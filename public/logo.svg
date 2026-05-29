@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="greenGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D7C3E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C9A84C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="goldShine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#C9A84C;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#E8D48B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C9A84C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#0D7C3E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#15A34A;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="200" cy="200" r="185" fill="url(#greenGrad)" filter="url(#shadow)"/>
+  <circle cx="200" cy="200" r="170" fill="none" stroke="url(#goldShine)" stroke-width="3" opacity="0.7"/>
+
+  <!-- Chart grid lines (subtle) -->
+  <g opacity="0.12" stroke="#E8D48B" stroke-width="1">
+    <line x1="70" y1="150" x2="330" y2="150"/>
+    <line x1="70" y1="190" x2="330" y2="190"/>
+    <line x1="70" y1="230" x2="330" y2="230"/>
+    <line x1="70" y1="270" x2="330" y2="270"/>
+  </g>
+
+  <!-- Upward trending chart line -->
+  <polyline
+    points="75,275 115,260 150,245 185,250 215,210 250,175 280,155 325,110"
+    fill="none"
+    stroke="url(#goldShine)"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#shadow)"
+  />
+
+  <!-- Area fill under the chart line -->
+  <polygon
+    points="75,275 115,260 150,245 185,250 215,210 250,175 280,155 325,110 325,290 75,290"
+    fill="url(#goldShine)"
+    opacity="0.1"
+  />
+
+  <!-- Candlestick bars -->
+  <g opacity="0.6">
+    <!-- Bar 1 -->
+    <rect x="90" y="240" width="8" height="40" rx="2" fill="#15A34A"/>
+    <line x1="94" y1="235" x2="94" y2="240" stroke="#15A34A" stroke-width="1.5"/>
+    <!-- Bar 2 -->
+    <rect x="120" y="225" width="8" height="45" rx="2" fill="#15A34A"/>
+    <line x1="124" y1="218" x2="124" y2="225" stroke="#15A34A" stroke-width="1.5"/>
+    <!-- Bar 3 -->
+    <rect x="150" y="230" width="8" height="35" rx="2" fill="#C9A84C"/>
+    <line x1="154" y1="225" x2="154" y2="230" stroke="#C9A84C" stroke-width="1.5"/>
+    <!-- Bar 4 -->
+    <rect x="180" y="215" width="8" height="50" rx="2" fill="#15A34A"/>
+    <line x1="184" y1="208" x2="184" y2="215" stroke="#15A34A" stroke-width="1.5"/>
+    <!-- Bar 5 -->
+    <rect x="210" y="190" width="8" height="55" rx="2" fill="#15A34A"/>
+    <line x1="214" y1="183" x2="214" y2="190" stroke="#15A34A" stroke-width="1.5"/>
+  </g>
+
+  <!-- Arrow at the end of chart line -->
+  <polygon points="325,110 315,118 320,108" fill="url(#goldShine)" filter="url(#shadow)"/>
+
+  <!-- Globe icon (simplified) -->
+  <circle cx="200" cy="95" r="28" fill="none" stroke="url(#goldShine)" stroke-width="2.5" opacity="0.9"/>
+  <ellipse cx="200" cy="95" rx="14" ry="28" fill="none" stroke="url(#goldShine)" stroke-width="1.5" opacity="0.7"/>
+  <line x1="172" y1="95" x2="228" y2="95" stroke="url(#goldShine)" stroke-width="1.5" opacity="0.7"/>
+  <line x1="176" y1="80" x2="224" y2="80" stroke="url(#goldShine)" stroke-width="1" opacity="0.5"/>
+  <line x1="176" y1="110" x2="224" y2="110" stroke="url(#goldShine)" stroke-width="1" opacity="0.5"/>
+
+  <!-- "GSI" Text -->
+  <text x="200" y="340" text-anchor="middle" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="url(#goldShine)" letter-spacing="6">
+    GSI
+  </text>
+
+  <!-- Platform name -->
+  <text x="200" y="365" text-anchor="middle" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#E8D48B" letter-spacing="3" opacity="0.85">
+    GLOBAL SAHAM INDONESIA
+  </text>
+</svg>
