@@ -36,14 +36,35 @@ export async function POST(request: NextRequest) {
 
     const token = await generateToken({ userId: user.id, phone: user.phone })
 
+    // Calculate VIP level
+    const vipLevel = calculateVIPLevel(user.totalDeposit)
+
+    // Update VIP level if changed
+    if (user.vipLevel !== vipLevel) {
+      await db.user.update({
+        where: { id: user.id },
+        data: { vipLevel },
+      })
+    }
+
     return NextResponse.json({
       user: {
         id: user.id,
+        username: user.username,
         name: user.name,
         phone: user.phone,
+        email: user.email,
         balance: user.balance,
         role: user.role,
         avatar: user.avatar,
+        referralCode: user.referralCode,
+        kycStatus: user.kycStatus,
+        vipLevel,
+        totalDeposit: user.totalDeposit,
+        totalTrading: user.totalTrading,
+        bankName: user.bankName,
+        bankAccount: user.bankAccount,
+        bankHolder: user.bankHolder,
         createdAt: user.createdAt,
       },
       token,
@@ -55,4 +76,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+function calculateVIPLevel(totalDeposit: number): string {
+  if (totalDeposit >= 500000000) return 'Diamond'
+  if (totalDeposit >= 200000000) return 'Platinum'
+  if (totalDeposit >= 50000000) return 'Gold'
+  if (totalDeposit >= 10000000) return 'Silver'
+  return 'Bronze'
 }

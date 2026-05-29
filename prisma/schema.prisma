@@ -9,16 +9,22 @@ datasource db {
 
 model User {
   id              String   @id @default(cuid())
+  username        String?
   name            String
   phone           String   @unique
-  password        String
   email           String?
+  password        String
   balance         Float    @default(0)
   avatar          String?
   role            String   @default("investor")
   referralCode    String   @unique
   referredBy      String?
   kycStatus       String   @default("pending") // pending, verified, rejected
+  vipLevel        String   @default("Bronze") // Bronze, Silver, Gold, Platinum, Diamond
+  totalDeposit    Float    @default(0)
+  totalTrading    Float    @default(0)
+  dailyCheckIn    Int      @default(0)
+  lastCheckIn     DateTime?
   bankName        String?
   bankAccount     String?
   bankHolder      String?
@@ -26,13 +32,15 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  portfolios     Portfolio[]
-  transactions   Transaction[]
-  deposits       Deposit[]
-  withdrawals    Withdrawal[]
-  watchlist      Watchlist[]
-  notifications  Notification[]
-  sentReferrals  Referral[]  @relation("Referrer")
+  portfolios       Portfolio[]
+  transactions     Transaction[]
+  deposits         Deposit[]
+  withdrawals      Withdrawal[]
+  watchlist        Watchlist[]
+  notifications    Notification[]
+  bonuses          Bonus[]
+  kycRecords       KYC[]
+  sentReferrals    Referral[]  @relation("Referrer")
   receivedReferrals Referral[] @relation("Referred")
 }
 
@@ -65,11 +73,11 @@ model Stock {
 }
 
 model Portfolio {
-  id       String @id @default(cuid())
-  userId   String
-  stockId  String
-  shares   Int    @default(0)
-  avgPrice Float  @default(0)
+  id        String   @id @default(cuid())
+  userId    String
+  stockId   String
+  shares    Int      @default(0)
+  avgPrice  Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -111,7 +119,7 @@ model Deposit {
   id        String   @id @default(cuid())
   userId    String
   amount    Float
-  method    String   @default("bank_transfer") // bank_transfer, e_wallet
+  method    String   @default("bank_transfer") // bank_transfer, e_wallet, qris
   bankName  String?
   status    String   @default("pending") // pending, completed, rejected
   note      String?
@@ -122,16 +130,16 @@ model Deposit {
 }
 
 model Withdrawal {
-  id        String   @id @default(cuid())
-  userId    String
-  amount    Float
-  bankName  String?
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Float
+  bankName    String?
   bankAccount String?
   bankHolder  String?
-  status    String   @default("pending") // pending, completed, rejected
-  note      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status      String   @default("pending") // pending, processing, completed, rejected
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }
@@ -190,4 +198,52 @@ model MarketIndex {
   change        Float    @default(0)
   changePercent Float    @default(0)
   updatedAt     DateTime @updatedAt
+}
+
+model Bonus {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // daily_checkin, trading_bonus, deposit_bonus, referral_bonus, welcome_bonus
+  amount      Float
+  description String?
+  status      String   @default("completed") // pending, completed, cancelled
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model KYC {
+  id          String   @id @default(cuid())
+  userId      String
+  fullName    String
+  idNumber    String
+  address     String
+  occupation  String
+  incomeRange String
+  status      String   @default("pending") // pending, verified, rejected
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Promo {
+  id        String   @id @default(cuid())
+  title     String
+  description String
+  type      String   // welcome_bonus, deposit_bonus, referral_program, trading_competition
+  value     Float    @default(0)
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Leaderboard {
+  id           String   @id @default(cuid())
+  userId       String
+  rank         Int
+  totalProfit  Float    @default(0)
+  profitPercent Float   @default(0)
+  period       String   @default("all") // daily, weekly, monthly, all
+  createdAt    DateTime @default(now())
 }

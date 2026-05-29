@@ -15,10 +15,10 @@ export async function POST() {
     const updatedStocks = []
 
     for (const stock of stocks) {
-      // Random price change between -3% and +3%
-      const changePercent = (Math.random() - 0.48) * 6 // slight upward bias
+      // Random price change between -3% and +3% with slight upward bias
+      const changePercent = (Math.random() - 0.48) * 6
       const priceChange = stock.price * (changePercent / 100)
-      const newPrice = Math.round((stock.price + priceChange) * 100) / 100
+      const newPrice = Math.max(1, Math.round((stock.price + priceChange) * 100) / 100)
       const newChange = Math.round(priceChange * 100) / 100
       const newChangePercent = Math.round(changePercent * 100) / 100
       const newHigh = Math.max(stock.high, newPrice)
@@ -78,8 +78,8 @@ export async function POST() {
 
     return NextResponse.json({
       message: 'Prices and market indices updated successfully',
-      stocks: updatedStocks,
-      indices: updatedIndices,
+      stocksUpdated: updatedStocks.length,
+      indicesUpdated: updatedIndices.length,
     })
   } catch (error) {
     console.error('Update prices error:', error)

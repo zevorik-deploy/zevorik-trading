@@ -1,13 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 export async function GET() {
   try {
+    // Auto-seed if no indices exist
+    const indexCount = await db.marketIndex.count()
+    if (indexCount === 0) {
+      await seedMarketIndices()
+    }
+
     const indices = await db.marketIndex.findMany({
       orderBy: { code: 'asc' },
     })
 
-    return NextResponse.json({ indices })
+    // Add some simulated market stats
+    const marketStats = {
+      totalVolume: indices.reduce((sum, idx) => sum + Math.abs(idx.value * 1000), 0),
+      marketStatus: isMarketOpen() ? 'OPEN' : 'CLOSED',
+      lastUpdated: new Date().toISOString(),
+    }
+
+    return NextResponse.json({ indices, marketStats })
   } catch (error) {
     console.error('Get market indices error:', error)
     return NextResponse.json(
@@ -60,5 +73,35 @@ export async function POST() {
       { error: 'Failed to update market indices' },
       { status: 500 }
     )
+  }
+}
+
+function isMarketOpen(): boolean {
+  const now = new Date()
+  const jakartaOffset = 7 * 60 // UTC+7
+  const jakartaTime = new Date(now.getTime() + (jakartaOffset + now.getTimezoneOffset()) * 60000)
+  const hours = jakartaTime.getHours()
+  const minutes = jakartaTime.getMinutes()
+  const day = jakartaTime.getDay()
+
+  // Market open Mon-Fri, 9:00 - 15:00
+  if (day === 0 || day === 6) return false
+  if (hours < 9 || hours >= 15) return false
+  if (hours === 9 && minutes < 0) return false
+
+  return true
+}
+
+async function seedMarketIndices() {
+  const marketIndices = [
+    { code: 'IHSG', name: 'Indeks Harga Saham Gabungan', value: 7245.83, change: 23.45, changePercent: 0.32 },
+    { code: 'LQ45', name: 'Indeks LQ45', value: 983.56, change: -5.12, changePercent: -0.52 },
+    { code: 'JII', name: 'Jakarta Islamic Index', value: 498.72, change: 8.34, changePercent: 1.70 },
+    { code: 'KOMPAS100', name: 'Indeks KOMPAS100', value: 1256.89, change: 12.67, changePercent: 1.02 },
+    { code: 'IDX30', name: 'Indeks IDX30', value: 512.34, change: -3.21, changePercent: -0.62 },
+  ]
+
+  for (const index of marketIndices) {
+    await db.marketIndex.create({ data: index })
   }
 }

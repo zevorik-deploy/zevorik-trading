@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get list of users this user has referred
     const sentReferrals = await db.referral.findMany({
       where: { referrerId: userId },
       include: {
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest) {
         status: r.status,
         joinedAt: r.referred.createdAt,
       })),
-      totalReferrals: sentReferrals.length,
+      totalReferred: sentReferrals.length,
       totalBonus,
     })
   } catch (error) {
@@ -115,48 +114,69 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const bonusAmount = 50000 // Rp 50,000
+    const bonusAmount = 50000
 
-    await db.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          referredBy: referrer.id,
-          balance: { increment: bonusAmount },
-        },
-      })
+    // Update referred user
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        referredBy: referrer.id,
+        balance: user.balance + bonusAmount,
+      },
+    })
 
-      await tx.user.update({
-        where: { id: referrer.id },
-        data: { balance: { increment: bonusAmount } },
-      })
+    // Update referrer
+    await db.user.update({
+      where: { id: referrer.id },
+      data: { balance: { increment: bonusAmount } },
+    })
 
-      await tx.referral.create({
-        data: {
-          referrerId: referrer.id,
-          referredId: userId,
-          bonusAmount,
-          status: 'completed',
-        },
-      })
+    // Create referral record
+    await db.referral.create({
+      data: {
+        referrerId: referrer.id,
+        referredId: userId,
+        bonusAmount,
+        status: 'completed',
+      },
+    })
 
-      await tx.notification.create({
-        data: {
-          userId: referrer.id,
-          title: 'Bonus Referral!',
-          message: `Anda mendapat bonus referral Rp ${bonusAmount.toLocaleString('id-ID')} karena mengajak teman bergabung.`,
-          type: 'alert',
-        },
-      })
+    // Create bonus records
+    await db.bonus.create({
+      data: {
+        userId: referrer.id,
+        type: 'referral_bonus',
+        amount: bonusAmount,
+        description: `Bonus referral karena mengajak ${user.name} bergabung`,
+        status: 'completed',
+      },
+    })
+    await db.bonus.create({
+      data: {
+        userId,
+        type: 'referral_bonus',
+        amount: bonusAmount,
+        description: 'Bonus referral dari kode referral',
+        status: 'completed',
+      },
+    })
 
-      await tx.notification.create({
-        data: {
-          userId,
-          title: 'Bonus Referral!',
-          message: `Anda mendapat bonus referral Rp ${bonusAmount.toLocaleString('id-ID')} dari kode referral.`,
-          type: 'alert',
-        },
-      })
+    // Create notifications
+    await db.notification.create({
+      data: {
+        userId: referrer.id,
+        title: 'Bonus Referral!',
+        message: `Anda mendapat bonus referral Rp ${bonusAmount.toLocaleString('id-ID')} karena mengajak teman bergabung.`,
+        type: 'alert',
+      },
+    })
+    await db.notification.create({
+      data: {
+        userId,
+        title: 'Bonus Referral!',
+        message: `Anda mendapat bonus referral Rp ${bonusAmount.toLocaleString('id-ID')} dari kode referral.`,
+        type: 'alert',
+      },
     })
 
     return NextResponse.json({

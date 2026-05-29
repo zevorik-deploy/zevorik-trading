@@ -31,9 +31,13 @@ export async function GET(
       orderBy: { timestamp: 'asc' },
     })
 
+    // Get recent 30 data points for summary
+    const recentHistory = priceHistory.slice(-30)
+
     return NextResponse.json({
       stock,
       priceHistory,
+      recentHistory,
     })
   } catch (error) {
     console.error('Get stock detail error:', error)

@@ -35,34 +35,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Deduct balance immediately, set status pending
-    const withdrawal = await db.$transaction(async (tx) => {
-      const wd = await tx.withdrawal.create({
-        data: {
-          userId,
-          amount,
-          bankName,
-          bankAccount,
-          bankHolder,
-          status: 'pending',
-        },
-      })
+    // VIP withdrawal limits
+    const withdrawalLimits: Record<string, number> = {
+      Bronze: 50000000,
+      Silver: 100000000,
+      Gold: 250000000,
+      Platinum: 500000000,
+      Diamond: 1000000000,
+    }
+    const limit = withdrawalLimits[user.vipLevel] || 50000000
+    if (amount > limit) {
+      return NextResponse.json(
+        { error: `Maximum withdrawal for ${user.vipLevel} level is Rp ${limit.toLocaleString('id-ID')}` },
+        { status: 400 }
+      )
+    }
 
-      await tx.user.update({
-        where: { id: userId },
-        data: { balance: { decrement: amount } },
-      })
+    // Create withdrawal and deduct balance
+    const withdrawal = await db.withdrawal.create({
+      data: {
+        userId,
+        amount,
+        bankName,
+        bankAccount,
+        bankHolder,
+        status: 'processing',
+      },
+    })
 
-      await tx.notification.create({
-        data: {
-          userId,
-          title: 'Permintaan Penarikan',
-          message: `Penarikan sebesar Rp ${amount.toLocaleString('id-ID')} sedang diproses. Dana akan ditransfer dalam 1x24 jam.`,
-          type: 'info',
-        },
-      })
+    await db.user.update({
+      where: { id: userId },
+      data: { balance: user.balance - amount },
+    })
 
-      return wd
+    await db.notification.create({
+      data: {
+        userId,
+        title: 'Permintaan Penarikan',
+        message: `Penarikan sebesar Rp ${amount.toLocaleString('id-ID')} sedang diproses. Dana akan ditransfer dalam 1x24 jam.`,
+        type: 'info',
+      },
     })
 
     return NextResponse.json({ withdrawal }, { status: 201 })

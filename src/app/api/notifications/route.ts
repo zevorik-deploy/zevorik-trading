@@ -82,3 +82,34 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { userId, title, message, type } = body
+
+    if (!userId || !title || !message) {
+      return NextResponse.json(
+        { error: 'userId, title, and message are required' },
+        { status: 400 }
+      )
+    }
+
+    const notification = await db.notification.create({
+      data: {
+        userId,
+        title,
+        message,
+        type: type || 'info',
+      },
+    })
+
+    return NextResponse.json({ notification }, { status: 201 })
+  } catch (error) {
+    console.error('Create notification error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create notification' },
+      { status: 500 }
+    )
+  }
+}
