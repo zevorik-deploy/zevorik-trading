@@ -8,38 +8,60 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String   @unique
-  password  String
-  balance   Float    @default(0)
-  avatar    String?
-  role      String   @default("investor")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  phone           String   @unique
+  password        String
+  email           String?
+  balance         Float    @default(0)
+  avatar          String?
+  role            String   @default("investor")
+  referralCode    String   @unique
+  referredBy      String?
+  kycStatus       String   @default("pending") // pending, verified, rejected
+  bankName        String?
+  bankAccount     String?
+  bankHolder      String?
+  pin             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  portfolios   Portfolio[]
-  transactions Transaction[]
+  portfolios     Portfolio[]
+  transactions   Transaction[]
+  deposits       Deposit[]
+  withdrawals    Withdrawal[]
+  watchlist      Watchlist[]
+  notifications  Notification[]
+  sentReferrals  Referral[]  @relation("Referrer")
+  receivedReferrals Referral[] @relation("Referred")
 }
 
 model Stock {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  price       Float
-  change      Float    @default(0)
-  changePercent Float  @default(0)
-  high        Float    @default(0)
-  low         Float    @default(0)
-  volume      Int      @default(0)
-  marketCap   Float    @default(0)
-  category    String   @default("bluechip")
-  logo        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  price         Float
+  change        Float    @default(0)
+  changePercent Float    @default(0)
+  high          Float    @default(0)
+  low           Float    @default(0)
+  open          Float    @default(0)
+  volume        Int      @default(0)
+  marketCap     Float    @default(0)
+  category      String   @default("bluechip")
+  sector        String?
+  logo          String?
+  description   String?
+  peRatio       Float    @default(0)
+  pbv           Float    @default(0)
+  dividendYield Float    @default(0)
+  lotSize       Int      @default(100)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   portfolios   Portfolio[]
   transactions Transaction[]
+  watchlist    Watchlist[]
 }
 
 model Portfolio {
@@ -62,10 +84,12 @@ model Transaction {
   userId    String
   stockId   String
   type      String   // BUY or SELL
+  orderType String   @default("market") // market, limit
   shares    Int
   price     Float
   total     Float
-  status    String   @default("completed")
+  fee       Float    @default(0)
+  status    String   @default("completed") // completed, pending, cancelled
   createdAt DateTime @default(now())
 
   user  User  @relation(fields: [userId], references: [id])
@@ -76,5 +100,94 @@ model StockPriceHistory {
   id        String   @id @default(cuid())
   stockCode String
   price     Float
+  open      Float    @default(0)
+  high      Float    @default(0)
+  low       Float    @default(0)
+  volume    Int      @default(0)
   timestamp DateTime @default(now())
+}
+
+model Deposit {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  method    String   @default("bank_transfer") // bank_transfer, e_wallet
+  bankName  String?
+  status    String   @default("pending") // pending, completed, rejected
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Withdrawal {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  bankName  String?
+  bankAccount String?
+  bankHolder  String?
+  status    String   @default("pending") // pending, completed, rejected
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  stockId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  stock Stock @relation(fields: [stockId], references: [id])
+
+  @@unique([userId, stockId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info") // info, trade, deposit, system, alert
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referredId  String
+  bonusAmount Float    @default(0)
+  status      String   @default("pending") // pending, completed
+  createdAt   DateTime @default(now())
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id])
+  referred User @relation("Referred", fields: [referredId], references: [id])
+}
+
+model News {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  category    String   @default("market") // market, company, system, education
+  imageUrl    String?
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model MarketIndex {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  value         Float
+  change        Float    @default(0)
+  changePercent Float    @default(0)
+  updatedAt     DateTime @updatedAt
 }

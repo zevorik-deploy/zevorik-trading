@@ -42,6 +42,10 @@ export async function POST() {
         data: {
           stockCode: stock.code,
           price: newPrice,
+          open: stock.open,
+          high: newHigh,
+          low: newLow,
+          volume: stock.volume + volumeChange,
           timestamp: new Date(),
         },
       })
@@ -49,9 +53,33 @@ export async function POST() {
       updatedStocks.push(updated)
     }
 
+    // Also update market indices
+    const indices = await db.marketIndex.findMany()
+    const updatedIndices = []
+
+    for (const index of indices) {
+      const indexChangePercent = (Math.random() - 0.48) * 4
+      const valueChange = index.value * (indexChangePercent / 100)
+      const newValue = Math.round((index.value + valueChange) * 100) / 100
+      const newChange = Math.round(valueChange * 100) / 100
+      const newChangePercent = Math.round(indexChangePercent * 100) / 100
+
+      const updated = await db.marketIndex.update({
+        where: { id: index.id },
+        data: {
+          value: newValue,
+          change: newChange,
+          changePercent: newChangePercent,
+        },
+      })
+
+      updatedIndices.push(updated)
+    }
+
     return NextResponse.json({
-      message: 'Prices updated successfully',
+      message: 'Prices and market indices updated successfully',
       stocks: updatedStocks,
+      indices: updatedIndices,
     })
   } catch (error) {
     console.error('Update prices error:', error)

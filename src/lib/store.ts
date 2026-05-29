@@ -4,9 +4,15 @@ interface User {
   id: string
   name: string
   phone: string
+  email?: string
   balance: number
   role: string
   avatar: string | null
+  referralCode?: string
+  kycStatus?: string
+  bankName?: string
+  bankAccount?: string
+  bankHolder?: string
 }
 
 interface AuthState {
@@ -16,6 +22,7 @@ interface AuthState {
   login: (user: User, token: string) => void
   logout: () => void
   updateBalance: (balance: number) => void
+  updateUser: (data: Partial<User>) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -28,32 +35,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => ({
       user: state.user ? { ...state.user, balance } : null,
     })),
-}))
-
-interface Stock {
-  id: string
-  code: string
-  name: string
-  price: number
-  change: number
-  changePercent: number
-  high: number
-  low: number
-  volume: number
-  marketCap: number
-  category: string
-}
-
-interface StockState {
-  stocks: Stock[]
-  loading: boolean
-  setStocks: (stocks: Stock[]) => void
-  setLoading: (loading: boolean) => void
-}
-
-export const useStockStore = create<StockState>((set) => ({
-  stocks: [],
-  loading: false,
-  setStocks: (stocks) => set({ stocks }),
-  setLoading: (loading) => set({ loading }),
+  updateUser: (data) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...data } : null,
+    })),
 }))
