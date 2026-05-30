@@ -658,106 +658,84 @@ function Dashboard() {
   const [selectedDetailProduct, setSelectedDetailProduct] = useState<InvestProduct | null>(null)
   const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
 
-  // ============ LIVE CANDLESTICK DATA ============
-  const [liveCandleData, setLiveCandleData] = useState<Map<string, {o: number; h: number; l: number; c: number}[]>>(new Map())
-  const candleStateRef = useRef<Map<string, {prevClose: number; momentum: number; trend: number}>>(new Map())
-  const MAX_CANDLES = 14
+  // ============ LIVE INVESTMENT AREA CHART DATA ============
+  const [investChartData, setInvestChartData] = useState<Map<string, {idx: number; value: number}[]>>(new Map())
+  const investChartSimRef = useRef<Map<string, {val: number; baseVal: number; momentum: number; initialized: boolean}>>(new Map())
+  const investChartTickRef = useRef(0)
 
-  // Initialize candlestick data when products load
+  // Initialize investment area chart data when products load
   useEffect(() => {
     if (investProducts.length === 0) return
-    setLiveCandleData(prev => {
+    setInvestChartData(prev => {
       const next = new Map(prev)
       let changed = false
       investProducts.forEach(p => {
-        if (next.has(p.id)) return
+        if (investChartSimRef.current.has(p.id)) return
         changed = true
-        const data: {o: number; h: number; l: number; c: number}[] = []
-        const basePrice = p.modal
-        let prevClose = basePrice * (0.97 + Math.random() * 0.06)
+        const baseVal = p.modal
+        const pts: {idx: number; value: number}[] = []
+        let val = baseVal * (0.97 + Math.random() * 0.06)
         let momentum = 0
-        for (let i = 0; i < MAX_CANDLES; i++) {
-          // Random walk with momentum for natural zigzag
-          momentum = momentum * 0.6 + (Math.random() - 0.5) * basePrice * 0.012
-          const trend = (Math.random() - 0.48) * basePrice * 0.004
-          const change = momentum + trend
-          const open = prevClose
-          const close = open + change
-          const high = Math.max(open, close) + Math.random() * basePrice * 0.006
-          const low = Math.min(open, close) - Math.random() * basePrice * 0.006
-          data.push({ o: Math.round(open), h: Math.round(high), l: Math.round(Math.max(low, basePrice * 0.9)), c: Math.round(close) })
-          prevClose = close
+        for (let i = 0; i < 40; i++) {
+          const dir = Math.random() > 0.5 ? 1 : -1
+          const minStep = Math.max(1, baseVal * 0.0015)
+          const stepSize = minStep * (0.8 + Math.random() * 1.2)
+          const bias = (Math.random() - 0.48) * baseVal * 0.0003
+          momentum = momentum * 0.3 + dir * stepSize + bias
+          val += momentum
+          val += (baseVal - val) * 0.008
+          pts.push({ idx: i, value: Math.round(val) })
         }
-        next.set(p.id, data)
-        candleStateRef.current.set(p.id, { prevClose, momentum, trend: 0 })
+        // End near current modal price
+        pts.push({ idx: 40, value: Math.round(baseVal * (0.99 + Math.random() * 0.02)) })
+        next.set(p.id, pts)
+        investChartSimRef.current.set(p.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
       })
       return changed ? next : prev
     })
-    // Also initialize investMovement for the first time
-    setInvestMovement(prev => {
-      if (prev.size > 0) return prev
-      const next = new Map(prev)
-      investProducts.forEach(p => {
-        if (next.has(p.id)) return
-        next.set(p.id, { change: 0, changePercent: 0 })
-      })
-      return next
-    })
   }, [investProducts])
 
-  // Live candlestick update - adds new candle every 3 seconds
-  const liveCandleDataRef = useRef<Map<string, {o: number; h: number; l: number; c: number}[]>>(new Map())
-  useEffect(() => { liveCandleDataRef.current = liveCandleData }, [liveCandleData])
-
+  // Live investment chart update — every 2 seconds
   useEffect(() => {
-    if (investProducts.length === 0) return
     const interval = setInterval(() => {
-      const newMovements = new Map<string, {change: number; changePercent: number}>()
-      const newCandleMap = new Map<string, {o: number; h: number; l: number; c: number}[]>()
+      const simMap = investChartSimRef.current
+      if (simMap.size === 0) return
+      investChartTickRef.current += 1
+      const tick = investChartTickRef.current
+      const updates = new Map<string, {idx: number; value: number}[]>()
 
-      investProducts.forEach(p => {
-        const candles = liveCandleDataRef.current.get(p.id)
-        if (!candles || candles.length === 0) return
-        const state = candleStateRef.current.get(p.id)
-        if (!state) return
+      simMap.forEach((sim, productId) => {
+        const dir = Math.random() > 0.5 ? 1 : -1
+        const minStep = Math.max(1, sim.baseVal * 0.0012)
+        const stepSize = minStep * (0.6 + Math.random() * 1)
+        sim.momentum = sim.momentum * 0.3 + dir * stepSize
+        sim.val += sim.momentum
+        sim.val += (sim.baseVal - sim.val) * 0.006
 
-        // Random walk with momentum + soft mean reversion
-        const basePrice = p.modal
-        const reversion = (basePrice - state.prevClose) * 0.02
-        state.momentum = state.momentum * 0.55 + (Math.random() - 0.5) * basePrice * 0.014 + reversion * 0.3
-        state.trend = state.trend * 0.8 + (Math.random() - 0.48) * basePrice * 0.003
-        const change = state.momentum + state.trend
-
-        const open = state.prevClose
-        const close = open + change
-        const high = Math.max(open, close) + Math.random() * basePrice * 0.007
-        const low = Math.min(open, close) - Math.random() * basePrice * 0.007
-
-        const newCandle = { o: Math.round(open), h: Math.round(high), l: Math.round(Math.max(low, basePrice * 0.9)), c: Math.round(close) }
-        const updated = [...candles.slice(-(MAX_CANDLES - 1)), newCandle]
-        newCandleMap.set(p.id, updated)
-        state.prevClose = close
-
-        // Calculate movement
-        const changePercent = ((close - basePrice) / basePrice) * 100
-        newMovements.set(p.id, { change: Math.round(close - basePrice), changePercent: parseFloat(changePercent.toFixed(2)) })
+        setInvestChartData(prev => {
+          const existing = prev.get(productId)
+          if (!existing) return prev
+          const next = [...existing, { idx: tick + 40, value: Math.round(sim.val) }]
+          const trimmed = next.length > 50 ? next.slice(-50) : next
+          const nextMap = new Map(prev)
+          nextMap.set(productId, trimmed)
+          return nextMap
+        })
       })
 
-      if (newCandleMap.size > 0) {
-        setLiveCandleData(prev => {
-          const next = new Map(prev)
-          newCandleMap.forEach((v, k) => next.set(k, v))
-          return next
+      // Also update investMovement
+      setInvestMovement(prev => {
+        const next = new Map(prev)
+        simMap.forEach((sim, productId) => {
+          const changePercent = ((sim.val - sim.baseVal) / sim.baseVal) * 100
+          next.set(productId, { change: Math.round(sim.val - sim.baseVal), changePercent: parseFloat(changePercent.toFixed(2)) })
         })
-        setInvestMovement(prev => {
-          const next = new Map(prev)
-          newMovements.forEach((v, k) => next.set(k, v))
-          return next
-        })
-      }
-    }, 3000)
+        return next
+      })
+    }, 2000)
     return () => clearInterval(interval)
-  }, [investProducts])
+  }, [])
+
 
   const initialized2 = useRef(false)
   const stocksRef = useRef<Stock[]>([])
@@ -1123,10 +1101,10 @@ function Dashboard() {
     setShowWelcomeModal(false)
   }
 
-  // ============ CANDLESTICK DATA HELPER ============
-  const getCandlestickData = useCallback((product: InvestProduct) => {
-    return liveCandleData.get(product.id) || []
-  }, [liveCandleData])
+  // ============ INVEST CHART DATA HELPER ============
+  const getInvestChartData = useCallback((product: InvestProduct) => {
+    return investChartData.get(product.id) || []
+  }, [investChartData])
 
   // ============ TRADE ============
   const handleTrade = async () => {
@@ -1287,30 +1265,12 @@ function Dashboard() {
     } finally { setClaimLoadingId(null) }
   }
 
-  // ============ INVESTMENT SPARKLINE (live, updates with candlestick) ============
+  // ============ INVESTMENT SPARKLINE (derived from live chart data) ============
   const getInvestSparkline = useCallback((product: InvestProduct) => {
-    const candles = liveCandleData.get(product.id)
-    if (!candles || candles.length === 0) return []
-    // Derive sparkline from candlestick close prices
-    const movement = investMovement.get(product.id)
-    const isUp = movement ? movement.changePercent >= 0 : true
-    const pts: {i: number; p: number}[] = []
-    let p = product.modal * 0.98
-    // Use candle close prices to create smooth sparkline
-    const closePrices = candles.map(c => c.c)
-    const minClose = Math.min(...closePrices)
-    const maxClose = Math.max(...closePrices)
-    const range = maxClose - minClose || 1
-    for (let i = 0; i < closePrices.length; i++) {
-      // Normalize and add some interpolation points
-      pts.push({ i: i * 2, p: closePrices[i] })
-      if (i < closePrices.length - 1) {
-        const mid = (closePrices[i] + closePrices[i + 1]) / 2
-        pts.push({ i: i * 2 + 1, p: Math.round(mid) })
-      }
-    }
-    return pts
-  }, [liveCandleData, investMovement])
+    const chartData = investChartData.get(product.id)
+    if (!chartData || chartData.length === 0) return []
+    return chartData.map((d, i) => ({ i, p: d.value }))
+  }, [investChartData])
 
   // ============ DERIVED ============
   const unreadNotif = notifications.filter(n => !n.isRead).length
@@ -2140,7 +2100,8 @@ function Dashboard() {
                   const movement = investMovement.get(product.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
                   const currentVal = product.modal + (movement?.change || 0)
-                  const candles = getCandlestickData(product)
+                  const chartData = getInvestChartData(product)
+                  const chartColor = isUp ? '#17b85c' : '#ef4444'
 
                   return (
                     <div key={product.id} className="rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow overflow-hidden">
@@ -2159,7 +2120,7 @@ function Dashboard() {
                         <span className="text-[8px] font-bold text-gs-muted">Aset Saham</span>
                       </div>
 
-                      {/* PERGERAKAN MARKET label + Live Candlestick Chart */}
+                      {/* PERGERAKAN MARKET label + Live Area Chart */}
                       <div className="px-3 py-1">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1">
@@ -2171,44 +2132,43 @@ function Dashboard() {
                             <span className="text-[6px] font-black text-green-600">LIVE</span>
                           </div>
                         </div>
-                        <div className="h-16 w-full relative bg-gray-50 rounded-lg border border-gs-line/50 overflow-hidden">
-                          {candles.length > 0 ? (() => {
-                              const allPrices = candles.flatMap(c => [c.h, c.l])
-                              const minP = Math.min(...allPrices)
-                              const maxP = Math.max(...allPrices)
-                              const range = maxP - minP || 1
-                              const totalCandles = candles.length
-                              const candleWidth = Math.max(3, Math.floor((120 - totalCandles * 2) / totalCandles))
-                              const gap = Math.max(1, Math.floor((120 - totalCandles * candleWidth) / (totalCandles + 1)))
-                              const svgW = totalCandles * (candleWidth + gap) + gap * 2
+                        <div className="h-20 w-full relative bg-gray-50 rounded-lg border border-gs-line/50 overflow-hidden">
+                          {chartData.length > 2 ? (() => {
+                              const values = chartData.map(d => d.value)
+                              const minV = Math.min(...values)
+                              const maxV = Math.max(...values)
+                              const rangeV = maxV - minV || 1
+                              const domain: [number, number] = [Math.floor(minV - rangeV * 0.1), Math.ceil(maxV + rangeV * 0.1)]
                               return (
-                                <svg className="w-full h-full" viewBox={`0 0 ${svgW} 56`} preserveAspectRatio="none">
-                                  {candles.map((c, i) => {
-                                    const x = gap + i * (candleWidth + gap)
-                                    const yH = 4 + ((maxP - c.h) / range) * 44
-                                    const yL = 4 + ((maxP - c.l) / range) * 44
-                                    const yO = 4 + ((maxP - c.o) / range) * 44
-                                    const yC = 4 + ((maxP - c.c) / range) * 44
-                                    const isGreen = c.c >= c.o
-                                    const bodyTop = Math.min(yO, yC)
-                                    const bodyH = Math.max(Math.abs(yO - yC), 1)
-                                    const isLast = i === totalCandles - 1
-                                    return (
-                                      <g key={i}>
-                                        <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1" opacity={isLast ? 1 : 0.7} />
-                                        <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="0.5" opacity={isLast ? 1 : 0.7} />
-                                        {isLast && (
-                                          <>
-                                            <circle cx={x + candleWidth / 2} cy={yC} r="2" fill={isGreen ? '#17b85c' : '#ef4444'}>
-                                              <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                                    <defs>
+                                      <linearGradient id={`investGrad-${product.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor={chartColor} stopOpacity="0.35" />
+                                        <stop offset="70%" stopColor={chartColor} stopOpacity="0.08" />
+                                        <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                      </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="idx" hide />
+                                    <YAxis hide domain={domain} />
+                                    <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investGrad-${product.id})`} strokeWidth={1.8}
+                                      dot={(props: Record<string, unknown>) => {
+                                        const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                        if (index !== chartData.length - 1) return <g key={String(index)} />
+                                        return (
+                                          <g key={`invest-dot-${product.id}`}>
+                                            <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.2}>
+                                              <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                                             </circle>
-                                          </>
-                                        )}
-                                      </g>
-                                    )
-                                  })}
-                                </svg>
+                                            <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#fff" strokeWidth={1} />
+                                          </g>
+                                        )
+                                      }}
+                                      activeDot={false}
+                                      isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                  </AreaChart>
+                                </ResponsiveContainer>
                               )
                             })() : (
                               <div className="flex items-center justify-center h-full text-[8px] text-gs-muted">Memuat data...</div>
@@ -3958,11 +3918,13 @@ function Dashboard() {
                   </div>
                 </div>
 
-                {/* Live Candlestick Chart */}
+                {/* Live Area Chart */}
                 {(() => {
-                  const candles = getCandlestickData(selectedDetailProduct)
+                  const chartData = getInvestChartData(selectedDetailProduct)
                   const movement = investMovement.get(selectedDetailProduct.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
+                  const chartColor = isUp ? '#17b85c' : '#ef4444'
+                  const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : selectedDetailProduct.modal
                   return (
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
@@ -3975,50 +3937,53 @@ function Dashboard() {
                           <span className="text-[7px] font-black text-green-600">LIVE</span>
                         </div>
                       </div>
-                      <div className="h-44 w-full rounded-2xl bg-gs-soft border border-gs-line p-3 overflow-hidden">
-                        {candles.length > 0 ? (() => {
-                          const allPrices = candles.flatMap(c => [c.h, c.l])
-                          const minP = Math.min(...allPrices)
-                          const maxP = Math.max(...allPrices)
-                          const range = maxP - minP || 1
-                          const totalCandles = candles.length
-                          const candleWidth = Math.max(5, Math.floor((200 - totalCandles * 4) / totalCandles))
-                          const gap = Math.max(3, Math.floor((200 - totalCandles * candleWidth) / (totalCandles + 1)))
-                          const svgW = totalCandles * (candleWidth + gap) + gap * 2
+                      {/* Current Price Display */}
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-xl font-black text-gs-text tabular-nums">{formatRupiah(lastValue)}</span>
+                        <span className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                          {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                          {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
+                        </span>
+                      </div>
+                      <div className="h-48 w-full rounded-2xl bg-gs-soft border border-gs-line p-2 overflow-hidden">
+                        {chartData.length > 2 ? (() => {
+                          const values = chartData.map(d => d.value)
+                          const minV = Math.min(...values)
+                          const maxV = Math.max(...values)
+                          const rangeV = maxV - minV || 1
+                          const domain: [number, number] = [Math.floor(minV - rangeV * 0.12), Math.ceil(maxV + rangeV * 0.12)]
                           return (
-                            <svg className="w-full h-full" viewBox={`0 0 ${svgW} 120`} preserveAspectRatio="xMidYMid meet">
-                              {/* Grid lines */}
-                              {[0, 1, 2, 3].map(gi => (
-                                <line key={gi} x1="0" y1={10 + gi * 28} x2={svgW} y2={10 + gi * 28} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="4,4" />
-                              ))}
-                              {candles.map((c, i) => {
-                                const x = gap + i * (candleWidth + gap)
-                                const yH = 8 + ((maxP - c.h) / range) * 100
-                                const yL = 8 + ((maxP - c.l) / range) * 100
-                                const yO = 8 + ((maxP - c.o) / range) * 100
-                                const yC = 8 + ((maxP - c.c) / range) * 100
-                                const isGreen = c.c >= c.o
-                                const bodyTop = Math.min(yO, yC)
-                                const bodyH = Math.max(Math.abs(yO - yC), 1.5)
-                                const isLast = i === totalCandles - 1
-                                return (
-                                  <g key={i}>
-                                    <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth={isLast ? "2" : "1.5"} opacity={isLast ? 1 : 0.6} />
-                                    <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="1" opacity={isLast ? 1 : 0.6} />
-                                    {isLast && (
-                                      <>
-                                        <circle cx={x + candleWidth / 2} cy={yC} r="3" fill={isGreen ? '#17b85c' : '#ef4444'}>
-                                          <animate attributeName="r" values="3;6;3" dur="1.5s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                                <defs>
+                                  <linearGradient id={`investDetailGrad-${selectedDetailProduct.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.4" />
+                                    <stop offset="50%" stopColor={chartColor} stopOpacity="0.1" />
+                                    <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                  </linearGradient>
+                                </defs>
+                                <XAxis dataKey="idx" hide />
+                                <YAxis hide domain={domain} />
+                                <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
+                                <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: `1px solid ${isUp ? '#bbf7d0' : '#fecaca'}`, background: isUp ? '#f0fdf4' : '#fef2f2' }} />
+                                <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investDetailGrad-${selectedDetailProduct.id})`} strokeWidth={2.5}
+                                  dot={(props: Record<string, unknown>) => {
+                                    const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                    if (index !== chartData.length - 1) return <g key={String(index)} />
+                                    return (
+                                      <g key={`invest-detail-dot-${selectedDetailProduct.id}`}>
+                                        <circle cx={cx} cy={cy} r={8} fill={chartColor} opacity={0.2}>
+                                          <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                                         </circle>
-                                        {/* Price line from last candle to right */}
-                                        <line x1={x + candleWidth + 2} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="0.8" strokeDasharray="3,2" opacity="0.6" />
-                                      </>
-                                    )}
-                                  </g>
-                                )
-                              })}
-                            </svg>
+                                        <circle cx={cx} cy={cy} r={4} fill={chartColor} stroke="#fff" strokeWidth={1.5} />
+                                      </g>
+                                    )
+                                  }}
+                                  activeDot={false}
+                                  isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                              </AreaChart>
+                            </ResponsiveContainer>
                           )
                         })() : (
                           <div className="flex items-center justify-center h-full text-[10px] text-gs-muted">Memuat data market...</div>
@@ -4026,13 +3991,13 @@ function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1">
-                          {isUp ? <ArrowUpRight className="w-3.5 h-3.5 text-green-600" /> : <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />}
-                          <span className={`text-[10px] font-black ${isUp ? 'text-green-600' : 'text-red-500'}`}>
-                            {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
+                          {isUp ? <TrendingUp className="w-3.5 h-3.5 text-green-600" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+                          <span className={`text-[10px] font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+                            Modal: {formatRupiah(selectedDetailProduct.modal)}
                           </span>
                         </div>
                         <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                          {formatRupiah(selectedDetailProduct.modal + (movement?.change || 0))}
+                          {formatRupiah(lastValue)}
                         </span>
                       </div>
                     </div>

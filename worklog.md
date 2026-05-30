@@ -47,3 +47,32 @@ Stage Summary:
 - Pasar Aktif Stats (product count, category count, Live 24/7)
 - Profile VERIFIED badge, Layanan Pelanggan, Profil Perusahaan, regulatory footer
 - Enhanced Referral Page with colored Gem tier badges, Salin/Bagikan buttons
+
+---
+Task ID: 5
+Agent: main
+Task: Make investment charts live and real-time (replacing static SVG candlesticks with animated Recharts AreaCharts)
+
+Work Log:
+- Removed old `liveCandleData`, `candleStateRef`, `MAX_CANDLES` state variables and all related candlestick initialization/update effects
+- Added new `investChartData` state (Map<string, {idx: number; value: number}[]>) for live area chart data
+- Added `investChartSimRef` ref for per-product simulation state (val, baseVal, momentum, initialized)
+- Added `investChartTickRef` for tick counter
+- Created initialization effect that generates 40-point historical data with random walk + momentum when products load
+- Created live update effect that adds new data point every 2 seconds with natural zigzag movement (50% up/down, adaptive step sizes, mean reversion)
+- Replaced `getCandlestickData` with `getInvestChartData` helper that returns live area chart data
+- Updated `getInvestSparkline` to derive from `investChartData` instead of candlestick data
+- Replaced SVG candlestick chart on investment product cards with Recharts AreaChart featuring: gradient fill, smooth animation (500ms ease-out), pulsing dot at last point, green/red coloring based on movement direction
+- Replaced SVG candlestick chart in Investment Detail Modal with larger Recharts AreaChart (h-48) featuring: current price display with Rupiah formatting, percentage change badge, gradient fill, reference line at last price, tooltip with Rupiah formatting, larger pulsing dot animation
+- Increased product card chart height from h-16 to h-20 for better visibility
+- All charts now update every 2 seconds with visible, smooth animations
+- Lint passes with no errors
+- Dev server running successfully
+
+Stage Summary:
+- Successfully replaced all static SVG candlestick charts with live, animated Recharts AreaCharts
+- Investment product cards now show clearly moving area charts that update every 2 seconds
+- Investment Detail Modal shows a large live area chart with current price, percentage change, and tooltip
+- Charts use the same proven live update pattern as IHSG chart and stock sparklines
+- Natural zigzag movement with momentum + mean reversion ensures realistic price movements
+- Green/red gradient fills with pulsing dots make the live nature visually obvious
