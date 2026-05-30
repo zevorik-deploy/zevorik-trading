@@ -124,6 +124,16 @@
   100% { stroke-dashoffset: 0; }
 }
 
+@keyframes price-flash-green {
+  0% { background-color: rgba(23, 184, 92, 0.2); }
+  100% { background-color: transparent; }
+}
+
+@keyframes price-flash-red {
+  0% { background-color: rgba(239, 68, 68, 0.2); }
+  100% { background-color: transparent; }
+}
+
 .animate-ticker {
   animation: ticker-scroll 25s linear infinite;
 }
@@ -143,6 +153,14 @@
 .animate-chart-draw {
   stroke-dasharray: 1000;
   animation: chart-draw 2s ease-out forwards;
+}
+
+.animate-price-flash-green {
+  animation: price-flash-green 0.5s ease-out;
+}
+
+.animate-price-flash-red {
+  animation: price-flash-red 0.5s ease-out;
 }
 
 /* Custom scrollbar */

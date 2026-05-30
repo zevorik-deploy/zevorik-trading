@@ -125,3 +125,44 @@ Stage Summary:
 - Full dashboard with 10+ tabs, modals, side menu, bottom nav
 - All 24 API routes integrated
 - Demo account: 081234567890 / demo123
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Add dynamic buy/sell price charts with real-time up/down movement
+
+Work Log:
+- Added live price chart state variables: liveBuyChart, liveSellChart, liveBuyPrice, liveSellPrice, liveChartActive
+- Implemented useEffect with setInterval (1.5s) for real-time price simulation
+- Price simulation uses random walk with trend bias, mean reversion, and spread maintenance
+- Initialize with 30 historical data points for immediate chart display
+- Max 80 data points with sliding window
+- Buy price = base price - 0.2% spread, Sell price = base price + 0.2% spread
+- Replaced static chart in Stock Detail modal with two live charts:
+  - Grafik Harga Beli (green area chart with gradient fill)
+  - Grafik Harga Jual (red area chart with gradient fill)
+- Added Live indicator badge (pulsing green dot + "LIVE" text)
+- Added up/down arrow indicators (▲/▼) on chart prices
+- Added Spread Info box showing buy-sell price difference
+- Added live buy/sell price cards in stock detail header
+- Updated Trade modal to show live prices:
+  - "Harga Beli (Live)" / "Harga Jual (Live)" labels
+  - Price colored green for buy, red for sell
+  - LIVE badge indicator
+  - Both buy and sell prices shown at bottom
+- Updated trade calculations to use live prices
+- Updated handleTrade to use live buy/sell prices for actual transactions
+- Added mini SVG sparkline charts in market tab stock list items
+- Added CSS animations: price-flash-green, price-flash-red
+- Cleaned up unused variables (chartPeriod, chartData)
+- Live chart resets on stock change
+- Lint passed, dev server running
+
+Stage Summary:
+- Dynamic buy/sell price charts that move up and down in real-time
+- Two separate charts: green for buy price, red for sell price
+- Charts update every 1.5 seconds with realistic price simulation
+- Mini sparkline charts added to market tab stock list
+- Trade modal shows live buy/sell prices
+- Spread info box shows price difference
+- All calculations use live prices

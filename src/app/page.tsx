@@ -537,11 +537,110 @@ function Dashboard() {
   const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
   const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[] })
   const [copied, setCopied] = useState(false)
-  const [chartPeriod, setChartPeriod] = useState('1M')
   const [txFilter, setTxFilter] = useState('all')
   const [showSideMenu, setShowSideMenu] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
   const initialized = useRef(false)
+
+  // ============ LIVE PRICE CHART STATE ============
+  const [liveBuyChart, setLiveBuyChart] = useState<{time: string; price: number}[]>([])
+  const [liveSellChart, setLiveSellChart] = useState<{time: string; price: number}[]>([])
+  const [liveBuyPrice, setLiveBuyPrice] = useState(0)
+  const [liveSellPrice, setLiveSellPrice] = useState(0)
+  const [liveChartActive, setLiveChartActive] = useState(false)
+  const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number}>({buyPrice: 0, sellPrice: 0, trend: 0})
+  const MAX_CHART_POINTS = 80
+
+  // Live price simulation effect
+  useEffect(() => {
+    if (!selectedStock || (!showStockDetail && !tradeModal)) {
+      setLiveChartActive(false)
+      return
+    }
+    const basePrice = selectedStock.price
+    const spread = basePrice * 0.002 // 0.2% spread between buy/sell
+    let buyPrice = basePrice - spread
+    let sellPrice = basePrice + spread
+    let trend = (Math.random() - 0.5) * 0.002 // initial trend direction
+    let trendDuration = 0
+    let pointCount = 0
+
+    // Initialize with some historical data
+    const initialBuy: {time: string; price: number}[] = []
+    const initialSell: {time: string; price: number}[] = []
+    let tempBuy = buyPrice
+    let tempSell = sellPrice
+    for (let i = 30; i >= 1; i--) {
+      const t = (Math.random() - 0.5) * basePrice * 0.003
+      tempBuy += t - spread * 0.1
+      tempSell += t + spread * 0.1
+      // Keep prices within reasonable range
+      tempBuy = Math.max(basePrice * 0.95, Math.min(basePrice * 1.05, tempBuy))
+      tempSell = Math.max(basePrice * 0.95, Math.min(basePrice * 1.05, tempSell))
+      const now = Date.now() - i * 1500
+      const timeStr = new Date(now).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+      initialBuy.push({time: timeStr, price: Math.round(tempBuy)})
+      initialSell.push({time: timeStr, price: Math.round(tempSell)})
+    }
+    buyPrice = tempBuy
+    sellPrice = tempSell
+    setLiveBuyChart(initialBuy)
+    setLiveSellChart(initialSell)
+    setLiveBuyPrice(Math.round(buyPrice))
+    setLiveSellPrice(Math.round(sellPrice))
+    liveChartRef.current = {buyPrice, sellPrice, trend}
+    setLiveChartActive(true)
+
+    const interval = setInterval(() => {
+      pointCount++
+      // Shift trend occasionally for more natural movement
+      trendDuration++
+      if (trendDuration > 5 + Math.random() * 15) {
+        trend = (Math.random() - 0.5) * basePrice * 0.004
+        trendDuration = 0
+      }
+
+      // Random walk with trend bias
+      const buyDelta = trend + (Math.random() - 0.5) * basePrice * 0.005
+      const sellDelta = trend + (Math.random() - 0.5) * basePrice * 0.005
+
+      buyPrice += buyDelta
+      sellPrice += sellDelta
+
+      // Ensure sell > buy (maintain spread)
+      if (sellPrice <= buyPrice) {
+        sellPrice = buyPrice + spread
+      }
+
+      // Keep within ±5% range
+      buyPrice = Math.max(basePrice * 0.93, Math.min(basePrice * 1.07, buyPrice))
+      sellPrice = Math.max(basePrice * 0.93, Math.min(basePrice * 1.07, sellPrice))
+
+      // Mean reversion (soft pull back toward base)
+      buyPrice += (basePrice - buyPrice) * 0.01
+      sellPrice += (basePrice - sellPrice) * 0.01
+
+      liveChartRef.current = {buyPrice, sellPrice, trend}
+      const now = new Date()
+      const timeStr = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+
+      setLiveBuyChart(prev => {
+        const next = [...prev, {time: timeStr, price: Math.round(buyPrice)}]
+        return next.length > MAX_CHART_POINTS ? next.slice(-MAX_CHART_POINTS) : next
+      })
+      setLiveSellChart(prev => {
+        const next = [...prev, {time: timeStr, price: Math.round(sellPrice)}]
+        return next.length > MAX_CHART_POINTS ? next.slice(-MAX_CHART_POINTS) : next
+      })
+      setLiveBuyPrice(Math.round(buyPrice))
+      setLiveSellPrice(Math.round(sellPrice))
+    }, 1500)
+
+    return () => {
+      clearInterval(interval)
+      setLiveChartActive(false)
+    }
+  }, [selectedStock, showStockDetail, tradeModal])
 
   // ============ FETCH FUNCTIONS ============
   const fetchStocks = useCallback(async () => {
@@ -619,9 +718,10 @@ function Dashboard() {
     if (shares <= 0) return
     setTradeLoading(true)
     try {
+      const livePrice = tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price)
       const res = await fetch('/api/transactions', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, stockId: selectedStock.id, type: tradeModal === 'buy' ? 'BUY' : 'SELL', shares, price: tradeOrderType === 'limit' ? parseFloat(tradePrice) || selectedStock.price : selectedStock.price }),
+        body: JSON.stringify({ userId: user.id, stockId: selectedStock.id, type: tradeModal === 'buy' ? 'BUY' : 'SELL', shares, price: tradeOrderType === 'limit' ? parseFloat(tradePrice) || livePrice : livePrice }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -723,16 +823,12 @@ function Dashboard() {
   })
   const categories = [{ key: 'all', label: 'Semua' }, { key: 'bluechip', label: 'Blue Chip' }, { key: 'tech', label: 'Teknologi' }, { key: 'banking', label: 'Perbankan' }, { key: 'energy', label: 'Energi' }, { key: 'consumer', label: 'Konsumer' }, { key: 'mining', label: 'Pertambangan' }, { key: 'healthcare', label: 'Kesehatan' }]
   const isWatched = (stockId: string) => watchlist.some(w => w.stockId === stockId)
-  const openStockDetail = (stock: Stock) => { setSelectedStock(stock); setShowStockDetail(true); fetchPriceHistory(stock.id) }
-  const openTrade = (stock: Stock, type: 'buy' | 'sell') => { setSelectedStock(stock); setTradeModal(type); setTradeShares(''); setTradePrice(''); setTradeOrderType('market'); fetchPriceHistory(stock.id) }
+  const openStockDetail = (stock: Stock) => { setSelectedStock(stock); setShowStockDetail(true); setLiveBuyChart([]); setLiveSellChart([]); setLiveBuyPrice(0); setLiveSellPrice(0); fetchPriceHistory(stock.id) }
+  const openTrade = (stock: Stock, type: 'buy' | 'sell') => { setSelectedStock(stock); setTradeModal(type); setTradeShares(''); setTradePrice(''); setTradeOrderType('market'); setLiveBuyChart([]); setLiveSellChart([]); setLiveBuyPrice(0); setLiveSellPrice(0); fetchPriceHistory(stock.id) }
   const portfolioPieData = portfolio.map((p, i) => ({ name: p.stock.code, value: p.currentValue, color: PIE_COLORS[i % PIE_COLORS.length] }))
   const filteredTransactions = transactions.filter(t => txFilter === 'all' || t.type === txFilter)
   const topGainers = [...stocks].sort((a, b) => b.changePercent - a.changePercent).slice(0, 5)
   const topLosers = [...stocks].sort((a, b) => a.changePercent - b.changePercent).slice(0, 5)
-
-  const chartData = priceHistory.length > 0
-    ? priceHistory.map(p => ({ time: new Date(p.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }), price: p.price }))
-    : selectedStock ? [{ time: 'Now', price: selectedStock.price }] : []
 
   // ============ RENDER ============
   return (
@@ -1026,38 +1122,78 @@ function Dashboard() {
 
               {/* Stock List */}
               <div className="space-y-1.5">
-                {filteredStocks.map(s => (
-                  <div key={s.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2" onClick={() => openStockDetail(s)}>
-                        <div className="w-9 h-9 rounded-xl bg-gs-soft grid place-items-center text-[9px] font-black text-gs-green3 cursor-pointer">{s.code.slice(0, 2)}</div>
-                        <div className="cursor-pointer">
-                          <span className="block text-[10px] font-black text-gs-text">{s.code}</span>
-                          <span className="block text-[8px] text-gs-muted max-w-[120px] truncate">{s.name}</span>
+                {filteredStocks.map(s => {
+                  // Generate sparkline from stock data
+                  const sparkPoints = (() => {
+                    const pts: number[] = []
+                    let p = s.open
+                    for (let i = 0; i < 20; i++) {
+                      p += (Math.random() - 0.5) * s.price * 0.003
+                      p = Math.max(s.low, Math.min(s.high, p))
+                      pts.push(p)
+                    }
+                    pts.push(s.price)
+                    return pts
+                  })()
+                  const sparkMin = Math.min(...sparkPoints)
+                  const sparkMax = Math.max(...sparkPoints)
+                  const sparkRange = sparkMax - sparkMin || 1
+                  const svgW = 80
+                  const svgH = 28
+                  const sparkPath = sparkPoints.map((p, i) => {
+                    const x = (i / (sparkPoints.length - 1)) * svgW
+                    const y = svgH - ((p - sparkMin) / sparkRange) * (svgH - 4) - 2
+                    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
+                  }).join(' ')
+                  const isUp = s.changePercent >= 0
+                  const sparkColor = isUp ? '#17b85c' : '#ef4444'
+
+                  return (
+                    <div key={s.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2" onClick={() => openStockDetail(s)}>
+                          <div className="w-9 h-9 rounded-xl bg-gs-soft grid place-items-center text-[9px] font-black text-gs-green3 cursor-pointer">{s.code.slice(0, 2)}</div>
+                          <div className="cursor-pointer">
+                            <span className="block text-[10px] font-black text-gs-text">{s.code}</span>
+                            <span className="block text-[8px] text-gs-muted max-w-[120px] truncate">{s.name}</span>
+                          </div>
+                        </div>
+                        <button onClick={() => toggleWatchlist(s.id)} className="w-7 h-7 rounded-lg grid place-items-center hover:bg-gs-soft transition-colors">
+                          <Star className={`w-3.5 h-3.5 ${isWatched(s.id) ? 'text-gs-gold fill-gs-gold' : 'text-gray-300'}`} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="block text-[13px] font-black text-gs-text tabular-nums">{formatRupiah(s.price)}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={`text-[9px] font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+                              {isUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
+                              {' '}{formatPercent(s.changePercent)}
+                            </span>
+                            <span className="text-[7px] text-gs-muted">Vol: {formatNumber(s.volume)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {/* Mini Sparkline */}
+                          <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} className="flex-shrink-0">
+                            <defs>
+                              <linearGradient id={`sparkFill-${s.code}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor={sparkColor} stopOpacity="0.2" />
+                                <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <path d={`${sparkPath} L${svgW},${svgH} L0,${svgH}Z`} fill={`url(#sparkFill-${s.code})`} />
+                            <path d={sparkPath} fill="none" stroke={sparkColor} strokeWidth="1.5" />
+                          </svg>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => openTrade(s, 'buy')} className="h-7 px-3 rounded-lg bg-green-600 text-white text-[8px] font-bold hover:bg-green-700 transition-colors">Beli</button>
+                            <button onClick={() => openTrade(s, 'sell')} className="h-7 px-3 rounded-lg bg-red-500 text-white text-[8px] font-bold hover:bg-red-600 transition-colors">Jual</button>
+                          </div>
                         </div>
                       </div>
-                      <button onClick={() => toggleWatchlist(s.id)} className="w-7 h-7 rounded-lg grid place-items-center hover:bg-gs-soft transition-colors">
-                        <Star className={`w-3.5 h-3.5 ${isWatched(s.id) ? 'text-gs-gold fill-gs-gold' : 'text-gray-300'}`} />
-                      </button>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="block text-[13px] font-black text-gs-text tabular-nums">{formatRupiah(s.price)}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={`text-[9px] font-bold ${s.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                            {s.changePercent >= 0 ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
-                            {' '}{formatPercent(s.changePercent)}
-                          </span>
-                          <span className="text-[7px] text-gs-muted">Vol: {formatNumber(s.volume)}</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => openTrade(s, 'buy')} className="h-7 px-3 rounded-lg bg-green-600 text-white text-[8px] font-bold hover:bg-green-700 transition-colors">Beli</button>
-                        <button onClick={() => openTrade(s, 'sell')} className="h-7 px-3 rounded-lg bg-red-500 text-white text-[8px] font-bold hover:bg-red-600 transition-colors">Jual</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
                 {filteredStocks.length === 0 && (
                   <div className="text-center py-8">
                     <BarChart3 className="w-10 h-10 text-gs-muted mx-auto mb-2" />
@@ -1745,33 +1881,130 @@ function Dashboard() {
                       {' '}{formatRupiah(selectedStock.change)} ({formatPercent(selectedStock.changePercent)})
                     </span>
                   </div>
+                  {/* Live Buy/Sell Prices */}
+                  {liveChartActive && (
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl p-2 bg-green-50 border border-green-200">
+                        <div className="flex items-center gap-1">
+                          <ArrowDownRight className="w-3 h-3 text-green-600" />
+                          <span className="text-[7px] font-bold text-green-700 uppercase">Harga Beli</span>
+                        </div>
+                        <span className="block text-[13px] font-black text-green-700 tabular-nums mt-0.5">{formatRupiah(liveBuyPrice)}</span>
+                      </div>
+                      <div className="rounded-xl p-2 bg-red-50 border border-red-200">
+                        <div className="flex items-center gap-1">
+                          <ArrowUpRight className="w-3 h-3 text-red-500" />
+                          <span className="text-[7px] font-bold text-red-600 uppercase">Harga Jual</span>
+                        </div>
+                        <span className="block text-[13px] font-black text-red-600 tabular-nums mt-0.5">{formatRupiah(liveSellPrice)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Chart */}
-                <div className="h-40 mb-3 rounded-xl bg-gs-soft p-2">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {['1D', '1W', '1M', '3M', '1Y'].map(p => (
-                      <button key={p} onClick={() => setChartPeriod(p)} className={`h-5 px-2 rounded text-[7px] font-bold ${chartPeriod === p ? 'bg-gs-green3 text-white' : 'bg-white text-gs-muted'}`}>{p}</button>
-                    ))}
+                {/* Live Buy/Sell Price Charts */}
+                <div className="mb-3 space-y-2">
+                  {/* Live Indicator */}
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="flex items-center gap-1">
+                      <span className={`w-2 h-2 rounded-full ${liveChartActive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                      <span className="text-[8px] font-black text-gs-green3 uppercase tracking-wider">Live</span>
+                    </div>
+                    <span className="text-[7px] text-gs-muted">Harga berjalan real-time</span>
                   </div>
-                  {chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={110}>
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="stockGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#17b85c" stopOpacity="0.3" />
-                            <stop offset="100%" stopColor="#17b85c" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="time" hide />
-                        <YAxis hide domain={['auto', 'auto']} />
-                        <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '8px', border: '1px solid #dceee3' }} />
-                        <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#stockGrad)" strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-[110px] flex items-center justify-center text-[10px] text-gs-muted">Memuat chart...</div>
-                  )}
+
+                  {/* Buy Price Chart (Green) */}
+                  <div className="rounded-2xl border border-green-200 bg-gradient-to-b from-green-50/50 to-white overflow-hidden">
+                    <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <ArrowDownRight className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-[9px] font-black text-green-700 uppercase tracking-wider">Grafik Harga Beli</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-black text-green-700 tabular-nums">{formatRupiah(liveBuyPrice)}</span>
+                        {liveBuyChart.length >= 2 && (
+                          <span className={`text-[8px] font-bold ${liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? 'text-green-600' : 'text-red-500'}`}>
+                            {liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="h-28 px-1 pb-1">
+                      {liveBuyChart.length > 2 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={liveBuyChart}>
+                            <defs>
+                              <linearGradient id="buyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#17b85c" stopOpacity="0.35" />
+                                <stop offset="60%" stopColor="#17b85c" stopOpacity="0.08" />
+                                <stop offset="100%" stopColor="#17b85c" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="time" hide />
+                            <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                            <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Beli']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
+                            <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#buyGrad)" strokeWidth={2.5} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-[10px] text-gs-muted">Memuat grafik beli...</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sell Price Chart (Red) */}
+                  <div className="rounded-2xl border border-red-200 bg-gradient-to-b from-red-50/50 to-white overflow-hidden">
+                    <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />
+                        <span className="text-[9px] font-black text-red-600 uppercase tracking-wider">Grafik Harga Jual</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[14px] font-black text-red-600 tabular-nums">{formatRupiah(liveSellPrice)}</span>
+                        {liveSellChart.length >= 2 && (
+                          <span className={`text-[8px] font-bold ${liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? 'text-green-600' : 'text-red-500'}`}>
+                            {liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="h-28 px-1 pb-1">
+                      {liveSellChart.length > 2 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={liveSellChart}>
+                            <defs>
+                              <linearGradient id="sellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.35" />
+                                <stop offset="60%" stopColor="#ef4444" stopOpacity="0.08" />
+                                <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="time" hide />
+                            <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                            <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Jual']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2' }} />
+                            <Area type="monotone" dataKey="price" stroke="#ef4444" fill="url(#sellGrad)" strokeWidth={2.5} isAnimationActive={true} animationDuration={800} animationEasing="ease-out" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-[10px] text-gs-muted">Memuat grafik jual...</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Spread Info */}
+                  <div className="rounded-xl p-2.5 bg-gs-soft border border-gs-line">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-gs-gold" />
+                        <span className="text-[8px] font-bold text-gs-muted">Spread (Selisih)</span>
+                      </div>
+                      <span className="text-[10px] font-black text-gs-gold tabular-nums">{formatRupiah(liveSellPrice - liveBuyPrice)}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[7px] text-gs-muted">Beli: {formatRupiah(liveBuyPrice)}</span>
+                      <span className="text-[7px] text-gs-muted">Jual: {formatRupiah(liveSellPrice)}</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Stats */}
@@ -1837,12 +2070,32 @@ function Dashboard() {
                 </div>
 
                 {/* Price Info */}
-                <div className="rounded-xl p-3 bg-gs-soft mb-3 flex items-center justify-between">
-                  <div>
-                    <span className="block text-[8px] font-bold text-gs-muted">Harga Saat Ini</span>
-                    <span className="block text-[16px] font-black text-gs-text tabular-nums">{formatRupiah(selectedStock.price)}</span>
+                <div className="rounded-xl p-3 bg-gs-soft mb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="block text-[8px] font-bold text-gs-muted">
+                        {tradeModal === 'buy' ? 'Harga Beli (Live)' : 'Harga Jual (Live)'}
+                      </span>
+                      <span className="block text-[16px] font-black tabular-nums" style={{color: tradeModal === 'buy' ? '#15803d' : '#dc2626'}}>
+                        {formatRupiah(tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price))}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(selectedStock.changePercent)}</span>
+                      {liveChartActive && (
+                        <div className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-[7px] font-bold text-green-600">LIVE</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(selectedStock.changePercent)}</span>
+                  {liveChartActive && (
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gs-line">
+                      <span className="text-[7px] text-gs-muted">Beli: {formatRupiah(liveBuyPrice)}</span>
+                      <span className="text-[7px] text-gs-muted">Jual: {formatRupiah(liveSellPrice)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Order Type */}
@@ -1879,8 +2132,8 @@ function Dashboard() {
                 {tradeShares && (
                   <div className="rounded-xl p-3 bg-gs-soft mb-3">
                     <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[8px] text-gs-muted">Harga</span>
-                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : selectedStock.price)}</span>
+                      <span className="text-[8px] text-gs-muted">Harga {tradeModal === 'buy' ? 'Beli' : 'Jual'}</span>
+                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : (tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price)))}</span>
                     </div>
                     <div className="flex items-center justify-between py-0.5">
                       <span className="text-[8px] text-gs-muted">Lot</span>
@@ -1888,11 +2141,11 @@ function Dashboard() {
                     </div>
                     <div className="flex items-center justify-between py-0.5">
                       <span className="text-[8px] text-gs-muted">Biaya (0.15%)</span>
-                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah((tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : selectedStock.price) * parseInt(tradeShares || '0') * 0.0015)}</span>
+                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah((tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : (tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price))) * parseInt(tradeShares || '0') * 0.0015)}</span>
                     </div>
                     <div className="flex items-center justify-between pt-1 mt-1 border-t border-gs-line">
                       <span className="text-[9px] font-bold text-gs-green3">Total</span>
-                      <span className="text-[9px] font-black text-gs-green3">{formatRupiah((tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : selectedStock.price) * parseInt(tradeShares || '0') * 1.0015)}</span>
+                      <span className="text-[9px] font-black text-gs-green3">{formatRupiah((tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : (tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price))) * parseInt(tradeShares || '0') * 1.0015)}</span>
                     </div>
                   </div>
                 )}
