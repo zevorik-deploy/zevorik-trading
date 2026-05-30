@@ -619,7 +619,7 @@ function Dashboard() {
 
   // ============ LIVE IHSG CHART STATE (stable, always running) ============
   const [ihsgChartData, setIhsgChartData] = useState<{idx: number; value: number}[]>([])
-  const ihsgChartRef = useRef<{val: number; prevD: number; trend: number; momentum: number; phase: number; baseVal: number; initialized: boolean}>({val: 0, prevD: 0, trend: 0, momentum: 0, phase: 0, baseVal: 0, initialized: false})
+  const ihsgChartRef = useRef<{val: number; baseVal: number; initialized: boolean}>({val: 0, baseVal: 0, initialized: false})
 
   // Initialize IHSG chart data ONCE when indices first loads
   useEffect(() => {
@@ -631,57 +631,43 @@ function Dashboard() {
     ihsgChartRef.current.baseVal = baseVal
     const isUp = ihsgIdx.changePercent >= 0
 
-    // Generate realistic historical data with visible up/down swings
+    // Generate historical data with VISIBLE up/down zigzag
     const pts: {idx: number; value: number}[] = []
-    let val = baseVal * (1 + (isUp ? -0.008 : 0.008)) // start offset from current
-    let prevD = 0
-    let histTrend = (isUp ? 1 : -1) * baseVal * 0.0015
+    let val = baseVal * (1 + (isUp ? -0.005 : 0.005))
+    let momentum = 0
+
     for (let i = 0; i < 50; i++) {
-      // Switch trend phase every 8-15 points for visible swings
-      if (i % (8 + Math.floor(Math.random() * 7)) === 0) {
-        histTrend = (Math.random() > 0.4 ? 1 : -1) * baseVal * (0.0008 + Math.random() * 0.001)
-      }
-      // Main trend bias toward overall direction
-      const trendPush = (isUp ? 1 : -1) * baseVal * 0.0002
-      // Micro-oscillation for zigzag pattern
-      const wave = Math.sin(i * 0.35) * baseVal * 0.0004
-      // Stronger noise for visible movement
-      const noise = (Math.random() - 0.5) * baseVal * 0.0012
-      const d = prevD * 0.65 + histTrend + noise + trendPush + wave
-      prevD = d
-      val += d
-      // Very light mean reversion — let trends breathe
-      val += (baseVal - val) * 0.003
-      // Allow ±1.5% range for visible swings
-      val = Math.max(baseVal * 0.985, Math.min(baseVal * 1.015, val))
+      // Each tick: 50% chance to flip direction — creates natural zigzag
+      const dir = Math.random() > 0.5 ? 1 : -1
+      // Step size: baseVal * 0.0005-0.0015
+      const stepSize = baseVal * (0.0005 + Math.random() * 0.001)
+      // Overall bias toward the final value
+      const bias = (isUp ? 1 : -1) * baseVal * 0.00005
+      // Combine: momentum carries, new direction adds, bias drifts toward target
+      momentum = momentum * 0.3 + dir * stepSize + bias
+      val += momentum
+      // Light mean reversion — pulls toward baseVal
+      val += (baseVal - val) * 0.005
       pts.push({ idx: i, value: Math.round(val) })
     }
-    // Last point should be close to actual value
+    // End at actual value
     pts.push({ idx: 50, value: baseVal })
     setIhsgChartData(pts)
-    ihsgChartRef.current = { val: baseVal, prevD, trend: histTrend, momentum: prevD * 0.5, phase: 0, baseVal, initialized: true }
+    ihsgChartRef.current = { val: baseVal, baseVal, initialized: true }
   }, [indices])
 
   // IHSG live update interval — runs independently, never stops
   useEffect(() => {
     const interval = setInterval(() => {
       const ref = ihsgChartRef.current
-      if (!ref.initialized) return // wait until data is ready
-      ref.phase++
-      // Switch trend direction every 5-12 ticks for visible swings
-      if (ref.phase % (5 + Math.floor(Math.random() * 7)) === 0) {
-        ref.trend = (Math.random() > 0.4 ? 1 : -1) * ref.baseVal * (0.0006 + Math.random() * 0.0008)
-      }
-      // Stronger noise for visible up/down movement
-      const noise = (Math.random() - 0.5) * ref.baseVal * 0.001
-      // Momentum carries direction, trend adds bias, noise adds jitter
-      const delta = ref.momentum * 0.6 + ref.trend + noise * 0.4
-      ref.momentum = delta * 0.55
-      ref.val += delta
-      // Very light mean reversion — allow the price to actually trend
-      ref.val += (ref.baseVal - ref.val) * 0.002
-      // Allow ±1.5% range for visible swings
-      ref.val = Math.max(ref.baseVal * 0.985, Math.min(ref.baseVal * 1.015, ref.val))
+      if (!ref.initialized) return
+      // Each tick: 50% chance to go up or down — natural zigzag
+      const dir = Math.random() > 0.5 ? 1 : -1
+      const stepSize = ref.baseVal * (0.0003 + Math.random() * 0.0008)
+      const d = dir * stepSize
+      ref.val += d
+      // Light mean reversion — keeps price near baseVal
+      ref.val += (ref.baseVal - ref.val) * 0.004
 
       setIhsgChartData(prev => {
         if (prev.length === 0) return prev
@@ -689,7 +675,7 @@ function Dashboard() {
         const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
         return next.length > 60 ? next.slice(-60) : next
       })
-    }, 3000) // faster 3s interval for smoother movement
+    }, 2500)
     return () => clearInterval(interval)
   }, []) // empty deps = runs once, never restarts
 
@@ -703,36 +689,32 @@ function Dashboard() {
       return sparklineCache.current.get(stock.id)!
     }
     const pts: {i: number; p: number}[] = []
-    const range = stock.high - stock.low || stock.price * 0.02
+    const mainDir = stock.changePercent >= 0 ? 1 : -1
     let p = stock.open
-    let prevD = 0
-    const mainTrend = stock.changePercent >= 0 ? 1 : -1
-    let phaseTrend = mainTrend * range * 0.012
+    let momentum = 0
+
     for (let i = 0; i < 25; i++) {
-      // Switch phase direction every 5-8 points for visible up/down swings
-      if (i % (5 + Math.floor(Math.random() * 3)) === 0) {
-        phaseTrend = (Math.random() > 0.4 ? 1 : -1) * range * (0.006 + Math.random() * 0.01)
-      }
-      const wave = Math.sin(i * 0.45) * range * 0.015
-      const trendPush = mainTrend * range * 0.004
-      // Stronger noise for visible zigzag
-      const noise = (Math.random() - 0.5) * range * 0.04
-      const d = prevD * 0.6 + phaseTrend + noise + trendPush + wave
-      prevD = d
-      p += d
-      // Very light mean reversion — let trends actually move
+      // Each tick: 50% chance to go up or down — natural zigzag
+      const dir = Math.random() > 0.5 ? 1 : -1
+      // Step size proportional to price (0.1-0.3% per tick)
+      const stepSize = stock.price * (0.001 + Math.random() * 0.002)
+      // Bias toward main direction
+      const bias = mainDir * stock.price * 0.0002
+      // Combine: momentum carries, new direction adds, bias drifts toward target
+      momentum = momentum * 0.3 + dir * stepSize + bias
+      p += momentum
+      // Light mean reversion — pulls toward current price
       p += (stock.price - p) * 0.008
-      p = Math.max(stock.low, Math.min(stock.high, p))
       pts.push({ i, p: Math.round(p) })
     }
     pts.push({ i: 25, p: Math.round(stock.price) })
     sparklineCache.current.set(stock.id, pts)
-    // Save simulation state for live updates — stronger trend for visible swings
-    sparklineSimRef.current.set(stock.id, { val: stock.price, prevD, trend: phaseTrend, momentum: prevD * 0.4 })
+    // Save simulation state for live updates
+    sparklineSimRef.current.set(stock.id, { val: stock.price, prevD: momentum * 0.3, trend: mainDir * stock.price * 0.0002, momentum: 0 })
     return pts
   }, [])
 
-  // Live sparkline update — shifts data left and adds new point every 3 seconds
+  // Live sparkline update — shifts data left and adds new point every 2.5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       const currentStocks = stocksRef.current
@@ -742,19 +724,14 @@ function Dashboard() {
         const cached = sparklineCache.current.get(s.id)
         if (!sim || !cached) return
 
-        // Switch trend more often for visible up/down swings
-        if (Math.random() < 0.25) {
-          const range = s.high - s.low || s.price * 0.02
-          sim.trend = (Math.random() > 0.4 ? 1 : -1) * range * (0.003 + Math.random() * 0.006)
-        }
-        // Stronger noise for visible price changes
-        const noise = (Math.random() - 0.5) * s.price * 0.0015
-        const delta = sim.momentum * 0.55 + sim.trend + noise * 0.35
-        sim.momentum = delta * 0.45
-        sim.val += delta
-        // Very light mean reversion — don't kill the trend
-        sim.val += (s.price - sim.val) * 0.003
-        sim.val = Math.max(s.price * 0.97, Math.min(s.price * 1.03, sim.val))
+        // Each tick: 50% chance to go up or down — natural zigzag
+        const dir = Math.random() > 0.5 ? 1 : -1
+        // Step size proportional to price (0.05-0.15% per tick)
+        const stepSize = s.price * (0.0005 + Math.random() * 0.001)
+        const d = dir * stepSize
+        sim.val += d
+        // Light mean reversion
+        sim.val += (s.price - sim.val) * 0.004
 
         // Shift sparkline data left and add new point
         const newPts = cached.slice(1).map((pt, idx) => ({ i: idx, p: pt.p }))
@@ -763,7 +740,7 @@ function Dashboard() {
       })
       // Force re-render by updating any state
       setStocks(prev => [...prev])
-    }, 3000) // faster 3s interval for smoother movement
+    }, 2500)
     return () => clearInterval(interval)
   }, []) // empty deps — uses stocksRef so interval never restarts
 
@@ -778,51 +755,36 @@ function Dashboard() {
     return [Math.floor(min - pad), Math.ceil(max + pad)]
   }, [])
 
-  // Live price simulation — REALISTIC stock movement with visible up/down swings
+  // Live price simulation — REALISTIC stock movement with natural up/down zigzag
   useEffect(() => {
     if (!selectedStock || (!showStockDetail && !tradeModal)) {
       setLiveChartActive(false)
       return
     }
     const basePrice = selectedStock.price
-    const spread = basePrice * 0.002 // visible spread
+    const spread = basePrice * 0.002
     let buyPrice = basePrice - spread / 2
     let sellPrice = basePrice + spread / 2
-    // Start with a clear trend direction
-    let trend = (Math.random() > 0.5 ? 1 : -1) * basePrice * 0.0015
     let momentum = 0
-    let phase = 0 // counter for trend phase switching
+    let phase = 0
 
-    // Build realistic historical data with VISIBLE up/down trend phases
+    // Build realistic historical data with VISIBLE zigzag swings
     const initialBuy: {time: string; price: number}[] = []
     const initialSell: {time: string; price: number}[] = []
     let tempBuy = buyPrice
     let tempSell = sellPrice
-    let prevDelta = 0
-    let histTrend = (Math.random() > 0.5 ? 1 : -1) * basePrice * 0.0012
+    let histMomentum = 0
     for (let i = 40; i >= 1; i--) {
-      // Switch trend phase every 6-10 points for visible swings
-      if (i % (6 + Math.floor(Math.random() * 4)) === 0) {
-        histTrend = (Math.random() > 0.4 ? 1 : -1) * basePrice * (0.0008 + Math.random() * 0.001)
-      }
-      // Correlated walk with trend + oscillation waves
-      const wave = Math.sin(i * 0.4) * basePrice * 0.0004
-      // Stronger noise for visible movement
-      const noise = (Math.random() - 0.5) * basePrice * 0.0012
-      const newDelta = prevDelta * 0.6 + histTrend + noise + wave
-      prevDelta = newDelta
-      tempBuy += newDelta
-      tempSell += newDelta
-      // Keep buy/sell spread
-      const mid = (tempBuy + tempSell) / 2
+      // Each tick: 50% chance to go up or down — natural zigzag
+      const dir = Math.random() > 0.5 ? 1 : -1
+      const stepSize = basePrice * (0.0008 + Math.random() * 0.0012)
+      histMomentum = histMomentum * 0.3 + dir * stepSize
+      const mid = (tempBuy + tempSell) / 2 + histMomentum
       tempBuy = mid - spread / 2
       tempSell = mid + spread / 2
-      // Very light mean reversion — let trends actually develop
-      tempBuy += (basePrice - tempBuy) * 0.003
-      tempSell += (basePrice - tempSell) * 0.003
-      // Allow wider range for realistic movement (±3%)
-      tempBuy = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, tempBuy))
-      tempSell = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, tempSell))
+      // Light mean reversion
+      tempBuy += (basePrice - tempBuy) * 0.005
+      tempSell += (basePrice - tempSell) * 0.005
       const now = Date.now() - i * 2000
       const timeStr = new Date(now).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
       initialBuy.push({time: timeStr, price: Math.round(tempBuy)})
@@ -834,41 +796,28 @@ function Dashboard() {
     setLiveSellChart(initialSell)
     setLiveBuyPrice(Math.round(buyPrice))
     setLiveSellPrice(Math.round(sellPrice))
-    liveChartRef.current = {buyPrice, sellPrice, trend, momentum, phase}
+    liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum: 0, phase}
     setLiveChartActive(true)
 
     const interval = setInterval(() => {
       phase++
-      // Switch trend phase every 4-8 ticks for visible up/down swings
-      if (phase % (4 + Math.floor(Math.random() * 5)) === 0) {
-        trend = (Math.random() > 0.4 ? 1 : -1) * basePrice * (0.0008 + Math.random() * 0.0012)
-      }
+      // Each tick: 50% chance to go up or down — natural zigzag
+      const dir = Math.random() > 0.5 ? 1 : -1
+      const stepSize = basePrice * (0.0004 + Math.random() * 0.0008)
+      momentum = momentum * 0.3 + dir * stepSize
 
-      // Realistic walk: momentum carries through, stronger noise for visible zigzag
-      const noise = (Math.random() - 0.5) * basePrice * 0.001
-      const delta = momentum * 0.6 + trend + noise * 0.4
-      momentum = delta * 0.5 // carry some momentum forward
-
-      buyPrice += delta
-      sellPrice += delta
-
-      // Maintain spread
-      const mid = (buyPrice + sellPrice) / 2
+      const mid = (buyPrice + sellPrice) / 2 + momentum
       buyPrice = mid - spread / 2
       sellPrice = mid + spread / 2
 
       // Ensure sell > buy
       if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
 
-      // Allow ±3% range for realistic movement
-      buyPrice = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, buyPrice))
-      sellPrice = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, sellPrice))
+      // Light mean reversion
+      buyPrice += (basePrice - buyPrice) * 0.003
+      sellPrice += (basePrice - sellPrice) * 0.003
 
-      // Very light mean reversion — let trends breathe and create real swings
-      buyPrice += (basePrice - buyPrice) * 0.002
-      sellPrice += (basePrice - sellPrice) * 0.002
-
-      liveChartRef.current = {buyPrice, sellPrice, trend, momentum, phase}
+      liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum, phase}
       const now = new Date()
       const timeStr = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
 
