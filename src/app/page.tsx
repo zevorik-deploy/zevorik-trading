@@ -615,33 +615,26 @@ function Dashboard() {
   const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number; momentum: number; phase: number}>({buyPrice: 0, sellPrice: 0, trend: 0, momentum: 0, phase: 0})
   const MAX_CHART_POINTS = 60
 
-  // ============ LIVE IHSG CHART STATE (stable, not regenerated on re-render) ============
+  // ============ LIVE IHSG CHART STATE (stable, always running) ============
   const [ihsgChartData, setIhsgChartData] = useState<{idx: number; value: number}[]>([])
   const ihsgChartRef = useRef<{val: number; prevD: number; trend: number; momentum: number; phase: number; baseVal: number; initialized: boolean}>({val: 0, prevD: 0, trend: 0, momentum: 0, phase: 0, baseVal: 0, initialized: false})
-  const ihsgIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Initialize IHSG chart ONCE, then keep updating live
+  // Initialize IHSG chart data ONCE when indices first loads
   useEffect(() => {
     const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
-    if (!ihsgIdx) return
+    if (!ihsgIdx || ihsgChartRef.current.initialized) return
 
-    // Only initialize once — don't reset when indices refresh
-    if (ihsgChartRef.current.initialized) return
     ihsgChartRef.current.initialized = true
-
     const baseVal = ihsgIdx.value
     ihsgChartRef.current.baseVal = baseVal
     const isUp = ihsgIdx.changePercent >= 0
 
-    // Initialize with smooth historical data
     const pts: {idx: number; value: number}[] = []
     let val = baseVal - baseVal * (isUp ? 0.003 : -0.003)
     let prevD = 0
     let histTrend = (isUp ? 1 : -1) * baseVal * 0.0003
     for (let i = 0; i < 50; i++) {
-      if (i % 14 === 0) {
-        histTrend = (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.0002
-      }
+      if (i % 14 === 0) histTrend = (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.0002
       const trendPush = (isUp ? 1 : -1) * baseVal * 0.00003
       const wave = Math.sin(i * 0.2) * baseVal * 0.00008
       const d = prevD * 0.8 + histTrend * 0.3 + (Math.random() - 0.5) * baseVal * 0.0003 + trendPush + wave
@@ -653,12 +646,14 @@ function Dashboard() {
     }
     pts.push({ idx: 50, value: baseVal })
     setIhsgChartData(pts)
-
     ihsgChartRef.current = { val: baseVal, prevD, trend: histTrend, momentum: 0, phase: 0, baseVal, initialized: true }
+  }, [indices])
 
-    // Live update interval — smooth tick every 4 seconds
-    ihsgIntervalRef.current = setInterval(() => {
+  // IHSG live update interval — runs independently, never stops
+  useEffect(() => {
+    const interval = setInterval(() => {
       const ref = ihsgChartRef.current
+      if (!ref.initialized) return // wait until data is ready
       ref.phase++
       if (ref.phase % (10 + Math.floor(Math.random() * 8)) === 0) {
         ref.trend = (Math.random() > 0.5 ? 1 : -1) * ref.baseVal * 0.0002
@@ -671,28 +666,26 @@ function Dashboard() {
       ref.val = Math.max(ref.baseVal * 0.996, Math.min(ref.baseVal * 1.004, ref.val))
 
       setIhsgChartData(prev => {
-        const nextIdx = prev.length > 0 ? prev[prev.length - 1].idx + 1 : 0
+        if (prev.length === 0) return prev
+        const nextIdx = prev[prev.length - 1].idx + 1
         const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
         return next.length > 60 ? next.slice(-60) : next
       })
     }, 4000)
-
-    return () => {
-      if (ihsgIntervalRef.current) clearInterval(ihsgIntervalRef.current)
-    }
-  }, [indices])
+    return () => clearInterval(interval)
+  }, []) // empty deps = runs once, never restarts
 
   // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
   const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
+  const sparklineSimRef = useRef<Map<string, {val: number; prevD: number; trend: number; momentum: number}>>(new Map())
 
   const getSparklineData = useCallback((stock: Stock) => {
     // Only generate ONCE per stock ID — never regenerate on price changes
     if (sparklineCache.current.has(stock.id)) {
       return sparklineCache.current.get(stock.id)!
     }
-    // Generate realistic stock-like sparkline with trend phases
     const pts: {i: number; p: number}[] = []
-    const range = stock.high - stock.low
+    const range = stock.high - stock.low || stock.price * 0.02
     let p = stock.open
     let prevD = 0
     const mainTrend = stock.changePercent >= 0 ? 1 : -1
@@ -708,8 +701,41 @@ function Dashboard() {
     }
     pts.push({ i: 25, p: Math.round(stock.price) })
     sparklineCache.current.set(stock.id, pts)
+    // Save simulation state for live updates
+    sparklineSimRef.current.set(stock.id, { val: stock.price, prevD, trend: mainTrend * range * 0.001, momentum: 0 })
     return pts
   }, [])
+
+  // Live sparkline update — shifts data left and adds new point every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (stocks.length === 0) return
+      stocks.forEach(s => {
+        const sim = sparklineSimRef.current.get(s.id)
+        const cached = sparklineCache.current.get(s.id)
+        if (!sim || !cached) return
+
+        // Update simulation
+        if (Math.random() < 0.15) {
+          sim.trend = (Math.random() - 0.5) * s.price * 0.001
+        }
+        const noise = (Math.random() - 0.5) * s.price * 0.0006
+        const delta = sim.momentum * 0.6 + sim.trend * 0.2 + noise * 0.3
+        sim.momentum = delta * 0.4
+        sim.val += delta
+        sim.val += (s.price - sim.val) * 0.015
+        sim.val = Math.max(s.price * 0.97, Math.min(s.price * 1.03, sim.val))
+
+        // Shift sparkline data left and add new point
+        const newPts = cached.slice(1).map((pt, idx) => ({ i: idx, p: pt.p }))
+        newPts.push({ i: cached.length - 1, p: Math.round(sim.val) })
+        sparklineCache.current.set(s.id, newPts)
+      })
+      // Force re-render by updating any state
+      setStocks(prev => [...prev])
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [stocks])
 
   // ============ HELPER: compute Y-axis domain from chart data ============
   const computeYDomain = useCallback((data: {price: number}[], paddingPercent = 0.08): [number, number] => {
