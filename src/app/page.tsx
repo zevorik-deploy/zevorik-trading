@@ -19,7 +19,8 @@ import {
 import { toast } from '@/hooks/use-toast'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart as RePieChart, Pie, Cell, ReferenceLine
+  PieChart as RePieChart, Pie, Cell, ReferenceLine,
+  LineChart, Line, BarChart as ReBarChart, Bar, CartesianGrid
 } from 'recharts'
 
 // ============================================
@@ -657,11 +658,45 @@ function Dashboard() {
   const [showInvestDetailModal, setShowInvestDetailModal] = useState(false)
   const [selectedDetailProduct, setSelectedDetailProduct] = useState<InvestProduct | null>(null)
   const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
+  const [investChartType, setInvestChartType] = useState<'area' | 'line' | 'candle' | 'bar'>('area')
+  const [investTimeframe, setInvestTimeframe] = useState<'1H' | '1D' | '1W' | '1M' | 'ALL'>('1D')
 
-  // ============ LIVE INVESTMENT AREA CHART DATA ============
+  // ============ LIVE INVESTMENT CHART DATA ============
   const [investChartData, setInvestChartData] = useState<Map<string, {idx: number; value: number}[]>>(new Map())
   const investChartSimRef = useRef<Map<string, {val: number; baseVal: number; momentum: number; initialized: boolean}>>(new Map())
   const investChartTickRef = useRef(0)
+
+  // Helper: derive OHLC candlestick data from line data
+  const getCandleData = useCallback((data: {idx: number; value: number}[]) => {
+    if (data.length < 4) return []
+    const candles: {idx: number; open: number; high: number; low: number; close: number}[] = []
+    const groupSize = Math.max(2, Math.floor(data.length / 16))
+    for (let i = 0; i < data.length; i += groupSize) {
+      const group = data.slice(i, i + groupSize)
+      if (group.length < 2) continue
+      candles.push({
+        idx: candles.length,
+        open: group[0].value,
+        high: Math.max(...group.map(g => g.value)),
+        low: Math.min(...group.map(g => g.value)),
+        close: group[group.length - 1].value,
+      })
+    }
+    return candles
+  }, [])
+
+  // Helper: get data based on timeframe
+  const getDataForTimeframe = useCallback((data: {idx: number; value: number}[], tf: string) => {
+    if (data.length === 0) return data
+    switch (tf) {
+      case '1H': return data.slice(-10)
+      case '1D': return data.slice(-25)
+      case '1W': return data.slice(-40)
+      case '1M': return data
+      case 'ALL': return data
+      default: return data
+    }
+  }, [])
 
   // Initialize investment area chart data when products load
   useEffect(() => {
@@ -676,7 +711,7 @@ function Dashboard() {
         const pts: {idx: number; value: number}[] = []
         let val = baseVal * (0.97 + Math.random() * 0.06)
         let momentum = 0
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 60; i++) {
           const dir = Math.random() > 0.5 ? 1 : -1
           const minStep = Math.max(1, baseVal * 0.0015)
           const stepSize = minStep * (0.8 + Math.random() * 1.2)
@@ -687,7 +722,7 @@ function Dashboard() {
           pts.push({ idx: i, value: Math.round(val) })
         }
         // End near current modal price
-        pts.push({ idx: 40, value: Math.round(baseVal * (0.99 + Math.random() * 0.02)) })
+        pts.push({ idx: 60, value: Math.round(baseVal * (0.99 + Math.random() * 0.02)) })
         next.set(p.id, pts)
         investChartSimRef.current.set(p.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
       })
@@ -715,8 +750,8 @@ function Dashboard() {
         setInvestChartData(prev => {
           const existing = prev.get(productId)
           if (!existing) return prev
-          const next = [...existing, { idx: tick + 40, value: Math.round(sim.val) }]
-          const trimmed = next.length > 50 ? next.slice(-50) : next
+          const next = [...existing, { idx: tick + 60, value: Math.round(sim.val) }]
+          const trimmed = next.length > 80 ? next.slice(-80) : next
           const nextMap = new Map(prev)
           nextMap.set(productId, trimmed)
           return nextMap
@@ -2100,8 +2135,10 @@ function Dashboard() {
                   const movement = investMovement.get(product.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
                   const currentVal = product.modal + (movement?.change || 0)
-                  const chartData = getInvestChartData(product)
+                  const rawData = getInvestChartData(product)
+                  const chartData = getDataForTimeframe(rawData, investTimeframe)
                   const chartColor = isUp ? '#17b85c' : '#ef4444'
+                  const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : product.modal
 
                   return (
                     <div key={product.id} className="rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow overflow-hidden">
@@ -2114,15 +2151,50 @@ function Dashboard() {
                         <span className="h-4 px-1.5 rounded-full bg-blue-50 border border-blue-200 text-[7px] font-bold text-blue-600">{product.duration} Hari</span>
                       </div>
 
-                      {/* Product Name */}
+                      {/* Product Name + Price */}
                       <div className="px-3 pt-2 pb-1">
-                        <h3 className="text-[13px] font-black text-gs-text">{product.name}</h3>
-                        <span className="text-[8px] font-bold text-gs-muted">Aset Saham</span>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-[13px] font-black text-gs-text">{product.name}</h3>
+                            <span className="text-[8px] font-bold text-gs-muted">Aset Saham</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="block text-[12px] font-black tabular-nums" style={{ color: isUp ? '#16a34a' : '#dc2626' }}>{formatRupiah(lastValue)}</span>
+                            <span className={`text-[8px] font-black ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+                              {isUp ? '▲' : '▼'} {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* PERGERAKAN MARKET label + Live Area Chart */}
-                      <div className="px-3 py-1">
-                        <div className="flex items-center justify-between mb-1">
+                      {/* Chart Controls */}
+                      <div className="px-3 py-0.5">
+                        <div className="flex items-center justify-between">
+                          {/* Chart Type Selector */}
+                          <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+                            {([
+                              { type: 'area' as const, icon: ' area', label: 'Area' },
+                              { type: 'line' as const, icon: ' line', label: 'Line' },
+                              { type: 'candle' as const, icon: ' candle', label: 'Candle' },
+                              { type: 'bar' as const, icon: ' bar', label: 'Bar' },
+                            ]).map(ct => (
+                              <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
+                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investChartType === ct.type ? 'bg-white shadow-sm text-gs-green3' : 'text-gs-muted hover:text-gs-text'}`}>
+                                {ct.label}
+                              </button>
+                            ))}
+                          </div>
+                          {/* Timeframe Selector */}
+                          <div className="flex items-center gap-0.5">
+                            {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
+                              <button key={tf} onClick={() => setInvestTimeframe(tf)}
+                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:text-gs-text hover:bg-gray-100'}`}>
+                                {tf}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-0.5">
                           <div className="flex items-center gap-1">
                             <BarChart3 className="w-2.5 h-2.5 text-gs-muted" />
                             <span className="text-[7px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
@@ -2132,13 +2204,108 @@ function Dashboard() {
                             <span className="text-[6px] font-black text-green-600">LIVE</span>
                           </div>
                         </div>
-                        <div className="h-20 w-full relative bg-gray-50 rounded-lg border border-gs-line/50 overflow-hidden">
+                      </div>
+
+                      {/* Live Chart */}
+                      <div className="px-3 py-1">
+                        <div className="h-24 w-full relative bg-gray-50 rounded-lg border border-gs-line/50 overflow-hidden">
                           {chartData.length > 2 ? (() => {
                               const values = chartData.map(d => d.value)
                               const minV = Math.min(...values)
                               const maxV = Math.max(...values)
                               const rangeV = maxV - minV || 1
                               const domain: [number, number] = [Math.floor(minV - rangeV * 0.1), Math.ceil(maxV + rangeV * 0.1)]
+
+                              // Candlestick chart
+                              if (investChartType === 'candle') {
+                                const candles = getCandleData(chartData)
+                                if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[8px] text-gs-muted">Data kurang...</div>
+                                const allPrices = candles.flatMap(c => [c.high, c.low])
+                                const minP = Math.min(...allPrices)
+                                const maxP = Math.max(...allPrices)
+                                const rangeP = maxP - minP || 1
+                                const candleDomain: [number, number] = [Math.floor(minP - rangeP * 0.1), Math.ceil(maxP + rangeP * 0.1)]
+                                const totalCandles = candles.length
+                                const candleW = Math.max(4, Math.floor(140 / totalCandles))
+                                const gapW = Math.max(2, Math.floor(40 / totalCandles))
+                                const svgW = totalCandles * (candleW + gapW) + gapW * 2
+                                return (
+                                  <svg className="w-full h-full" viewBox={`0 0 ${svgW} 88`} preserveAspectRatio="none">
+                                    {[0, 1, 2, 3].map(gi => (
+                                      <line key={gi} x1="0" y1={8 + gi * 20} x2={svgW} y2={8 + gi * 20} stroke="#e5e7eb" strokeWidth="0.4" strokeDasharray="3,3" />
+                                    ))}
+                                    {candles.map((c, i) => {
+                                      const x = gapW + i * (candleW + gapW)
+                                      const yH = 6 + ((maxP - c.high) / rangeP) * 72
+                                      const yL = 6 + ((maxP - c.low) / rangeP) * 72
+                                      const yO = 6 + ((maxP - c.open) / rangeP) * 72
+                                      const yC = 6 + ((maxP - c.close) / rangeP) * 72
+                                      const isGreen = c.close >= c.open
+                                      const bodyTop = Math.min(yO, yC)
+                                      const bodyH = Math.max(Math.abs(yO - yC), 1.5)
+                                      const isLast = i === totalCandles - 1
+                                      return (
+                                        <g key={i} opacity={isLast ? 1 : 0.7}>
+                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1.2" />
+                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="0.8" />
+                                          {isLast && (
+                                            <>
+                                              <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#17b85c' : '#ef4444'}>
+                                                <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
+                                                <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+                                              </circle>
+                                              <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
+                                            </>
+                                          )}
+                                        </g>
+                                      )
+                                    })}
+                                  </svg>
+                                )
+                              }
+
+                              // Bar chart
+                              if (investChartType === 'bar') {
+                                const barData = chartData.map((d, i) => ({
+                                  idx: d.idx,
+                                  value: d.value,
+                                  fill: i > 0 && d.value >= chartData[i - 1].value ? '#17b85c' : '#ef4444'
+                                }))
+                                return (
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <ReBarChart data={barData} margin={{ top: 2, right: 4, bottom: 2, left: 2 }}>
+                                      <XAxis dataKey="idx" hide />
+                                      <YAxis hide domain={domain} />
+                                      <Bar dataKey="value" radius={[2, 2, 0, 0]} isAnimationActive={true} animationDuration={400}
+                                        shape={(props: Record<string, unknown>) => {
+                                          const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
+                                          return <rect x={x} y={y} width={Math.max(width, 2)} height={Math.max(height, 1)} fill={_fill} rx={2} opacity={0.8} />
+                                        }}>
+                                        {barData.map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                      </Bar>
+                                    </ReBarChart>
+                                  </ResponsiveContainer>
+                                )
+                              }
+
+                              // Line chart
+                              if (investChartType === 'line') {
+                                return (
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                                      <XAxis dataKey="idx" hide />
+                                      <YAxis hide domain={domain} />
+                                      <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                                        activeDot={false}
+                                        isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                )
+                              }
+
+                              // Area chart (default)
                               return (
                                 <ResponsiveContainer width="100%" height="100%">
                                   <AreaChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
@@ -2175,19 +2342,6 @@ function Dashboard() {
                             )
                           }
                         </div>
-                      </div>
-
-                      {/* Market Movement Indicator */}
-                      <div className="px-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          {isUp ? <ArrowUpRight className="w-3 h-3 text-green-600" /> : <ArrowDownRight className="w-3 h-3 text-red-500" />}
-                          <span className={`text-[9px] font-black ${isUp ? 'text-green-600' : 'text-red-500'}`}>
-                            {isUp ? '▲' : '▼'} {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
-                          </span>
-                        </div>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                          {formatRupiah(currentVal)}
-                        </span>
                       </div>
 
                       {/* Product Details */}
@@ -3918,9 +4072,10 @@ function Dashboard() {
                   </div>
                 </div>
 
-                {/* Live Area Chart */}
+                {/* Live Chart with Type & Timeframe Selectors */}
                 {(() => {
-                  const chartData = getInvestChartData(selectedDetailProduct)
+                  const rawData = getInvestChartData(selectedDetailProduct)
+                  const chartData = getDataForTimeframe(rawData, investTimeframe)
                   const movement = investMovement.get(selectedDetailProduct.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
                   const chartColor = isUp ? '#17b85c' : '#ef4444'
@@ -3945,13 +4100,134 @@ function Dashboard() {
                           {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                         </span>
                       </div>
-                      <div className="h-48 w-full rounded-2xl bg-gs-soft border border-gs-line p-2 overflow-hidden">
+                      {/* Chart Type & Timeframe Selectors */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                          {([
+                            { type: 'area' as const, label: '📈 Area' },
+                            { type: 'line' as const, label: '📉 Line' },
+                            { type: 'candle' as const, label: '🕯️ Candle' },
+                            { type: 'bar' as const, label: '📊 Bar' },
+                          ]).map(ct => (
+                            <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
+                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investChartType === ct.type ? 'bg-white shadow-sm text-gs-green3' : 'text-gs-muted hover:text-gs-text'}`}>
+                              {ct.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-0.5 bg-gray-50 rounded-xl p-1">
+                          {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
+                            <button key={tf} onClick={() => setInvestTimeframe(tf)}
+                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:text-gs-text'}`}>
+                              {tf}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Chart Area */}
+                      <div className="h-56 w-full rounded-2xl bg-gs-soft border border-gs-line p-2 overflow-hidden">
                         {chartData.length > 2 ? (() => {
                           const values = chartData.map(d => d.value)
                           const minV = Math.min(...values)
                           const maxV = Math.max(...values)
                           const rangeV = maxV - minV || 1
                           const domain: [number, number] = [Math.floor(minV - rangeV * 0.12), Math.ceil(maxV + rangeV * 0.12)]
+
+                          // Candlestick
+                          if (investChartType === 'candle') {
+                            const candles = getCandleData(chartData)
+                            if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[10px] text-gs-muted">Data kurang...</div>
+                            const allPrices = candles.flatMap(c => [c.high, c.low])
+                            const minP = Math.min(...allPrices)
+                            const maxP = Math.max(...allPrices)
+                            const rangeP = maxP - minP || 1
+                            const totalCandles = candles.length
+                            const candleW = Math.max(6, Math.floor(260 / totalCandles))
+                            const gapW = Math.max(3, Math.floor(60 / totalCandles))
+                            const svgW = totalCandles * (candleW + gapW) + gapW * 2
+                            return (
+                              <svg className="w-full h-full" viewBox={`0 0 ${svgW} 196`} preserveAspectRatio="xMidYMid meet">
+                                {[0, 1, 2, 3, 4].map(gi => (
+                                  <g key={gi}>
+                                    <line x1="0" y1={10 + gi * 38} x2={svgW} y2={10 + gi * 38} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="4,4" />
+                                    <text x="4" y={14 + gi * 38} fontSize="7" fill="#9ca3af">{formatRupiah(Math.round(maxP - (rangeP / 4) * gi))}</text>
+                                  </g>
+                                ))}
+                                {candles.map((c, i) => {
+                                  const x = gapW + i * (candleW + gapW)
+                                  const yH = 8 + ((maxP - c.high) / rangeP) * 176
+                                  const yL = 8 + ((maxP - c.low) / rangeP) * 176
+                                  const yO = 8 + ((maxP - c.open) / rangeP) * 176
+                                  const yC = 8 + ((maxP - c.close) / rangeP) * 176
+                                  const isGreen = c.close >= c.open
+                                  const bodyTop = Math.min(yO, yC)
+                                  const bodyH = Math.max(Math.abs(yO - yC), 2)
+                                  const isLast = i === totalCandles - 1
+                                  return (
+                                    <g key={i} opacity={isLast ? 1 : 0.75}>
+                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth={isLast ? "2" : "1.5"} />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="1" />
+                                      {isLast && (
+                                        <>
+                                          <circle cx={x + candleW / 2} cy={yC} r="4" fill={isGreen ? '#17b85c' : '#ef4444'}>
+                                            <animate attributeName="r" values="4;7;4" dur="1.5s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                                          </circle>
+                                          <line x1={x + candleW + 2} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1" strokeDasharray="4,3" opacity="0.6" />
+                                          <rect x={svgW - 70} y={yC - 8} width="68" height="16" rx="4" fill={isGreen ? '#17b85c' : '#ef4444'} />
+                                          <text x={svgW - 36} y={yC + 3} fontSize="8" fill="white" textAnchor="middle" fontWeight="bold">{formatRupiah(c.close)}</text>
+                                        </>
+                                      )}
+                                    </g>
+                                  )
+                                })}
+                              </svg>
+                            )
+                          }
+
+                          // Bar chart
+                          if (investChartType === 'bar') {
+                            const barData = chartData.map((d, i) => ({
+                              idx: d.idx,
+                              value: d.value,
+                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#17b85c' : '#ef4444'
+                            }))
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <ReBarChart data={barData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                                  <XAxis dataKey="idx" hide />
+                                  <YAxis hide domain={domain} />
+                                  <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #e5e7eb' }} />
+                                  <Bar dataKey="value" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={400}>
+                                    {barData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                  </Bar>
+                                </ReBarChart>
+                              </ResponsiveContainer>
+                            )
+                          }
+
+                          // Line chart
+                          if (investChartType === 'line') {
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                                  <XAxis dataKey="idx" hide />
+                                  <YAxis hide domain={domain} />
+                                  <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
+                                  <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: `1px solid ${isUp ? '#bbf7d0' : '#fecaca'}`, background: isUp ? '#f0fdf4' : '#fef2f2' }} />
+                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2.5} dot={false}
+                                    activeDot={{ r: 5, fill: chartColor, stroke: '#fff', strokeWidth: 2 }}
+                                    isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            )
+                          }
+
+                          // Area chart (default)
                           return (
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
@@ -3962,6 +4238,7 @@ function Dashboard() {
                                     <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
                                   </linearGradient>
                                 </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                                 <XAxis dataKey="idx" hide />
                                 <YAxis hide domain={domain} />
                                 <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />

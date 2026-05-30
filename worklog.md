@@ -76,3 +76,35 @@ Stage Summary:
 - Charts use the same proven live update pattern as IHSG chart and stock sparklines
 - Natural zigzag movement with momentum + mean reversion ensures realistic price movements
 - Green/red gradient fills with pulsing dots make the live nature visually obvious
+
+---
+Task ID: 6
+Agent: main
+Task: Add chart type selector (Area, Line, Candle, Bar) and timeframe selector (1H, 1D, 1W, 1M, ALL) to investment charts
+
+Work Log:
+- Added new recharts imports: LineChart, Line, BarChart (as ReBarChart), Bar, CartesianGrid
+- Added state variables: `investChartType` ('area' | 'line' | 'candle' | 'bar'), `investTimeframe` ('1H' | '1D' | '1W' | '1M' | 'ALL')
+- Added `getCandleData` helper: derives OHLC candlestick data from line data by grouping points
+- Added `getDataForTimeframe` helper: slices data array based on timeframe selection
+- Increased initial data points from 40 to 60, max data buffer from 50 to 80 for longer history
+- Updated product cards with: chart type selector (Area/Line/Candle/Bar toggle buttons), timeframe selector (1H/1D/1W/1M/ALL toggle buttons), larger chart area (h-24), price display with change percentage moved above chart
+- Implemented 4 chart types on product cards:
+  - Area: gradient fill + pulsing dot (default)
+  - Line: clean stroke with no fill
+  - Candle: SVG-based OHLC candlestick with grid lines, wicks, bodies, pulsing last candle, price line extension
+  - Bar: Recharts BarChart with green/red cells based on direction
+- Updated detail modal with: larger chart (h-56), emoji-enhanced chart type buttons (📈📉🕯️📊), same timeframe selector, enhanced candlestick with price labels on Y-axis and price badge on last candle, CartesianGrid on line/bar/area charts, activeDot on line chart
+- All chart types are LIVE and update every 2 seconds
+- Lint passes with no errors
+- Dev server running successfully
+
+Stage Summary:
+- Investment charts now support 4 chart types: Area, Line, Candlestick, Bar
+- Timeframe selector allows viewing 1H, 1D, 1W, 1M, or ALL data
+- All chart types are live and animated, updating every 2 seconds
+- Candlestick chart has professional features: grid lines, Y-axis price labels, price badge on last candle
+- Bar chart has green/red coloring based on direction
+- Line chart has active dot on hover
+- Area chart has gradient fill with pulsing dot
+- Both product cards and detail modal have full chart controls
