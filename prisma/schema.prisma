@@ -42,6 +42,9 @@ model User {
   kycRecords       KYC[]
   sentReferrals    Referral[]  @relation("Referrer")
   receivedReferrals Referral[] @relation("Referred")
+  commissionEarned ReferralCommission[] @relation("CommissionReferrer")
+  commissionGenerated ReferralCommission[] @relation("CommissionReferred")
+  investments      Investment[]
 }
 
 model Stock {
@@ -246,4 +249,78 @@ model Leaderboard {
   profitPercent Float   @default(0)
   period       String   @default("all") // daily, weekly, monthly, all
   createdAt    DateTime @default(now())
+}
+
+model InvestmentProduct {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // "potential" or "dividen"
+  modal       Int      // Investment amount in IDR
+  dailyProfit Int      // Daily profit in IDR
+  totalReturn Int      // Total return in IDR
+  duration    Int      // Duration in days
+  roi         Float    // ROI percentage
+  order       Int      // Display order
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  investments Investment[]
+}
+
+model Investment {
+  id           String    @id @default(cuid())
+  userId       String
+  productId    String
+  amount       Int       // Investment amount
+  dailyProfit  Int       // Daily profit amount
+  totalReturn  Int       // Total expected return
+  duration     Int       // Duration in days
+  daysElapsed  Int       @default(0)
+  totalClaimed Int       @default(0) // Total profit claimed so far
+  status       String    @default("active") // active, completed, cancelled
+  lastClaimAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  user    User              @relation(fields: [userId], references: [id])
+  product InvestmentProduct @relation(fields: [productId], references: [id])
+}
+
+model DailyCheck {
+  id          String   @id @default(cuid())
+  userId      String
+  checkDate   DateTime // The date of check-in
+  reward      Int      // Reward amount in IDR
+  streak      Int      // Current streak count
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, checkDate]) // One check per day per user
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  userId      String
+  taskType    String   // "first_invest", "top_up", "invite_3", "verify", "invest_3", "check_7"
+  title       String
+  description String?
+  reward      Int      // Reward amount
+  progress    Int      @default(0)
+  target      Int      @default(1)
+  completed   Boolean  @default(false)
+  claimed     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ReferralCommission {
+  id          String   @id @default(cuid())
+  referrerId  String   // Who earned the commission
+  referredId  String   // Who was referred
+  level       Int      // 1, 2, or 3
+  amount      Int      // Commission amount
+  sourceAmount Int     // The deposit/investment amount that generated this commission
+  status      String   @default("pending") // pending, claimed
+  createdAt   DateTime @default(now())
+
+  referrer User @relation("CommissionReferrer", fields: [referrerId], references: [id])
+  referred User @relation("CommissionReferred", fields: [referredId], references: [id])
 }
