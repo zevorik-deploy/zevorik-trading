@@ -166,3 +166,39 @@ Stage Summary:
 - Jaringan Referral: Beautiful sun/tree SVG visualization with 3 levels of nodes, animated center pulse, expanding root system
 - Misi Promosi Video: Complete video review submission system with 5 platforms, view-based bonus calculation, submitted video tracking
 - All features mobile responsive (scrollable platform selector, responsive grids)
+
+---
+Task ID: 9
+Agent: main
+Task: Complete overhaul - Blue theme, simplified commission/video/mission logic, deposit=investment only
+
+Work Log:
+- Changed entire color theme from GREEN to BLUE in globals.css:
+  - gs-green: #109346 → #1a56db, gs-green2: #17b85c → #3b82f6, gs-green3: #064b28 → #1e3a5f
+  - gs-gold: #d4a331 → #f59e0b, gs-gold2: #ffe6a8 → #fde68a
+  - gs-dark: #071f14 → #0a1628, gs-text: #10261a → #0f172a
+  - gs-muted: #738579 → #64748b, gs-line: #dceee3 → #e2e8f0, gs-soft: #f4fff7 → #f0f5ff
+  - Scrollbar thumb colors updated to blue theme
+- Changed all inline style hex colors in page.tsx: #042d1a → #0a1628, #08713a → #1e3a5f, #17b85c → #3b82f6, #d4a331 → #f59e0b
+- Changed all Tailwind green-* classes to blue-* classes throughout
+- Simplified commission tiers: Level 1 = 10%, Level 2 = 3%, Level 3 = 1% (was 35/5/3)
+- Updated "Komisi Hingga 40%" → "Komisi Hingga 14%"
+- Fixed video promo calculation: simple formula 1K views = 5K Rupiah (Math.floor(views/1000) * 5000)
+- Added tag requirement: "4️⃣ Wajib tag @GlobalSaham di video"
+- Added anti-injection notice: "⚠️ Views & Likes harus REAL/ORGANIK. Dilarang suntikan views/bot."
+- New formula cards: 💰 1.000 Views = Rp 5.000 / 10.000 = Rp 50.000 / 100.000 = Rp 500.000
+- Simplified Misi Bonus from 6 to 4 milestones: 5 teman=25K, 20=75K, 50=150K, 100=400K
+- Added "Wajib aktif deposit min Rp 100.000" condition under each milestone
+- Deposit balance = investment only: added warning "Saldo deposit tidak dapat ditarik"
+- Added "Dompet Penarikan" as only withdrawable balance
+- Added "Transfer ke Penarikan" button (UI placeholder)
+- Lint passes with no errors
+- Dev server running on port 3000
+
+Stage Summary:
+- Complete color theme overhaul: GREEN → BLUE (professional navy/electric blue)
+- Commission tiers: 10% + 3% + 1% = 14% total
+- Video promo: 1K views = 5K Rupiah, real views only, tag @GlobalSaham required
+- Misi Bonus: 4 tiers max 400K, requires active deposit min 100K
+- Deposit = investment only, withdrawal from separate withdrawal balance
+- File: 5133 lines

@@ -41,17 +41,17 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-gs-green: #109346;
-  --color-gs-green2: #17b85c;
-  --color-gs-green3: #064b28;
-  --color-gs-gold: #d4a331;
-  --color-gs-gold2: #ffe6a8;
+  --color-gs-green: #1a56db;
+  --color-gs-green2: #3b82f6;
+  --color-gs-green3: #1e3a5f;
+  --color-gs-gold: #f59e0b;
+  --color-gs-gold2: #fde68a;
   --color-gs-red: #ef4444;
-  --color-gs-dark: #071f14;
-  --color-gs-text: #10261a;
-  --color-gs-muted: #738579;
-  --color-gs-line: #dceee3;
-  --color-gs-soft: #f4fff7;
+  --color-gs-dark: #0a1628;
+  --color-gs-text: #0f172a;
+  --color-gs-muted: #64748b;
+  --color-gs-line: #e2e8f0;
+  --color-gs-soft: #f0f5ff;
 }
 
 :root {
@@ -109,7 +109,7 @@
   100% { transform: translateX(100%); }
 }
 
-@keyframes pulse-green {
+@keyframes pulse-blue {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
@@ -124,8 +124,8 @@
   100% { stroke-dashoffset: 0; }
 }
 
-@keyframes price-flash-green {
-  0% { background-color: rgba(23, 184, 92, 0.2); }
+@keyframes price-flash-blue {
+  0% { background-color: rgba(59, 130, 246, 0.2); }
   100% { background-color: transparent; }
 }
 
@@ -154,8 +154,8 @@
   animation: shimmer 3.5s linear infinite;
 }
 
-.animate-pulse-green {
-  animation: pulse-green 2s ease-in-out infinite;
+.animate-pulse-blue {
+  animation: pulse-blue 2s ease-in-out infinite;
 }
 
 .animate-float-up {
@@ -167,8 +167,8 @@
   animation: chart-draw 2s ease-out forwards;
 }
 
-.animate-price-flash-green {
-  animation: price-flash-green 0.5s ease-out;
+.animate-price-flash-blue {
+  animation: price-flash-blue 0.5s ease-out;
 }
 
 .animate-price-flash-red {
@@ -183,11 +183,11 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #dceee3;
+  background: #e2e8f0;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #109346;
+  background: #1a56db;
 }
 
 /* Number formatting */

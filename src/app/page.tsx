@@ -144,7 +144,7 @@ const REFERENCE_TICKERS = [
   { code: 'GS', change: '+2.86%', up: true },
 ]
 
-const PIE_COLORS = ['#17b85c', '#d4a331', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
+const PIE_COLORS = ['#3b82f6', '#f59e0b', '#1a56db', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
 // ============================================
 // LOGIN / REGISTER PAGE
@@ -212,31 +212,31 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #f5f0e8 0%, #e8f5e9 50%, #c8e6c9 100%)' }}>
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #f5f0e8 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
       {/* Desktop Left Branding Panel - hidden on mobile */}
-      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 text-center text-white max-w-lg">
           <div className="w-24 h-24 rounded-full bg-white p-2 mx-auto mb-6 shadow-[0_12px_40px_rgba(0,0,0,.3)]">
             <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-3xl lg:text-4xl font-black mb-3">Global Saham</h1>
-          <p className="text-green-200 text-sm lg:text-base mb-8 leading-relaxed">Platform investasi saham terpercaya dengan akses pasar real-time, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.</p>
+          <p className="text-blue-200 text-sm lg:text-base mb-8 leading-relaxed">Platform investasi saham terpercaya dengan akses pasar real-time, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.</p>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <BarChart3 className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
               <b className="block text-sm font-black">Market</b>
-              <span className="block text-xs text-green-200 font-bold">Live</span>
+              <span className="block text-xs text-blue-200 font-bold">Live</span>
             </div>
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <Users className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
               <b className="block text-sm font-black">125K++</b>
-              <span className="block text-xs text-green-200 font-bold">Pengguna</span>
+              <span className="block text-xs text-blue-200 font-bold">Pengguna</span>
             </div>
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <Shield className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
               <b className="block text-sm font-black">Aman</b>
-              <span className="block text-xs text-green-200 font-bold">Terjamin</span>
+              <span className="block text-xs text-blue-200 font-bold">Terjamin</span>
             </div>
           </div>
           {/* Decorative chart line */}
@@ -244,12 +244,12 @@ function LoginPage() {
             <svg className="w-full h-full" viewBox="0 0 400 50" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="deskChartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#d4a331" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#d4a331" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3 L400,50 L0,50Z" fill="url(#deskChartGrad)" />
-              <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#d4a331" strokeWidth="2.5" />
+              <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
             </svg>
           </div>
         </div>
@@ -299,7 +299,7 @@ function LoginPage() {
         {/* Main Card */}
         <div className="rounded-3xl bg-white shadow-xl overflow-hidden flex-1 md:flex-none flex flex-col">
           {/* Green Header Section */}
-          <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+          <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
             {/* GS LIVE Badge + Ticker */}
@@ -311,8 +311,8 @@ function LoginPage() {
               <div className="flex-1 overflow-hidden h-6 rounded-full bg-white/10 border border-white/15">
                 <div className="flex items-center gap-3 whitespace-nowrap animate-ticker px-2 h-full">
                   {[...REFERENCE_TICKERS, ...REFERENCE_TICKERS].map((item, i) => (
-                    <span key={i} className={`flex items-center gap-1 text-[8px] font-bold ${item.up ? 'text-green-300' : 'text-red-300'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${item.up ? 'bg-green-400' : 'bg-red-400'}`} />
+                    <span key={i} className={`flex items-center gap-1 text-[8px] font-bold ${item.up ? 'text-blue-300' : 'text-red-300'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${item.up ? 'bg-blue-400' : 'bg-red-400'}`} />
                       {item.code} {item.change}
                     </span>
                   ))}
@@ -329,7 +329,7 @@ function LoginPage() {
               {isLogin ? (
                 <>
                   <h1 className="text-[18px] font-black text-center leading-tight">Masuk Investor<br />Global Saham</h1>
-                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-green-200 leading-relaxed">
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
                     Akses akun Global Saham untuk memantau portofolio, pergerakan saham, aktivitas profit, dan layanan Investor.
                   </p>
                 </>
@@ -340,7 +340,7 @@ function LoginPage() {
                     <span className="text-[8px] font-black text-yellow-300 tracking-wide">REGISTRASI INVESTOR</span>
                   </div>
                   <h1 className="text-[18px] font-black text-center leading-tight">Daftar Global Saham</h1>
-                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-green-200 leading-relaxed">
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
                     Buat akun investor untuk akses portofolio, produk aktif, dan program reward Global Saham.
                   </p>
                 </>
@@ -353,17 +353,17 @@ function LoginPage() {
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <BarChart3 className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">Market</b>
-                      <span className="block text-[7px] text-green-200 font-bold">Live</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Live</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">125K++</b>
-                      <span className="block text-[7px] text-green-200 font-bold">Pengguna</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Pengguna</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <Briefcase className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">Portofolio</b>
-                      <span className="block text-[7px] text-green-200 font-bold">Akses</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Akses</span>
                     </div>
                   </>
                 ) : (
@@ -371,17 +371,17 @@ function LoginPage() {
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">PENDUDUKA</b>
-                      <span className="block text-[7px] text-green-200 font-bold">125K++</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">125K++</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <TrendingUp className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">MARKET</b>
-                      <span className="block text-[7px] text-green-200 font-bold">+4.18%</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">+4.18%</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <CheckCircle className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">STATUS</b>
-                      <span className="block text-[7px] text-green-200 font-bold">OPEN</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">OPEN</span>
                     </div>
                   </>
                 )}
@@ -393,12 +393,12 @@ function LoginPage() {
               <svg className="w-full h-full" viewBox="0 0 400 50" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#d4a331" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#d4a331" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3 L400,50 L0,50Z" fill="url(#chartGrad)" />
-                <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#d4a331" strokeWidth="2.5" className="animate-chart-draw" />
+                <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#f59e0b" strokeWidth="2.5" className="animate-chart-draw" />
               </svg>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/10 to-transparent animate-shimmer" />
             </div>
@@ -521,7 +521,7 @@ function LoginPage() {
               {/* Submit Button */}
               <button type="submit" disabled={loading}
                 className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}>
+                style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
                 <span className="relative z-10 flex items-center gap-2">
                   {loading ? (
@@ -647,7 +647,7 @@ function Dashboard() {
   const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
   const [profileEdit, setProfileEdit] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
-  const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[], totalMembers: 0, totalDeposit: 0, totalCommission: 0, pendingCommission: 0, claimedCommission: 0, tiers: [{ level: 1, commissionPercent: 35, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 5, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }], history: [] as { id: string; name: string; date: string; level: number; deposit: number; commission: number; status: string }[] })
+  const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[], totalMembers: 0, totalDeposit: 0, totalCommission: 0, pendingCommission: 0, claimedCommission: 0, tiers: [{ level: 1, commissionPercent: 10, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 1, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }], history: [] as { id: string; name: string; date: string; level: number; deposit: number; commission: number; status: string }[] })
   const [claimLoading, setClaimLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [txFilter, setTxFilter] = useState('all')
@@ -1088,7 +1088,7 @@ function Dashboard() {
         totalCommission: d.totalCommission || 0,
         pendingCommission: d.pendingCommission || 0,
         claimedCommission: d.claimedCommission || 0,
-        tiers: d.tiers || [{ level: 1, commissionPercent: 35, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 5, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }],
+        tiers: d.tiers || [{ level: 1, commissionPercent: 10, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 1, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }],
         history: d.history || [],
       })
     } catch {}
@@ -1370,10 +1370,10 @@ function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={refreshAll} className="w-8 h-8 rounded-xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-green-100 transition-colors">
+            <button onClick={refreshAll} className="w-8 h-8 rounded-xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-blue-100 transition-colors">
               <RefreshCw className={`w-3.5 h-3.5 text-gs-green3 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button onClick={() => { setShowNotifPanel(true); markNotifRead() }} className="w-8 h-8 rounded-xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-green-100 transition-colors relative">
+            <button onClick={() => { setShowNotifPanel(true); markNotifRead() }} className="w-8 h-8 rounded-xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-blue-100 transition-colors relative">
               <Bell className="w-3.5 h-3.5 text-gs-green3" />
               {unreadNotif > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gs-red border-2 border-white text-[6px] text-white font-black grid place-items-center">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
             </button>
@@ -1389,7 +1389,7 @@ function Dashboard() {
               <div key={idx.id} className="flex-shrink-0 flex items-center gap-1">
                 <span className="text-[8px] md:text-[9px] font-black text-gs-green3">{idx.code}</span>
                 <span className="text-[9px] md:text-[10px] font-black text-gs-text tabular-nums">{formatNumber(idx.value)}</span>
-                <span className={`text-[8px] md:text-[9px] font-black ${idx.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(idx.changePercent)}</span>
+                <span className={`text-[8px] md:text-[9px] font-black ${idx.changePercent >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(idx.changePercent)}</span>
               </div>
             ))}
           </div>
@@ -1403,14 +1403,14 @@ function Dashboard() {
           {activeTab === 'home' && (
             <motion.div key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Dual Wallet Card */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-4 text-white">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] md:text-[11px] font-black tracking-wider">RINGKASAN SALDO</span>
-                      <span className="h-4 px-1.5 rounded-full bg-green-400/30 border border-green-400/40 text-[7px] font-black text-green-300 flex items-center gap-0.5">
-                        <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />AKTIF
+                      <span className="h-4 px-1.5 rounded-full bg-blue-400/30 border border-blue-400/40 text-[7px] font-black text-blue-300 flex items-center gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />AKTIF
                       </span>
                     </div>
                     <button onClick={() => setShowBalance(!showBalance)} className="text-white/60 hover:text-white">
@@ -1424,17 +1424,19 @@ function Dashboard() {
                     <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
                       <div className="flex items-center gap-1 mb-1">
                         <Wallet className="w-3 h-3 text-yellow-300" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-green-200 uppercase tracking-wider">DOMPET UTAMA</span>
+                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200 uppercase tracking-wider">DOMPET UTAMA</span>
                       </div>
                       <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••••'}</b>
+                      <span className="block text-[5px] font-semibold text-blue-200/60 mt-0.5">Deposit untuk investasi</span>
                     </div>
                     {/* Dompet Penarikan */}
                     <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
                       <div className="flex items-center gap-1 mb-1">
                         <CreditCard className="w-3 h-3 text-blue-300" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-green-200 uppercase tracking-wider">DOMPET PENARIKAN</span>
+                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200 uppercase tracking-wider">DOMPET PENARIKAN</span>
                       </div>
                       <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••••'}</b>
+                      <span className="block text-[5px] font-semibold text-blue-200/60 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
 
@@ -1443,7 +1445,7 @@ function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Briefcase className="w-3.5 h-3.5 text-yellow-300" />
-                        <span className="text-[8px] font-bold text-green-200">TOTAL INVESTASI</span>
+                        <span className="text-[8px] font-bold text-blue-200">TOTAL INVESTASI</span>
                       </div>
                       <b className="text-[12px] font-black">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••••••'}</b>
                     </div>
@@ -1462,13 +1464,13 @@ function Dashboard() {
                   {/* Regulatory Badges */}
                   <div className="flex items-center justify-center gap-3">
                     <div className="flex items-center gap-1">
-                      <Shield className="w-3 h-3 text-green-300" />
-                      <span className="text-[7px] font-bold text-green-200">Terdaftar & Diawasi</span>
+                      <Shield className="w-3 h-3 text-blue-300" />
+                      <span className="text-[7px] font-bold text-blue-200">Terdaftar & Diawasi</span>
                     </div>
                     <div className="w-px h-3 bg-white/20" />
                     <div className="flex items-center gap-1">
                       <CheckCircle className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[7px] font-bold text-green-200">Berlisensi Resmi</span>
+                      <span className="text-[7px] font-bold text-blue-200">Berlisensi Resmi</span>
                     </div>
                   </div>
                 </div>
@@ -1491,7 +1493,7 @@ function Dashboard() {
                       <div className={`w-9 h-9 rounded-xl ${a.color} grid place-items-center`}>{a.icon}</div>
                       <span className="text-[7px] md:text-[8px] font-bold text-gs-green3">{a.label}</span>
                       {'badge' in a && a.badge && (
-                        <span className="absolute -top-1 -right-1 h-4 px-1 rounded-full bg-green-500 text-white text-[6px] font-black flex items-center">{a.badge}</span>
+                        <span className="absolute -top-1 -right-1 h-4 px-1 rounded-full bg-blue-500 text-white text-[6px] font-black flex items-center">{a.badge}</span>
                       )}
                     </button>
                   ))}
@@ -1499,7 +1501,7 @@ function Dashboard() {
               </div>
 
               {/* Cek Harian Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-green-200" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-200" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-3 text-white">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -1508,7 +1510,7 @@ function Dashboard() {
                       </div>
                       <div>
                         <b className="text-[11px] md:text-xs font-black">CEK HARIAN</b>
-                        <span className="block text-[8px] md:text-[9px] font-semibold text-green-200">
+                        <span className="block text-[8px] md:text-[9px] font-semibold text-blue-200">
                           {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
                         </span>
                       </div>
@@ -1527,7 +1529,7 @@ function Dashboard() {
                       </button>
                     ) : (
                       <div className="h-8 px-4 rounded-xl bg-white/15 text-[9px] font-bold flex items-center gap-1">
-                        <CheckCircle className="w-3.5 h-3.5 text-green-300" />
+                        <CheckCircle className="w-3.5 h-3.5 text-blue-300" />
                         Sudah Dicek ✓
                       </div>
                     )}
@@ -1544,7 +1546,7 @@ function Dashboard() {
                   )}
                   {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
                     <div className="rounded-xl p-2 bg-white/10 border border-white/15 text-center">
-                      <span className="text-[8px] text-green-200 font-bold">Bonus Hari Ini</span>
+                      <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
                       <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
                     </div>
                   )}
@@ -1583,15 +1585,15 @@ function Dashboard() {
                 {tasks.filter(t => !t.claimed).slice(0, 2).map(task => (
                   <div key={task.id} className="flex items-center justify-between mt-2 py-1 border-b border-gs-line last:border-0">
                     <div className="flex items-center gap-1.5">
-                      <div className={`w-5 h-5 rounded-md grid place-items-center ${task.completed ? 'bg-green-100' : 'bg-amber-100'}`}>
-                        {task.completed ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Target className="w-3 h-3 text-amber-600" />}
+                      <div className={`w-5 h-5 rounded-md grid place-items-center ${task.completed ? 'bg-blue-100' : 'bg-amber-100'}`}>
+                        {task.completed ? <CheckCircle className="w-3 h-3 text-blue-600" /> : <Target className="w-3 h-3 text-amber-600" />}
                       </div>
                       <div>
                         <span className="block text-[8px] font-bold text-gs-text">{task.title}</span>
                         <span className="block text-[7px] text-gs-muted">{task.progress}/{task.target}</span>
                       </div>
                     </div>
-                    <span className="text-[8px] font-black text-green-600">+{formatRupiah(task.reward)}</span>
+                    <span className="text-[8px] font-black text-blue-600">+{formatRupiah(task.reward)}</span>
                   </div>
                 ))}
               </div>
@@ -1655,7 +1657,7 @@ function Dashboard() {
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
                           <span className="text-[8px] font-black text-gs-green3 flex-shrink-0">{p.stock.code}</span>
                           <span className="text-[7px] md:text-[8px] font-bold text-gs-muted flex-1">{formatRupiah(p.currentValue)}</span>
-                          <span className={`text-[7px] md:text-[8px] font-black ${p.profitLoss >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(p.profitLossPercent)}</span>
+                          <span className={`text-[7px] md:text-[8px] font-black ${p.profitLoss >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(p.profitLossPercent)}</span>
                         </div>
                       ))}
                     </div>
@@ -1672,14 +1674,14 @@ function Dashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[8px] md:text-[9px] font-bold text-green-600 mb-1 block">🔺 Gainers</span>
+                      <span className="text-[8px] md:text-[9px] font-bold text-blue-600 mb-1 block">🔺 Gainers</span>
                       {topGainers.slice(0, 3).map(s => (
                         <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-gs-line last:border-0">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg bg-green-50 grid place-items-center text-[7px] font-black text-green-600">{s.code.slice(0, 2)}</div>
+                            <div className="w-6 h-6 rounded-lg bg-blue-50 grid place-items-center text-[7px] font-black text-blue-600">{s.code.slice(0, 2)}</div>
                             <span className="text-[9px] font-bold text-gs-text">{s.code}</span>
                           </div>
-                          <span className="text-[8px] font-black text-green-600">+{s.changePercent.toFixed(2)}%</span>
+                          <span className="text-[8px] font-black text-blue-600">+{s.changePercent.toFixed(2)}%</span>
                         </button>
                       ))}
                     </div>
@@ -1718,7 +1720,7 @@ function Dashboard() {
                         </div>
                         <div className="text-right">
                           <span className="block text-[9px] font-black text-gs-text tabular-nums">{formatRupiah(w.stock.price)}</span>
-                          <span className={`block text-[8px] font-black ${w.stock.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(w.stock.changePercent)}</span>
+                          <span className={`block text-[8px] font-black ${w.stock.changePercent >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(w.stock.changePercent)}</span>
                         </div>
                       </button>
                     ))}
@@ -1736,8 +1738,8 @@ function Dashboard() {
                   {transactions.slice(0, 4).map(tx => (
                     <div key={tx.id} className="flex items-center justify-between py-1.5 border-b border-gs-line last:border-0">
                       <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-lg grid place-items-center ${tx.type === 'BUY' ? 'bg-green-50' : 'bg-red-50'}`}>
-                          {tx.type === 'BUY' ? <ArrowDownRight className="w-3.5 h-3.5 text-green-600" /> : <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />}
+                        <div className={`w-7 h-7 rounded-lg grid place-items-center ${tx.type === 'BUY' ? 'bg-blue-50' : 'bg-red-50'}`}>
+                          {tx.type === 'BUY' ? <ArrowDownRight className="w-3.5 h-3.5 text-blue-600" /> : <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />}
                         </div>
                         <div>
                           <span className="block text-[9px] font-bold text-gs-text">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
@@ -1777,15 +1779,15 @@ function Dashboard() {
               {/* Market Overview Section */}
               {indices.length > 0 && (
                 <div className="rounded-2xl overflow-hidden mb-4 bg-white border border-gs-line shadow-sm">
-                  <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                  <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-yellow-300" />
                         <span className="text-[10px] md:text-xs font-black text-white">Market Overview</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-green-200">LIVE</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200">LIVE</span>
                       </div>
                     </div>
                     {(() => {
@@ -1803,7 +1805,7 @@ function Dashboard() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(lastIhsgVal)}</span>
-                            <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-green-300' : 'text-red-300'}`}>
+                            <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-blue-300' : 'text-red-300'}`}>
                               {isIhsgUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
                               {' '}{formatPercent(ihsgIdx.changePercent)}
                             </span>
@@ -1854,9 +1856,9 @@ function Dashboard() {
                       return (
                         <>
                           <div className="p-2 md:p-3 text-center">
-                            <span className="block text-[7px] md:text-[8px] font-bold text-green-600 mb-0.5">🔺 Top Gainer</span>
+                            <span className="block text-[7px] md:text-[8px] font-bold text-blue-600 mb-0.5">🔺 Top Gainer</span>
                             <span className="block text-[10px] md:text-xs font-black text-gs-text">{gainer?.code || '-'}</span>
-                            <span className="block text-[8px] md:text-[10px] font-bold text-green-600">{gainer ? `+${gainer.changePercent.toFixed(2)}%` : '-'}</span>
+                            <span className="block text-[8px] md:text-[10px] font-bold text-blue-600">{gainer ? `+${gainer.changePercent.toFixed(2)}%` : '-'}</span>
                           </div>
                           <div className="p-2 md:p-3 text-center">
                             <span className="block text-[7px] md:text-[8px] font-bold text-red-500 mb-0.5">🔻 Top Loser</span>
@@ -1898,17 +1900,17 @@ function Dashboard() {
                   // Use memoized sparkline data to prevent jitter on re-renders
                   const sparkData = getSparklineData(s)
                   const isUp = s.changePercent >= 0
-                  const sparkColor = isUp ? '#17b85c' : '#ef4444'
+                  const sparkColor = isUp ? '#3b82f6' : '#ef4444'
                   const buyPrice = Math.round(s.price * 0.998)
                   const sellPrice = Math.round(s.price * 1.002)
                   const maxVol = Math.max(...stocks.map(st => st.volume), 1)
                   const volPercent = Math.round((s.volume / maxVol) * 100)
 
                   return (
-                    <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-shadow ${isUp ? 'border-green-100' : 'border-red-100'}`}>
+                    <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-shadow ${isUp ? 'border-blue-100' : 'border-red-100'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(s)}>
-                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl grid place-items-center text-[9px] md:text-[10px] font-black ${isUp ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{s.code.slice(0, 2)}</div>
+                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl grid place-items-center text-[9px] md:text-[10px] font-black ${isUp ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-600'}`}>{s.code.slice(0, 2)}</div>
                           <div>
                             <span className="block text-[10px] md:text-xs font-black text-gs-text">{s.code}</span>
                             <span className="block text-[7px] md:text-[8px] text-gs-muted max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
@@ -1954,13 +1956,13 @@ function Dashboard() {
                       <div className="flex items-end justify-between">
                         <div>
                           <span className="block text-[13px] md:text-sm font-black text-gs-text tabular-nums">{formatRupiah(s.price)}</span>
-                          <div className={`inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-md ${isUp ? 'bg-green-50' : 'bg-red-50'}`}>
-                            {isUp ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
-                            <span className={`text-[9px] md:text-[10px] font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
+                          <div className={`inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-md ${isUp ? 'bg-blue-50' : 'bg-red-50'}`}>
+                            {isUp ? <TrendingUp className="w-3 h-3 text-blue-600" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
+                            <span className={`text-[9px] md:text-[10px] font-bold ${isUp ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
                           </div>
                         </div>
                         <div className="flex gap-1 md:gap-1.5">
-                          <button onClick={() => openTrade(s, 'buy')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-green-600 text-white text-[8px] md:text-[9px] font-bold hover:bg-green-700 transition-colors">Beli</button>
+                          <button onClick={() => openTrade(s, 'buy')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-blue-600 text-white text-[8px] md:text-[9px] font-bold hover:bg-blue-700 transition-colors">Beli</button>
                           <button onClick={() => openTrade(s, 'sell')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-red-500 text-white text-[8px] md:text-[9px] font-bold hover:bg-red-600 transition-colors">Jual</button>
                         </div>
                       </div>
@@ -1969,7 +1971,7 @@ function Dashboard() {
                       <div className="mt-2 pt-2 border-t border-gs-line grid grid-cols-3 gap-1">
                         <div>
                           <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Beli</span>
-                          <span className="block text-[8px] md:text-[9px] font-black text-green-700 tabular-nums">{formatRupiah(buyPrice)}</span>
+                          <span className="block text-[8px] md:text-[9px] font-black text-blue-700 tabular-nums">{formatRupiah(buyPrice)}</span>
                         </div>
                         <div>
                           <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Jual</span>
@@ -1980,7 +1982,7 @@ function Dashboard() {
                           <div className="flex items-center gap-1">
                             <span className="text-[7px] md:text-[8px] font-bold text-gs-text">{formatNumber(s.volume)}</span>
                             <div className="flex-1 h-1.5 rounded-full bg-gs-soft overflow-hidden">
-                              <div className={`h-full rounded-full ${isUp ? 'bg-green-500' : 'bg-red-400'}`} style={{ width: `${volPercent}%` }} />
+                              <div className={`h-full rounded-full ${isUp ? 'bg-blue-500' : 'bg-red-400'}`} style={{ width: `${volPercent}%` }} />
                             </div>
                           </div>
                         </div>
@@ -2002,22 +2004,22 @@ function Dashboard() {
           {activeTab === 'portfolio' && (
             <motion.div key="portfolio" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Portfolio Value Card */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-4 text-white">
-                  <span className="text-[9px] font-medium text-green-200">Nilai Portofolio</span>
+                  <span className="text-[9px] font-medium text-blue-200">Nilai Portofolio</span>
                   <b className="block text-2xl font-black mt-0.5">{formatRupiah(portfolioSummary.totalCurrentValue)}</b>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-blue-300' : 'text-red-300'}`}>
                       {formatRupiah(portfolioSummary.totalProfitLoss)} ({formatPercent(portfolioSummary.totalProfitLossPercent)})
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] text-green-200">Investasi</span>
+                      <span className="text-[7px] text-blue-200">Investasi</span>
                       <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.totalInvested)}</b>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] text-green-200">Saldo</span>
+                      <span className="text-[7px] text-blue-200">Saldo</span>
                       <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.cashBalance)}</b>
                     </div>
                   </div>
@@ -2031,7 +2033,7 @@ function Dashboard() {
                   <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg grid place-items-center text-[8px] md:text-[10px] font-black cursor-pointer ${p.profitLoss >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{p.stock.code.slice(0, 2)}</div>
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg grid place-items-center text-[8px] md:text-[10px] font-black cursor-pointer ${p.profitLoss >= 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-600'}`}>{p.stock.code.slice(0, 2)}</div>
                         <div>
                           <span className="block text-[10px] md:text-xs font-black text-gs-text">{p.stock.code}</span>
                           <span className="block text-[7px] md:text-[8px] text-gs-muted">{p.shares} lot × {formatRupiah(p.avgPrice)}</span>
@@ -2039,13 +2041,13 @@ function Dashboard() {
                       </div>
                       <div className="text-right">
                         <span className="block text-[10px] md:text-xs font-black text-gs-text tabular-nums">{formatRupiah(p.currentValue)}</span>
-                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
                           {formatRupiah(p.profitLoss)} ({formatPercent(p.profitLossPercent)})
                         </span>
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <button onClick={() => openTrade(p.stock, 'buy')} className="flex-1 h-7 md:h-8 rounded-lg bg-green-600 text-white text-[8px] md:text-[9px] font-bold">+ Tambah</button>
+                      <button onClick={() => openTrade(p.stock, 'buy')} className="flex-1 h-7 md:h-8 rounded-lg bg-blue-600 text-white text-[8px] md:text-[9px] font-bold">+ Tambah</button>
                       <button onClick={() => openTrade(p.stock, 'sell')} className="flex-1 h-7 md:h-8 rounded-lg bg-red-500 text-white text-[8px] md:text-[9px] font-bold">Jual</button>
                     </div>
                   </div>
@@ -2070,8 +2072,8 @@ function Dashboard() {
                         <div key={inv.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-green-50">
-                                <DollarSign className="w-4 h-4 text-green-600" />
+                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-blue-50">
+                                <DollarSign className="w-4 h-4 text-blue-600" />
                               </div>
                               <div>
                                 <span className="block text-[10px] font-black text-gs-text">{inv.product.name}</span>
@@ -2079,12 +2081,12 @@ function Dashboard() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="block text-[9px] font-black text-green-600">+{formatRupiah(inv.dailyProfit)}/hari</span>
+                              <span className="block text-[9px] font-black text-blue-600">+{formatRupiah(inv.dailyProfit)}/hari</span>
                               <span className="block text-[7px] text-gs-muted">{inv.daysElapsed}/{inv.duration} hari</span>
                             </div>
                           </div>
                           <div className="w-full h-1.5 rounded-full bg-gs-soft overflow-hidden mb-1">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #08713a, #17b85c)' }} />
+                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)' }} />
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[7px] font-bold text-gs-muted">{formatRupiah(inv.totalClaimed)} diklaim</span>
@@ -2103,13 +2105,13 @@ function Dashboard() {
           {activeTab === 'investasi' && (
             <motion.div key="investasi" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Header Card */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-4 text-white">
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSign className="w-5 h-5 text-yellow-300" />
                     <h2 className="text-[16px] md:text-xl font-black">Investasi</h2>
                   </div>
-                  <p className="text-[9px] md:text-[10px] text-green-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Semua profit dikreditkan ke saldo Anda setiap 24 jam.</p>
+                  <p className="text-[9px] md:text-[10px] text-blue-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Semua profit dikreditkan ke saldo Anda setiap 24 jam.</p>
 
                   {/* Pasar Aktif Stats */}
                   <div className="flex items-center gap-3">
@@ -2122,8 +2124,8 @@ function Dashboard() {
                       <span className="text-[8px] font-black text-white">{new Set(investProducts.map(p => p.category)).size} Kategori</span>
                     </div>
                     <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                      <span className="text-[8px] font-black text-green-300">Live 24/7</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                      <span className="text-[8px] font-black text-blue-300">Live 24/7</span>
                     </div>
                   </div>
 
@@ -2131,17 +2133,17 @@ function Dashboard() {
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Package className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{investProducts.length}</b>
-                      <span className="block text-[7px] text-green-200 font-bold">Produk</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Produk</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Sparkles className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{userInvestments.filter(i => i.status === 'active').length}</b>
-                      <span className="block text-[7px] text-green-200 font-bold">Aktif</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Aktif</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Wallet className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{formatRupiah(user?.balance || 0).replace('Rp', '').trim()}</b>
-                      <span className="block text-[7px] text-green-200 font-bold">Saldo</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Saldo</span>
                     </div>
                   </div>
                 </div>
@@ -2165,14 +2167,14 @@ function Dashboard() {
                   const currentVal = product.modal + (movement?.change || 0)
                   const rawData = getInvestChartData(product)
                   const chartData = getDataForTimeframe(rawData, investTimeframe)
-                  const chartColor = isUp ? '#17b85c' : '#ef4444'
+                  const chartColor = isUp ? '#3b82f6' : '#ef4444'
                   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : product.modal
 
                   return (
                     <div key={product.id} className="rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                       {/* Top badges */}
                       <div className="px-3 pt-3 flex items-center gap-1.5 flex-wrap">
-                        <span className="h-4 px-1.5 rounded-full bg-green-100 border border-green-200 text-[7px] font-black text-green-700 flex items-center gap-0.5">
+                        <span className="h-4 px-1.5 rounded-full bg-blue-100 border border-blue-200 text-[7px] font-black text-blue-700 flex items-center gap-0.5">
                           <CheckCircle className="w-2.5 h-2.5" />Tersedia
                         </span>
                         <span className="h-4 px-1.5 rounded-full bg-yellow-100 border border-yellow-200 text-[7px] font-black text-yellow-700">DAILY PROFIT</span>
@@ -2188,7 +2190,7 @@ function Dashboard() {
                           </div>
                           <div className="text-right">
                             <span className="block text-[12px] font-black tabular-nums" style={{ color: isUp ? '#16a34a' : '#dc2626' }}>{formatRupiah(lastValue)}</span>
-                            <span className={`text-[8px] font-black ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+                            <span className={`text-[8px] font-black ${isUp ? 'text-blue-600' : 'text-red-500'}`}>
                               {isUp ? '▲' : '▼'} {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                             </span>
                           </div>
@@ -2228,8 +2230,8 @@ function Dashboard() {
                             <span className="text-[7px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[6px] font-black text-green-600">LIVE</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            <span className="text-[6px] font-black text-blue-600">LIVE</span>
                           </div>
                         </div>
                       </div>
@@ -2274,15 +2276,15 @@ function Dashboard() {
                                       const isLast = i === totalCandles - 1
                                       return (
                                         <g key={i} opacity={isLast ? 1 : 0.7}>
-                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1.2" />
-                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="0.8" />
+                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#3b82f6' : '#ef4444'} strokeWidth="1.2" />
+                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#3b82f6' : '#ef4444'} rx="0.8" />
                                           {isLast && (
                                             <>
-                                              <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#17b85c' : '#ef4444'}>
+                                              <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#3b82f6' : '#ef4444'}>
                                                 <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
                                                 <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
                                               </circle>
-                                              <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
+                                              <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#3b82f6' : '#ef4444'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
                                             </>
                                           )}
                                         </g>
@@ -2297,7 +2299,7 @@ function Dashboard() {
                                 const barData = chartData.map((d, i) => ({
                                   idx: d.idx,
                                   value: d.value,
-                                  fill: i > 0 && d.value >= chartData[i - 1].value ? '#17b85c' : '#ef4444'
+                                  fill: i > 0 && d.value >= chartData[i - 1].value ? '#3b82f6' : '#ef4444'
                                 }))
                                 return (
                                   <ResponsiveContainer width="100%" height="100%">
@@ -2380,7 +2382,7 @@ function Dashboard() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-[8px] font-bold text-gs-muted uppercase tracking-wider">PROFIT HARIAN</span>
-                          <span className="text-[10px] font-black text-green-600">+{formatRupiah(product.dailyProfit)}</span>
+                          <span className="text-[10px] font-black text-blue-600">+{formatRupiah(product.dailyProfit)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-[8px] font-bold text-gs-muted uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
@@ -2402,12 +2404,12 @@ function Dashboard() {
                       {/* Buttons */}
                       <div className="px-3 pb-3 pt-2 flex gap-2">
                         <button onClick={() => { setSelectedDetailProduct(product); setShowInvestDetailModal(true) }}
-                          className="flex-1 h-9 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[9px] font-bold hover:bg-green-50 transition-colors">
+                          className="flex-1 h-9 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[9px] font-bold hover:bg-blue-50 transition-colors">
                           Lihat Selengkapnya
                         </button>
                         <button onClick={() => { setSelectedProduct(product); setShowInvestModal(true) }}
                           className="flex-1 h-9 rounded-xl text-white text-[9px] font-black tracking-wide hover:scale-[1.02] transition-transform"
-                          style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}>
+                          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}>
                           Investasi Sekarang
                         </button>
                       </div>
@@ -2432,13 +2434,13 @@ function Dashboard() {
                               <span className="block text-[8px] text-gs-muted">{formatRupiah(inv.amount)} • {inv.daysElapsed}/{inv.duration} hari</span>
                             </div>
                             <div className="text-right">
-                              <span className="block text-[10px] font-black text-green-600">+{formatRupiah(inv.dailyProfit)}/hari</span>
+                              <span className="block text-[10px] font-black text-blue-600">+{formatRupiah(inv.dailyProfit)}/hari</span>
                               <span className="block text-[8px] text-gs-muted">Diklaim: {formatRupiah(inv.totalClaimed)}</span>
                             </div>
                           </div>
                           {/* Progress Bar */}
                           <div className="w-full h-2 rounded-full bg-gs-soft overflow-hidden mb-2">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #08713a, #17b85c)' }} />
+                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)' }} />
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[8px] font-bold text-gs-muted">{progress}% selesai</span>
@@ -2466,7 +2468,7 @@ function Dashboard() {
                           <span className="block text-[8px] text-gs-muted">Modal: {formatRupiah(inv.amount)}</span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[10px] font-black text-green-600">+{formatRupiah(inv.totalClaimed)}</span>
+                          <span className="block text-[10px] font-black text-blue-600">+{formatRupiah(inv.totalClaimed)}</span>
                           <span className="block text-[7px] text-gs-muted flex items-center gap-0.5 justify-end"><CheckCircle className="w-2.5 h-2.5" />Selesai</span>
                         </div>
                       </div>
@@ -2539,7 +2541,7 @@ function Dashboard() {
                             { code: 'Danamon', name: 'Bank Danamon', color: '#FDDA24' },
                           ].map(bank => (
                             <button key={bank.code} onClick={() => setDepositBankMethod(bank.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositBankMethod === bank.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositBankMethod === bank.code ? 'border-gs-green bg-blue-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
                                 {bank.code.slice(0, 2)}
                               </div>
@@ -2564,7 +2566,7 @@ function Dashboard() {
                             { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
                           ].map(ew => (
                             <button key={ew.code} onClick={() => setDepositEwalletMethod(ew.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositEwalletMethod === ew.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositEwalletMethod === ew.code ? 'border-gs-green bg-blue-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
                                 {ew.name.slice(0, 2)}
                               </div>
@@ -2582,70 +2584,70 @@ function Dashboard() {
                           <svg viewBox="0 0 200 200" className="w-full h-full">
                             <rect width="200" height="200" fill="white" rx="8" />
                             {/* QR pattern simulation */}
-                            <rect x="20" y="20" width="50" height="50" fill="#042d1a" rx="4" />
+                            <rect x="20" y="20" width="50" height="50" fill="#0a1628" rx="4" />
                             <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
-                            <rect x="36" y="36" width="18" height="18" fill="#042d1a" rx="1" />
-                            <rect x="130" y="20" width="50" height="50" fill="#042d1a" rx="4" />
+                            <rect x="36" y="36" width="18" height="18" fill="#0a1628" rx="1" />
+                            <rect x="130" y="20" width="50" height="50" fill="#0a1628" rx="4" />
                             <rect x="138" y="28" width="34" height="34" fill="white" rx="2" />
-                            <rect x="146" y="36" width="18" height="18" fill="#042d1a" rx="1" />
-                            <rect x="20" y="130" width="50" height="50" fill="#042d1a" rx="4" />
+                            <rect x="146" y="36" width="18" height="18" fill="#0a1628" rx="1" />
+                            <rect x="20" y="130" width="50" height="50" fill="#0a1628" rx="4" />
                             <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
-                            <rect x="36" y="146" width="18" height="18" fill="#042d1a" rx="1" />
+                            <rect x="36" y="146" width="18" height="18" fill="#0a1628" rx="1" />
                             {/* Middle pattern */}
-                            <rect x="80" y="20" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="20" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="20" width="8" height="8" fill="#042d1a" />
-                            <rect x="80" y="36" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="44" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="36" width="8" height="8" fill="#042d1a" />
-                            <rect x="80" y="60" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="60" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="60" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="20" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="20" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="20" width="8" height="8" fill="#0a1628" />
+                            <rect x="80" y="36" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="44" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="36" width="8" height="8" fill="#0a1628" />
+                            <rect x="80" y="60" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="60" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="60" width="8" height="8" fill="#0a1628" />
                             {/* Bottom middle */}
-                            <rect x="20" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="36" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="52" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="20" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="36" y="104" width="8" height="8" fill="#042d1a" />
-                            <rect x="52" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="20" y="112" width="8" height="8" fill="#042d1a" />
-                            <rect x="36" y="112" width="8" height="8" fill="#042d1a" />
-                            <rect x="52" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="20" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="36" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="52" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="20" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="36" y="104" width="8" height="8" fill="#0a1628" />
+                            <rect x="52" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="20" y="112" width="8" height="8" fill="#0a1628" />
+                            <rect x="36" y="112" width="8" height="8" fill="#0a1628" />
+                            <rect x="52" y="112" width="8" height="8" fill="#0a1628" />
                             {/* Right middle */}
-                            <rect x="80" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="130" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="146" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="162" y="80" width="8" height="8" fill="#042d1a" />
-                            <rect x="80" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="130" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="162" y="96" width="8" height="8" fill="#042d1a" />
-                            <rect x="80" y="112" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="112" width="8" height="8" fill="#042d1a" />
-                            <rect x="130" y="112" width="8" height="8" fill="#042d1a" />
-                            <rect x="146" y="112" width="8" height="8" fill="#042d1a" />
-                            <rect x="162" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="130" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="146" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="162" y="80" width="8" height="8" fill="#0a1628" />
+                            <rect x="80" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="130" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="162" y="96" width="8" height="8" fill="#0a1628" />
+                            <rect x="80" y="112" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="112" width="8" height="8" fill="#0a1628" />
+                            <rect x="130" y="112" width="8" height="8" fill="#0a1628" />
+                            <rect x="146" y="112" width="8" height="8" fill="#0a1628" />
+                            <rect x="162" y="112" width="8" height="8" fill="#0a1628" />
                             {/* Bottom section */}
-                            <rect x="80" y="130" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="130" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="130" width="8" height="8" fill="#042d1a" />
-                            <rect x="80" y="146" width="8" height="8" fill="#042d1a" />
-                            <rect x="112" y="146" width="8" height="8" fill="#042d1a" />
-                            <rect x="130" y="130" width="8" height="8" fill="#042d1a" />
-                            <rect x="146" y="146" width="8" height="8" fill="#042d1a" />
-                            <rect x="162" y="130" width="8" height="8" fill="#042d1a" />
-                            <rect x="130" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="146" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="162" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="80" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="96" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="20" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="36" y="162" width="8" height="8" fill="#042d1a" />
-                            <rect x="52" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="130" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="130" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="130" width="8" height="8" fill="#0a1628" />
+                            <rect x="80" y="146" width="8" height="8" fill="#0a1628" />
+                            <rect x="112" y="146" width="8" height="8" fill="#0a1628" />
+                            <rect x="130" y="130" width="8" height="8" fill="#0a1628" />
+                            <rect x="146" y="146" width="8" height="8" fill="#0a1628" />
+                            <rect x="162" y="130" width="8" height="8" fill="#0a1628" />
+                            <rect x="130" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="146" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="162" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="80" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="96" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="20" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="36" y="162" width="8" height="8" fill="#0a1628" />
+                            <rect x="52" y="162" width="8" height="8" fill="#0a1628" />
                             {/* QRIS label */}
-                            <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#042d1a">QRIS</text>
+                            <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0a1628">QRIS</text>
                           </svg>
                         </div>
                         <span className="text-[10px] font-bold text-gs-green3">Scan QRIS untuk deposit</span>
@@ -2681,7 +2683,7 @@ function Dashboard() {
                     {/* Deposit Button */}
                     <button onClick={handleDeposit} disabled={depositLoading}
                       className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                      style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}>
+                      style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}>
                       {depositLoading ? (
                         <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
                       ) : (
@@ -2696,15 +2698,15 @@ function Dashboard() {
                     {deposits.map(d => (
                       <div key={d.id} className="rounded-2xl p-2.5 bg-white border border-gs-line flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-green-50 grid place-items-center"><Plus className="w-4 h-4 text-green-600" /></div>
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 grid place-items-center"><Plus className="w-4 h-4 text-blue-600" /></div>
                           <div>
                             <span className="block text-[9px] font-bold text-gs-text">{d.bankName || (d.method === 'bank_transfer' ? 'Transfer Bank' : 'E-Wallet')}</span>
                             <span className="block text-[7px] text-gs-muted">{formatDateTime(d.createdAt)}</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[10px] font-black text-green-600">+{formatRupiah(d.amount)}</span>
-                          <span className={`block text-[7px] font-bold ${d.status === 'completed' ? 'text-green-600' : d.status === 'pending' ? 'text-amber-500' : 'text-red-500'}`}>{d.status}</span>
+                          <span className="block text-[10px] font-black text-blue-600">+{formatRupiah(d.amount)}</span>
+                          <span className={`block text-[7px] font-bold ${d.status === 'completed' ? 'text-blue-600' : d.status === 'pending' ? 'text-amber-500' : 'text-red-500'}`}>{d.status}</span>
                         </div>
                       </div>
                     ))}
@@ -2713,15 +2715,33 @@ function Dashboard() {
               ) : (
                 <>
                   {/* Balance - Dompet Utama & Penarikan */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line">
-                      <span className="text-[7px] font-bold text-gs-muted">Dompet Utama</span>
-                      <b className="block text-[13px] font-black text-gs-green3">{formatRupiah(user?.balance || 0)}</b>
+                  <div className="mb-3">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line">
+                        <span className="text-[7px] font-bold text-gs-muted">Dompet Utama</span>
+                        <b className="block text-[13px] font-black text-gs-green3">{formatRupiah(user?.balance || 0)}</b>
+                        <span className="block text-[6px] font-semibold text-gs-muted mt-0.5">Saldo deposit hanya untuk investasi</span>
+                      </div>
+                      <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line">
+                        <span className="text-[7px] font-bold text-gs-muted">Dompet Penarikan</span>
+                        <b className="block text-[13px] font-black text-gs-gold">{formatRupiah(user?.withdrawalBalance || 0)}</b>
+                        <span className="block text-[6px] font-semibold text-gs-muted mt-0.5">Saldo yang dapat ditarik</span>
+                      </div>
                     </div>
-                    <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line">
-                      <span className="text-[7px] font-bold text-gs-muted">Dompet Penarikan</span>
-                      <b className="block text-[13px] font-black text-gs-gold">{formatRupiah((user?.balance || 0) * 0.9)}</b>
+                    {/* Deposit not withdrawable notice */}
+                    <div className="rounded-xl p-2 bg-amber-50 border border-amber-200 mb-2">
+                      <div className="flex items-start gap-1.5">
+                        <AlertCircle className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-[6px] font-bold text-amber-700 leading-relaxed">⚠️ Saldo deposit tidak dapat ditarik. Saldo deposit hanya untuk investasi produk.</span>
+                      </div>
                     </div>
+                    {/* Transfer to withdrawal button */}
+                    <button
+                      onClick={() => toast({ title: 'Fitur Segera Hadir', description: 'Transfer ke penarikan akan tersedia segera' })}
+                      className="w-full h-9 rounded-xl bg-gs-green3/10 border border-gs-green3/20 text-gs-green3 text-[9px] font-bold flex items-center justify-center gap-1.5 hover:bg-gs-green3/20 transition-colors"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" /> Transfer ke Penarikan
+                    </button>
                   </div>
 
                   {/* Withdraw Category Tabs */}
@@ -2759,7 +2779,7 @@ function Dashboard() {
                             { code: 'Maybank', name: 'Maybank', color: '#002F6C' },
                           ].map(bank => (
                             <button key={bank.code} onClick={() => setWithdrawBankMethod(bank.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-gs-green bg-blue-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
                                 {bank.code.slice(0, 2)}
                               </div>
@@ -2786,7 +2806,7 @@ function Dashboard() {
                             { code: 'BLU', name: 'Blu by BCA', color: '#005BAA' },
                           ].map(ew => (
                             <button key={ew.code} onClick={() => setWithdrawEwalletMethod(ew.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-gs-green bg-blue-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
                                 {ew.name.slice(0, 2)}
                               </div>
@@ -2810,7 +2830,7 @@ function Dashboard() {
                             { code: 'BNB', name: 'BNB', network: 'BEP20', color: '#F3BA2F' },
                           ].map(cr => (
                             <button key={cr.code} onClick={() => setWithdrawCryptoMethod(cr.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[56px] flex flex-col items-center justify-center gap-1 ${withdrawCryptoMethod === cr.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[56px] flex flex-col items-center justify-center gap-1 ${withdrawCryptoMethod === cr.code ? 'border-gs-green bg-blue-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
                               <div className="w-7 h-7 rounded-full grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: cr.color }}>
                                 {cr.name.slice(0, 2)}
                               </div>
@@ -2865,7 +2885,7 @@ function Dashboard() {
                     {/* Withdraw Button */}
                     <button onClick={handleWithdraw} disabled={withdrawLoading}
                       className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                      style={{ background: 'linear-gradient(135deg, #6b2100 0%, #b45309 50%, #d4a331 100%)' }}>
+                      style={{ background: 'linear-gradient(135deg, #6b2100 0%, #b45309 50%, #f59e0b 100%)' }}>
                       {withdrawLoading ? (
                         <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
                       ) : (
@@ -2888,7 +2908,7 @@ function Dashboard() {
                         </div>
                         <div className="text-right">
                           <span className="block text-[10px] font-black text-red-500">-{formatRupiah(w.amount)}</span>
-                          <span className={`block text-[7px] font-bold ${w.status === 'completed' ? 'text-green-600' : w.status === 'processing' ? 'text-amber-500' : 'text-red-500'}`}>{w.status}</span>
+                          <span className={`block text-[7px] font-bold ${w.status === 'completed' ? 'text-blue-600' : w.status === 'processing' ? 'text-amber-500' : 'text-red-500'}`}>{w.status}</span>
                         </div>
                       </div>
                     ))}
@@ -2920,8 +2940,8 @@ function Dashboard() {
                   <div key={tx.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-green-50' : 'bg-red-50'}`}>
-                          {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-green-600" /> : <ArrowUpRight className="w-4 h-4 text-red-500" />}
+                        <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-blue-50' : 'bg-red-50'}`}>
+                          {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-blue-600" /> : <ArrowUpRight className="w-4 h-4 text-red-500" />}
                         </div>
                         <div>
                           <span className="block text-[10px] font-black text-gs-text">
@@ -2931,11 +2951,11 @@ function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className={`block text-[10px] font-black ${tx.type === 'BUY' ? 'text-red-500' : 'text-green-600'}`}>
+                        <span className={`block text-[10px] font-black ${tx.type === 'BUY' ? 'text-red-500' : 'text-blue-600'}`}>
                           {tx.type === 'BUY' ? '-' : '+'}{formatRupiah(tx.total)}
                         </span>
                         <div className="flex items-center gap-1 justify-end">
-                          <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'completed' ? 'bg-green-500' : tx.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'completed' ? 'bg-blue-500' : tx.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'}`} />
                           <span className="text-[7px] font-bold text-gs-muted">{tx.status}</span>
                         </div>
                         <span className="block text-[7px] text-gs-muted">{formatDateTime(tx.createdAt)}</span>
@@ -2962,7 +2982,7 @@ function Dashboard() {
                   <div className="flex items-center gap-2">
                     <h2 className="text-[16px] md:text-xl font-black text-gs-green3">Program Referral</h2>
                   </div>
-                  <span className="text-[9px] font-black text-gs-gold tracking-widest uppercase">Komisi Hingga 40%</span>
+                  <span className="text-[9px] font-black text-gs-gold tracking-widest uppercase">Komisi Hingga 14%</span>
                   <p className="text-[8px] font-semibold text-gs-muted mt-0.5">Ajak Teman, Tumbuh Bersama</p>
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-gs-green3/10 grid place-items-center">
@@ -2971,7 +2991,7 @@ function Dashboard() {
               </div>
 
               {/* ====== MISI BONUS UNDANGAN ====== */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #1a0a00 0%, #7c3a00 54%, #d4a331 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #1a0a00 0%, #7c3a00 54%, #f59e0b 100%)' }}>
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                 <div className="relative p-4 md:p-5 text-white">
                   <div className="flex items-center gap-2 mb-3">
@@ -2987,12 +3007,10 @@ function Dashboard() {
                   <div className="space-y-2.5">
                     {(() => {
                       const missions = [
-                        { target: 3, bonus: 15000, medal: '🥉', tier: 'Perunggu', color: 'from-amber-700 to-amber-500', barColor: 'bg-amber-400', borderColor: 'border-amber-400/40' },
-                        { target: 5, bonus: 35000, medal: '🥈', tier: 'Perak', color: 'from-gray-400 to-gray-300', barColor: 'bg-gray-300', borderColor: 'border-gray-300/40' },
-                        { target: 10, bonus: 75000, medal: '🥇', tier: 'Emas', color: 'from-yellow-500 to-yellow-300', barColor: 'bg-yellow-400', borderColor: 'border-yellow-400/40' },
-                        { target: 20, bonus: 150000, medal: '💎', tier: 'Berlian', color: 'from-cyan-500 to-blue-400', barColor: 'bg-cyan-400', borderColor: 'border-cyan-400/40' },
-                        { target: 50, bonus: 500000, medal: '👑', tier: 'Mahkota', color: 'from-purple-600 to-pink-400', barColor: 'bg-purple-400', borderColor: 'border-purple-400/40' },
-                        { target: 100, bonus: 1500000, medal: '🏆', tier: 'Legenda', color: 'from-gs-gold to-yellow-300', barColor: 'bg-yellow-300', borderColor: 'border-yellow-300/40' },
+                        { target: 5, bonus: 25000, medal: '🥉', tier: 'Perunggu', color: 'from-amber-700 to-amber-500', barColor: 'bg-amber-400', borderColor: 'border-amber-400/40' },
+                        { target: 20, bonus: 75000, medal: '🥈', tier: 'Perak', color: 'from-gray-400 to-gray-300', barColor: 'bg-gray-300', borderColor: 'border-gray-300/40' },
+                        { target: 50, bonus: 150000, medal: '🥇', tier: 'Emas', color: 'from-yellow-500 to-yellow-300', barColor: 'bg-yellow-400', borderColor: 'border-yellow-400/40' },
+                        { target: 100, bonus: 400000, medal: '💎', tier: 'Berlian', color: 'from-cyan-500 to-blue-400', barColor: 'bg-cyan-400', borderColor: 'border-cyan-400/40' },
                       ]
                       const totalMembers = referralInfo.totalMembers || 0
                       return missions.map((m) => {
@@ -3008,10 +3026,11 @@ function Dashboard() {
                                 <div>
                                   <span className="block text-[10px] font-black text-white">Undang {m.target} Teman</span>
                                   <span className="block text-[7px] font-bold text-yellow-200">{m.tier} — Bonus {formatRupiah(m.bonus)}</span>
+                                  <span className="block text-[6px] font-semibold text-yellow-200/70">Wajib aktif deposit min Rp 100.000</span>
                                 </div>
                               </div>
                               {claimed ? (
-                                <span className="h-7 px-3 rounded-lg bg-green-500 text-white text-[8px] font-black flex items-center gap-1">
+                                <span className="h-7 px-3 rounded-lg bg-blue-500 text-white text-[8px] font-black flex items-center gap-1">
                                   <CheckCircle className="w-3 h-3" />Diklaim
                                 </span>
                               ) : reached ? (
@@ -3020,7 +3039,7 @@ function Dashboard() {
                                     setClaimedMissions(prev => new Set(prev).add(m.target))
                                     toast({ title: 'Bonus Diklaim!', description: `+${formatRupiah(m.bonus)} bonus undangan ${m.tier}` })
                                   }}
-                                  className="h-7 px-3 rounded-lg bg-green-500 hover:bg-green-600 text-white text-[8px] font-black flex items-center gap-1 transition-colors"
+                                  className="h-7 px-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-[8px] font-black flex items-center gap-1 transition-colors"
                                 >
                                   <DollarSign className="w-3 h-3" />Klaim
                                 </button>
@@ -3062,12 +3081,12 @@ function Dashboard() {
                     <svg viewBox="0 0 340 220" className="w-full min-w-[300px]" style={{ maxHeight: 220 }}>
                       <defs>
                         <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#17b85c" />
-                          <stop offset="100%" stopColor="#064b28" />
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#1e3a5f" />
                         </radialGradient>
                         <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#d4a331" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#d4a331" stopOpacity="0" />
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
                         </radialGradient>
                         <filter id="glow">
                           <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -3089,13 +3108,13 @@ function Dashboard() {
                           const angle1 = Math.PI * 0.3 + (pi * 0.2)
                           const angle2 = Math.PI * 0.3 + ((pi + 1) * 0.2)
                           lines.push(
-                            <line key={`l3-${pi}-a`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle1) * 28} y2={p.y + Math.sin(angle1) * 28} stroke="#d4a331" strokeWidth="1" strokeOpacity="0.25" />,
-                            <circle key={`l3-${pi}-a-c`} cx={p.x + Math.cos(angle1) * 28} cy={p.y + Math.sin(angle1) * 28} r="4" fill="#d4a331" fillOpacity="0.3" />,
+                            <line key={`l3-${pi}-a`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle1) * 28} y2={p.y + Math.sin(angle1) * 28} stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.25" />,
+                            <circle key={`l3-${pi}-a-c`} cx={p.x + Math.cos(angle1) * 28} cy={p.y + Math.sin(angle1) * 28} r="4" fill="#f59e0b" fillOpacity="0.3" />,
                           )
                           if (pi % 2 === 0) {
                             lines.push(
-                              <line key={`l3-${pi}-b`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle2) * 25} y2={p.y + Math.sin(angle2) * 25} stroke="#d4a331" strokeWidth="1" strokeOpacity="0.2" />,
-                              <circle key={`l3-${pi}-b-c`} cx={p.x + Math.cos(angle2) * 25} cy={p.y + Math.sin(angle2) * 25} r="3" fill="#d4a331" fillOpacity="0.2" />,
+                              <line key={`l3-${pi}-b`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle2) * 25} y2={p.y + Math.sin(angle2) * 25} stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.2" />,
+                              <circle key={`l3-${pi}-b-c`} cx={p.x + Math.cos(angle2) * 25} cy={p.y + Math.sin(angle2) * 25} r="3" fill="#f59e0b" fillOpacity="0.2" />,
                             )
                           }
                         })
@@ -3125,7 +3144,7 @@ function Dashboard() {
                         { fx: 170, fy: 110, tx: 170, ty: 195 },
                         { fx: 170, fy: 110, tx: 250, ty: 180 },
                       ].map((l, i) => (
-                        <line key={`l1-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke="#17b85c" strokeWidth="2" strokeOpacity="0.6" />
+                        <line key={`l1-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke="#3b82f6" strokeWidth="2" strokeOpacity="0.6" />
                       ))}
 
                       {/* Level 2 nodes (orange) */}
@@ -3147,19 +3166,19 @@ function Dashboard() {
                         { x: 90, y: 180, label: '6' }, { x: 170, y: 195, label: '7' }, { x: 250, y: 180, label: '8' },
                       ].map((n, i) => (
                         <g key={`n1-${i}`}>
-                          <circle cx={n.x} cy={n.y} r="13" fill="#17b85c" fillOpacity="0.85" filter="url(#glow)" />
+                          <circle cx={n.x} cy={n.y} r="13" fill="#3b82f6" fillOpacity="0.85" filter="url(#glow)" />
                           <text x={n.x} y={n.y + 3.5} textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">{n.label}</text>
                         </g>
                       ))}
 
                       {/* Center node (YOU) */}
                       <circle cx="170" cy="110" r="28" fill="url(#centerGrad)" filter="url(#glow)" />
-                      <circle cx="170" cy="110" r="28" fill="none" stroke="#d4a331" strokeWidth="2" strokeOpacity="0.6" />
+                      <circle cx="170" cy="110" r="28" fill="none" stroke="#f59e0b" strokeWidth="2" strokeOpacity="0.6" />
                       <text x="170" y="107" textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">ANDA</text>
-                      <text x="170" y="117" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#d4a331">CENTER</text>
+                      <text x="170" y="117" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#f59e0b">CENTER</text>
 
                       {/* Animated pulse on center */}
-                      <circle cx="170" cy="110" r="28" fill="none" stroke="#17b85c" strokeWidth="2">
+                      <circle cx="170" cy="110" r="28" fill="none" stroke="#3b82f6" strokeWidth="2">
                         <animate attributeName="r" from="28" to="42" dur="2s" repeatCount="indefinite" />
                         <animate attributeName="stroke-opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
                       </circle>
@@ -3168,7 +3187,7 @@ function Dashboard() {
 
                   {/* Network Stats */}
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-xl p-2 bg-green-50 border border-green-200 text-center">
+                    <div className="rounded-xl p-2 bg-blue-50 border border-blue-200 text-center">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gs-green2" />
                         <span className="text-[7px] font-black text-gs-muted">LEVEL 1</span>
@@ -3224,25 +3243,35 @@ function Dashboard() {
                           <span className="block text-[7px] font-semibold text-gs-muted">1️⃣ Upload video review tentang Global Saham ke media sosial</span>
                           <span className="block text-[7px] font-semibold text-gs-muted">2️⃣ Kirim link video yang sudah di-upload</span>
                           <span className="block text-[7px] font-semibold text-gs-muted">3️⃣ Bonus dihitung dari views & likes video Anda!</span>
+                          <span className="block text-[7px] font-semibold text-gs-muted">4️⃣ Wajib tag @GlobalSaham di video</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Reward tiers for video */}
-                  <div className="grid grid-cols-3 gap-1.5 mb-3">
+                  {/* Reward formula cards */}
+                  <div className="space-y-1.5 mb-3">
                     {[
-                      { minViews: 100, bonus: 5000, icon: '🎬', label: 'Starter' },
-                      { minViews: 1000, bonus: 25000, icon: '🔥', label: 'Viral' },
-                      { minViews: 10000, bonus: 100000, icon: '🌟', label: 'Superstar' },
-                    ].map(t => (
-                      <div key={t.label} className="rounded-xl p-2 bg-gs-soft border border-gs-line text-center">
-                        <span className="block text-[16px] mb-0.5">{t.icon}</span>
-                        <span className="block text-[7px] font-black text-gs-green3">{t.label}</span>
-                        <span className="block text-[8px] font-black text-gs-gold">{formatRupiah(t.bonus)}</span>
-                        <span className="block text-[6px] font-bold text-gs-muted">Min {t.minViews >= 1000 ? `${t.minViews / 1000}K` : t.minViews} views</span>
+                      { views: '1.000', bonus: 'Rp 5.000', icon: '💰' },
+                      { views: '10.000', bonus: 'Rp 50.000', icon: '💰' },
+                      { views: '100.000', bonus: 'Rp 500.000', icon: '💰' },
+                    ].map((t, i) => (
+                      <div key={i} className="rounded-xl p-2 bg-gs-soft border border-gs-line flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px]">{t.icon}</span>
+                          <span className="text-[9px] font-black text-gs-green3">{t.views} Views</span>
+                        </div>
+                        <span className="text-[10px] font-black text-gs-gold">= {t.bonus}</span>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Anti-injection notice */}
+                  <div className="rounded-xl p-2.5 bg-amber-50 border border-amber-200 mb-3">
+                    <div className="flex items-start gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-[7px] font-bold text-amber-700 leading-relaxed">⚠️ Perhatian: Views & Likes harus REAL/ORGANIK. Dilarang suntikan views/bot. Jika terdeteksi, bonus akan dibatalkan.</span>
+                    </div>
                   </div>
 
                   {/* Platform selector */}
@@ -3293,11 +3322,7 @@ function Dashboard() {
                           setTimeout(() => {
                             const simulatedViews = Math.floor(Math.random() * 5000) + 50
                             const simulatedLikes = Math.floor(simulatedViews * (Math.random() * 0.15 + 0.02))
-                            let bonus = 0
-                            if (simulatedViews >= 10000) bonus = 100000
-                            else if (simulatedViews >= 1000) bonus = 25000
-                            else if (simulatedViews >= 100) bonus = 5000
-                            else bonus = 1000
+                            const bonus = Math.floor(simulatedViews / 1000) * 5000
                             const newVideo = {
                               id: `promo-${Date.now()}`,
                               platform: promoPlatform,
@@ -3352,7 +3377,7 @@ function Dashboard() {
                                     <span className="block text-[6px] text-gs-muted truncate max-w-[140px]">{v.link}</span>
                                   </div>
                                 </div>
-                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-green-100 text-green-700' : v.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-blue-100 text-blue-700' : v.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                                   {v.status === 'verified' ? <><CheckCircle className="w-2.5 h-2.5" />Terverifikasi</> : v.status === 'pending' ? <><Clock className="w-2.5 h-2.5" />Diperiksa</> : <><AlertCircle className="w-2.5 h-2.5" />Ditolak</>}
                                 </span>
                               </div>
@@ -3386,7 +3411,7 @@ function Dashboard() {
               </div>
 
               {/* Hero Card */}
-              <div className="rounded-3xl overflow-hidden mb-4 relative" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4 relative" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                 <div className="relative p-4 md:p-6 text-white text-center">
                   {/* Badge */}
@@ -3397,22 +3422,22 @@ function Dashboard() {
 
                   {/* Commission highlight */}
                   <div className="mb-2">
-                    <span className="text-[28px] md:text-[36px] font-black text-yellow-300 drop-shadow-lg">40%</span>
-                    <span className="block text-[9px] font-bold text-green-200 mt-0.5">Komisi Hingga</span>
+                    <span className="text-[28px] md:text-[36px] font-black text-yellow-300 drop-shadow-lg">14%</span>
+                    <span className="block text-[9px] font-bold text-blue-200 mt-0.5">Komisi Hingga</span>
                   </div>
 
                   <h3 className="text-[14px] md:text-[16px] font-black mb-1">Ajak Teman, Tumbuh Bersama</h3>
-                  <p className="text-[9px] md:text-[10px] text-green-200 leading-relaxed max-w-[300px] mx-auto mb-4">
+                  <p className="text-[9px] md:text-[10px] text-blue-200 leading-relaxed max-w-[300px] mx-auto mb-4">
                     Dapatkan komisi dari setiap teman yang berinvestasi melalui tautan referral Anda.
                   </p>
 
                   {/* Total Commission */}
                   <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
-                    <span className="block text-[8px] font-bold text-green-200 mb-1">TOTAL KOMISI DIPEROLEH</span>
+                    <span className="block text-[8px] font-bold text-blue-200 mb-1">TOTAL KOMISI DIPEROLEH</span>
                     <b className="text-[20px] md:text-[24px] font-black text-yellow-300">{formatRupiah(referralInfo.totalCommission)}</b>
                     {referralInfo.pendingCommission > 0 && (
                       <div className="mt-1 flex items-center justify-center gap-2">
-                        <span className="text-[8px] text-green-200">Pending: {formatRupiah(referralInfo.pendingCommission)}</span>
+                        <span className="text-[8px] text-blue-200">Pending: {formatRupiah(referralInfo.pendingCommission)}</span>
                         <button
                           onClick={async () => {
                             if (claimLoading) return
@@ -3463,7 +3488,7 @@ function Dashboard() {
                 <div className="flex gap-2 mb-3">
                   <button
                     onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); toast({ title: 'Kode disalin!' }) }}
-                    className="flex-1 h-10 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[10px] font-bold hover:bg-green-50 transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 h-10 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[10px] font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-1.5"
                   >
                     <Copy className="w-3.5 h-3.5" />Salin
                   </button>
@@ -3504,8 +3529,8 @@ function Dashboard() {
                   <span className="block text-[8px] font-bold text-gs-muted">Deposit</span>
                 </div>
                 <div className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm text-center">
-                  <DollarSign className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                  <b className="block text-[12px] font-black text-green-600">{formatRupiah(referralInfo.totalCommission)}</b>
+                  <DollarSign className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                  <b className="block text-[12px] font-black text-blue-600">{formatRupiah(referralInfo.totalCommission)}</b>
                   <span className="block text-[8px] font-bold text-gs-muted">Komisi</span>
                 </div>
               </div>
@@ -3517,7 +3542,7 @@ function Dashboard() {
                   const tierColors = [
                     { bg: 'bg-blue-500', text: 'text-blue-500', light: 'bg-blue-50', gem: '💎', border: 'border-blue-200' },
                     { bg: 'bg-orange-500', text: 'text-orange-500', light: 'bg-orange-50', gem: '🔥', border: 'border-orange-200' },
-                    { bg: 'bg-green-500', text: 'text-green-500', light: 'bg-green-50', gem: '💚', border: 'border-green-200' },
+                    { bg: 'bg-blue-500', text: 'text-blue-500', light: 'bg-blue-50', gem: '💚', border: 'border-blue-200' },
                   ]
                   const tc = tierColors[tier.level - 1] || tierColors[0]
                   return (
@@ -3558,7 +3583,7 @@ function Dashboard() {
                       {tier.commission > 0 && (
                         <div className="mt-2 pt-2 border-t border-gs-line flex items-center justify-between">
                           <span className="text-[8px] font-bold text-gs-muted">Komisi Level {tier.level}</span>
-                          <span className="text-[10px] font-black text-green-600">+{formatRupiah(tier.commission)}</span>
+                          <span className="text-[10px] font-black text-blue-600">+{formatRupiah(tier.commission)}</span>
                         </div>
                       )}
                     </div>
@@ -3575,10 +3600,10 @@ function Dashboard() {
                       <div key={h.id} className="p-3 border-b border-gs-line last:border-0 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full grid place-items-center ${
-                            h.level === 1 ? 'bg-blue-50' : h.level === 2 ? 'bg-orange-50' : 'bg-green-50'
+                            h.level === 1 ? 'bg-blue-50' : h.level === 2 ? 'bg-orange-50' : 'bg-blue-50'
                           }`}>
                             <Gem className={`w-3.5 h-3.5 ${
-                              h.level === 1 ? 'text-blue-500' : h.level === 2 ? 'text-orange-500' : 'text-green-500'
+                              h.level === 1 ? 'text-blue-500' : h.level === 2 ? 'text-orange-500' : 'text-blue-500'
                             }`} />
                           </div>
                           <div>
@@ -3586,13 +3611,13 @@ function Dashboard() {
                             <div className="flex items-center gap-1.5">
                               <span className="text-[7px] text-gs-muted">{formatDate(h.date)}</span>
                               {h.status === 'claimed' && (
-                                <span className="text-[6px] font-bold text-green-600 bg-green-50 px-1 rounded">Diklaim</span>
+                                <span className="text-[6px] font-bold text-blue-600 bg-blue-50 px-1 rounded">Diklaim</span>
                               )}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[9px] font-black text-green-600">+{formatRupiah(h.commission)}</span>
+                          <span className="block text-[9px] font-black text-blue-600">+{formatRupiah(h.commission)}</span>
                           <span className="block text-[7px] text-gs-muted">Deposit: {formatRupiah(h.deposit)}</span>
                         </div>
                       </div>
@@ -3621,7 +3646,7 @@ function Dashboard() {
                             <span className="block text-[7px] text-gs-muted">{formatDate(u.date)}</span>
                           </div>
                         </div>
-                        <span className="text-[9px] font-black text-green-600">+{formatRupiah(u.bonus)}</span>
+                        <span className="text-[9px] font-black text-blue-600">+{formatRupiah(u.bonus)}</span>
                       </div>
                     ))}
                   </div>
@@ -3659,11 +3684,11 @@ function Dashboard() {
           {activeTab === 'bonus' && (
             <motion.div key="bonus" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Daily Check-in */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Flame className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
                   <h2 className="text-[16px] md:text-xl font-black">Bonus Harian</h2>
-                  <p className="text-[9px] md:text-[10px] text-green-200 mt-1">Klaim bonus check-in setiap hari</p>
+                  <p className="text-[9px] md:text-[10px] text-blue-200 mt-1">Klaim bonus check-in setiap hari</p>
                   {dailyCheckStatus.streak > 0 && (
                     <p className="text-[8px] text-yellow-300 font-bold mt-1">🔥 Streak: {dailyCheckStatus.streak} hari</p>
                   )}
@@ -3673,7 +3698,7 @@ function Dashboard() {
                     </button>
                   ) : (
                     <div className="mt-3 h-10 px-8 rounded-2xl bg-white/15 inline-flex items-center gap-1 text-[11px] font-bold">
-                      <CheckCircle className="w-4 h-4 text-green-300" /> Sudah Dicek ✓
+                      <CheckCircle className="w-4 h-4 text-blue-300" /> Sudah Dicek ✓
                     </div>
                   )}
                 </div>
@@ -3709,7 +3734,7 @@ function Dashboard() {
                         <span className="block text-[7px] text-gs-muted">{formatDateTime(b.createdAt)}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-black text-green-600">+{formatRupiah(b.amount)}</span>
+                    <span className="text-[10px] font-black text-blue-600">+{formatRupiah(b.amount)}</span>
                   </div>
                 ))}
                 {bonuses.length === 0 && (
@@ -3724,11 +3749,11 @@ function Dashboard() {
           {/* ====== LEADERBOARD TAB ====== */}
           {activeTab === 'leaderboard' && (
             <motion.div key="leaderboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Trophy className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
                   <h2 className="text-[16px] md:text-xl font-black">Leaderboard</h2>
-                  <p className="text-[9px] md:text-[10px] text-green-200 mt-1">Top investor dengan profit tertinggi</p>
+                  <p className="text-[9px] md:text-[10px] text-blue-200 mt-1">Top investor dengan profit tertinggi</p>
                 </div>
               </div>
 
@@ -3742,7 +3767,7 @@ function Dashboard() {
                       <span className="block text-[10px] font-bold text-gs-text">{entry.name}</span>
                       <span className="block text-[8px] text-gs-muted">Profit: {formatRupiah(entry.profit)}</span>
                     </div>
-                    <span className={`text-[11px] font-black ${entry.profitPercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(entry.profitPercent)}</span>
+                    <span className={`text-[11px] font-black ${entry.profitPercent >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(entry.profitPercent)}</span>
                   </div>
                 ))}
                 {leaderboard.length === 0 && (
@@ -3759,15 +3784,15 @@ function Dashboard() {
           {activeTab === 'profile' && (
             <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Profile Header */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/30 grid place-items-center mx-auto mb-2">
                     <User className="w-8 h-8 text-yellow-300" />
                   </div>
                   <h2 className="text-[14px] md:text-lg font-black">{user?.name}</h2>
                   <div className="flex items-center justify-center gap-1.5 mt-1">
-                    <span className="text-[9px] md:text-[10px] text-green-200">+62 {user?.phone}</span>
-                    <span className="h-4 px-1.5 rounded-full bg-green-500/30 border border-green-400/40 text-[7px] font-black text-green-300 flex items-center gap-0.5">
+                    <span className="text-[9px] md:text-[10px] text-blue-200">+62 {user?.phone}</span>
+                    <span className="h-4 px-1.5 rounded-full bg-blue-500/30 border border-blue-400/40 text-[7px] font-black text-blue-300 flex items-center gap-0.5">
                       <CheckCircle className="w-2.5 h-2.5" />VERIFIED
                     </span>
                   </div>
@@ -3919,7 +3944,7 @@ function Dashboard() {
           { key: 'profile', label: 'Profil', icon: User },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-colors ${activeTab === tab.key ? 'text-gs-green3 bg-green-50' : 'text-gs-muted hover:text-gs-green hover:bg-gs-soft'}`}>
+            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-colors ${activeTab === tab.key ? 'text-gs-green3 bg-blue-50' : 'text-gs-muted hover:text-gs-green hover:bg-gs-soft'}`}>
             <tab.icon className="w-5 h-5" />
             <span className="text-[7px] lg:text-[8px] font-bold">{tab.label}</span>
           </button>
@@ -3939,12 +3964,12 @@ function Dashboard() {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowSideMenu(false)} />
             <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[270px] md:w-[320px] bg-white shadow-2xl overflow-y-auto custom-scrollbar">
-              <div className="p-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+              <div className="p-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-white/20 grid place-items-center"><User className="w-6 h-6 text-yellow-300" /></div>
                   <div className="text-white">
                     <b className="block text-[12px] font-black">{user?.name}</b>
-                    <span className="block text-[8px] text-green-200">+62 {user?.phone}</span>
+                    <span className="block text-[8px] text-blue-200">+62 {user?.phone}</span>
                   </div>
                 </div>
               </div>
@@ -3994,10 +4019,10 @@ function Dashboard() {
               </div>
               <div className="p-2">
                 {notifications.map(n => (
-                  <div key={n.id} className={`p-3 rounded-xl mb-1 ${n.isRead ? 'bg-white' : 'bg-green-50'}`}>
+                  <div key={n.id} className={`p-3 rounded-xl mb-1 ${n.isRead ? 'bg-white' : 'bg-blue-50'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-6 h-6 rounded-lg grid place-items-center ${n.type === 'trade' ? 'bg-green-100' : n.type === 'deposit' ? 'bg-blue-100' : n.type === 'bonus' ? 'bg-purple-100' : 'bg-amber-100'}`}>
-                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-green-600" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-blue-600" /> : n.type === 'bonus' ? <Gift className="w-3 h-3 text-purple-600" /> : <Bell className="w-3 h-3 text-amber-600" />}
+                      <div className={`w-6 h-6 rounded-lg grid place-items-center ${n.type === 'trade' ? 'bg-blue-100' : n.type === 'deposit' ? 'bg-blue-100' : n.type === 'bonus' ? 'bg-purple-100' : 'bg-amber-100'}`}>
+                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-blue-600" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-blue-600" /> : n.type === 'bonus' ? <Gift className="w-3 h-3 text-purple-600" /> : <Bell className="w-3 h-3 text-amber-600" />}
                       </div>
                       <span className="flex-1 text-[9px] font-bold text-gs-text">{n.title}</span>
                       {!n.isRead && <span className="w-2 h-2 rounded-full bg-gs-green" />}
@@ -4032,13 +4057,13 @@ function Dashboard() {
                 </div>
 
                 {/* Product Info */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                   <div className="text-white">
                     <div className="flex items-center gap-2 mb-1">
                       <DollarSign className="w-5 h-5 text-yellow-300" />
                       <span className="text-[13px] font-black">{selectedProduct.name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-green-200">Aset Saham • {selectedProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
                   </div>
                 </div>
 
@@ -4054,7 +4079,7 @@ function Dashboard() {
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
                     <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">PENDAPATAN HARIAN</span>
-                    <span className="text-[12px] font-black text-green-600">+{formatRupiah(selectedProduct.dailyProfit)}</span>
+                    <span className="text-[12px] font-black text-blue-600">+{formatRupiah(selectedProduct.dailyProfit)}</span>
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
                     <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">DURASI</span>
@@ -4090,7 +4115,7 @@ function Dashboard() {
                   </button>
                   <button onClick={handlePurchaseInvestment} disabled={investLoading || (user?.balance || 0) < selectedProduct.modal}
                     className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}>
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}>
                     {investLoading ? 'Memproses...' : 'Konfirmasi Pembelian'}
                   </button>
                 </div>
@@ -4122,7 +4147,7 @@ function Dashboard() {
                 <div className="mb-3">
                   <span className="block text-2xl font-black text-gs-text tabular-nums">{formatRupiah(selectedStock.price)}</span>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
                       {selectedStock.changePercent >= 0 ? <TrendingUp className="w-3.5 h-3.5 inline" /> : <TrendingDown className="w-3.5 h-3.5 inline" />}
                       {' '}{formatRupiah(selectedStock.change)} ({formatPercent(selectedStock.changePercent)})
                     </span>
@@ -4130,12 +4155,12 @@ function Dashboard() {
                   {/* Live Buy/Sell Prices */}
                   {liveChartActive && (
                     <div className="mt-2 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl p-2 bg-green-50 border border-green-200">
+                      <div className="rounded-xl p-2 bg-blue-50 border border-blue-200">
                         <div className="flex items-center gap-1">
-                          <ArrowDownRight className="w-3 h-3 text-green-600" />
-                          <span className="text-[7px] font-bold text-green-700 uppercase">Harga Beli</span>
+                          <ArrowDownRight className="w-3 h-3 text-blue-600" />
+                          <span className="text-[7px] font-bold text-blue-700 uppercase">Harga Beli</span>
                         </div>
-                        <span className="block text-[13px] font-black text-green-700 tabular-nums mt-0.5">{formatRupiah(liveBuyPrice)}</span>
+                        <span className="block text-[13px] font-black text-blue-700 tabular-nums mt-0.5">{formatRupiah(liveBuyPrice)}</span>
                       </div>
                       <div className="rounded-xl p-2 bg-red-50 border border-red-200">
                         <div className="flex items-center gap-1">
@@ -4153,23 +4178,23 @@ function Dashboard() {
                   {/* Live Indicator */}
                   <div className="flex items-center gap-2 px-1">
                     <div className="flex items-center gap-1">
-                      <span className={`w-2 h-2 rounded-full ${liveChartActive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                      <span className={`w-2 h-2 rounded-full ${liveChartActive ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`} />
                       <span className="text-[8px] font-black text-gs-green3 uppercase tracking-wider">Live</span>
                     </div>
                     <span className="text-[7px] text-gs-muted">Harga berjalan real-time</span>
                   </div>
 
                   {/* Buy Price Chart (Green) */}
-                  <div className="rounded-2xl border border-green-200 bg-gradient-to-b from-green-50/50 to-white overflow-hidden">
+                  <div className="rounded-2xl border border-blue-200 bg-gradient-to-b from-blue-50/50 to-white overflow-hidden">
                     <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
                       <div className="flex items-center gap-1.5">
-                        <ArrowDownRight className="w-3.5 h-3.5 text-green-600" />
-                        <span className="text-[9px] font-black text-green-700 uppercase tracking-wider">Grafik Harga Beli</span>
+                        <ArrowDownRight className="w-3.5 h-3.5 text-blue-600" />
+                        <span className="text-[9px] font-black text-blue-700 uppercase tracking-wider">Grafik Harga Beli</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[14px] font-black text-green-700 tabular-nums">{formatRupiah(liveBuyPrice)}</span>
+                        <span className="text-[14px] font-black text-blue-700 tabular-nums">{formatRupiah(liveBuyPrice)}</span>
                         {liveBuyChart.length >= 2 && (
-                          <span className={`text-[8px] font-bold ${liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? 'text-green-600' : 'text-red-500'}`}>
+                          <span className={`text-[8px] font-bold ${liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? 'text-blue-600' : 'text-red-500'}`}>
                             {liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? '▲' : '▼'}
                           </span>
                         )}
@@ -4181,26 +4206,26 @@ function Dashboard() {
                           <AreaChart data={liveBuyChart} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
                             <defs>
                               <linearGradient id="buyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#17b85c" stopOpacity="0.4" />
-                                <stop offset="50%" stopColor="#17b85c" stopOpacity="0.12" />
-                                <stop offset="100%" stopColor="#17b85c" stopOpacity="0" />
+                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
+                                <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.12" />
+                                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
                               </linearGradient>
                             </defs>
                             <XAxis dataKey="time" hide />
                             <YAxis hide domain={computeYDomain(liveBuyChart, 0.12)} />
-                            <ReferenceLine y={liveBuyPrice} stroke="#17b85c" strokeDasharray="3 3" strokeOpacity={0.25} />
+                            <ReferenceLine y={liveBuyPrice} stroke="#3b82f6" strokeDasharray="3 3" strokeOpacity={0.25} />
                             <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Beli']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                            <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#buyGrad)" strokeWidth={2}
+                            <Area type="monotone" dataKey="price" stroke="#3b82f6" fill="url(#buyGrad)" strokeWidth={2}
                               dot={(props: Record<string, unknown>) => {
                                 const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                 if (index !== liveBuyChart.length - 1) return <g key={String(index)} />
                                 return (
                                   <g key="live-dot-buy">
-                                    <circle cx={cx} cy={cy} r={8} fill="#17b85c" opacity={0.2}>
+                                    <circle cx={cx} cy={cy} r={8} fill="#3b82f6" opacity={0.2}>
                                       <animate attributeName="r" values="6;12;6" dur="1.8s" repeatCount="indefinite" />
                                       <animate attributeName="opacity" values="0.35;0;0.35" dur="1.8s" repeatCount="indefinite" />
                                     </circle>
-                                    <circle cx={cx} cy={cy} r={4} fill="#17b85c" stroke="#fff" strokeWidth={1.5} />
+                                    <circle cx={cx} cy={cy} r={4} fill="#3b82f6" stroke="#fff" strokeWidth={1.5} />
                                   </g>
                                 )
                               }}
@@ -4224,7 +4249,7 @@ function Dashboard() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-[14px] font-black text-red-600 tabular-nums">{formatRupiah(liveSellPrice)}</span>
                         {liveSellChart.length >= 2 && (
-                          <span className={`text-[8px] font-bold ${liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? 'text-green-600' : 'text-red-500'}`}>
+                          <span className={`text-[8px] font-bold ${liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? 'text-blue-600' : 'text-red-500'}`}>
                             {liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? '▲' : '▼'}
                           </span>
                         )}
@@ -4320,7 +4345,7 @@ function Dashboard() {
 
                 {/* Buy/Sell Buttons */}
                 <div className="flex gap-2">
-                  <button onClick={() => { setTradeModal('buy'); setShowStockDetail(false) }} className="flex-1 h-11 rounded-xl bg-green-600 text-white text-[11px] font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
+                  <button onClick={() => { setTradeModal('buy'); setShowStockDetail(false) }} className="flex-1 h-11 rounded-xl bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1">
                     <ArrowDownRight className="w-4 h-4" />Beli
                   </button>
                   <button onClick={() => { setTradeModal('sell'); setShowStockDetail(false) }} className="flex-1 h-11 rounded-xl bg-red-500 text-white text-[11px] font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1">
@@ -4359,11 +4384,11 @@ function Dashboard() {
                       </span>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(selectedStock.changePercent)}</span>
+                      <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(selectedStock.changePercent)}</span>
                       {liveChartActive && (
                         <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          <span className="text-[7px] font-bold text-green-600">LIVE</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                          <span className="text-[7px] font-bold text-blue-600">LIVE</span>
                         </div>
                       )}
                     </div>
@@ -4430,7 +4455,7 @@ function Dashboard() {
 
                 {/* Submit */}
                 <button onClick={handleTrade} disabled={tradeLoading || !tradeShares}
-                  className={`w-full h-12 rounded-xl text-white text-[12px] font-bold disabled:opacity-70 transition-colors ${tradeModal === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'}`}>
+                  className={`w-full h-12 rounded-xl text-white text-[12px] font-bold disabled:opacity-70 transition-colors ${tradeModal === 'buy' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-500 hover:bg-red-600'}`}>
                   {tradeLoading ? 'Memproses...' : `${tradeModal === 'buy' ? 'Beli' : 'Jual'} ${selectedStock.code}`}
                 </button>
               </div>
@@ -4455,12 +4480,12 @@ function Dashboard() {
 
               <div className="p-4">
                 {/* Streak Display */}
-                <div className="rounded-2xl p-4 text-center mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                <div className="rounded-2xl p-4 text-center mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                   <Flame className="w-12 h-12 text-yellow-300 mx-auto mb-2" />
                   <h3 className="text-lg font-black text-white mb-1">
                     {dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} Hari Berturut-turut` : 'Mulai Streak Anda!'}
                   </h3>
-                  <p className="text-[9px] text-green-200">Cek setiap hari untuk mendapat bonus Rp 1.000 - Rp 10.000</p>
+                  <p className="text-[9px] text-blue-200">Cek setiap hari untuk mendapat bonus Rp 1.000 - Rp 10.000</p>
 
                   {/* Streak dots */}
                   <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -4490,7 +4515,7 @@ function Dashboard() {
 
                   {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
                     <div className="mt-4 rounded-xl p-3 bg-white/10 border border-white/15">
-                      <span className="text-[9px] text-green-200 font-bold">Bonus Hari Ini</span>
+                      <span className="text-[9px] text-blue-200 font-bold">Bonus Hari Ini</span>
                       <b className="block text-2xl font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
                     </div>
                   )}
@@ -4502,7 +4527,7 @@ function Dashboard() {
                     onClick={handleDailyCheck}
                     disabled={dailyCheckLoading}
                     className="w-full h-12 rounded-xl text-white text-[12px] font-black hover:scale-[1.02] transition-transform disabled:opacity-70"
-                    style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}
                   >
                     {dailyCheckLoading ? (
                       <div className="flex items-center justify-center gap-2">
@@ -4517,7 +4542,7 @@ function Dashboard() {
                   </button>
                 ) : (
                   <div className="w-full h-12 rounded-xl bg-gs-soft border border-gs-line flex items-center justify-center gap-2 text-gs-muted text-[11px] font-bold">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <CheckCircle className="w-4 h-4 text-blue-600" />
                     Sudah Dicek Hari Ini ✓
                   </div>
                 )}
@@ -4577,11 +4602,11 @@ function Dashboard() {
                       check_7: <Flame className="w-4 h-4" />,
                     }
                     return (
-                      <div key={task.id} className={`rounded-xl p-3 border ${task.claimed ? 'bg-green-50 border-green-200' : task.completed ? 'bg-amber-50 border-amber-200' : 'bg-white border-gs-line'}`}>
+                      <div key={task.id} className={`rounded-xl p-3 border ${task.claimed ? 'bg-blue-50 border-blue-200' : task.completed ? 'bg-amber-50 border-amber-200' : 'bg-white border-gs-line'}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-9 h-9 rounded-xl grid place-items-center ${
-                              task.claimed ? 'bg-green-100 text-green-600' :
+                              task.claimed ? 'bg-blue-100 text-blue-600' :
                               task.completed ? 'bg-amber-100 text-amber-600' :
                               'bg-gs-soft text-gs-muted'
                             }`}>
@@ -4592,16 +4617,16 @@ function Dashboard() {
                               <span className="block text-[8px] text-gs-muted">{task.description}</span>
                               <div className="flex items-center gap-1 mt-0.5">
                                 <div className="w-16 h-1.5 rounded-full bg-gs-soft overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all duration-500 ${task.claimed ? 'bg-green-500' : 'bg-amber-500'}`} style={{ width: `${task.target > 0 ? (task.progress / task.target) * 100 : 0}%` }} />
+                                  <div className={`h-full rounded-full transition-all duration-500 ${task.claimed ? 'bg-blue-500' : 'bg-amber-500'}`} style={{ width: `${task.target > 0 ? (task.progress / task.target) * 100 : 0}%` }} />
                                 </div>
                                 <span className="text-[7px] font-bold text-gs-muted">{task.progress}/{task.target}</span>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <b className="block text-[10px] font-black text-green-600">+{formatRupiah(task.reward)}</b>
+                            <b className="block text-[10px] font-black text-blue-600">+{formatRupiah(task.reward)}</b>
                             {task.claimed ? (
-                              <span className="text-[7px] font-bold text-green-600">Diklaim ✓</span>
+                              <span className="text-[7px] font-bold text-blue-600">Diklaim ✓</span>
                             ) : task.completed ? (
                               <button
                                 onClick={() => handleClaimTask(task.id)}
@@ -4652,7 +4677,7 @@ function Dashboard() {
                 {/* Testimonials */}
                 <div className="space-y-3">
                   {[
-                    { name: 'Rina S.', initial: 'RS', profit: 'Rp 2.500.000', from: 'Potential III', color: 'bg-green-100 text-green-700', days: '12 hari lalu' },
+                    { name: 'Rina S.', initial: 'RS', profit: 'Rp 2.500.000', from: 'Potential III', color: 'bg-blue-100 text-blue-700', days: '12 hari lalu' },
                     { name: 'Budi P.', initial: 'BP', profit: 'Rp 1.800.000', from: 'Profit harian lancar, sudah 15 hari berturut', color: 'bg-amber-100 text-amber-700', days: '3 hari lalu' },
                     { name: 'Andi W.', initial: 'AW', profit: 'Rp 3.200.000', from: 'Dividen III sangat bagus, modal kecil untung besar', color: 'bg-purple-100 text-purple-700', days: '5 hari lalu' },
                     { name: 'Siti M.', initial: 'SM', profit: 'Rp 950.000', from: 'Potential I cocok pemula, sudah profit stabil', color: 'bg-blue-100 text-blue-700', days: '1 hari lalu' },
@@ -4677,8 +4702,8 @@ function Dashboard() {
                           </div>
                           <p className="text-[8px] text-gs-muted leading-relaxed mt-0.5">{t.from}</p>
                           <div className="mt-1 flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3 text-green-600" />
-                            <b className="text-[10px] font-black text-green-600">Keuntungan {t.profit}</b>
+                            <TrendingUp className="w-3 h-3 text-blue-600" />
+                            <b className="text-[10px] font-black text-blue-600">Keuntungan {t.profit}</b>
                           </div>
                         </div>
                       </div>
@@ -4708,14 +4733,14 @@ function Dashboard() {
             <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-white rounded-3xl shadow-2xl overflow-y-auto custom-scrollbar">
               <div className="relative">
                 {/* Green Header */}
-                <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="relative z-10">
                     <div className="w-16 h-16 rounded-full bg-white p-1.5 mx-auto mb-3 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
                       <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
                     </div>
                     <h2 className="text-lg font-black mb-1">Selamat Datang di Global Saham</h2>
-                    <p className="text-[9px] text-green-200 leading-relaxed max-w-[280px] mx-auto">
+                    <p className="text-[9px] text-blue-200 leading-relaxed max-w-[280px] mx-auto">
                       Platform investasi terpercaya dengan profit harian, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.
                     </p>
                   </div>
@@ -4726,8 +4751,8 @@ function Dashboard() {
                   {/* Regulatory Badges */}
                   <div className="flex items-center justify-center gap-4 mb-4">
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-200 grid place-items-center">
-                        <Shield className="w-5 h-5 text-green-600" />
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 grid place-items-center">
+                        <Shield className="w-5 h-5 text-blue-600" />
                       </div>
                       <span className="text-[7px] font-bold text-gs-muted">OJK</span>
                     </div>
@@ -4749,14 +4774,14 @@ function Dashboard() {
                   <button
                     onClick={() => { handleWelcomeClose(); setActiveTab('investasi') }}
                     className="w-full h-11 rounded-xl text-white text-[11px] font-black tracking-wide hover:scale-[1.02] transition-transform mb-2"
-                    style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}
                   >
                     Mulai Berinvestasi
                   </button>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <button
                       onClick={handleWelcomeClose}
-                      className="h-9 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[9px] font-bold hover:bg-green-50 transition-colors flex items-center justify-center gap-1"
+                      className="h-9 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[9px] font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
                     >
                       <Headphones className="w-3.5 h-3.5" />Hubungi CS
                     </button>
@@ -4797,13 +4822,13 @@ function Dashboard() {
 
               <div className="p-4">
                 {/* Product Header */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
                   <div className="text-white">
                     <div className="flex items-center gap-2 mb-1">
                       <DollarSign className="w-5 h-5 text-yellow-300" />
                       <span className="text-[14px] font-black">{selectedDetailProduct.name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-green-200">Aset Saham • {selectedDetailProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedDetailProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
                   </div>
                 </div>
 
@@ -4813,7 +4838,7 @@ function Dashboard() {
                   const chartData = getDataForTimeframe(rawData, investTimeframe)
                   const movement = investMovement.get(selectedDetailProduct.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
-                  const chartColor = isUp ? '#17b85c' : '#ef4444'
+                  const chartColor = isUp ? '#3b82f6' : '#ef4444'
                   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : selectedDetailProduct.modal
                   return (
                     <div className="mb-4">
@@ -4823,14 +4848,14 @@ function Dashboard() {
                           <span className="text-[8px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          <span className="text-[7px] font-black text-green-600">LIVE</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                          <span className="text-[7px] font-black text-blue-600">LIVE</span>
                         </div>
                       </div>
                       {/* Current Price Display */}
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-xl font-black text-gs-text tabular-nums">{formatRupiah(lastValue)}</span>
-                        <span className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                        <span className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-600'}`}>
                           {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                           {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                         </span>
@@ -4900,16 +4925,16 @@ function Dashboard() {
                                   const isLast = i === totalCandles - 1
                                   return (
                                     <g key={i} opacity={isLast ? 1 : 0.75}>
-                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth={isLast ? "2" : "1.5"} />
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="1" />
+                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#3b82f6' : '#ef4444'} strokeWidth={isLast ? "2" : "1.5"} />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#3b82f6' : '#ef4444'} rx="1" />
                                       {isLast && (
                                         <>
-                                          <circle cx={x + candleW / 2} cy={yC} r="4" fill={isGreen ? '#17b85c' : '#ef4444'}>
+                                          <circle cx={x + candleW / 2} cy={yC} r="4" fill={isGreen ? '#3b82f6' : '#ef4444'}>
                                             <animate attributeName="r" values="4;7;4" dur="1.5s" repeatCount="indefinite" />
                                             <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
                                           </circle>
-                                          <line x1={x + candleW + 2} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1" strokeDasharray="4,3" opacity="0.6" />
-                                          <rect x={svgW - 70} y={yC - 8} width="68" height="16" rx="4" fill={isGreen ? '#17b85c' : '#ef4444'} />
+                                          <line x1={x + candleW + 2} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#3b82f6' : '#ef4444'} strokeWidth="1" strokeDasharray="4,3" opacity="0.6" />
+                                          <rect x={svgW - 70} y={yC - 8} width="68" height="16" rx="4" fill={isGreen ? '#3b82f6' : '#ef4444'} />
                                           <text x={svgW - 36} y={yC + 3} fontSize="8" fill="white" textAnchor="middle" fontWeight="bold">{formatRupiah(c.close)}</text>
                                         </>
                                       )}
@@ -4925,7 +4950,7 @@ function Dashboard() {
                             const barData = chartData.map((d, i) => ({
                               idx: d.idx,
                               value: d.value,
-                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#17b85c' : '#ef4444'
+                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#3b82f6' : '#ef4444'
                             }))
                             return (
                               <ResponsiveContainer width="100%" height="100%">
@@ -5003,12 +5028,12 @@ function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1">
-                          {isUp ? <TrendingUp className="w-3.5 h-3.5 text-green-600" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
-                          <span className={`text-[10px] font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {isUp ? <TrendingUp className="w-3.5 h-3.5 text-blue-600" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+                          <span className={`text-[10px] font-bold ${isUp ? 'text-blue-600' : 'text-red-500'}`}>
                             Modal: {formatRupiah(selectedDetailProduct.modal)}
                           </span>
                         </div>
-                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-600'}`}>
                           {formatRupiah(lastValue)}
                         </span>
                       </div>
@@ -5024,7 +5049,7 @@ function Dashboard() {
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
                     <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">PROFIT HARIAN</span>
-                    <span className="text-[12px] font-black text-green-600">+{formatRupiah(selectedDetailProduct.dailyProfit)}</span>
+                    <span className="text-[12px] font-black text-blue-600">+{formatRupiah(selectedDetailProduct.dailyProfit)}</span>
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
                     <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">DURASI</span>
@@ -5085,7 +5110,7 @@ function Dashboard() {
                     }}
                     disabled={(user?.balance || 0) < selectedDetailProduct.modal}
                     className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #3b82f6 100%)' }}
                   >
                     Investasi Sekarang
                   </button>
