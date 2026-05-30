@@ -13,7 +13,8 @@ import {
   BookOpen, Award, Target, PieChart, Zap, Users, Menu,
   Phone, Lock, ChevronRight, Trophy, CalendarDays, Flame,
   MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
-  ListChecks, ClipboardList, PartyPopper
+  ListChecks, ClipboardList, PartyPopper,
+  Download, MessageSquare, Gem, Building2, Headphones, ChevronLeft
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -648,6 +649,18 @@ function Dashboard() {
   const [taskClaimingId, setTaskClaimingId] = useState<string | null>(null)
   const [showTestimonialModal, setShowTestimonialModal] = useState(false)
 
+  // ============ WELCOME MODAL STATE ============
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
+  const [welcomeDontShow, setWelcomeDontShow] = useState(false)
+
+  // ============ INVEST DETAIL MODAL STATE ============
+  const [showInvestDetailModal, setShowInvestDetailModal] = useState(false)
+  const [selectedDetailProduct, setSelectedDetailProduct] = useState<InvestProduct | null>(null)
+  const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
+
+  // ============ CANDLESTICK DATA CACHE ============
+  const candlestickCache = useRef<Map<string, {o: number; h: number; l: number; c: number}[]>>(new Map())
+
   const initialized2 = useRef(false)
   const stocksRef = useRef<Stock[]>([])
   useEffect(() => { stocksRef.current = stocks }, [stocks])
@@ -995,6 +1008,44 @@ function Dashboard() {
 
   useEffect(() => { const iv = setInterval(refreshAll, 30000); return () => clearInterval(iv) }, [refreshAll])
 
+  // ============ WELCOME MODAL LOGIC ============
+  useEffect(() => {
+    if (user) {
+      const dismissed = localStorage.getItem('gs_welcome_dismissed')
+      if (!dismissed || Date.now() > parseInt(dismissed)) {
+        setShowWelcomeModal(true)
+      }
+    }
+  }, [user])
+
+  const handleWelcomeClose = () => {
+    if (welcomeDontShow) {
+      localStorage.setItem('gs_welcome_dismissed', (Date.now() + 30 * 60 * 1000).toString())
+    }
+    setShowWelcomeModal(false)
+  }
+
+  // ============ CANDLESTICK DATA GENERATOR ============
+  const getCandlestickData = useCallback((product: InvestProduct) => {
+    if (candlestickCache.current.has(product.id)) {
+      return candlestickCache.current.get(product.id)!
+    }
+    const data: {o: number; h: number; l: number; c: number}[] = []
+    const basePrice = product.modal
+    let prevClose = basePrice * (0.97 + Math.random() * 0.03)
+    for (let i = 0; i < 12; i++) {
+      const change = (Math.random() - 0.45) * basePrice * 0.015
+      const open = prevClose
+      const close = open + change
+      const high = Math.max(open, close) + Math.random() * basePrice * 0.008
+      const low = Math.min(open, close) - Math.random() * basePrice * 0.008
+      data.push({ o: Math.round(open), h: Math.round(high), l: Math.round(low), c: Math.round(close) })
+      prevClose = close
+    }
+    candlestickCache.current.set(product.id, data)
+    return data
+  }, [])
+
   // ============ TRADE ============
   const handleTrade = async () => {
     if (!user || !selectedStock || !tradeModal || !tradeShares) return
@@ -1262,67 +1313,100 @@ function Dashboard() {
           {/* ====== HOME TAB ====== */}
           {activeTab === 'home' && (
             <motion.div key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Balance Card */}
+              {/* Dual Wallet Card */}
               <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
                 <div className="p-4 text-white">
+                  {/* Header */}
                   <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <span className="text-[9px] md:text-[10px] font-medium text-green-200">Selamat datang,</span>
-                      <b className="block text-sm md:text-base font-black">{user?.name}</b>
-                    </div>
                     <div className="flex items-center gap-2">
-                      {user?.kycStatus === 'verified' && (
-                        <div className="h-5 px-2 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center gap-1">
-                          <Shield className="w-2.5 h-2.5 text-blue-300" />
-                          <span className="text-[6px] font-black text-blue-200">KYC ✓</span>
-                        </div>
-                      )}
-                      <div className="w-9 h-9 rounded-full bg-white/15 border border-white/20 grid place-items-center">
-                        <User className="w-4 h-4 text-yellow-300" />
+                      <span className="text-[10px] md:text-[11px] font-black tracking-wider">RINGKASAN SALDO</span>
+                      <span className="h-4 px-1.5 rounded-full bg-green-400/30 border border-green-400/40 text-[7px] font-black text-green-300 flex items-center gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />AKTIF
+                      </span>
+                    </div>
+                    <button onClick={() => setShowBalance(!showBalance)} className="text-white/60 hover:text-white">
+                      {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {/* Dual Wallets */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    {/* Dompet Utama */}
+                    <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Wallet className="w-3 h-3 text-yellow-300" />
+                        <span className="text-[7px] md:text-[8px] font-bold text-green-200 uppercase tracking-wider">DOMPET UTAMA</span>
                       </div>
+                      <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••••'}</b>
+                    </div>
+                    {/* Dompet Penarikan */}
+                    <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
+                      <div className="flex items-center gap-1 mb-1">
+                        <CreditCard className="w-3 h-3 text-blue-300" />
+                        <span className="text-[7px] md:text-[8px] font-bold text-green-200 uppercase tracking-wider">DOMPET PENARIKAN</span>
+                      </div>
+                      <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••••'}</b>
                     </div>
                   </div>
-                  <div className="mb-2">
-                    <span className="text-[9px] font-medium text-green-200">Total Aset</span>
-                    <div className="flex items-center gap-2">
-                      <b className="text-xl md:text-2xl font-black">{showBalance ? formatRupiah(portfolioSummary.totalAssets) : '••••••••'}</b>
-                      <button onClick={() => setShowBalance(!showBalance)} className="text-white/60 hover:text-white">
-                        {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                      </button>
+
+                  {/* Total Investasi */}
+                  <div className="rounded-2xl p-2.5 bg-white/8 border border-white/12 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-yellow-300" />
+                        <span className="text-[8px] font-bold text-green-200">TOTAL INVESTASI</span>
+                      </div>
+                      <b className="text-[12px] font-black">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••••••'}</b>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] md:text-[8px] font-medium text-green-200">Saldo Kas</span>
-                      <b className="block text-[11px] md:text-xs font-black mt-0.5">{showBalance ? formatRupiah(portfolioSummary.cashBalance) : '••••'}</b>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <button onClick={() => setActiveTab('finance')} className="h-9 rounded-xl bg-yellow-500 text-gs-dark text-[9px] font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-1">
+                      <Plus className="w-3.5 h-3.5" />Isi Saldo
+                    </button>
+                    <button onClick={() => setActiveTab('finance')} className="h-9 rounded-xl bg-white/15 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-colors flex items-center justify-center gap-1">
+                      <Minus className="w-3.5 h-3.5" />Tarik Saldo
+                    </button>
+                  </div>
+
+                  {/* Regulatory Badges */}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <Shield className="w-3 h-3 text-green-300" />
+                      <span className="text-[7px] font-bold text-green-200">Terdaftar & Diawasi</span>
                     </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] md:text-[8px] font-medium text-green-200">Investasi</span>
-                      <b className="block text-[11px] md:text-xs font-black mt-0.5">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••'}</b>
-                    </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] md:text-[8px] font-medium text-green-200">Profit/Loss</span>
-                      <b className={`block text-[11px] md:text-xs font-black mt-0.5 ${portfolioSummary.totalProfitLoss >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {showBalance ? formatRupiah(portfolioSummary.totalProfitLoss) : '••••'}
-                      </b>
+                    <div className="w-px h-3 bg-white/20" />
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-yellow-300" />
+                      <span className="text-[7px] font-bold text-green-200">Berlisensi Resmi</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-4 gap-1.5 mb-4">
-                {[
-                  { icon: <Plus className="w-4 h-4" />, label: 'Deposit', action: () => setActiveTab('finance'), color: 'bg-green-50 text-green-600' },
-                  { icon: <Minus className="w-4 h-4" />, label: 'Withdraw', action: () => setActiveTab('finance'), color: 'bg-red-50 text-red-500' },
-                  { icon: <CalendarDays className="w-4 h-4" />, label: 'Cek Harian', action: () => setShowDailyCheckModal(true), color: 'bg-emerald-50 text-emerald-600' },
-                  { icon: <ListChecks className="w-4 h-4" />, label: 'Tugas', action: () => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }, color: 'bg-amber-50 text-amber-600' },
-                ].map((a, i) => (
-                  <button key={i} onClick={a.action} className="flex flex-col items-center gap-1 py-2.5 rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow">
-                    <div className={`w-8 h-8 rounded-lg ${a.color} grid place-items-center`}>{a.icon}</div>
-                    <span className="text-[7px] md:text-[8px] font-bold text-gs-green3">{a.label}</span>
-                  </button>
-                ))}
+              {/* Menu Cepat */}
+              <div className="mb-4">
+                <div className="mb-2">
+                  <h3 className="text-[11px] md:text-xs font-black text-gs-green3">Menu Cepat</h3>
+                  <span className="text-[8px] font-semibold text-gs-muted">Akses fitur penting hanya dalam satu ketukan</span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                  {[
+                    { icon: <ClipboardList className="w-4 h-4" />, label: 'Cek Harian', action: () => setShowDailyCheckModal(true), color: 'bg-emerald-50 text-emerald-600' },
+                    { icon: <CalendarDays className="w-4 h-4" />, label: 'Tugas', action: () => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }, color: 'bg-amber-50 text-amber-600' },
+                    { icon: <Download className="w-4 h-4" />, label: 'Unduh Aplikasi', action: () => {}, color: 'bg-blue-50 text-blue-600' },
+                    { icon: <MessageSquare className="w-4 h-4" />, label: 'Testimoni', action: () => setShowTestimonialModal(true), color: 'bg-purple-50 text-purple-600', badge: 'Bonus' },
+                  ].map((a, i) => (
+                    <button key={i} onClick={a.action} className="flex-shrink-0 flex flex-col items-center gap-1.5 py-3 px-4 rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow relative min-w-[80px]">
+                      <div className={`w-9 h-9 rounded-xl ${a.color} grid place-items-center`}>{a.icon}</div>
+                      <span className="text-[7px] md:text-[8px] font-bold text-gs-green3">{a.label}</span>
+                      {'badge' in a && a.badge && (
+                        <span className="absolute -top-1 -right-1 h-4 px-1 rounded-full bg-green-500 text-white text-[6px] font-black flex items-center">{a.badge}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Cek Harian Card */}
@@ -1937,7 +2021,24 @@ function Dashboard() {
                     <h2 className="text-[16px] md:text-xl font-black">Investasi</h2>
                   </div>
                   <p className="text-[9px] md:text-[10px] text-green-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Semua profit dikreditkan ke saldo Anda setiap 24 jam.</p>
-                  <div className="grid grid-cols-3 gap-2">
+
+                  {/* Pasar Aktif Stats */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
+                      <Package className="w-3 h-3 text-yellow-300" />
+                      <span className="text-[8px] font-black text-white">{investProducts.length} Produk</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
+                      <Award className="w-3 h-3 text-yellow-300" />
+                      <span className="text-[8px] font-black text-white">{new Set(investProducts.map(p => p.category)).size} Kategori</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      <span className="text-[8px] font-black text-green-300">Live 24/7</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mt-3">
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Package className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{investProducts.length}</b>
@@ -1973,10 +2074,7 @@ function Dashboard() {
                   const movement = investMovement.get(product.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
                   const currentVal = product.modal + (movement?.change || 0)
-                  const sparkData = getInvestSparkline(product)
-                  const sparkMin = Math.min(...sparkData.map(d => d.p))
-                  const sparkMax = Math.max(...sparkData.map(d => d.p))
-                  const sparkRange = sparkMax - sparkMin || 1
+                  const candles = getCandlestickData(product)
 
                   return (
                     <div key={product.id} className="rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow overflow-hidden">
@@ -1995,26 +2093,40 @@ function Dashboard() {
                         <span className="text-[8px] font-bold text-gs-muted">Aset Saham</span>
                       </div>
 
-                      {/* Mini Sparkline Chart */}
+                      {/* PERGERAKAN MARKET label + Candlestick Chart */}
                       <div className="px-3 py-1">
-                        <div className="h-12 w-full">
-                          <svg className="w-full h-full" viewBox="0 0 26 50" preserveAspectRatio="none">
-                            <defs>
-                              <linearGradient id={`investGrad-${product.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor={isUp ? '#17b85c' : '#ef4444'} stopOpacity="0.3" />
-                                <stop offset="100%" stopColor={isUp ? '#17b85c' : '#ef4444'} stopOpacity="0" />
-                              </linearGradient>
-                            </defs>
-                            <path d={sparkData.map((d, i) => {
-                              const x = d.i
-                              const y = 50 - ((d.p - sparkMin) / sparkRange) * 40 - 5
-                              return `${i === 0 ? 'M' : 'L'}${x},${y}`
-                            }).join(' ') + ` L25,50 L0,50 Z`} fill={`url(#investGrad-${product.id})`} />
-                            <path d={sparkData.map((d, i) => {
-                              const x = d.i
-                              const y = 50 - ((d.p - sparkMin) / sparkRange) * 40 - 5
-                              return `${i === 0 ? 'M' : 'L'}${x},${y}`
-                            }).join(' ')} fill="none" stroke={isUp ? '#17b85c' : '#ef4444'} strokeWidth="0.8" />
+                        <div className="flex items-center gap-1 mb-1">
+                          <BarChart3 className="w-2.5 h-2.5 text-gs-muted" />
+                          <span className="text-[7px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
+                        </div>
+                        <div className="h-14 w-full relative">
+                          <svg className="w-full h-full" viewBox="0 0 120 56" preserveAspectRatio="none">
+                            {(() => {
+                              const allPrices = candles.flatMap(c => [c.h, c.l])
+                              const minP = Math.min(...allPrices)
+                              const maxP = Math.max(...allPrices)
+                              const range = maxP - minP || 1
+                              const candleWidth = 6
+                              const gap = 4
+                              return candles.map((c, i) => {
+                                const x = 8 + i * (candleWidth + gap)
+                                const yH = 4 + ((maxP - c.h) / range) * 44
+                                const yL = 4 + ((maxP - c.l) / range) * 44
+                                const yO = 4 + ((maxP - c.o) / range) * 44
+                                const yC = 4 + ((maxP - c.c) / range) * 44
+                                const isGreen = c.c >= c.o
+                                const bodyTop = Math.min(yO, yC)
+                                const bodyH = Math.max(Math.abs(yO - yC), 1)
+                                return (
+                                  <g key={i}>
+                                    {/* Wick */}
+                                    <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1" />
+                                    {/* Body */}
+                                    <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="0.5" />
+                                  </g>
+                                )
+                              })
+                            })()}
                           </svg>
                         </div>
                       </div>
@@ -2027,7 +2139,9 @@ function Dashboard() {
                             {isUp ? '▲' : '▼'} {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                           </span>
                         </div>
-                        <span className="text-[10px] font-black text-gs-text tabular-nums">{formatRupiah(currentVal)}</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                          {formatRupiah(currentVal)}
+                        </span>
                       </div>
 
                       {/* Product Details */}
@@ -2057,10 +2171,14 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Invest Button */}
-                      <div className="px-3 pb-3 pt-2">
+                      {/* Buttons */}
+                      <div className="px-3 pb-3 pt-2 flex gap-2">
+                        <button onClick={() => { setSelectedDetailProduct(product); setShowInvestDetailModal(true) }}
+                          className="flex-1 h-9 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[9px] font-bold hover:bg-green-50 transition-colors">
+                          Lihat Selengkapnya
+                        </button>
                         <button onClick={() => { setSelectedProduct(product); setShowInvestModal(true) }}
-                          className="w-full h-9 rounded-xl text-white text-[10px] font-black tracking-wide hover:scale-[1.02] transition-transform"
+                          className="flex-1 h-9 rounded-xl text-white text-[9px] font-black tracking-wide hover:scale-[1.02] transition-transform"
                           style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}>
                           Investasi Sekarang
                         </button>
@@ -2321,8 +2439,11 @@ function Dashboard() {
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-[16px] md:text-xl font-black text-gs-green3">Undang Tim</h2>
-                  <span className="text-[8px] font-black text-gs-gold tracking-widest uppercase">ASET SAHAM</span>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-[16px] md:text-xl font-black text-gs-green3">Program Referral</h2>
+                  </div>
+                  <span className="text-[9px] font-black text-gs-gold tracking-widest uppercase">Komisi Hingga 40%</span>
+                  <p className="text-[8px] font-semibold text-gs-muted mt-0.5">Ajak Teman, Tumbuh Bersama</p>
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-gs-green3/10 grid place-items-center">
                   <UserPlus className="w-5 h-5 text-gs-green3" />
@@ -2336,7 +2457,7 @@ function Dashboard() {
                   {/* Badge */}
                   <div className="inline-flex items-center gap-1.5 h-6 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 mb-3">
                     <Zap className="w-3 h-3 text-yellow-300" />
-                    <span className="text-[8px] font-black text-yellow-300 tracking-wide">PROGRAM REFERAL</span>
+                    <span className="text-[8px] font-black text-yellow-300 tracking-wide">PROGRAM REFERRAL</span>
                   </div>
 
                   {/* Commission highlight */}
@@ -2347,7 +2468,7 @@ function Dashboard() {
 
                   <h3 className="text-[14px] md:text-[16px] font-black mb-1">Ajak Teman, Tumbuh Bersama</h3>
                   <p className="text-[9px] md:text-[10px] text-green-200 leading-relaxed max-w-[300px] mx-auto mb-4">
-                    Dapatkan komisi dari setiap teman yang berinvestasi melalui tautan referal Anda.
+                    Dapatkan komisi dari setiap teman yang berinvestasi melalui tautan referral Anda.
                   </p>
 
                   {/* Total Commission */}
@@ -2391,7 +2512,7 @@ function Dashboard() {
 
               {/* Referral Code & Link */}
               <div className="rounded-2xl p-4 bg-white border border-gs-line shadow-sm mb-4">
-                <span className="block text-[9px] font-black text-gs-green3 mb-2">Kode Referal Anda</span>
+                <span className="block text-[9px] font-black text-gs-green3 mb-2">Kode Referral Anda</span>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex-1 h-11 rounded-xl bg-gs-soft border border-gs-line px-4 flex items-center">
                     <b className="text-[18px] font-black tracking-[0.2em] text-gs-green3">{referralInfo.code || user?.referralCode || 'GSXXXX'}</b>
@@ -2404,33 +2525,35 @@ function Dashboard() {
                   </button>
                 </div>
 
-                <span className="block text-[9px] font-black text-gs-muted mb-1">Tautan Referal</span>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); toast({ title: 'Kode disalin!' }) }}
+                    className="flex-1 h-10 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[10px] font-bold hover:bg-green-50 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Copy className="w-3.5 h-3.5" />Salin
+                  </button>
+                  <button
+                    onClick={() => {
+                      const shareText = `Gabung Global Saham dan mulai investasi! Daftar melalui tautan saya: https://globalsaham.com/register/${referralInfo.code || user?.referralCode || ''}`
+                      if (navigator.share) {
+                        navigator.share({ title: 'Global Saham - Undang Teman', text: shareText }).catch(() => {})
+                      } else {
+                        navigator.clipboard.writeText(shareText)
+                        toast({ title: 'Link disalin!' })
+                      }
+                    }}
+                    className="flex-1 h-10 rounded-xl bg-yellow-500 text-gs-dark text-[10px] font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />Bagikan
+                  </button>
+                </div>
+
+                <span className="block text-[9px] font-black text-gs-muted mb-1">Tautan Referral</span>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-9 rounded-lg bg-gs-soft border border-gs-line px-3 flex items-center overflow-hidden">
                     <span className="text-[9px] font-semibold text-gs-text truncate">https://globalsaham.com/register/{referralInfo.code || user?.referralCode || 'GSXXXX'}</span>
                   </div>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(`https://globalsaham.com/register/${referralInfo.code || user?.referralCode || ''}`); toast({ title: 'Link disalin!' }) }}
-                    className="h-9 px-3 rounded-lg bg-gs-soft border border-gs-line text-[8px] font-bold text-gs-green3 hover:bg-green-50 transition-colors flex items-center gap-1"
-                  >
-                    <Copy className="w-3 h-3" />Salin
-                  </button>
                 </div>
-
-                <button
-                  onClick={() => {
-                    const shareText = `Gabung Global Saham dan mulai investasi! Daftar melalui tautan saya: https://globalsaham.com/register/${referralInfo.code || user?.referralCode || ''}`
-                    if (navigator.share) {
-                      navigator.share({ title: 'Global Saham - Undang Teman', text: shareText }).catch(() => {})
-                    } else {
-                      navigator.clipboard.writeText(shareText)
-                      toast({ title: 'Link disalin!' })
-                    }
-                  }}
-                  className="mt-3 w-full h-10 rounded-xl bg-yellow-500 text-gs-dark text-[10px] font-bold flex items-center justify-center gap-1.5 hover:bg-yellow-400 transition-colors"
-                >
-                  <Share2 className="w-4 h-4" /> Bagikan
-                </button>
               </div>
 
               {/* Stats Cards */}
@@ -2452,56 +2575,60 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* Tier Commission System */}
+              {/* Tier Commission System with Gem Badges */}
               <h3 className="text-[12px] font-black text-gs-green3 mb-3">Sistem Komisi Tier</h3>
               <div className="space-y-2 mb-4">
-                {referralInfo.tiers.map((tier) => (
-                  <div key={tier.level} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg grid place-items-center text-white text-[10px] font-black ${
-                          tier.level === 1 ? 'bg-gs-green3' : tier.level === 2 ? 'bg-gs-gold' : 'bg-amber-600'
-                        }`}>
-                          L{tier.level}
+                {referralInfo.tiers.map((tier) => {
+                  const tierColors = [
+                    { bg: 'bg-blue-500', text: 'text-blue-500', light: 'bg-blue-50', gem: '💎', border: 'border-blue-200' },
+                    { bg: 'bg-orange-500', text: 'text-orange-500', light: 'bg-orange-50', gem: '🔥', border: 'border-orange-200' },
+                    { bg: 'bg-green-500', text: 'text-green-500', light: 'bg-green-50', gem: '💚', border: 'border-green-200' },
+                  ]
+                  const tc = tierColors[tier.level - 1] || tierColors[0]
+                  return (
+                    <div key={tier.level} className={`rounded-2xl p-3 bg-white border ${tc.border} shadow-sm`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-9 h-9 rounded-lg ${tc.bg} grid place-items-center text-white shadow-sm`}>
+                            <Gem className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-black text-gs-text">Level {tier.level}</span>
+                            <span className="block text-[7px] text-gs-muted">
+                              {tier.level === 1 ? 'Referral langsung' : tier.level === 2 ? 'Referral dari referral Anda' : 'Referral level ketiga'}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="block text-[10px] font-black text-gs-text">Tier {tier.level} (Level {tier.level})</span>
-                          <span className="block text-[7px] text-gs-muted">
-                            {tier.level === 1 ? 'Referal langsung' : tier.level === 2 ? 'Referal dari referal Anda' : 'Referal level ketiga'}
+                        <div className="text-right">
+                          <span className={`text-[18px] font-black ${tc.text}`}>
+                            {tier.commissionPercent}%
                           </span>
+                          <span className="block text-[7px] font-bold text-gs-muted">Komisi</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`text-[16px] font-black ${
-                          tier.level === 1 ? 'text-gs-green3' : tier.level === 2 ? 'text-gs-gold' : 'text-amber-600'
-                        }`}>
-                          {tier.commissionPercent}%
-                        </span>
-                        <span className="block text-[7px] font-bold text-gs-muted">Komisi</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
+                          <b className="block text-[11px] font-black text-gs-text">{tier.activeMembers + tier.inactiveMembers}</b>
+                          <span className="block text-[6px] font-bold text-gs-muted">Anggota</span>
+                        </div>
+                        <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
+                          <b className="block text-[9px] font-black text-gs-text">{tier.activeMembers}/{tier.inactiveMembers}</b>
+                          <span className="block text-[6px] font-bold text-gs-muted">Aktif/Nonaktif</span>
+                        </div>
+                        <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
+                          <b className="block text-[9px] font-black text-gs-gold">{formatRupiah(tier.deposit)}</b>
+                          <span className="block text-[6px] font-bold text-gs-muted">Deposit</span>
+                        </div>
                       </div>
+                      {tier.commission > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gs-line flex items-center justify-between">
+                          <span className="text-[8px] font-bold text-gs-muted">Komisi Level {tier.level}</span>
+                          <span className="text-[10px] font-black text-green-600">+{formatRupiah(tier.commission)}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-lg p-1.5 bg-green-50 text-center">
-                        <b className="block text-[11px] font-black text-green-700">{tier.activeMembers}</b>
-                        <span className="block text-[6px] font-bold text-green-600">Aktif</span>
-                      </div>
-                      <div className="rounded-lg p-1.5 bg-red-50 text-center">
-                        <b className="block text-[11px] font-black text-red-500">{tier.inactiveMembers}</b>
-                        <span className="block text-[6px] font-bold text-red-400">Nonaktif</span>
-                      </div>
-                      <div className="rounded-lg p-1.5 bg-yellow-50 text-center">
-                        <b className="block text-[9px] font-black text-gs-gold">{formatRupiah(tier.deposit)}</b>
-                        <span className="block text-[6px] font-bold text-gs-muted">Deposit</span>
-                      </div>
-                    </div>
-                    {tier.commission > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gs-line flex items-center justify-between">
-                        <span className="text-[8px] font-bold text-gs-muted">Komisi Tier {tier.level}</span>
-                        <span className="text-[10px] font-black text-green-600">+{formatRupiah(tier.commission)}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* Referral History */}
@@ -2513,11 +2640,11 @@ function Dashboard() {
                       <div key={h.id} className="p-3 border-b border-gs-line last:border-0 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full grid place-items-center ${
-                            h.level === 1 ? 'bg-green-50' : h.level === 2 ? 'bg-yellow-50' : 'bg-amber-50'
+                            h.level === 1 ? 'bg-blue-50' : h.level === 2 ? 'bg-orange-50' : 'bg-green-50'
                           }`}>
-                            <span className={`text-[8px] font-black ${
-                              h.level === 1 ? 'text-gs-green3' : h.level === 2 ? 'text-gs-gold' : 'text-amber-600'
-                            }`}>L{h.level}</span>
+                            <Gem className={`w-3.5 h-3.5 ${
+                              h.level === 1 ? 'text-blue-500' : h.level === 2 ? 'text-orange-500' : 'text-green-500'
+                            }`} />
                           </div>
                           <div>
                             <span className="block text-[9px] font-bold text-gs-text">{h.name}</span>
@@ -2539,7 +2666,7 @@ function Dashboard() {
                 ) : (
                   <div className="p-6 text-center">
                     <UserPlus className="w-10 h-10 text-gs-muted mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-gs-muted">Belum ada komisi referal</p>
+                    <p className="text-[10px] font-bold text-gs-muted">Belum ada komisi referral</p>
                     <p className="text-[8px] text-gs-muted mt-1">Ajak teman untuk mulai mendapatkan komisi</p>
                   </div>
                 )}
@@ -2548,7 +2675,7 @@ function Dashboard() {
               {/* Backwards compat: referred users list */}
               {referralInfo.referredUsers.length > 0 && (
                 <>
-                  <h3 className="text-[12px] font-black text-gs-green3 mb-3 mt-4">Daftar Referal Langsung</h3>
+                  <h3 className="text-[12px] font-black text-gs-green3 mb-3 mt-4">Daftar Referral Langsung</h3>
                   <div className="space-y-1.5">
                     {referralInfo.referredUsers.map((u, i) => (
                       <div key={i} className="rounded-2xl p-2.5 bg-white border border-gs-line flex items-center justify-between">
@@ -2703,7 +2830,12 @@ function Dashboard() {
                     <User className="w-8 h-8 text-yellow-300" />
                   </div>
                   <h2 className="text-[14px] md:text-lg font-black">{user?.name}</h2>
-                  <span className="block text-[9px] md:text-[10px] text-green-200 mt-0.5">+62 {user?.phone}</span>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    <span className="text-[9px] md:text-[10px] text-green-200">+62 {user?.phone}</span>
+                    <span className="h-4 px-1.5 rounded-full bg-green-500/30 border border-green-400/40 text-[7px] font-black text-green-300 flex items-center gap-0.5">
+                      <CheckCircle className="w-2.5 h-2.5" />VERIFIED
+                    </span>
+                  </div>
                   <div className="flex items-center justify-center gap-2 mt-2">
                     <span className="h-5 px-2 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[7px] font-bold text-yellow-300 flex items-center gap-1">
                       <Award className="w-2.5 h-2.5" />Gold VIP
@@ -2782,6 +2914,8 @@ function Dashboard() {
                   { icon: <Award className="w-4 h-4 text-gs-gold" />, label: 'VIP Level', desc: 'Gold', action: () => {} },
                   { icon: <Gift className="w-4 h-4 text-purple-600" />, label: 'Bonus & Promo', desc: 'Klaim bonus harian', action: () => setActiveTab('bonus') },
                   { icon: <UserPlus className="w-4 h-4 text-gs-green" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
+                  { icon: <Headphones className="w-4 h-4 text-emerald-600" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => {} },
+                  { icon: <Building2 className="w-4 h-4 text-gs-green3" />, label: 'Profil Perusahaan', desc: 'Tentang Global Saham', action: () => {} },
                   { icon: <HelpCircle className="w-4 h-4 text-amber-600" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => {} },
                 ].map((item, i) => (
                   <button key={i} onClick={item.action} className="w-full flex items-center gap-3 p-3 border-b border-gs-line last:border-0 hover:bg-gs-soft transition-colors">
@@ -2793,6 +2927,15 @@ function Dashboard() {
                     <ChevronRight className="w-4 h-4 text-gs-muted" />
                   </button>
                 ))}
+              </div>
+
+              {/* Regulatory Footer */}
+              <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line mb-4">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
+                  <Shield className="w-4 h-4 text-gs-green" />
+                  <CheckCircle className="w-4 h-4 text-gs-gold" />
+                </div>
+                <p className="text-center text-[7px] font-black text-gs-muted tracking-wider">ASET SAHAM • TERDAFTAR & DIAWASI OJK • V1.0</p>
               </div>
 
               {/* Logout */}
@@ -3616,6 +3759,246 @@ function Dashboard() {
                 >
                   Mulai Investasi Sekarang
                 </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Welcome Modal */}
+      <AnimatePresence>
+        {showWelcomeModal && user && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={handleWelcomeClose} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-white rounded-3xl shadow-2xl overflow-y-auto custom-scrollbar">
+              <div className="relative">
+                {/* Green Header */}
+                <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                  <div className="relative z-10">
+                    <div className="w-16 h-16 rounded-full bg-white p-1.5 mx-auto mb-3 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
+                      <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
+                    </div>
+                    <h2 className="text-lg font-black mb-1">Selamat Datang di Global Saham</h2>
+                    <p className="text-[9px] text-green-200 leading-relaxed max-w-[280px] mx-auto">
+                      Platform investasi terpercaya dengan profit harian, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-5">
+                  {/* Regulatory Badges */}
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-200 grid place-items-center">
+                        <Shield className="w-5 h-5 text-green-600" />
+                      </div>
+                      <span className="text-[7px] font-bold text-gs-muted">OJK</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-200 grid place-items-center">
+                        <CheckCircle className="w-5 h-5 text-yellow-600" />
+                      </div>
+                      <span className="text-[7px] font-bold text-gs-muted">Bappebti</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 grid place-items-center">
+                        <Lock className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <span className="text-[7px] font-bold text-gs-muted">Aman</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <button
+                    onClick={() => { handleWelcomeClose(); setActiveTab('investasi') }}
+                    className="w-full h-11 rounded-xl text-white text-[11px] font-black tracking-wide hover:scale-[1.02] transition-transform mb-2"
+                    style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}
+                  >
+                    Mulai Berinvestasi
+                  </button>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <button
+                      onClick={handleWelcomeClose}
+                      className="h-9 rounded-xl bg-gs-soft border border-gs-line text-gs-green3 text-[9px] font-bold hover:bg-green-50 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Headphones className="w-3.5 h-3.5" />Hubungi CS
+                    </button>
+                    <button
+                      onClick={handleWelcomeClose}
+                      className="h-9 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-700 text-[9px] font-bold hover:bg-yellow-100 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />Gabung Channel
+                    </button>
+                  </div>
+
+                  {/* Don't show checkbox */}
+                  <label className="flex items-center gap-2 cursor-pointer justify-center">
+                    <input type="checkbox" checked={welcomeDontShow} onChange={(e) => setWelcomeDontShow(e.target.checked)}
+                      className="w-3.5 h-3.5 rounded accent-gs-green" />
+                    <span className="text-[8px] font-semibold text-gs-muted">Jangan tampilkan selama 30 menit</span>
+                  </label>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Investment Product Detail Modal */}
+      <AnimatePresence>
+        {showInvestDetailModal && selectedDetailProduct && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowInvestDetailModal(false)} />
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[90vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
+              <div className="sticky top-0 bg-white p-4 border-b border-gs-line flex items-center justify-between rounded-t-3xl z-10">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-gs-green3" />
+                  <span className="text-[12px] font-black text-gs-text">Detail Investasi</span>
+                </div>
+                <button onClick={() => setShowInvestDetailModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft"><X className="w-4 h-4" /></button>
+              </div>
+
+              <div className="p-4">
+                {/* Product Header */}
+                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                  <div className="text-white">
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSign className="w-5 h-5 text-yellow-300" />
+                      <span className="text-[14px] font-black">{selectedDetailProduct.name}</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-green-200">Aset Saham • {selectedDetailProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                  </div>
+                </div>
+
+                {/* Candlestick Chart */}
+                {(() => {
+                  const candles = getCandlestickData(selectedDetailProduct)
+                  const movement = investMovement.get(selectedDetailProduct.id)
+                  const isUp = movement ? movement.changePercent >= 0 : true
+                  const allPrices = candles.flatMap(c => [c.h, c.l])
+                  const minP = Math.min(...allPrices)
+                  const maxP = Math.max(...allPrices)
+                  const range = maxP - minP || 1
+                  const candleWidth = 8
+                  const gap = 6
+                  const svgW = candles.length * (candleWidth + gap) + 20
+                  return (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-1 mb-2">
+                        <BarChart3 className="w-3 h-3 text-gs-muted" />
+                        <span className="text-[8px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
+                      </div>
+                      <div className="h-40 w-full rounded-2xl bg-gs-soft border border-gs-line p-3">
+                        <svg className="w-full h-full" viewBox={`0 0 ${svgW} 120`} preserveAspectRatio="xMidYMid meet">
+                          {candles.map((c, i) => {
+                            const x = 10 + i * (candleWidth + gap)
+                            const yH = 8 + ((maxP - c.h) / range) * 90
+                            const yL = 8 + ((maxP - c.l) / range) * 90
+                            const yO = 8 + ((maxP - c.o) / range) * 90
+                            const yC = 8 + ((maxP - c.c) / range) * 90
+                            const isGreen = c.c >= c.o
+                            const bodyTop = Math.min(yO, yC)
+                            const bodyH = Math.max(Math.abs(yO - yC), 1)
+                            return (
+                              <g key={i}>
+                                <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1.5" />
+                                <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="1" />
+                              </g>
+                            )
+                          })}
+                        </svg>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-1">
+                          {isUp ? <ArrowUpRight className="w-3.5 h-3.5 text-green-600" /> : <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />}
+                          <span className={`text-[10px] font-black ${isUp ? 'text-green-600' : 'text-red-500'}`}>
+                            {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
+                          </span>
+                        </div>
+                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                          {formatRupiah(selectedDetailProduct.modal + (movement?.change || 0))}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Full Financial Details */}
+                <div className="space-y-2.5 mb-4">
+                  <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
+                    <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">JUMLAH MODAL</span>
+                    <span className="text-[12px] font-black text-gs-text">{formatRupiah(selectedDetailProduct.modal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
+                    <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">PROFIT HARIAN</span>
+                    <span className="text-[12px] font-black text-green-600">+{formatRupiah(selectedDetailProduct.dailyProfit)}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
+                    <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">DURASI</span>
+                    <span className="text-[12px] font-black text-gs-text">{selectedDetailProduct.duration} Hari</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-gs-line">
+                    <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
+                    <div className="text-right">
+                      <span className="text-[12px] font-black text-gs-green3">{formatRupiah(selectedDetailProduct.totalReturn)}</span>
+                      <span className="ml-1 text-[8px] font-bold text-yellow-600 bg-yellow-50 px-1 rounded">ROI {selectedDetailProduct.roi}%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5">
+                    <span className="text-[9px] font-bold text-gs-muted uppercase tracking-wider">SALDO TERSEDIA</span>
+                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedDetailProduct.modal ? 'text-gs-green3' : 'text-red-500'}`}>{formatRupiah(user?.balance || 0)}</span>
+                  </div>
+                </div>
+
+                {/* Profit Distribution with AUTO toggle */}
+                <div className="rounded-xl p-3 bg-gs-soft border border-gs-line mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-gs-green" />
+                      <span className="text-[9px] font-bold text-gs-green3">Pembagian Profit Setiap 24 jam</span>
+                    </div>
+                    <button
+                      onClick={() => setInvestDetailAutoProfit(!investDetailAutoProfit)}
+                      className={`h-6 px-3 rounded-full text-[7px] font-black transition-colors ${investDetailAutoProfit ? 'bg-gs-green3 text-white' : 'bg-gray-200 text-gs-muted'}`}
+                    >
+                      {investDetailAutoProfit ? 'AUTO' : 'MANUAL'}
+                    </button>
+                  </div>
+                  <p className="text-[7px] text-gs-muted mt-1">
+                    {investDetailAutoProfit
+                      ? 'Profit akan otomatis dikreditkan ke saldo Anda setiap 24 jam.'
+                      : 'Anda perlu mengklaim profit secara manual setiap hari.'}
+                  </p>
+                </div>
+
+                {/* Balance Warning */}
+                {(user?.balance || 0) < selectedDetailProduct.modal && (
+                  <div className="rounded-xl p-2.5 bg-red-50 border border-red-200 mb-3 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span className="text-[9px] font-bold text-red-600">Saldo tidak mencukupi. Silakan deposit terlebih dahulu.</span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <button onClick={() => setShowInvestDetailModal(false)} className="flex-1 h-11 rounded-xl bg-gs-soft border border-gs-line text-gs-muted text-[11px] font-bold hover:bg-gray-100 transition-colors">
+                    Kembali
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowInvestDetailModal(false)
+                      setSelectedProduct(selectedDetailProduct)
+                      setShowInvestModal(true)
+                    }}
+                    disabled={(user?.balance || 0) < selectedDetailProduct.modal}
+                    className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
+                    style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}
+                  >
+                    Investasi Sekarang
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>

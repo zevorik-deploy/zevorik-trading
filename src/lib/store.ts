@@ -6,6 +6,7 @@ interface User {
   phone: string
   email?: string
   balance: number
+  withdrawalBalance: number
   role: string
   avatar: string | null
   referralCode?: string
