@@ -134,6 +134,18 @@
   100% { background-color: transparent; }
 }
 
+@keyframes live-dot-pulse {
+  0% { r: 4; opacity: 1; }
+  50% { r: 7; opacity: 0.4; }
+  100% { r: 4; opacity: 1; }
+}
+
+@keyframes live-dot-ring {
+  0% { r: 4; opacity: 0.6; }
+  80% { r: 12; opacity: 0; }
+  100% { r: 4; opacity: 0; }
+}
+
 .animate-ticker {
   animation: ticker-scroll 25s linear infinite;
 }

@@ -17,7 +17,7 @@ import {
 import { toast } from '@/hooks/use-toast'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart as RePieChart, Pie, Cell
+  PieChart as RePieChart, Pie, Cell, ReferenceLine
 } from 'recharts'
 
 // ============================================
@@ -1318,10 +1318,12 @@ function Dashboard() {
                       const ihsgMax = Math.max(...ihsgPrices)
                       const ihsgRange = ihsgMax - ihsgMin || 1
                       const ihsgDomain: [number, number] = [Math.floor(ihsgMin - ihsgRange * 0.1), Math.ceil(ihsgMax + ihsgRange * 0.1)]
+                      const lastIhsgVal = ihsgChartData[ihsgChartData.length - 1].value
+                      const ihsgStroke = isIhsgUp ? '#4ade80' : '#f87171'
                       return (
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(ihsgChartData[ihsgChartData.length - 1].value)}</span>
+                            <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(lastIhsgVal)}</span>
                             <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-green-300' : 'text-red-300'}`}>
                               {isIhsgUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
                               {' '}{formatPercent(ihsgIdx.changePercent)}
@@ -1329,18 +1331,34 @@ function Dashboard() {
                           </div>
                           <div className="h-20 md:h-24">
                             <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={ihsgChartData} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
+                              <AreaChart data={ihsgChartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
                                 <defs>
                                   <linearGradient id="ihsgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0.45" />
-                                    <stop offset="50%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0.1" />
-                                    <stop offset="100%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0" />
+                                    <stop offset="0%" stopColor={ihsgStroke} stopOpacity="0.45" />
+                                    <stop offset="50%" stopColor={ihsgStroke} stopOpacity="0.1" />
+                                    <stop offset="100%" stopColor={ihsgStroke} stopOpacity="0" />
                                   </linearGradient>
                                 </defs>
                                 <XAxis dataKey="idx" hide />
                                 <YAxis hide domain={ihsgDomain} />
+                                <ReferenceLine y={lastIhsgVal} stroke={ihsgStroke} strokeDasharray="3 3" strokeOpacity={0.3} />
                                 <Tooltip formatter={(value: number) => [formatNumber(value), 'IHSG']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                                <Area type="monotone" dataKey="value" stroke={isIhsgUp ? '#4ade80' : '#f87171'} fill="url(#ihsgGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                <Area type="monotone" dataKey="value" stroke={ihsgStroke} fill="url(#ihsgGrad)" strokeWidth={2}
+                                  dot={(props: Record<string, unknown>) => {
+                                    const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                    if (index !== ihsgChartData.length - 1) return <g key={String(index)} />
+                                    return (
+                                      <g key="live-dot-ihsg">
+                                        <circle cx={cx} cy={cy} r={8} fill={ihsgStroke} opacity={0.2}>
+                                          <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
+                                        </circle>
+                                        <circle cx={cx} cy={cy} r={4} fill={ihsgStroke} stroke="#fff" strokeWidth={1.5} />
+                                      </g>
+                                    )
+                                  }}
+                                  activeDot={false}
+                                  isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
                               </AreaChart>
                             </ResponsiveContainer>
                           </div>
@@ -1425,7 +1443,7 @@ function Dashboard() {
                       {/* Recharts Mini AreaChart */}
                       <div className="h-[50px] md:h-[60px] -mx-1 mb-2">
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={sparkData}>
+                          <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
                             <defs>
                               <linearGradient id={`sparkGrad-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
@@ -1435,7 +1453,21 @@ function Dashboard() {
                             </defs>
                             <XAxis dataKey="i" hide />
                             <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
-                            <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sparkGrad-${s.id})`} strokeWidth={1.5} dot={false} activeDot={{ r: 2, strokeWidth: 0 }} />
+                            <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sparkGrad-${s.id})`} strokeWidth={1.5}
+                              dot={(props: Record<string, unknown>) => {
+                                const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                if (index !== sparkData.length - 1) return <g key={String(index)} />
+                                return (
+                                  <g key={`dot-${s.id}`}>
+                                    <circle cx={cx} cy={cy} r={5} fill={sparkColor} opacity={0.2}>
+                                      <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx={cx} cy={cy} r={3} fill={sparkColor} stroke="#fff" strokeWidth={1} />
+                                  </g>
+                                )
+                              }}
+                              activeDot={false} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -2243,7 +2275,7 @@ function Dashboard() {
                     <div className="h-32 px-1 pb-1">
                       {liveBuyChart.length > 2 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={liveBuyChart} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
+                          <AreaChart data={liveBuyChart} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
                             <defs>
                               <linearGradient id="buyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor="#17b85c" stopOpacity="0.4" />
@@ -2253,8 +2285,24 @@ function Dashboard() {
                             </defs>
                             <XAxis dataKey="time" hide />
                             <YAxis hide domain={computeYDomain(liveBuyChart, 0.12)} />
+                            <ReferenceLine y={liveBuyPrice} stroke="#17b85c" strokeDasharray="3 3" strokeOpacity={0.25} />
                             <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Beli']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                            <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#buyGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: '#17b85c' }} isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
+                            <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#buyGrad)" strokeWidth={2}
+                              dot={(props: Record<string, unknown>) => {
+                                const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                if (index !== liveBuyChart.length - 1) return <g key={String(index)} />
+                                return (
+                                  <g key="live-dot-buy">
+                                    <circle cx={cx} cy={cy} r={8} fill="#17b85c" opacity={0.2}>
+                                      <animate attributeName="r" values="6;12;6" dur="1.8s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.35;0;0.35" dur="1.8s" repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx={cx} cy={cy} r={4} fill="#17b85c" stroke="#fff" strokeWidth={1.5} />
+                                  </g>
+                                )
+                              }}
+                              activeDot={false}
+                              isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
                           </AreaChart>
                         </ResponsiveContainer>
                       ) : (
@@ -2282,7 +2330,7 @@ function Dashboard() {
                     <div className="h-32 px-1 pb-1">
                       {liveSellChart.length > 2 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={liveSellChart} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
+                          <AreaChart data={liveSellChart} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
                             <defs>
                               <linearGradient id="sellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
@@ -2292,8 +2340,24 @@ function Dashboard() {
                             </defs>
                             <XAxis dataKey="time" hide />
                             <YAxis hide domain={computeYDomain(liveSellChart, 0.12)} />
+                            <ReferenceLine y={liveSellPrice} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.25} />
                             <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Jual']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2' }} />
-                            <Area type="monotone" dataKey="price" stroke="#ef4444" fill="url(#sellGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: '#ef4444' }} isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
+                            <Area type="monotone" dataKey="price" stroke="#ef4444" fill="url(#sellGrad)" strokeWidth={2}
+                              dot={(props: Record<string, unknown>) => {
+                                const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                if (index !== liveSellChart.length - 1) return <g key={String(index)} />
+                                return (
+                                  <g key="live-dot-sell">
+                                    <circle cx={cx} cy={cy} r={8} fill="#ef4444" opacity={0.2}>
+                                      <animate attributeName="r" values="6;12;6" dur="1.8s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.35;0;0.35" dur="1.8s" repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx={cx} cy={cy} r={4} fill="#ef4444" stroke="#fff" strokeWidth={1.5} />
+                                  </g>
+                                )
+                              }}
+                              activeDot={false}
+                              isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
                           </AreaChart>
                         </ResponsiveContainer>
                       ) : (
