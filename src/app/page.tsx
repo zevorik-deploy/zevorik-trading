@@ -187,29 +187,92 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #f5f0e8 0%, #e8f5e9 50%, #c8e6c9 100%)' }}>
-      <div className="w-full max-w-[430px] mx-auto px-4 py-4 flex-1 flex flex-col">
-        {/* Top Navigation */}
-        <header className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
-              <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #f5f0e8 0%, #e8f5e9 50%, #c8e6c9 100%)' }}>
+      {/* Desktop Left Branding Panel - hidden on mobile */}
+      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="relative z-10 text-center text-white max-w-lg">
+          <div className="w-24 h-24 rounded-full bg-white p-2 mx-auto mb-6 shadow-[0_12px_40px_rgba(0,0,0,.3)]">
+            <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-black mb-3">Global Saham</h1>
+          <p className="text-green-200 text-sm lg:text-base mb-8 leading-relaxed">Platform investasi saham terpercaya dengan akses pasar real-time, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.</p>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
+              <BarChart3 className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
+              <b className="block text-sm font-black">Market</b>
+              <span className="block text-xs text-green-200 font-bold">Live</span>
             </div>
-            <div>
-              <b className="block text-[11px] leading-tight font-black text-gs-green3 tracking-wide">GLOBAL SAHAM</b>
-              <span className="block text-[7px] font-bold text-gs-green uppercase tracking-widest">GS Capital Access</span>
+            <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
+              <Users className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
+              <b className="block text-sm font-black">125K++</b>
+              <span className="block text-xs text-green-200 font-bold">Pengguna</span>
+            </div>
+            <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
+              <Shield className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
+              <b className="block text-sm font-black">Aman</b>
+              <span className="block text-xs text-green-200 font-bold">Terjamin</span>
             </div>
           </div>
-          <button
-            onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
-            className="h-8 px-4 rounded-xl bg-gs-green3 text-white text-[10px] font-bold hover:bg-gs-green transition-colors flex items-center gap-1"
-          >
-            {isLogin ? <><UserPlus className="w-3 h-3" />Daftar</> : <><LogIn className="w-3 h-3" />Masuk</>}
-          </button>
-        </header>
+          {/* Decorative chart line */}
+          <div className="mt-8 mx-auto h-12 w-full max-w-sm rounded-xl overflow-hidden bg-white/8 border border-white/12">
+            <svg className="w-full h-full" viewBox="0 0 400 50" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="deskChartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#d4a331" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#d4a331" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3 L400,50 L0,50Z" fill="url(#deskChartGrad)" />
+              <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#d4a331" strokeWidth="2.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side / Mobile Full Content */}
+      <div className="w-full md:w-1/2 lg:w-[45%] flex items-center justify-center px-4 py-4 md:px-8 md:py-8 min-h-screen md:min-h-0">
+        <div className="w-full max-w-[430px] md:max-w-md flex flex-col flex-1 md:flex-none md:justify-center">
+          {/* Top Navigation - mobile only */}
+          <header className="flex items-center justify-between mb-3 md:hidden">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
+                <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <b className="block text-[11px] leading-tight font-black text-gs-green3 tracking-wide">GLOBAL SAHAM</b>
+                <span className="block text-[7px] font-bold text-gs-green uppercase tracking-widest">GS Capital Access</span>
+              </div>
+            </div>
+            <button
+              onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
+              className="h-8 px-4 rounded-xl bg-gs-green3 text-white text-[10px] font-bold hover:bg-gs-green transition-colors flex items-center gap-1"
+            >
+              {isLogin ? <><UserPlus className="w-3 h-3" />Daftar</> : <><LogIn className="w-3 h-3" />Masuk</>}
+            </button>
+          </header>
+
+          {/* Desktop switch button */}
+          <div className="hidden md:flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
+                <img src="/logo.svg" alt="Global Saham" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <b className="block text-xs leading-tight font-black text-gs-green3 tracking-wide">GLOBAL SAHAM</b>
+                <span className="block text-[9px] font-bold text-gs-green uppercase tracking-widest">GS Capital Access</span>
+              </div>
+            </div>
+            <button
+              onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
+              className="h-9 px-5 rounded-xl bg-gs-green3 text-white text-xs font-bold hover:bg-gs-green transition-colors flex items-center gap-1.5"
+            >
+              {isLogin ? <><UserPlus className="w-3.5 h-3.5" />Daftar</> : <><LogIn className="w-3.5 h-3.5" />Masuk</>}
+            </button>
+          </div>
 
         {/* Main Card */}
-        <div className="rounded-3xl bg-white shadow-xl overflow-hidden flex-1 flex flex-col">
+        <div className="rounded-3xl bg-white shadow-xl overflow-hidden flex-1 md:flex-none flex flex-col">
           {/* Green Header Section */}
           <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
@@ -474,15 +537,15 @@ function LoginPage() {
         {/* Footer */}
         <div className="mt-3 pb-2">
           <div className="text-center mb-2">
-            <b className="block text-[9px] font-black text-gs-green3">Legalitas Perusahaan</b>
-            <span className="block mt-0.5 text-[8px] font-semibold text-gs-muted">Halaman resmi Global Saham</span>
+            <b className="block text-[9px] md:text-[10px] font-black text-gs-green3">Legalitas Perusahaan</b>
+            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-gs-muted">Halaman resmi Global Saham</span>
           </div>
           <div className="flex items-center justify-center gap-3 mb-2">
             <Shield className="w-4 h-4 text-gs-green" />
             <CheckCircle className="w-4 h-4 text-gs-gold" />
             <Lock className="w-4 h-4 text-gs-green" />
           </div>
-          <div className="flex items-center justify-center gap-2 text-[8px] font-bold text-gs-muted">
+          <div className="flex items-center justify-center gap-2 text-[8px] md:text-[9px] font-bold text-gs-muted">
             <span>Investasi Aman</span>
             <span>•</span>
             <span>Market Live</span>
@@ -490,7 +553,8 @@ function LoginPage() {
             <span>125K++ Pengguna</span>
           </div>
         </div>
-      </div>
+        </div>{/* end max-w-md wrapper */}
+      </div>{/* end right-side container */}
     </div>
   )
 }
@@ -832,10 +896,10 @@ function Dashboard() {
 
   // ============ RENDER ============
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 md:pl-[72px] lg:pl-[80px]">
       {/* Top Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-gs-line shadow-sm">
-        <div className="max-w-[430px] mx-auto px-3 py-2.5 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-gs-soft border border-gs-line grid place-items-center">
               <Menu className="w-4 h-4 text-gs-green3" />
@@ -844,8 +908,8 @@ function Dashboard() {
               <img src="/logo.svg" alt="GS" className="w-full h-full object-contain" />
             </div>
             <div>
-              <b className="block text-[10px] font-black text-gs-green3 leading-tight">GLOBAL SAHAM</b>
-              <span className="block text-[7px] font-bold text-gs-muted">Dashboard</span>
+              <b className="block text-[10px] md:text-xs font-black text-gs-green3 leading-tight">GLOBAL SAHAM</b>
+              <span className="block text-[7px] md:text-[9px] font-bold text-gs-muted">Dashboard</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -863,12 +927,12 @@ function Dashboard() {
       {/* Market Indices Bar */}
       {indices.length > 0 && (
         <div className="bg-white border-b border-gs-line overflow-x-auto">
-          <div className="max-w-[430px] mx-auto flex gap-3 px-3 py-1.5">
+          <div className="max-w-7xl mx-auto flex gap-3 px-3 md:px-6 py-1.5">
             {indices.map(idx => (
               <div key={idx.id} className="flex-shrink-0 flex items-center gap-1">
-                <span className="text-[8px] font-black text-gs-green3">{idx.code}</span>
-                <span className="text-[9px] font-black text-gs-text tabular-nums">{formatNumber(idx.value)}</span>
-                <span className={`text-[8px] font-black ${idx.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(idx.changePercent)}</span>
+                <span className="text-[8px] md:text-[9px] font-black text-gs-green3">{idx.code}</span>
+                <span className="text-[9px] md:text-[10px] font-black text-gs-text tabular-nums">{formatNumber(idx.value)}</span>
+                <span className={`text-[8px] md:text-[9px] font-black ${idx.changePercent >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(idx.changePercent)}</span>
               </div>
             ))}
           </div>
@@ -876,7 +940,7 @@ function Dashboard() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-[430px] mx-auto w-full px-3 py-3 pb-24">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 md:px-6 py-3 pb-20 md:pb-6">
         <AnimatePresence mode="wait">
           {/* ====== HOME TAB ====== */}
           {activeTab === 'home' && (
@@ -886,8 +950,8 @@ function Dashboard() {
                 <div className="p-4 text-white">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <span className="text-[9px] font-medium text-green-200">Selamat datang,</span>
-                      <b className="block text-sm font-black">{user?.name}</b>
+                      <span className="text-[9px] md:text-[10px] font-medium text-green-200">Selamat datang,</span>
+                      <b className="block text-sm md:text-base font-black">{user?.name}</b>
                     </div>
                     <div className="flex items-center gap-2">
                       {user?.kycStatus === 'verified' && (
@@ -904,7 +968,7 @@ function Dashboard() {
                   <div className="mb-2">
                     <span className="text-[9px] font-medium text-green-200">Total Aset</span>
                     <div className="flex items-center gap-2">
-                      <b className="text-xl font-black">{showBalance ? formatRupiah(portfolioSummary.totalAssets) : '••••••••'}</b>
+                      <b className="text-xl md:text-2xl font-black">{showBalance ? formatRupiah(portfolioSummary.totalAssets) : '••••••••'}</b>
                       <button onClick={() => setShowBalance(!showBalance)} className="text-white/60 hover:text-white">
                         {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
@@ -912,16 +976,16 @@ function Dashboard() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] font-medium text-green-200">Saldo Kas</span>
-                      <b className="block text-[11px] font-black mt-0.5">{showBalance ? formatRupiah(portfolioSummary.cashBalance) : '••••'}</b>
+                      <span className="text-[7px] md:text-[8px] font-medium text-green-200">Saldo Kas</span>
+                      <b className="block text-[11px] md:text-xs font-black mt-0.5">{showBalance ? formatRupiah(portfolioSummary.cashBalance) : '••••'}</b>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] font-medium text-green-200">Investasi</span>
-                      <b className="block text-[11px] font-black mt-0.5">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••'}</b>
+                      <span className="text-[7px] md:text-[8px] font-medium text-green-200">Investasi</span>
+                      <b className="block text-[11px] md:text-xs font-black mt-0.5">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••'}</b>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] font-medium text-green-200">Profit/Loss</span>
-                      <b className={`block text-[11px] font-black mt-0.5 ${portfolioSummary.totalProfitLoss >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                      <span className="text-[7px] md:text-[8px] font-medium text-green-200">Profit/Loss</span>
+                      <b className={`block text-[11px] md:text-xs font-black mt-0.5 ${portfolioSummary.totalProfitLoss >= 0 ? 'text-green-300' : 'text-red-300'}`}>
                         {showBalance ? formatRupiah(portfolioSummary.totalProfitLoss) : '••••'}
                       </b>
                     </div>
@@ -940,7 +1004,7 @@ function Dashboard() {
                 ].map((a, i) => (
                   <button key={i} onClick={a.action} className="flex flex-col items-center gap-1 py-2.5 rounded-2xl bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow">
                     <div className={`w-8 h-8 rounded-lg ${a.color} grid place-items-center`}>{a.icon}</div>
-                    <span className="text-[7px] font-bold text-gs-green3">{a.label}</span>
+                    <span className="text-[7px] md:text-[8px] font-bold text-gs-green3">{a.label}</span>
                   </button>
                 ))}
               </div>
@@ -953,8 +1017,8 @@ function Dashboard() {
                       <CalendarDays className="w-5 h-5 text-yellow-300" />
                     </div>
                     <div>
-                      <b className="text-[11px] font-black text-gs-green3">Daily Check-in</b>
-                      <span className="block text-[8px] font-semibold text-gs-muted">Klaim bonus harian Anda</span>
+                      <b className="text-[11px] md:text-xs font-black text-gs-green3">Daily Check-in</b>
+                      <span className="block text-[8px] md:text-[9px] font-semibold text-gs-muted">Klaim bonus harian Anda</span>
                     </div>
                   </div>
                   <button onClick={handleCheckIn} className="h-8 px-4 rounded-xl bg-gs-green3 text-white text-[9px] font-bold hover:bg-gs-green transition-colors">
@@ -967,8 +1031,8 @@ function Dashboard() {
               {portfolio.length > 0 && (
                 <div className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] font-black text-gs-green3">Alokasi Portofolio</h3>
-                    <span className="text-[8px] font-bold text-gs-muted">{portfolio.length} saham</span>
+                    <h3 className="text-[11px] md:text-xs font-black text-gs-green3">Alokasi Portofolio</h3>
+                    <span className="text-[8px] md:text-[9px] font-bold text-gs-muted">{portfolio.length} saham</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-24 h-24 flex-shrink-0">
@@ -983,8 +1047,8 @@ function Dashboard() {
                         <div key={p.id} className="flex items-center gap-1.5">
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
                           <span className="text-[8px] font-black text-gs-green3 flex-shrink-0">{p.stock.code}</span>
-                          <span className="text-[7px] font-bold text-gs-muted flex-1">{formatRupiah(p.currentValue)}</span>
-                          <span className={`text-[7px] font-black ${p.profitLoss >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(p.profitLossPercent)}</span>
+                          <span className="text-[7px] md:text-[8px] font-bold text-gs-muted flex-1">{formatRupiah(p.currentValue)}</span>
+                          <span className={`text-[7px] md:text-[8px] font-black ${p.profitLoss >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(p.profitLossPercent)}</span>
                         </div>
                       ))}
                     </div>
@@ -996,12 +1060,12 @@ function Dashboard() {
               {stocks.length > 0 && (
                 <div className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] font-black text-gs-green3">Top Movers</h3>
-                    <button onClick={() => setActiveTab('market')} className="text-[8px] font-bold text-gs-green hover:underline">Lihat Semua</button>
+                    <h3 className="text-[11px] md:text-xs font-black text-gs-green3">Top Movers</h3>
+                    <button onClick={() => setActiveTab('market')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[8px] font-bold text-green-600 mb-1 block">🔺 Gainers</span>
+                      <span className="text-[8px] md:text-[9px] font-bold text-green-600 mb-1 block">🔺 Gainers</span>
                       {topGainers.slice(0, 3).map(s => (
                         <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-gs-line last:border-0">
                           <div className="flex items-center gap-1.5">
@@ -1032,7 +1096,7 @@ function Dashboard() {
               {watchlist.length > 0 && (
                 <div className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] font-black text-gs-green3">Watchlist</h3>
+                    <h3 className="text-[11px] md:text-xs font-black text-gs-green3">Watchlist</h3>
                     <Star className="w-3.5 h-3.5 text-gs-gold" />
                   </div>
                   <div className="space-y-1.5">
@@ -1059,8 +1123,8 @@ function Dashboard() {
               {transactions.length > 0 && (
                 <div className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] font-black text-gs-green3">Transaksi Terakhir</h3>
-                    <button onClick={() => setActiveTab('history')} className="text-[8px] font-bold text-gs-green hover:underline">Lihat Semua</button>
+                    <h3 className="text-[11px] md:text-xs font-black text-gs-green3">Transaksi Terakhir</h3>
+                    <button onClick={() => setActiveTab('history')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
                   </div>
                   {transactions.slice(0, 4).map(tx => (
                     <div key={tx.id} className="flex items-center justify-between py-1.5 border-b border-gs-line last:border-0">
@@ -1086,8 +1150,8 @@ function Dashboard() {
               {news.length > 0 && (
                 <div className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] font-black text-gs-green3">Berita Terkini</h3>
-                    <button onClick={() => setActiveTab('news')} className="text-[8px] font-bold text-gs-green hover:underline">Lihat Semua</button>
+                    <h3 className="text-[11px] md:text-xs font-black text-gs-green3">Berita Terkini</h3>
+                    <button onClick={() => setActiveTab('news')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
                   </div>
                   {news.slice(0, 3).map(n => (
                     <div key={n.id} className="py-2 border-b border-gs-line last:border-0">
@@ -1103,91 +1167,195 @@ function Dashboard() {
           {/* ====== MARKET TAB ====== */}
           {activeTab === 'market' && (
             <motion.div key="market" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              {/* Market Overview Section */}
+              {indices.length > 0 && (
+                <div className="rounded-2xl overflow-hidden mb-4 bg-white border border-gs-line shadow-sm">
+                  <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-yellow-300" />
+                        <span className="text-[10px] md:text-xs font-black text-white">Market Overview</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-[7px] md:text-[8px] font-bold text-green-200">LIVE</span>
+                      </div>
+                    </div>
+                    {(() => {
+                      const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
+                      if (!ihsgIdx) return null
+                      // Generate IHSG chart data
+                      const ihsgChartPts: {idx: number; value: number}[] = []
+                      let val = ihsgIdx.value - ihsgIdx.value * 0.01
+                      for (let i = 0; i < 30; i++) {
+                        val += (Math.random() - 0.48) * ihsgIdx.value * 0.002
+                        val = Math.max(ihsgIdx.value * 0.98, Math.min(ihsgIdx.value * 1.02, val))
+                        ihsgChartPts.push({ idx: i, value: Math.round(val) })
+                      }
+                      ihsgChartPts.push({ idx: 30, value: ihsgIdx.value })
+                      const isIhsgUp = ihsgIdx.changePercent >= 0
+                      return (
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(ihsgIdx.value)}</span>
+                            <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-green-300' : 'text-red-300'}`}>
+                              {isIhsgUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
+                              {' '}{formatPercent(ihsgIdx.changePercent)}
+                            </span>
+                          </div>
+                          <div className="h-16 md:h-20">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={ihsgChartPts}>
+                                <defs>
+                                  <linearGradient id="ihsgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0.4" />
+                                    <stop offset="100%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0" />
+                                  </linearGradient>
+                                </defs>
+                                <XAxis dataKey="idx" hide />
+                                <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
+                                <Tooltip formatter={(value: number) => [formatNumber(value), 'IHSG']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
+                                <Area type="monotone" dataKey="value" stroke={isIhsgUp ? '#4ade80' : '#f87171'} fill="url(#ihsgGrad)" strokeWidth={2} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-3 gap-0 divide-x divide-gs-line">
+                    {(() => {
+                      const gainer = topGainers[0]
+                      const loser = topLosers[0]
+                      const mostActive = stocks.length > 0 ? [...stocks].sort((a, b) => b.volume - a.volume)[0] : null
+                      return (
+                        <>
+                          <div className="p-2 md:p-3 text-center">
+                            <span className="block text-[7px] md:text-[8px] font-bold text-green-600 mb-0.5">🔺 Top Gainer</span>
+                            <span className="block text-[10px] md:text-xs font-black text-gs-text">{gainer?.code || '-'}</span>
+                            <span className="block text-[8px] md:text-[10px] font-bold text-green-600">{gainer ? `+${gainer.changePercent.toFixed(2)}%` : '-'}</span>
+                          </div>
+                          <div className="p-2 md:p-3 text-center">
+                            <span className="block text-[7px] md:text-[8px] font-bold text-red-500 mb-0.5">🔻 Top Loser</span>
+                            <span className="block text-[10px] md:text-xs font-black text-gs-text">{loser?.code || '-'}</span>
+                            <span className="block text-[8px] md:text-[10px] font-bold text-red-500">{loser ? `${loser.changePercent.toFixed(2)}%` : '-'}</span>
+                          </div>
+                          <div className="p-2 md:p-3 text-center">
+                            <span className="block text-[7px] md:text-[8px] font-bold text-gs-gold mb-0.5">⚡ Most Active</span>
+                            <span className="block text-[10px] md:text-xs font-black text-gs-text">{mostActive?.code || '-'}</span>
+                            <span className="block text-[8px] md:text-[10px] font-bold text-gs-muted">{mostActive ? formatNumber(mostActive.volume) : '-'}</span>
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )}
+
               {/* Search */}
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gs-muted" />
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari saham..."
-                  className="w-full h-10 rounded-2xl bg-white border border-gs-line pl-9 pr-4 text-[12px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors placeholder:text-gray-400" />
+                  className="w-full h-10 rounded-2xl bg-white border border-gs-line pl-9 pr-4 text-[12px] md:text-sm font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors placeholder:text-gray-400" />
               </div>
 
               {/* Category Filter */}
               <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 custom-scrollbar">
                 {categories.map(c => (
                   <button key={c.key} onClick={() => setStockFilter(c.key)}
-                    className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-colors ${stockFilter === c.key ? 'bg-gs-green3 text-white' : 'bg-white border border-gs-line text-gs-muted hover:bg-gs-soft'}`}>
+                    className={`flex-shrink-0 h-7 md:h-8 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-bold transition-colors ${stockFilter === c.key ? 'bg-gs-green3 text-white' : 'bg-white border border-gs-line text-gs-muted hover:bg-gs-soft'}`}>
                     {c.label}
                   </button>
                 ))}
               </div>
 
-              {/* Stock List */}
-              <div className="space-y-1.5">
+              {/* Stock List - Multi Column Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3">
                 {filteredStocks.map(s => {
-                  // Generate sparkline from stock data
-                  const sparkPoints = (() => {
-                    const pts: number[] = []
+                  // Generate sparkline data for recharts
+                  const sparkData = (() => {
+                    const pts: {i: number; p: number}[] = []
                     let p = s.open
                     for (let i = 0; i < 20; i++) {
                       p += (Math.random() - 0.5) * s.price * 0.003
                       p = Math.max(s.low, Math.min(s.high, p))
-                      pts.push(p)
+                      pts.push({ i, p: Math.round(p) })
                     }
-                    pts.push(s.price)
+                    pts.push({ i: 20, p: Math.round(s.price) })
                     return pts
                   })()
-                  const sparkMin = Math.min(...sparkPoints)
-                  const sparkMax = Math.max(...sparkPoints)
-                  const sparkRange = sparkMax - sparkMin || 1
-                  const svgW = 80
-                  const svgH = 28
-                  const sparkPath = sparkPoints.map((p, i) => {
-                    const x = (i / (sparkPoints.length - 1)) * svgW
-                    const y = svgH - ((p - sparkMin) / sparkRange) * (svgH - 4) - 2
-                    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
-                  }).join(' ')
                   const isUp = s.changePercent >= 0
                   const sparkColor = isUp ? '#17b85c' : '#ef4444'
+                  const buyPrice = Math.round(s.price * 0.998)
+                  const sellPrice = Math.round(s.price * 1.002)
+                  const maxVol = Math.max(...stocks.map(st => st.volume), 1)
+                  const volPercent = Math.round((s.volume / maxVol) * 100)
 
                   return (
-                    <div key={s.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
+                    <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-shadow ${isUp ? 'border-green-100' : 'border-red-100'}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2" onClick={() => openStockDetail(s)}>
-                          <div className="w-9 h-9 rounded-xl bg-gs-soft grid place-items-center text-[9px] font-black text-gs-green3 cursor-pointer">{s.code.slice(0, 2)}</div>
-                          <div className="cursor-pointer">
-                            <span className="block text-[10px] font-black text-gs-text">{s.code}</span>
-                            <span className="block text-[8px] text-gs-muted max-w-[120px] truncate">{s.name}</span>
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(s)}>
+                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl grid place-items-center text-[9px] md:text-[10px] font-black ${isUp ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{s.code.slice(0, 2)}</div>
+                          <div>
+                            <span className="block text-[10px] md:text-xs font-black text-gs-text">{s.code}</span>
+                            <span className="block text-[7px] md:text-[8px] text-gs-muted max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
                           </div>
                         </div>
                         <button onClick={() => toggleWatchlist(s.id)} className="w-7 h-7 rounded-lg grid place-items-center hover:bg-gs-soft transition-colors">
                           <Star className={`w-3.5 h-3.5 ${isWatched(s.id) ? 'text-gs-gold fill-gs-gold' : 'text-gray-300'}`} />
                         </button>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="block text-[13px] font-black text-gs-text tabular-nums">{formatRupiah(s.price)}</span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`text-[9px] font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>
-                              {isUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
-                              {' '}{formatPercent(s.changePercent)}
-                            </span>
-                            <span className="text-[7px] text-gs-muted">Vol: {formatNumber(s.volume)}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {/* Mini Sparkline */}
-                          <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} className="flex-shrink-0">
+
+                      {/* Recharts Mini AreaChart */}
+                      <div className="h-[50px] md:h-[60px] -mx-1 mb-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={sparkData}>
                             <defs>
-                              <linearGradient id={`sparkFill-${s.code}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor={sparkColor} stopOpacity="0.2" />
+                              <linearGradient id={`sparkGrad-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
+                                <stop offset="70%" stopColor={sparkColor} stopOpacity="0.05" />
                                 <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
                               </linearGradient>
                             </defs>
-                            <path d={`${sparkPath} L${svgW},${svgH} L0,${svgH}Z`} fill={`url(#sparkFill-${s.code})`} />
-                            <path d={sparkPath} fill="none" stroke={sparkColor} strokeWidth="1.5" />
-                          </svg>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => openTrade(s, 'buy')} className="h-7 px-3 rounded-lg bg-green-600 text-white text-[8px] font-bold hover:bg-green-700 transition-colors">Beli</button>
-                            <button onClick={() => openTrade(s, 'sell')} className="h-7 px-3 rounded-lg bg-red-500 text-white text-[8px] font-bold hover:bg-red-600 transition-colors">Jual</button>
+                            <XAxis dataKey="i" hide />
+                            <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                            <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sparkGrad-${s.id})`} strokeWidth={1.5} dot={false} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <span className="block text-[13px] md:text-sm font-black text-gs-text tabular-nums">{formatRupiah(s.price)}</span>
+                          <div className={`inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-md ${isUp ? 'bg-green-50' : 'bg-red-50'}`}>
+                            {isUp ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
+                            <span className={`text-[9px] md:text-[10px] font-bold ${isUp ? 'text-green-600' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 md:gap-1.5">
+                          <button onClick={() => openTrade(s, 'buy')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-green-600 text-white text-[8px] md:text-[9px] font-bold hover:bg-green-700 transition-colors">Beli</button>
+                          <button onClick={() => openTrade(s, 'sell')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-red-500 text-white text-[8px] md:text-[9px] font-bold hover:bg-red-600 transition-colors">Jual</button>
+                        </div>
+                      </div>
+
+                      {/* Buy/Sell Price + Volume - Desktop extra info */}
+                      <div className="mt-2 pt-2 border-t border-gs-line grid grid-cols-3 gap-1">
+                        <div>
+                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Beli</span>
+                          <span className="block text-[8px] md:text-[9px] font-black text-green-700 tabular-nums">{formatRupiah(buyPrice)}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Jual</span>
+                          <span className="block text-[8px] md:text-[9px] font-black text-red-600 tabular-nums">{formatRupiah(sellPrice)}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Vol</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[7px] md:text-[8px] font-bold text-gs-text">{formatNumber(s.volume)}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-gs-soft overflow-hidden">
+                              <div className={`h-full rounded-full ${isUp ? 'bg-green-500' : 'bg-red-400'}`} style={{ width: `${volPercent}%` }} />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1195,9 +1363,9 @@ function Dashboard() {
                   )
                 })}
                 {filteredStocks.length === 0 && (
-                  <div className="text-center py-8">
+                  <div className="col-span-full text-center py-8">
                     <BarChart3 className="w-10 h-10 text-gs-muted mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-gs-muted">Tidak ada saham ditemukan</p>
+                    <p className="text-[11px] md:text-sm font-bold text-gs-muted">Tidak ada saham ditemukan</p>
                   </div>
                 )}
               </div>
@@ -1231,36 +1399,36 @@ function Dashboard() {
               </div>
 
               {/* Holdings */}
-              <h3 className="text-[11px] font-black text-gs-green3 mb-2">Saham Dimiliki</h3>
-              <div className="space-y-2">
+              <h3 className="text-[11px] md:text-sm font-black text-gs-green3 mb-2">Saham Dimiliki</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
                 {portfolio.map(p => (
-                  <div key={p.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
+                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2" onClick={() => openStockDetail(p.stock)}>
-                        <div className="w-8 h-8 rounded-lg bg-gs-soft grid place-items-center text-[8px] font-black text-gs-green3 cursor-pointer">{p.stock.code.slice(0, 2)}</div>
-                        <div className="cursor-pointer">
-                          <span className="block text-[10px] font-black text-gs-text">{p.stock.code}</span>
-                          <span className="block text-[7px] text-gs-muted">{p.shares} lot × {formatRupiah(p.avgPrice)}</span>
+                      <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg grid place-items-center text-[8px] md:text-[10px] font-black cursor-pointer ${p.profitLoss >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{p.stock.code.slice(0, 2)}</div>
+                        <div>
+                          <span className="block text-[10px] md:text-xs font-black text-gs-text">{p.stock.code}</span>
+                          <span className="block text-[7px] md:text-[8px] text-gs-muted">{p.shares} lot × {formatRupiah(p.avgPrice)}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="block text-[10px] font-black text-gs-text tabular-nums">{formatRupiah(p.currentValue)}</span>
-                        <span className={`block text-[9px] font-bold ${p.profitLoss >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        <span className="block text-[10px] md:text-xs font-black text-gs-text tabular-nums">{formatRupiah(p.currentValue)}</span>
+                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                           {formatRupiah(p.profitLoss)} ({formatPercent(p.profitLossPercent)})
                         </span>
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <button onClick={() => openTrade(p.stock, 'buy')} className="flex-1 h-7 rounded-lg bg-green-600 text-white text-[8px] font-bold">+ Tambah</button>
-                      <button onClick={() => openTrade(p.stock, 'sell')} className="flex-1 h-7 rounded-lg bg-red-500 text-white text-[8px] font-bold">Jual</button>
+                      <button onClick={() => openTrade(p.stock, 'buy')} className="flex-1 h-7 md:h-8 rounded-lg bg-green-600 text-white text-[8px] md:text-[9px] font-bold">+ Tambah</button>
+                      <button onClick={() => openTrade(p.stock, 'sell')} className="flex-1 h-7 md:h-8 rounded-lg bg-red-500 text-white text-[8px] md:text-[9px] font-bold">Jual</button>
                     </div>
                   </div>
                 ))}
                 {portfolio.length === 0 && (
-                  <div className="text-center py-8">
+                  <div className="col-span-full text-center py-8">
                     <Briefcase className="w-10 h-10 text-gs-muted mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-gs-muted">Belum ada saham di portofolio</p>
-                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gs-green3 text-white text-[9px] font-bold">Mulai Investasi</button>
+                    <p className="text-[11px] md:text-sm font-bold text-gs-muted">Belum ada saham di portofolio</p>
+                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gs-green3 text-white text-[9px] md:text-[10px] font-bold">Mulai Investasi</button>
                   </div>
                 )}
               </div>
@@ -1270,12 +1438,13 @@ function Dashboard() {
           {/* ====== FINANCE TAB ====== */}
           {activeTab === 'finance' && (
             <motion.div key="finance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <div className="max-w-lg mx-auto">
               {/* Finance Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] font-bold transition-colors ${financeTab === 'deposit' ? 'bg-gs-green3 text-white' : 'bg-white border border-gs-line text-gs-muted'}`}>
+                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'deposit' ? 'bg-gs-green3 text-white' : 'bg-white border border-gs-line text-gs-muted'}`}>
                   <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
                 </button>
-                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] font-bold transition-colors ${financeTab === 'withdraw' ? 'bg-gs-green3 text-white' : 'bg-white border border-gs-line text-gs-muted'}`}>
+                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'withdraw' ? 'bg-gs-green3 text-white' : 'bg-white border border-gs-line text-gs-muted'}`}>
                   <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
                 </button>
               </div>
@@ -1392,13 +1561,14 @@ function Dashboard() {
                   </div>
                 </>
               )}
+            </div>
             </motion.div>
           )}
 
           {/* ====== HISTORY TAB ====== */}
           {activeTab === 'history' && (
             <motion.div key="history" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-[14px] font-black text-gs-green3 mb-3">Riwayat Transaksi</h2>
+              <h2 className="text-[14px] md:text-lg font-black text-gs-green3 mb-3">Riwayat Transaksi</h2>
 
               {/* Filter */}
               <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3">
@@ -1456,8 +1626,8 @@ function Dashboard() {
               <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Gift className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
-                  <h2 className="text-[16px] font-black">Program Referral</h2>
-                  <p className="text-[9px] text-green-200 mt-1">Ajak teman dan dapatkan bonus untuk setiap referral</p>
+                  <h2 className="text-[16px] md:text-xl font-black">Program Referral</h2>
+                  <p className="text-[9px] md:text-[10px] text-green-200 mt-1">Ajak teman dan dapatkan bonus untuk setiap referral</p>
 
                   <div className="mt-4 rounded-2xl p-3 bg-white/10 border border-white/15">
                     <span className="block text-[8px] font-bold text-green-200 mb-1">Kode Referral Anda</span>
@@ -1523,7 +1693,7 @@ function Dashboard() {
           {/* ====== NEWS TAB ====== */}
           {activeTab === 'news' && (
             <motion.div key="news" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-[14px] font-black text-gs-green3 mb-3">Berita & Edukasi</h2>
+              <h2 className="text-[14px] md:text-lg font-black text-gs-green3 mb-3">Berita & Edukasi</h2>
               <div className="space-y-2">
                 {news.map(n => (
                   <div key={n.id} className="rounded-2xl p-3 bg-white border border-gs-line shadow-sm">
@@ -1552,8 +1722,8 @@ function Dashboard() {
               <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Flame className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
-                  <h2 className="text-[16px] font-black">Bonus Harian</h2>
-                  <p className="text-[9px] text-green-200 mt-1">Klaim bonus check-in setiap hari</p>
+                  <h2 className="text-[16px] md:text-xl font-black">Bonus Harian</h2>
+                  <p className="text-[9px] md:text-[10px] text-green-200 mt-1">Klaim bonus check-in setiap hari</p>
                   <button onClick={handleCheckIn} className="mt-3 h-10 px-8 rounded-2xl bg-yellow-500 text-gs-dark text-[11px] font-bold hover:bg-yellow-400 transition-colors">
                     Check-in Sekarang
                   </button>
@@ -1608,8 +1778,8 @@ function Dashboard() {
               <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Trophy className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
-                  <h2 className="text-[16px] font-black">Leaderboard</h2>
-                  <p className="text-[9px] text-green-200 mt-1">Top investor dengan profit tertinggi</p>
+                  <h2 className="text-[16px] md:text-xl font-black">Leaderboard</h2>
+                  <p className="text-[9px] md:text-[10px] text-green-200 mt-1">Top investor dengan profit tertinggi</p>
                 </div>
               </div>
 
@@ -1645,8 +1815,8 @@ function Dashboard() {
                   <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/30 grid place-items-center mx-auto mb-2">
                     <User className="w-8 h-8 text-yellow-300" />
                   </div>
-                  <h2 className="text-[14px] font-black">{user?.name}</h2>
-                  <span className="block text-[9px] text-green-200 mt-0.5">+62 {user?.phone}</span>
+                  <h2 className="text-[14px] md:text-lg font-black">{user?.name}</h2>
+                  <span className="block text-[9px] md:text-[10px] text-green-200 mt-0.5">+62 {user?.phone}</span>
                   <div className="flex items-center justify-center gap-2 mt-2">
                     <span className="h-5 px-2 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[7px] font-bold text-yellow-300 flex items-center gap-1">
                       <Award className="w-2.5 h-2.5" />Gold VIP
@@ -1749,8 +1919,8 @@ function Dashboard() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gs-line shadow-[0_-2px_10px_rgba(0,0,0,.05)]">
-        <div className="max-w-[430px] mx-auto flex">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gs-line shadow-[0_-2px_10px_rgba(0,0,0,.05)] md:hidden">
+        <div className="max-w-7xl mx-auto flex">
           {[
             { key: 'home', label: 'Beranda', icon: HomeIcon },
             { key: 'market', label: 'Pasar', icon: BarChart3 },
@@ -1770,12 +1940,38 @@ function Dashboard() {
         </div>
       </nav>
 
+      {/* Desktop Sidebar Navigation - hidden on mobile */}
+      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] bg-white border-r border-gs-line flex-col items-center pt-16 pb-4 gap-1">
+        {[
+          { key: 'home', label: 'Beranda', icon: HomeIcon },
+          { key: 'market', label: 'Pasar', icon: BarChart3 },
+          { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
+          { key: 'finance', label: 'Keuangan', icon: Wallet },
+          { key: 'history', label: 'Riwayat', icon: History },
+          { key: 'bonus', label: 'Bonus', icon: Gift },
+          { key: 'profile', label: 'Profil', icon: User },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-colors ${activeTab === tab.key ? 'text-gs-green3 bg-green-50' : 'text-gs-muted hover:text-gs-green hover:bg-gs-soft'}`}>
+            <tab.icon className="w-5 h-5" />
+            <span className="text-[7px] lg:text-[8px] font-bold">{tab.label}</span>
+          </button>
+        ))}
+        <div className="mt-auto">
+          <button onClick={() => { logout(); toast({ title: 'Berhasil logout' }) }}
+            className="w-full flex flex-col items-center gap-0.5 py-2.5 text-red-400 hover:text-red-600 transition-colors">
+            <LogOut className="w-5 h-5" />
+            <span className="text-[7px] lg:text-[8px] font-bold">Keluar</span>
+          </button>
+        </div>
+      </nav>
+
       {/* Side Menu */}
       <AnimatePresence>
         {showSideMenu && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowSideMenu(false)} />
-            <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[270px] bg-white shadow-2xl overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[270px] md:w-[320px] bg-white shadow-2xl overflow-y-auto custom-scrollbar">
               <div className="p-4" style={{ background: 'linear-gradient(145deg, #042d1a 0%, #08713a 54%, #17b85c 100%)' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-white/20 grid place-items-center"><User className="w-6 h-6 text-yellow-300" /></div>
@@ -1820,7 +2016,7 @@ function Dashboard() {
         {showNotifPanel && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowNotifPanel(false)} />
-            <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[300px] bg-white shadow-2xl overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[300px] md:w-[380px] bg-white shadow-2xl overflow-y-auto custom-scrollbar">
               <div className="p-4 border-b border-gs-line flex items-center justify-between">
                 <h3 className="text-[13px] font-black text-gs-green3">Notifikasi</h3>
                 <div className="flex items-center gap-2">
@@ -1859,7 +2055,7 @@ function Dashboard() {
         {showStockDetail && selectedStock && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowStockDetail(false)} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] bg-white rounded-t-3xl shadow-2xl overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-2xl md:mx-auto md:my-auto">
               <div className="sticky top-0 bg-white p-4 border-b border-gs-line flex items-center justify-between rounded-t-3xl">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-xl bg-gs-soft grid place-items-center text-[10px] font-black text-gs-green3">{selectedStock.code.slice(0, 2)}</div>
@@ -2060,7 +2256,7 @@ function Dashboard() {
         {tradeModal && selectedStock && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setTradeModal(null)} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center bg-white rounded-t-3xl md:rounded-3xl shadow-2xl md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-[14px] font-black text-gs-green3">
