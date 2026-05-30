@@ -612,70 +612,99 @@ function Dashboard() {
   const [liveBuyPrice, setLiveBuyPrice] = useState(0)
   const [liveSellPrice, setLiveSellPrice] = useState(0)
   const [liveChartActive, setLiveChartActive] = useState(false)
-  const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number; momentum: number}>({buyPrice: 0, sellPrice: 0, trend: 0, momentum: 0})
-  const MAX_CHART_POINTS = 80
+  const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number; momentum: number; phase: number}>({buyPrice: 0, sellPrice: 0, trend: 0, momentum: 0, phase: 0})
+  const MAX_CHART_POINTS = 60
 
   // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
   const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
+  const sparklineStockHash = useRef<Map<string, string>>(new Map())
 
   const getSparklineData = useCallback((stock: Stock) => {
-    if (sparklineCache.current.has(stock.id)) {
+    // Only regenerate if stock price actually changed
+    const hash = `${stock.price}-${stock.open}-${stock.high}-${stock.low}`
+    if (sparklineCache.current.has(stock.id) && sparklineStockHash.current.get(stock.id) === hash) {
       return sparklineCache.current.get(stock.id)!
     }
+    // Generate realistic stock-like sparkline with trend phases
     const pts: {i: number; p: number}[] = []
+    const range = stock.high - stock.low
     let p = stock.open
     let prevD = 0
+    // Pick a trend direction based on whether stock is up or down
+    const mainTrend = stock.changePercent >= 0 ? 1 : -1
     for (let i = 0; i < 25; i++) {
-      const d = prevD * 0.8 + (Math.random() - 0.48) * stock.price * 0.0006
+      // Trend phase: stronger push in the trend direction, with pullbacks
+      const phaseNoise = Math.sin(i * 0.4) * range * 0.03
+      const trendPush = mainTrend * range * 0.008
+      const d = prevD * 0.75 + (Math.random() - 0.5) * range * 0.015 + trendPush + phaseNoise
       prevD = d
       p += d
-      p += (stock.price - p) * 0.03 // mean reversion
+      // Gentle mean reversion toward current price
+      p += (stock.price - p) * 0.04
       p = Math.max(stock.low, Math.min(stock.high, p))
       pts.push({ i, p: Math.round(p) })
     }
     pts.push({ i: 25, p: Math.round(stock.price) })
     sparklineCache.current.set(stock.id, pts)
+    sparklineStockHash.current.set(stock.id, hash)
     return pts
   }, [])
 
-  // Clear sparkline cache when stocks change
-  useEffect(() => {
-    sparklineCache.current.clear()
-  }, [stocks])
+  // ============ HELPER: compute Y-axis domain from chart data ============
+  const computeYDomain = useCallback((data: {price: number}[], paddingPercent = 0.08): [number, number] => {
+    if (data.length === 0) return [0, 100]
+    const prices = data.map(d => d.price)
+    const min = Math.min(...prices)
+    const max = Math.max(...prices)
+    const range = max - min || 1
+    const pad = range * paddingPercent
+    return [Math.floor(min - pad), Math.ceil(max + pad)]
+  }, [])
 
-  // Live price simulation effect — ULTRA STABLE smooth walk
+  // Live price simulation — REALISTIC stock movement with trend phases
   useEffect(() => {
     if (!selectedStock || (!showStockDetail && !tradeModal)) {
       setLiveChartActive(false)
       return
     }
     const basePrice = selectedStock.price
-    const spread = basePrice * 0.0015 // tight spread
-    let buyPrice = basePrice - spread
-    let sellPrice = basePrice + spread
-    // Very gentle initial trend
-    let trend = (Math.random() - 0.5) * basePrice * 0.0001
-    let momentum = 0 // accumulated momentum for smoother transitions
+    const spread = basePrice * 0.002 // visible spread
+    let buyPrice = basePrice - spread / 2
+    let sellPrice = basePrice + spread / 2
+    // Realistic trend: start with a clear direction
+    let trend = (Math.random() > 0.5 ? 1 : -1) * basePrice * 0.0004
+    let momentum = 0
+    let phase = 0 // counter for trend phase switching
 
-    // Build smooth historical data with heavily correlated random walk
+    // Build realistic historical data with trend phases
     const initialBuy: {time: string; price: number}[] = []
     const initialSell: {time: string; price: number}[] = []
     let tempBuy = buyPrice
     let tempSell = sellPrice
     let prevDelta = 0
-    for (let i = 30; i >= 1; i--) {
-      // Heavy correlation: 85% previous + 15% tiny noise
-      const newDelta = prevDelta * 0.85 + (Math.random() - 0.5) * basePrice * 0.0003
+    let histTrend = (Math.random() > 0.5 ? 1 : -1) * basePrice * 0.0004
+    for (let i = 40; i >= 1; i--) {
+      // Switch trend phase every 10-15 points
+      if (i % 12 === 0) {
+        histTrend = (Math.random() > 0.5 ? 1 : -1) * basePrice * 0.0003
+      }
+      // Correlated walk with trend + slight pullback waves
+      const wave = Math.sin(i * 0.3) * basePrice * 0.0001
+      const newDelta = prevDelta * 0.7 + histTrend + (Math.random() - 0.5) * basePrice * 0.0005 + wave
       prevDelta = newDelta
-      tempBuy += newDelta - spread * 0.03
-      tempSell += newDelta + spread * 0.03
-      // Strong mean reversion toward base
-      tempBuy += (basePrice - tempBuy) * 0.05
-      tempSell += (basePrice - tempSell) * 0.05
-      // Keep within ±1.5% range (very tight)
-      tempBuy = Math.max(basePrice * 0.985, Math.min(basePrice * 1.015, tempBuy))
-      tempSell = Math.max(basePrice * 0.985, Math.min(basePrice * 1.015, tempSell))
-      const now = Date.now() - i * 3000
+      tempBuy += newDelta
+      tempSell += newDelta
+      // Keep buy/sell spread
+      const mid = (tempBuy + tempSell) / 2
+      tempBuy = mid - spread / 2
+      tempSell = mid + spread / 2
+      // Soft mean reversion (not too strong, allow trends)
+      tempBuy += (basePrice - tempBuy) * 0.02
+      tempSell += (basePrice - tempSell) * 0.02
+      // Allow wider range for realistic movement (±3%)
+      tempBuy = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, tempBuy))
+      tempSell = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, tempSell))
+      const now = Date.now() - i * 2000
       const timeStr = new Date(now).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
       initialBuy.push({time: timeStr, price: Math.round(tempBuy)})
       initialSell.push({time: timeStr, price: Math.round(tempSell)})
@@ -686,39 +715,41 @@ function Dashboard() {
     setLiveSellChart(initialSell)
     setLiveBuyPrice(Math.round(buyPrice))
     setLiveSellPrice(Math.round(sellPrice))
-    liveChartRef.current = {buyPrice, sellPrice, trend, momentum}
+    liveChartRef.current = {buyPrice, sellPrice, trend, momentum, phase}
     setLiveChartActive(true)
 
     const interval = setInterval(() => {
-      // Very slowly drift the trend — only 3% chance, tiny magnitude
-      if (Math.random() < 0.03) {
-        trend = (Math.random() - 0.5) * basePrice * 0.00015
+      phase++
+      // Switch trend phase every 8-15 ticks (16-30 seconds)
+      if (phase % (8 + Math.floor(Math.random() * 8)) === 0) {
+        trend = (Math.random() > 0.5 ? 1 : -1) * basePrice * (0.0003 + Math.random() * 0.0003)
       }
 
-      // Ultra-smooth correlated walk: 80% momentum + trend + tiny noise
-      const buyNoise = (Math.random() - 0.5) * basePrice * 0.00025
-      const sellNoise = (Math.random() - 0.5) * basePrice * 0.00025
-      const buyDelta = momentum * 0.8 + trend * 0.15 + buyNoise * 0.2
-      const sellDelta = momentum * 0.8 + trend * 0.15 + sellNoise * 0.2
-      momentum = (buyDelta + sellDelta) / 2 // shared momentum keeps buy/sell correlated
+      // Realistic walk: momentum carries through, noise is proportional to price
+      const noise = (Math.random() - 0.5) * basePrice * 0.0004
+      const delta = momentum * 0.7 + trend * 0.25 + noise * 0.3
+      momentum = delta * 0.6 // carry some momentum forward
 
-      buyPrice += buyDelta
-      sellPrice += sellDelta
+      buyPrice += delta
+      sellPrice += delta
 
-      // Ensure sell > buy (maintain spread)
-      if (sellPrice <= buyPrice) {
-        sellPrice = buyPrice + spread
-      }
+      // Maintain spread
+      const mid = (buyPrice + sellPrice) / 2
+      buyPrice = mid - spread / 2
+      sellPrice = mid + spread / 2
 
-      // Keep within ±1.5% range
-      buyPrice = Math.max(basePrice * 0.985, Math.min(basePrice * 1.015, buyPrice))
-      sellPrice = Math.max(basePrice * 0.985, Math.min(basePrice * 1.015, sellPrice))
+      // Ensure sell > buy
+      if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
 
-      // Strong mean reversion (pull back toward base price firmly)
-      buyPrice += (basePrice - buyPrice) * 0.015
-      sellPrice += (basePrice - sellPrice) * 0.015
+      // Allow ±3% range for realistic movement
+      buyPrice = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, buyPrice))
+      sellPrice = Math.max(basePrice * 0.97, Math.min(basePrice * 1.03, sellPrice))
 
-      liveChartRef.current = {buyPrice, sellPrice, trend, momentum}
+      // Light mean reversion (don't overdo it, let trends breathe)
+      buyPrice += (basePrice - buyPrice) * 0.008
+      sellPrice += (basePrice - sellPrice) * 0.008
+
+      liveChartRef.current = {buyPrice, sellPrice, trend, momentum, phase}
       const now = new Date()
       const timeStr = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
 
@@ -732,7 +763,7 @@ function Dashboard() {
       })
       setLiveBuyPrice(Math.round(buyPrice))
       setLiveSellPrice(Math.round(sellPrice))
-    }, 3000) // 3 second interval for ultra-smooth feel
+    }, 2000) // 2s interval — smooth but responsive
 
     return () => {
       clearInterval(interval)
@@ -1218,20 +1249,28 @@ function Dashboard() {
                     {(() => {
                       const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
                       if (!ihsgIdx) return null
-                      // Generate IHSG chart data — smooth stable walk
+                      // Generate IHSG chart data — realistic with trend phases
                       const ihsgChartPts: {idx: number; value: number}[] = []
-                      let val = ihsgIdx.value - ihsgIdx.value * 0.003
+                      let val = ihsgIdx.value - ihsgIdx.value * 0.004
                       let prevD = 0
-                      for (let i = 0; i < 30; i++) {
-                        const d = prevD * 0.85 + (Math.random() - 0.48) * ihsgIdx.value * 0.0003
+                      const ihsgTrend = ihsgIdx.changePercent >= 0 ? 1 : -1
+                      for (let i = 0; i < 40; i++) {
+                        const trendPush = ihsgTrend * ihsgIdx.value * 0.00005
+                        const wave = Math.sin(i * 0.25) * ihsgIdx.value * 0.0001
+                        const d = prevD * 0.75 + (Math.random() - 0.48) * ihsgIdx.value * 0.0004 + trendPush + wave
                         prevD = d
                         val += d
-                        val += (ihsgIdx.value - val) * 0.04 // strong mean reversion
-                        val = Math.max(ihsgIdx.value * 0.997, Math.min(ihsgIdx.value * 1.003, val))
+                        val += (ihsgIdx.value - val) * 0.025
+                        val = Math.max(ihsgIdx.value * 0.996, Math.min(ihsgIdx.value * 1.004, val))
                         ihsgChartPts.push({ idx: i, value: Math.round(val) })
                       }
-                      ihsgChartPts.push({ idx: 30, value: ihsgIdx.value })
+                      ihsgChartPts.push({ idx: 40, value: ihsgIdx.value })
                       const isIhsgUp = ihsgIdx.changePercent >= 0
+                      const ihsgPrices = ihsgChartPts.map(p => p.value)
+                      const ihsgMin = Math.min(...ihsgPrices)
+                      const ihsgMax = Math.max(...ihsgPrices)
+                      const ihsgRange = ihsgMax - ihsgMin || 1
+                      const ihsgDomain: [number, number] = [Math.floor(ihsgMin - ihsgRange * 0.1), Math.ceil(ihsgMax + ihsgRange * 0.1)]
                       return (
                         <div>
                           <div className="flex items-center gap-2 mb-1">
@@ -1241,7 +1280,7 @@ function Dashboard() {
                               {' '}{formatPercent(ihsgIdx.changePercent)}
                             </span>
                           </div>
-                          <div className="h-16 md:h-20">
+                          <div className="h-20 md:h-24">
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={ihsgChartPts}>
                                 <defs>
@@ -1251,7 +1290,7 @@ function Dashboard() {
                                   </linearGradient>
                                 </defs>
                                 <XAxis dataKey="idx" hide />
-                                <YAxis hide domain={[Math.round((ihsgIdx.value || 7000) * 0.995), Math.round((ihsgIdx.value || 7000) * 1.005)]} />
+                                <YAxis hide domain={ihsgDomain} />
                                 <Tooltip formatter={(value: number) => [formatNumber(value), 'IHSG']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
                                 <Area type="monotone" dataKey="value" stroke={isIhsgUp ? '#4ade80' : '#f87171'} fill="url(#ihsgGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} />
                               </AreaChart>
@@ -1347,7 +1386,7 @@ function Dashboard() {
                               </linearGradient>
                             </defs>
                             <XAxis dataKey="i" hide />
-                            <YAxis hide domain={[Math.round(s.price * 0.975), Math.round(s.price * 1.025)]} />
+                            <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
                             <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sparkGrad-${s.id})`} strokeWidth={1.5} dot={false} activeDot={{ r: 2, strokeWidth: 0 }} />
                           </AreaChart>
                         </ResponsiveContainer>
@@ -2153,21 +2192,21 @@ function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <div className="h-28 px-1 pb-1">
+                    <div className="h-32 px-1 pb-1">
                       {liveBuyChart.length > 2 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={liveBuyChart}>
+                          <AreaChart data={liveBuyChart} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
                             <defs>
                               <linearGradient id="buyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#17b85c" stopOpacity="0.35" />
-                                <stop offset="60%" stopColor="#17b85c" stopOpacity="0.08" />
+                                <stop offset="0%" stopColor="#17b85c" stopOpacity="0.4" />
+                                <stop offset="50%" stopColor="#17b85c" stopOpacity="0.12" />
                                 <stop offset="100%" stopColor="#17b85c" stopOpacity="0" />
                               </linearGradient>
                             </defs>
                             <XAxis dataKey="time" hide />
-                            <YAxis hide domain={[Math.round(selectedStock!.price * 0.975), Math.round(selectedStock!.price * 1.025)]} />
+                            <YAxis hide domain={computeYDomain(liveBuyChart, 0.12)} />
                             <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Beli']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                            <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#buyGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: '#17b85c' }} isAnimationActive={true} animationDuration={800} animationEasing="ease-in-out" />
+                            <Area type="monotone" dataKey="price" stroke="#17b85c" fill="url(#buyGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: '#17b85c' }} isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
                           </AreaChart>
                         </ResponsiveContainer>
                       ) : (
@@ -2192,21 +2231,21 @@ function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <div className="h-28 px-1 pb-1">
+                    <div className="h-32 px-1 pb-1">
                       {liveSellChart.length > 2 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={liveSellChart}>
+                          <AreaChart data={liveSellChart} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
                             <defs>
                               <linearGradient id="sellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.35" />
-                                <stop offset="60%" stopColor="#ef4444" stopOpacity="0.08" />
+                                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
+                                <stop offset="50%" stopColor="#ef4444" stopOpacity="0.12" />
                                 <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
                               </linearGradient>
                             </defs>
                             <XAxis dataKey="time" hide />
-                            <YAxis hide domain={[Math.round(selectedStock!.price * 0.975), Math.round(selectedStock!.price * 1.025)]} />
+                            <YAxis hide domain={computeYDomain(liveSellChart, 0.12)} />
                             <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Jual']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2' }} />
-                            <Area type="monotone" dataKey="price" stroke="#ef4444" fill="url(#sellGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: '#ef4444' }} isAnimationActive={true} animationDuration={800} animationEasing="ease-in-out" />
+                            <Area type="monotone" dataKey="price" stroke="#ef4444" fill="url(#sellGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: '#ef4444' }} isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
                           </AreaChart>
                         </ResponsiveContainer>
                       ) : (
