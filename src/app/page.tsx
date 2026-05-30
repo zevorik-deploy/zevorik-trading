@@ -658,8 +658,106 @@ function Dashboard() {
   const [selectedDetailProduct, setSelectedDetailProduct] = useState<InvestProduct | null>(null)
   const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
 
-  // ============ CANDLESTICK DATA CACHE ============
-  const candlestickCache = useRef<Map<string, {o: number; h: number; l: number; c: number}[]>>(new Map())
+  // ============ LIVE CANDLESTICK DATA ============
+  const [liveCandleData, setLiveCandleData] = useState<Map<string, {o: number; h: number; l: number; c: number}[]>>(new Map())
+  const candleStateRef = useRef<Map<string, {prevClose: number; momentum: number; trend: number}>>(new Map())
+  const MAX_CANDLES = 14
+
+  // Initialize candlestick data when products load
+  useEffect(() => {
+    if (investProducts.length === 0) return
+    setLiveCandleData(prev => {
+      const next = new Map(prev)
+      let changed = false
+      investProducts.forEach(p => {
+        if (next.has(p.id)) return
+        changed = true
+        const data: {o: number; h: number; l: number; c: number}[] = []
+        const basePrice = p.modal
+        let prevClose = basePrice * (0.97 + Math.random() * 0.06)
+        let momentum = 0
+        for (let i = 0; i < MAX_CANDLES; i++) {
+          // Random walk with momentum for natural zigzag
+          momentum = momentum * 0.6 + (Math.random() - 0.5) * basePrice * 0.012
+          const trend = (Math.random() - 0.48) * basePrice * 0.004
+          const change = momentum + trend
+          const open = prevClose
+          const close = open + change
+          const high = Math.max(open, close) + Math.random() * basePrice * 0.006
+          const low = Math.min(open, close) - Math.random() * basePrice * 0.006
+          data.push({ o: Math.round(open), h: Math.round(high), l: Math.round(Math.max(low, basePrice * 0.9)), c: Math.round(close) })
+          prevClose = close
+        }
+        next.set(p.id, data)
+        candleStateRef.current.set(p.id, { prevClose, momentum, trend: 0 })
+      })
+      return changed ? next : prev
+    })
+    // Also initialize investMovement for the first time
+    setInvestMovement(prev => {
+      if (prev.size > 0) return prev
+      const next = new Map(prev)
+      investProducts.forEach(p => {
+        if (next.has(p.id)) return
+        next.set(p.id, { change: 0, changePercent: 0 })
+      })
+      return next
+    })
+  }, [investProducts])
+
+  // Live candlestick update - adds new candle every 3 seconds
+  const liveCandleDataRef = useRef<Map<string, {o: number; h: number; l: number; c: number}[]>>(new Map())
+  useEffect(() => { liveCandleDataRef.current = liveCandleData }, [liveCandleData])
+
+  useEffect(() => {
+    if (investProducts.length === 0) return
+    const interval = setInterval(() => {
+      const newMovements = new Map<string, {change: number; changePercent: number}>()
+      const newCandleMap = new Map<string, {o: number; h: number; l: number; c: number}[]>()
+
+      investProducts.forEach(p => {
+        const candles = liveCandleDataRef.current.get(p.id)
+        if (!candles || candles.length === 0) return
+        const state = candleStateRef.current.get(p.id)
+        if (!state) return
+
+        // Random walk with momentum + soft mean reversion
+        const basePrice = p.modal
+        const reversion = (basePrice - state.prevClose) * 0.02
+        state.momentum = state.momentum * 0.55 + (Math.random() - 0.5) * basePrice * 0.014 + reversion * 0.3
+        state.trend = state.trend * 0.8 + (Math.random() - 0.48) * basePrice * 0.003
+        const change = state.momentum + state.trend
+
+        const open = state.prevClose
+        const close = open + change
+        const high = Math.max(open, close) + Math.random() * basePrice * 0.007
+        const low = Math.min(open, close) - Math.random() * basePrice * 0.007
+
+        const newCandle = { o: Math.round(open), h: Math.round(high), l: Math.round(Math.max(low, basePrice * 0.9)), c: Math.round(close) }
+        const updated = [...candles.slice(-(MAX_CANDLES - 1)), newCandle]
+        newCandleMap.set(p.id, updated)
+        state.prevClose = close
+
+        // Calculate movement
+        const changePercent = ((close - basePrice) / basePrice) * 100
+        newMovements.set(p.id, { change: Math.round(close - basePrice), changePercent: parseFloat(changePercent.toFixed(2)) })
+      })
+
+      if (newCandleMap.size > 0) {
+        setLiveCandleData(prev => {
+          const next = new Map(prev)
+          newCandleMap.forEach((v, k) => next.set(k, v))
+          return next
+        })
+        setInvestMovement(prev => {
+          const next = new Map(prev)
+          newMovements.forEach((v, k) => next.set(k, v))
+          return next
+        })
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [investProducts])
 
   const initialized2 = useRef(false)
   const stocksRef = useRef<Stock[]>([])
@@ -1025,26 +1123,10 @@ function Dashboard() {
     setShowWelcomeModal(false)
   }
 
-  // ============ CANDLESTICK DATA GENERATOR ============
+  // ============ CANDLESTICK DATA HELPER ============
   const getCandlestickData = useCallback((product: InvestProduct) => {
-    if (candlestickCache.current.has(product.id)) {
-      return candlestickCache.current.get(product.id)!
-    }
-    const data: {o: number; h: number; l: number; c: number}[] = []
-    const basePrice = product.modal
-    let prevClose = basePrice * (0.97 + Math.random() * 0.03)
-    for (let i = 0; i < 12; i++) {
-      const change = (Math.random() - 0.45) * basePrice * 0.015
-      const open = prevClose
-      const close = open + change
-      const high = Math.max(open, close) + Math.random() * basePrice * 0.008
-      const low = Math.min(open, close) - Math.random() * basePrice * 0.008
-      data.push({ o: Math.round(open), h: Math.round(high), l: Math.round(low), c: Math.round(close) })
-      prevClose = close
-    }
-    candlestickCache.current.set(product.id, data)
-    return data
-  }, [])
+    return liveCandleData.get(product.id) || []
+  }, [liveCandleData])
 
   // ============ TRADE ============
   const handleTrade = async () => {
@@ -1170,22 +1252,7 @@ function Dashboard() {
     finally { setTaskClaimingId(null) }
   }
 
-  // ============ INVESTMENT MOVEMENT SIMULATION ============
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newMap = new Map<string, {change: number; changePercent: number}>()
-      investProducts.forEach(p => {
-        const existing = investMovement.get(p.id)
-        const basePercent = existing?.changePercent || (Math.random() - 0.4) * 2
-        const newPercent = basePercent + (Math.random() - 0.5) * 0.3
-        const clampedPercent = Math.max(-3, Math.min(3, newPercent))
-        const change = p.modal * (clampedPercent / 100)
-        newMap.set(p.id, { change: Math.round(change), changePercent: parseFloat(clampedPercent.toFixed(2)) })
-      })
-      setInvestMovement(newMap)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [investProducts, investMovement])
+  // ============ INVESTMENT MOVEMENT (now driven by live candlestick data) ============
 
   // ============ INVESTMENT HANDLERS ============
   const handlePurchaseInvestment = async () => {
@@ -1220,31 +1287,30 @@ function Dashboard() {
     } finally { setClaimLoadingId(null) }
   }
 
-  // ============ INVESTMENT SPARKLINE ============
-  const investSparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
+  // ============ INVESTMENT SPARKLINE (live, updates with candlestick) ============
   const getInvestSparkline = useCallback((product: InvestProduct) => {
-    if (investSparklineCache.current.has(product.id)) {
-      return investSparklineCache.current.get(product.id)!
-    }
+    const candles = liveCandleData.get(product.id)
+    if (!candles || candles.length === 0) return []
+    // Derive sparkline from candlestick close prices
     const movement = investMovement.get(product.id)
-    const isUp = movement ? movement.changePercent >= 0 : Math.random() > 0.3
+    const isUp = movement ? movement.changePercent >= 0 : true
     const pts: {i: number; p: number}[] = []
     let p = product.modal * 0.98
-    let momentum = 0
-    for (let i = 0; i < 25; i++) {
-      const dir = Math.random() > 0.5 ? 1 : -1
-      const step = product.modal * 0.003 * (0.8 + Math.random() * 1.2)
-      const bias = (isUp ? 1 : -1) * product.modal * 0.0005
-      momentum = momentum * 0.3 + dir * step + bias
-      p += momentum
-      p += (product.modal - p) * 0.02
-      pts.push({ i, p: Math.round(p) })
+    // Use candle close prices to create smooth sparkline
+    const closePrices = candles.map(c => c.c)
+    const minClose = Math.min(...closePrices)
+    const maxClose = Math.max(...closePrices)
+    const range = maxClose - minClose || 1
+    for (let i = 0; i < closePrices.length; i++) {
+      // Normalize and add some interpolation points
+      pts.push({ i: i * 2, p: closePrices[i] })
+      if (i < closePrices.length - 1) {
+        const mid = (closePrices[i] + closePrices[i + 1]) / 2
+        pts.push({ i: i * 2 + 1, p: Math.round(mid) })
+      }
     }
-    const finalP = movement ? product.modal + movement.change : product.modal
-    pts.push({ i: 25, p: Math.round(finalP) })
-    investSparklineCache.current.set(product.id, pts)
     return pts
-  }, [investMovement])
+  }, [liveCandleData, investMovement])
 
   // ============ DERIVED ============
   const unreadNotif = notifications.filter(n => !n.isRead).length
@@ -2093,41 +2159,61 @@ function Dashboard() {
                         <span className="text-[8px] font-bold text-gs-muted">Aset Saham</span>
                       </div>
 
-                      {/* PERGERAKAN MARKET label + Candlestick Chart */}
+                      {/* PERGERAKAN MARKET label + Live Candlestick Chart */}
                       <div className="px-3 py-1">
-                        <div className="flex items-center gap-1 mb-1">
-                          <BarChart3 className="w-2.5 h-2.5 text-gs-muted" />
-                          <span className="text-[7px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1">
+                            <BarChart3 className="w-2.5 h-2.5 text-gs-muted" />
+                            <span className="text-[7px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-[6px] font-black text-green-600">LIVE</span>
+                          </div>
                         </div>
-                        <div className="h-14 w-full relative">
-                          <svg className="w-full h-full" viewBox="0 0 120 56" preserveAspectRatio="none">
-                            {(() => {
+                        <div className="h-16 w-full relative bg-gray-50 rounded-lg border border-gs-line/50 overflow-hidden">
+                          {candles.length > 0 ? (() => {
                               const allPrices = candles.flatMap(c => [c.h, c.l])
                               const minP = Math.min(...allPrices)
                               const maxP = Math.max(...allPrices)
                               const range = maxP - minP || 1
-                              const candleWidth = 6
-                              const gap = 4
-                              return candles.map((c, i) => {
-                                const x = 8 + i * (candleWidth + gap)
-                                const yH = 4 + ((maxP - c.h) / range) * 44
-                                const yL = 4 + ((maxP - c.l) / range) * 44
-                                const yO = 4 + ((maxP - c.o) / range) * 44
-                                const yC = 4 + ((maxP - c.c) / range) * 44
-                                const isGreen = c.c >= c.o
-                                const bodyTop = Math.min(yO, yC)
-                                const bodyH = Math.max(Math.abs(yO - yC), 1)
-                                return (
-                                  <g key={i}>
-                                    {/* Wick */}
-                                    <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1" />
-                                    {/* Body */}
-                                    <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="0.5" />
-                                  </g>
-                                )
-                              })
-                            })()}
-                          </svg>
+                              const totalCandles = candles.length
+                              const candleWidth = Math.max(3, Math.floor((120 - totalCandles * 2) / totalCandles))
+                              const gap = Math.max(1, Math.floor((120 - totalCandles * candleWidth) / (totalCandles + 1)))
+                              const svgW = totalCandles * (candleWidth + gap) + gap * 2
+                              return (
+                                <svg className="w-full h-full" viewBox={`0 0 ${svgW} 56`} preserveAspectRatio="none">
+                                  {candles.map((c, i) => {
+                                    const x = gap + i * (candleWidth + gap)
+                                    const yH = 4 + ((maxP - c.h) / range) * 44
+                                    const yL = 4 + ((maxP - c.l) / range) * 44
+                                    const yO = 4 + ((maxP - c.o) / range) * 44
+                                    const yC = 4 + ((maxP - c.c) / range) * 44
+                                    const isGreen = c.c >= c.o
+                                    const bodyTop = Math.min(yO, yC)
+                                    const bodyH = Math.max(Math.abs(yO - yC), 1)
+                                    const isLast = i === totalCandles - 1
+                                    return (
+                                      <g key={i}>
+                                        <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1" opacity={isLast ? 1 : 0.7} />
+                                        <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="0.5" opacity={isLast ? 1 : 0.7} />
+                                        {isLast && (
+                                          <>
+                                            <circle cx={x + candleWidth / 2} cy={yC} r="2" fill={isGreen ? '#17b85c' : '#ef4444'}>
+                                              <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+                                            </circle>
+                                          </>
+                                        )}
+                                      </g>
+                                    )
+                                  })}
+                                </svg>
+                              )
+                            })() : (
+                              <div className="flex items-center justify-center h-full text-[8px] text-gs-muted">Memuat data...</div>
+                            )
+                          }
                         </div>
                       </div>
 
@@ -3872,43 +3958,71 @@ function Dashboard() {
                   </div>
                 </div>
 
-                {/* Candlestick Chart */}
+                {/* Live Candlestick Chart */}
                 {(() => {
                   const candles = getCandlestickData(selectedDetailProduct)
                   const movement = investMovement.get(selectedDetailProduct.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
-                  const allPrices = candles.flatMap(c => [c.h, c.l])
-                  const minP = Math.min(...allPrices)
-                  const maxP = Math.max(...allPrices)
-                  const range = maxP - minP || 1
-                  const candleWidth = 8
-                  const gap = 6
-                  const svgW = candles.length * (candleWidth + gap) + 20
                   return (
                     <div className="mb-4">
-                      <div className="flex items-center gap-1 mb-2">
-                        <BarChart3 className="w-3 h-3 text-gs-muted" />
-                        <span className="text-[8px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1">
+                          <BarChart3 className="w-3 h-3 text-gs-muted" />
+                          <span className="text-[8px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-[7px] font-black text-green-600">LIVE</span>
+                        </div>
                       </div>
-                      <div className="h-40 w-full rounded-2xl bg-gs-soft border border-gs-line p-3">
-                        <svg className="w-full h-full" viewBox={`0 0 ${svgW} 120`} preserveAspectRatio="xMidYMid meet">
-                          {candles.map((c, i) => {
-                            const x = 10 + i * (candleWidth + gap)
-                            const yH = 8 + ((maxP - c.h) / range) * 90
-                            const yL = 8 + ((maxP - c.l) / range) * 90
-                            const yO = 8 + ((maxP - c.o) / range) * 90
-                            const yC = 8 + ((maxP - c.c) / range) * 90
-                            const isGreen = c.c >= c.o
-                            const bodyTop = Math.min(yO, yC)
-                            const bodyH = Math.max(Math.abs(yO - yC), 1)
-                            return (
-                              <g key={i}>
-                                <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="1.5" />
-                                <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="1" />
-                              </g>
-                            )
-                          })}
-                        </svg>
+                      <div className="h-44 w-full rounded-2xl bg-gs-soft border border-gs-line p-3 overflow-hidden">
+                        {candles.length > 0 ? (() => {
+                          const allPrices = candles.flatMap(c => [c.h, c.l])
+                          const minP = Math.min(...allPrices)
+                          const maxP = Math.max(...allPrices)
+                          const range = maxP - minP || 1
+                          const totalCandles = candles.length
+                          const candleWidth = Math.max(5, Math.floor((200 - totalCandles * 4) / totalCandles))
+                          const gap = Math.max(3, Math.floor((200 - totalCandles * candleWidth) / (totalCandles + 1)))
+                          const svgW = totalCandles * (candleWidth + gap) + gap * 2
+                          return (
+                            <svg className="w-full h-full" viewBox={`0 0 ${svgW} 120`} preserveAspectRatio="xMidYMid meet">
+                              {/* Grid lines */}
+                              {[0, 1, 2, 3].map(gi => (
+                                <line key={gi} x1="0" y1={10 + gi * 28} x2={svgW} y2={10 + gi * 28} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="4,4" />
+                              ))}
+                              {candles.map((c, i) => {
+                                const x = gap + i * (candleWidth + gap)
+                                const yH = 8 + ((maxP - c.h) / range) * 100
+                                const yL = 8 + ((maxP - c.l) / range) * 100
+                                const yO = 8 + ((maxP - c.o) / range) * 100
+                                const yC = 8 + ((maxP - c.c) / range) * 100
+                                const isGreen = c.c >= c.o
+                                const bodyTop = Math.min(yO, yC)
+                                const bodyH = Math.max(Math.abs(yO - yC), 1.5)
+                                const isLast = i === totalCandles - 1
+                                return (
+                                  <g key={i}>
+                                    <line x1={x + candleWidth / 2} y1={yH} x2={x + candleWidth / 2} y2={yL} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth={isLast ? "2" : "1.5"} opacity={isLast ? 1 : 0.6} />
+                                    <rect x={x} y={bodyTop} width={candleWidth} height={bodyH} fill={isGreen ? '#17b85c' : '#ef4444'} rx="1" opacity={isLast ? 1 : 0.6} />
+                                    {isLast && (
+                                      <>
+                                        <circle cx={x + candleWidth / 2} cy={yC} r="3" fill={isGreen ? '#17b85c' : '#ef4444'}>
+                                          <animate attributeName="r" values="3;6;3" dur="1.5s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                                        </circle>
+                                        {/* Price line from last candle to right */}
+                                        <line x1={x + candleWidth + 2} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#17b85c' : '#ef4444'} strokeWidth="0.8" strokeDasharray="3,2" opacity="0.6" />
+                                      </>
+                                    )}
+                                  </g>
+                                )
+                              })}
+                            </svg>
+                          )
+                        })() : (
+                          <div className="flex items-center justify-center h-full text-[10px] text-gs-muted">Memuat data market...</div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1">
