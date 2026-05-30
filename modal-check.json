@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Yes, there is a stock detail modal/sheet visible on the page. I can see:\n\n1. A modal overlay with a white background containing stock information\n2. The stock code \"GO\" and company name \"GOTO\" (GoTo Gojek Tokopedia Tbk)\n3. Current price \"Rp 74\" with a change of \"+Rp 2 (+2.78%)\"\n4. A price chart showing the stock's performance over time (with 1D, 1W, 1M, 1Y time period options)\n5. Key metrics including:\n   - Open: Rp 72\n   - High: Rp 76\n   - Low: Rp 72\n   - Volume: 45,678,900\n6. Fundamental data section showing Market Cap (87.0T), P/E Ratio (3.50), and Div. Yield (-45.2)\n7. A close button (X) in the top right corner of the modal\n\nThe modal appears to be displaying detailed information about the GOTO stock, including price performance, trading metrics, and fundamental data.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1780110208,
+  "id": "202605301103253546bfbb52a04fd3",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202605301103253546bfbb52a04fd3",
+  "usage": {
+    "completion_tokens": 230,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 996,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1226
+  }
+}

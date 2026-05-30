@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The login page for **Global Saham** (GS Capital Access) is displayed. Here’s a breakdown of all visible elements:  \n\n### Header & Branding  \n- Top-left: The “Global Saham” logo with the tagline *“GS CAPITAL ACCESS”*.  \n- Top-right: A “Daftar” (Register) button.  \n\n\n### Main Content (Green Section)  \n- A “GS LIVE” indicator (top-left of the green area).  \n- The Global Saham logo (circular, centered).  \n- Title: *“Masuk Investor Global Saham”* (Login as Global Saham Investor).  \n- Subtitle: *“Akses akun Global Saham untuk memantau portofolio, pergerakan saham, aktivitas profit, dan layanan Investor.”* (Access your Global Saham account to monitor portfolio, stock movements, profit activities, and investor services).  \n- Three feature icons (below the subtitle):  \n  - *“Market”* (with “Live” label).  \n  - *“125K++ Pengguna”* (125K++ Users).  \n  - *“Portofolio”* (with “Akses” label).  \n- A line graph (yellow) showing market trends.  \n\n\n### Login Form (White Section)  \n- **WhatsApp Number Field**:  \n  - Label: *“NOMOR WHATSAPP”*.  \n  - Input: Pre-filled with `+62 812345678901` (country code + number).  \n  - Icon: Phone (green circle).  \n- **Password Field**:  \n  - Label: *“KATA SANDI”* (Password).  \n  - Input: Placeholder *“Masukkan kata sandi”* (Enter password).  \n  - Icon: Lock (green circle).  \n  - “Lihat” (Show) button (to toggle password visibility).  \n- **“Ingat akun”** (Remember account) checkbox (unchecked).  \n- **“Lupa sandi?”** (Forgot password?) link (right-aligned, brown text).  \n- **Login Button**: *“MASUK SEKARANG”* (Login Now) — green gradient button with an arrow icon.  \n\n\n### Footer  \n- Text: *“Belum punya akun? Daftar Global Saham”* (Don’t have an account? Register for Global Saham).  \n- **Legal/Trust Section**:  \n  - *“Legalitas Perusahaan”* (Company Legality) + *“Halaman resmi Global Saham”* (Official Global Saham Page).  \n  - Logos (e.g., “OK” and another icon, likely for trust/certification).  \n- Bottom navigation tabs: *“Investasi Aman”* (Safe Investment), *“Market Live”*, *“125K++ Pengguna”*.  \n\n\n### Error Message  \nThere is **no error message** visible on the page. All fields appear to be in their default state (no validation errors, empty password field, pre-filled phone number).",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1780108238,
+  "id": "20260530103028f56e3115a73540b0",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260530103028f56e3115a73540b0",
+  "usage": {
+    "completion_tokens": 641,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1470,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 2111
+  }
+}

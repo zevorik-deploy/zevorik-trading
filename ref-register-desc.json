@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This is a **Global Saham** website registration page with a clean, modern design focused on financial investment registration. Here's a comprehensive breakdown of all UI elements, layout, and content:\n\n\n### **1. Header Section**\n- **Top Bar**:  \n  - Left: Logo (circular icon with \"GLOBAL SAHAM\" text + \"GS CAPITAL ACCESS\" tagline below it).  \n  - Right: \"Masuk\" (Login) button (white background, dark text, rounded corners).  \n\n- **Green Banner (Top Section)**:  \n  - Background: Gradient green (darker at top, lighter at bottom).  \n  - Left: Circular logo (same as header).  \n  - Center:  \n    - \"Daftar Global Saham\" (bold, white text).  \n    - Subtext: \"Buat akun investor untuk akses portofolio, produk aktif, dan program reward Global Saham.\" (smaller white text).  \n  - Top-left: \"GS LIVE\" badge (white text, dark background).  \n  - Top-center: \"REGISTRASI INVESTOR\" badge (white text, dark background).  \n  - Bottom: Three stat boxes (white background, rounded corners):  \n    - \"PENDUDUKA: 125K++\" (left, dark text).  \n    - \"MARKET: +4.18%\" (center, green text).  \n    - \"STATUS: OPEN\" (right, green text).  \n  - Middle: Line graph (yellow line on green background, showing upward trend).  \n\n\n### **2. Registration Form Section**\n- **Title & Subtitle**:  \n  - \"Lengkapi Data Akun\" (bold, dark text).  \n  - Subtext: \"Gunakan data aktif agar akses akun lebih aman dan mudah diverifikasi.\" (smaller gray text).  \n  - Icon: Green circular icon with a user silhouette.  \n\n- **Form Fields** (all with green circular icons on the left, white input fields, rounded corners):  \n  1. **Username**:  \n     - Label: \"USERNAME\" (small, gray text).  \n     - Placeholder: \"Masukkan username\" (gray text).  \n  2. **Nomor Ponsel**:  \n     - Label: \"NOMOR PONSEL\" (small, gray text).  \n     - Prefix: \"+62\" (gray text, fixed).  \n     - Placeholder: \"812345678901\" (gray text).  \n  3. **Kata Sandi (Password)**:  \n     - Label: \"KATA SANDI\" (small, gray text).  \n     - Placeholder: \"Masukkan kata sandi\" (gray text).  \n     - Right: \"Lihat\" (gray text, toggle password visibility).  \n     - Icon: Lock.  \n  4. **Konfirmasi Sandi (Confirm Password)**:  \n     - Label: \"KONFIRMASI SANDI\" (small, gray text).  \n     - Placeholder: \"Ulangi kata sandi\" (gray text).  \n     - Right: \"Lihat\" (gray text, toggle visibility).  \n     - Icon: Lock.  \n  5. **Kode Referral Opsional**:  \n     - Label: \"KODE REFERRAL OPSIONAL\" (small, gray text).  \n     - Placeholder: \"Masukkan kode referral jika ada\" (gray text).  \n     - Icon: Share (light yellow background).  \n\n- **Security Verification**:  \n  - Title: \"Verifikasi Keamanan\" (bold, dark text).  \n  - Icon: Checkmark (green).  \n  - Right: \"Ulang\" (gray text, refresh verification).  \n  - Math problem: \"6 - 3\" (white text on green background, rounded corners).  \n  - Button: \"Jawab\" (white text, green background, rounded corners).  \n\n- **Terms Checkbox**:  \n  - Checkbox (unchecked, gray).  \n  - Text: \"Saya menyetujui proses pendaftaran dan memahami keamanan akun Global Saham.\" (small, gray text).  \n\n- **Submit Button**:  \n  - \"DAFTAR SEKARANG\" (bold, white text, green gradient background, rounded corners).  \n  - Icon: Arrow (right).  \n\n- **Login Link**:  \n  - \"Sudah punya akun? Masuk Global Saham\" (small, green text, underlined).  \n\n\n### **3. Footer Section**\n- **Legal & Company Info**:  \n  - \"Legalitas Perusahaan\" (bold, dark text).  \n  - Subtext: \"Halaman resmi Global Saham\" (small, gray text).  \n  - Icons: Two document icons (right-aligned, gray).  \n\n- **Bottom Navigation Tabs** (white background, rounded corners):  \n  - \"Akun Aman\" (left, dark text).  \n  - \"Market Live\" (center, dark text).  \n  - \"Investor GS\" (right, dark text).  \n\n\n### **Colors & Layout**\n- **Primary Color**: Green (various shades: dark green for headers/buttons, light green for backgrounds).  \n- **Secondary Color**: White (for input fields, stat boxes, navigation).  \n- **Accent Color**: Yellow (for the graph line, referral icon).  \n- **Text Colors**: Dark gray/black (headings), gray (labels/placeholders), green (status/links).  \n- **Layout**: Vertical, centered on the page. The header and form are contained in a white card with rounded corners, set against a light green gradient background.  \n\n\n### **All UI Elements Summary**\n- Logos (2: header + banner).  \n- Buttons (3: \"Masuk\", \"Lihat\" (x2), \"Ulang\", \"Jawab\", \"DAFTAR SEKARANG\").  \n- Input fields (5: username, phone, password, confirm password, referral).  \n- Badges (2: \"GS LIVE\", \"REGISTRASI INVESTOR\").  \n- Stat boxes (3: penduduka, market, status).  \n- Graph (1: line chart).  \n- Icons (7: user, lock (x2), share, checkmark, arrow, documents (x2)).  \n- Checkbox (1).  \n- Navigation tabs (3).  \n- Text elements (headings, subtext, labels, placeholders, links).  \n\nThis design emphasizes clarity, security, and ease of use for new investors registering for the Global Saham platform.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1780107950,
+  "id": "20260530102535f6aed6ba79df4926",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260530102535f6aed6ba79df4926",
+  "usage": {
+    "completion_tokens": 1388,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1937,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 3325
+  }
+}

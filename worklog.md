@@ -75,3 +75,53 @@ Stage Summary:
 - All APIs work with userId parameter for demo (no real auth required)
 - Demo account: 081234567890 / demo123, Gold VIP, balance Rp 100M
 - Reduced SQLite locking issues by avoiding db.$transaction and using sequential operations
+
+---
+Task ID: 2-a
+Agent: Frontend Rebuild Agent
+Task: Rebuild page.tsx to match reference site (global-shmgs.cc) exactly
+
+Work Log:
+- Completely rewrote /home/z/my-project/src/app/page.tsx (1921 lines) from scratch
+- Fixed naming conflict: `Home` icon from lucide-react conflicted with `Home` default export function - renamed icon import to `HomeIcon`
+- Login page now matches reference exactly:
+  - Background: gradient from soft cream (#f5f0e8) to light green (#c8e6c9)
+  - Top nav: circular logo + "GLOBAL SAHAM" + "GS CAPITAL ACCESS", "Daftar" button
+  - GS LIVE badge with Zap icon and yellow styling
+  - Market ticker matching reference: GS +1.59%, IDX -2.13%, IHSG +0.28%, SAHAM +3.22%, GOLD +4.04%, BANK +3.30%, ENERGY +3.77%, OIL -3.48%, GS +2.86%
+  - Circular logo in center with green gradient background
+  - Login headline: "Masuk Investor Global Saham" with exact subheadline
+  - 3 stat boxes: Market/Live, 125K++/Pengguna, Portofolio/Akses
+  - Yellow (#d4a331) line graph SVG with animate-chart-draw
+  - "NOMOR WHATSAPP" label with +62 prefix in green bg and Phone icon
+  - "KATA SANDI" label with Lock icon and Eye toggle
+  - "Ingat akun" checkbox + "Lupa sandi?" orange link
+  - "MASUK SEKARANG" green gradient button with arrow
+  - Footer: "Legalitas Perusahaan", "Halaman resmi Global Saham", icons, "Investasi Aman / Market Live / 125K++ Pengguna"
+- Register page matches reference exactly:
+  - "REGISTRASI INVESTOR" badge with Shield icon
+  - "Daftar Global Saham" headline
+  - Username field, Nomor Ponsel (+62), Kata Sandi, Konfirmasi Sandi, Kode Referral Opsional
+  - Math verification (random addition, "Jawab" input, "Ulang" button)
+  - Terms checkbox
+  - "DAFTAR SEKARANG" green gradient button
+- Dashboard with 10+ tabs: Beranda, Pasar Saham, Portofolio, Keuangan, Riwayat, Referral, Berita, Bonus/Promo, Leaderboard, Profil
+- Bottom nav with exactly 5 items: Beranda, Pasar, Portofolio, Keuangan, Lainnya
+- Side menu with all navigation items and logout
+- Stock Detail modal with chart, fundamentals, buy/sell buttons
+- Trade modal with Market/Limit order types, lot selection, fee calculation
+- Notification panel (slide from right)
+- Daily check-in functionality
+- Balance visibility toggle
+- Real-time price simulation every 30 seconds
+- All API integrations working (stocks, portfolio, transactions, market, notifications, news, watchlist, deposits, withdrawals, referral, bonuses, promos, leaderboard)
+- Lint passed successfully
+- App responds with HTTP 200
+
+Stage Summary:
+- Complete frontend rebuild matching reference site design exactly
+- Login page with GS LIVE badge, market ticker, WhatsApp login, yellow chart
+- Register page with REGISTRASI INVESTOR badge, math verification
+- Full dashboard with 10+ tabs, modals, side menu, bottom nav
+- All 24 API routes integrated
+- Demo account: 081234567890 / demo123

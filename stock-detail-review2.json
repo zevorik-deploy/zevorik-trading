@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "No, there is no stock detail modal/sheet visible in the provided screenshot. The image shows a stock listing interface with multiple stock entries displayed in a list format, but no modal or sheet is currently open to show detailed information about a specific stock.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1780110148,
+  "id": "202605301102251bb3c5e3ff724ad7",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202605301102251bb3c5e3ff724ad7",
+  "usage": {
+    "completion_tokens": 53,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2642,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 2695
+  }
+}
