@@ -621,6 +621,22 @@ function Dashboard() {
   const [financeTab, setFinanceTab] = useState<'deposit' | 'withdraw'>('deposit')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawLoading, setWithdrawLoading] = useState(false)
+
+  // ============ DEPOSIT REDESIGN STATE ============
+  const [depositCategory, setDepositCategory] = useState<'bank' | 'ewallet' | 'qris'>('bank')
+  const [depositBankMethod, setDepositBankMethod] = useState('BCA')
+  const [depositEwalletMethod, setDepositEwalletMethod] = useState('GOPAY')
+
+  // ============ WITHDRAW REDESIGN STATE ============
+  const [withdrawCategory, setWithdrawCategory] = useState<'bank' | 'ewallet' | 'crypto'>('bank')
+  const [withdrawBankMethod, setWithdrawBankMethod] = useState('BCA')
+  const [withdrawEwalletMethod, setWithdrawEwalletMethod] = useState('GOPAY')
+  const [withdrawCryptoMethod, setWithdrawCryptoMethod] = useState('USDT_TRC20')
+  const [withdrawAccountNumber, setWithdrawAccountNumber] = useState('')
+  const [withdrawAccountHolder, setWithdrawAccountHolder] = useState('')
+
+  // ============ REFERRAL MISSION CLAIM STATE ============
+  const [claimedMissions, setClaimedMissions] = useState<Set<number>>(new Set())
   const [profileEdit, setProfileEdit] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
   const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[], totalMembers: 0, totalDeposit: 0, totalCommission: 0, pendingCommission: 0, claimedCommission: 0, tiers: [{ level: 1, commissionPercent: 35, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 5, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }], history: [] as { id: string; name: string; date: string; level: number; deposit: number; commission: number; status: string }[] })
@@ -1170,10 +1186,11 @@ function Dashboard() {
     if (amount < 10000) { toast({ title: 'Minimum deposit Rp 10.000', variant: 'destructive' }); return }
     setDepositLoading(true)
     try {
-      const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: depositMethod, bankName: 'BCA' }) })
+      const methodName = depositCategory === 'bank' ? depositBankMethod : depositCategory === 'ewallet' ? depositEwalletMethod : 'QRIS'
+      const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: depositCategory === 'qris' ? 'qris' : depositCategory === 'ewallet' ? 'e_wallet' : 'bank_transfer', bankName: methodName }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Deposit Berhasil!', description: `+${formatRupiah(amount)} telah ditambahkan` })
+      toast({ title: 'Deposit Berhasil!', description: `+${formatRupiah(amount)} via ${methodName} telah ditambahkan` })
       setDepositAmount(''); fetchPortfolio(); fetchDeposits(); fetchNotifications()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setDepositLoading(false) }
@@ -1185,13 +1202,16 @@ function Dashboard() {
     const amount = parseFloat(withdrawAmount)
     if (amount < 10000) { toast({ title: 'Minimum withdraw Rp 10.000', variant: 'destructive' }); return }
     if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
+    if (withdrawCategory !== 'crypto' && !withdrawAccountNumber) { toast({ title: 'Isi nomor rekening / HP terlebih dahulu', variant: 'destructive' }); return }
+    if (withdrawCategory === 'bank' && !withdrawAccountHolder) { toast({ title: 'Isi nama pemilik rekening', variant: 'destructive' }); return }
     setWithdrawLoading(true)
     try {
-      const res = await fetch('/api/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, bankName: user.bankName || 'BCA', bankAccount: user.bankAccount || '1234567890', bankHolder: user.bankHolder || user.name }) })
+      const methodName = withdrawCategory === 'bank' ? withdrawBankMethod : withdrawCategory === 'ewallet' ? withdrawEwalletMethod : withdrawCryptoMethod
+      const res = await fetch('/api/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, bankName: methodName, bankAccount: withdrawAccountNumber || user.bankAccount || '0000000', bankHolder: withdrawAccountHolder || user.name }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} sedang diproses` })
-      setWithdrawAmount(''); fetchPortfolio(); fetchWithdrawals()
+      toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} via ${methodName} sedang diproses` })
+      setWithdrawAmount(''); setWithdrawAccountNumber(''); setWithdrawAccountHolder(''); fetchPortfolio(); fetchWithdrawals()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setWithdrawLoading(false) }
   }
@@ -2466,40 +2486,199 @@ function Dashboard() {
               {financeTab === 'deposit' ? (
                 <>
                   {/* Balance */}
-                  <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line mb-3">
-                    <span className="text-[8px] font-bold text-gs-muted">Saldo Saat Ini</span>
-                    <b className="block text-lg font-black text-gs-green3">{formatRupiah(user?.balance || 0)}</b>
+                  <div className="rounded-2xl p-4 bg-gs-soft border border-gs-line mb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[8px] font-bold text-gs-muted">Saldo Saat Ini</span>
+                        <b className="block text-lg font-black text-gs-green3">{formatRupiah(user?.balance || 0)}</b>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-gs-green3/10 grid place-items-center">
+                        <Wallet className="w-5 h-5 text-gs-green3" />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Deposit Form */}
+                  {/* Payment Category Tabs */}
+                  <div className="flex gap-1.5 mb-3">
+                    {[
+                      { key: 'bank' as const, label: 'Transfer Bank', icon: <Building2 className="w-3.5 h-3.5" /> },
+                      { key: 'ewallet' as const, label: 'E-Wallet', icon: <Wallet className="w-3.5 h-3.5" /> },
+                      { key: 'qris' as const, label: 'QRIS', icon: <CreditCard className="w-3.5 h-3.5" /> },
+                    ].map(cat => (
+                      <button key={cat.key} onClick={() => setDepositCategory(cat.key)}
+                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${depositCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-white border border-gs-line text-gs-muted'}`}>
+                        {cat.icon}{cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Deposit Form Card */}
                   <div className="rounded-2xl p-4 bg-white border border-gs-line shadow-sm mb-4">
+
+                    {/* Bank Method Grid */}
+                    {depositCategory === 'bank' && (
+                      <div className="mb-3">
+                        <span className="block text-[9px] font-black text-gs-muted uppercase tracking-widest mb-2">Pilih Bank</span>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                          {[
+                            { code: 'BCA', name: 'Bank BCA', color: '#003399' },
+                            { code: 'BNI', name: 'Bank BNI', color: '#F15A22' },
+                            { code: 'BRI', name: 'Bank BRI', color: '#00529C' },
+                            { code: 'Mandiri', name: 'Bank Mandiri', color: '#003066' },
+                            { code: 'CIMB', name: 'CIMB Niaga', color: '#7B0E24' },
+                            { code: 'Permata', name: 'Bank Permata', color: '#005EAB' },
+                            { code: 'BSI', name: 'Bank BSI', color: '#00A650' },
+                            { code: 'Danamon', name: 'Bank Danamon', color: '#FDDA24' },
+                          ].map(bank => (
+                            <button key={bank.code} onClick={() => setDepositBankMethod(bank.code)}
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositBankMethod === bank.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
+                                {bank.code.slice(0, 2)}
+                              </div>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${depositBankMethod === bank.code ? 'text-gs-green3' : 'text-gs-muted'}`}>{bank.code}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* E-Wallet Method Grid */}
+                    {depositCategory === 'ewallet' && (
+                      <div className="mb-3">
+                        <span className="block text-[9px] font-black text-gs-muted uppercase tracking-widest mb-2">Pilih E-Wallet</span>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                          {[
+                            { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
+                            { code: 'OVO', name: 'OVO', color: '#4C2A86' },
+                            { code: 'DANA', name: 'DANA', color: '#108EE9' },
+                            { code: 'SHOPEEPAY', name: 'ShopeePay', color: '#EE4D2D' },
+                            { code: 'LINKAJA', name: 'LinkAja', color: '#E82529' },
+                            { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
+                          ].map(ew => (
+                            <button key={ew.code} onClick={() => setDepositEwalletMethod(ew.code)}
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositEwalletMethod === ew.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
+                                {ew.name.slice(0, 2)}
+                              </div>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${depositEwalletMethod === ew.code ? 'text-gs-green3' : 'text-gs-muted'}`}>{ew.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* QRIS Section */}
+                    {depositCategory === 'qris' && (
+                      <div className="mb-3 flex flex-col items-center py-4">
+                        <div className="w-40 h-40 rounded-2xl bg-white border-2 border-gs-line p-3 mb-3">
+                          <svg viewBox="0 0 200 200" className="w-full h-full">
+                            <rect width="200" height="200" fill="white" rx="8" />
+                            {/* QR pattern simulation */}
+                            <rect x="20" y="20" width="50" height="50" fill="#042d1a" rx="4" />
+                            <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
+                            <rect x="36" y="36" width="18" height="18" fill="#042d1a" rx="1" />
+                            <rect x="130" y="20" width="50" height="50" fill="#042d1a" rx="4" />
+                            <rect x="138" y="28" width="34" height="34" fill="white" rx="2" />
+                            <rect x="146" y="36" width="18" height="18" fill="#042d1a" rx="1" />
+                            <rect x="20" y="130" width="50" height="50" fill="#042d1a" rx="4" />
+                            <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
+                            <rect x="36" y="146" width="18" height="18" fill="#042d1a" rx="1" />
+                            {/* Middle pattern */}
+                            <rect x="80" y="20" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="20" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="20" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="36" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="44" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="36" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="60" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="60" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="60" width="8" height="8" fill="#042d1a" />
+                            {/* Bottom middle */}
+                            <rect x="20" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="36" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="52" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="20" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="36" y="104" width="8" height="8" fill="#042d1a" />
+                            <rect x="52" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="20" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="36" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="52" y="112" width="8" height="8" fill="#042d1a" />
+                            {/* Right middle */}
+                            <rect x="80" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="130" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="146" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="162" y="80" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="130" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="162" y="96" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="130" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="146" y="112" width="8" height="8" fill="#042d1a" />
+                            <rect x="162" y="112" width="8" height="8" fill="#042d1a" />
+                            {/* Bottom section */}
+                            <rect x="80" y="130" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="130" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="130" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="146" width="8" height="8" fill="#042d1a" />
+                            <rect x="112" y="146" width="8" height="8" fill="#042d1a" />
+                            <rect x="130" y="130" width="8" height="8" fill="#042d1a" />
+                            <rect x="146" y="146" width="8" height="8" fill="#042d1a" />
+                            <rect x="162" y="130" width="8" height="8" fill="#042d1a" />
+                            <rect x="130" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="146" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="162" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="80" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="96" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="20" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="36" y="162" width="8" height="8" fill="#042d1a" />
+                            <rect x="52" y="162" width="8" height="8" fill="#042d1a" />
+                            {/* QRIS label */}
+                            <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#042d1a">QRIS</text>
+                          </svg>
+                        </div>
+                        <span className="text-[10px] font-bold text-gs-green3">Scan QRIS untuk deposit</span>
+                        <span className="text-[8px] text-gs-muted mt-0.5">Gunakan aplikasi e-wallet atau mobile banking</span>
+                      </div>
+                    )}
+
+                    {/* Amount Input */}
                     <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Jumlah Deposit</label>
                     <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Minimal Rp 10.000"
                       className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors mb-2" />
-                    <div className="flex gap-1.5 mb-3">
-                      {['100000', '500000', '1000000', '5000000'].map(a => (
-                        <button key={a} onClick={() => setDepositAmount(a)} className="flex-1 h-7 rounded-lg bg-gs-soft border border-gs-line text-[8px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
+                    <div className="grid grid-cols-4 gap-1.5 mb-4">
+                      {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
+                        <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-gs-soft border border-gs-line text-[8px] md:text-[9px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
                           {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
                         </button>
                       ))}
                     </div>
 
-                    <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Metode Pembayaran</label>
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      {[
-                        { key: 'bank_transfer', label: 'Transfer Bank', icon: <CreditCard className="w-4 h-4" /> },
-                        { key: 'e_wallet', label: 'E-Wallet', icon: <Wallet className="w-4 h-4" /> },
-                      ].map(m => (
-                        <button key={m.key} onClick={() => setDepositMethod(m.key)}
-                          className={`h-10 rounded-xl border text-[9px] font-bold flex items-center justify-center gap-1.5 transition-colors ${depositMethod === m.key ? 'border-gs-green bg-green-50 text-gs-green3' : 'border-gs-line text-gs-muted'}`}>
-                          {m.icon}{m.label}
-                        </button>
-                      ))}
+                    {/* Selected Method Info */}
+                    <div className="rounded-xl p-3 bg-gs-soft border border-gs-line mb-4">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-gs-green" />
+                        <div>
+                          <span className="block text-[9px] font-bold text-gs-text">
+                            {depositCategory === 'bank' ? `Transfer ${depositBankMethod}` : depositCategory === 'ewallet' ? depositEwalletMethod : 'QRIS'}
+                          </span>
+                          <span className="block text-[7px] text-gs-muted">Metode pembayaran dipilih</span>
+                        </div>
+                      </div>
                     </div>
 
+                    {/* Deposit Button */}
                     <button onClick={handleDeposit} disabled={depositLoading}
-                      className="w-full h-11 rounded-2xl bg-gs-green3 text-white text-[11px] font-bold hover:bg-gs-green transition-colors disabled:opacity-70">
-                      {depositLoading ? 'Memproses...' : 'Deposit Sekarang'}
+                      className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                      style={{ background: 'linear-gradient(135deg, #064b28 0%, #08713a 50%, #17b85c 100%)' }}>
+                      {depositLoading ? (
+                        <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+                      ) : (
+                        <><Plus className="w-4 h-4" />Deposit Sekarang</>
+                      )}
                     </button>
                   </div>
 
@@ -2511,7 +2690,7 @@ function Dashboard() {
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-green-50 grid place-items-center"><Plus className="w-4 h-4 text-green-600" /></div>
                           <div>
-                            <span className="block text-[9px] font-bold text-gs-text">{d.method === 'bank_transfer' ? 'Transfer Bank' : 'E-Wallet'}</span>
+                            <span className="block text-[9px] font-bold text-gs-text">{d.bankName || (d.method === 'bank_transfer' ? 'Transfer Bank' : 'E-Wallet')}</span>
                             <span className="block text-[7px] text-gs-muted">{formatDateTime(d.createdAt)}</span>
                           </div>
                         </div>
@@ -2525,32 +2704,165 @@ function Dashboard() {
                 </>
               ) : (
                 <>
-                  {/* Balance */}
-                  <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line mb-3">
-                    <span className="text-[8px] font-bold text-gs-muted">Saldo Tersedia</span>
-                    <b className="block text-lg font-black text-gs-green3">{formatRupiah(user?.balance || 0)}</b>
+                  {/* Balance - Dompet Utama & Penarikan */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line">
+                      <span className="text-[7px] font-bold text-gs-muted">Dompet Utama</span>
+                      <b className="block text-[13px] font-black text-gs-green3">{formatRupiah(user?.balance || 0)}</b>
+                    </div>
+                    <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line">
+                      <span className="text-[7px] font-bold text-gs-muted">Dompet Penarikan</span>
+                      <b className="block text-[13px] font-black text-gs-gold">{formatRupiah((user?.balance || 0) * 0.9)}</b>
+                    </div>
                   </div>
 
-                  {/* Withdraw Form */}
-                  <div className="rounded-2xl p-4 bg-white border border-gs-line shadow-sm mb-4">
-                    <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Jumlah Withdraw</label>
-                    <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder="Minimal Rp 10.000"
-                      className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors mb-3" />
+                  {/* Withdraw Category Tabs */}
+                  <div className="flex gap-1.5 mb-3">
+                    {[
+                      { key: 'bank' as const, label: 'Transfer Bank', icon: <Building2 className="w-3.5 h-3.5" /> },
+                      { key: 'ewallet' as const, label: 'E-Wallet', icon: <Wallet className="w-3.5 h-3.5" /> },
+                      { key: 'crypto' as const, label: 'Crypto', icon: <Gem className="w-3.5 h-3.5" /> },
+                    ].map(cat => (
+                      <button key={cat.key} onClick={() => setWithdrawCategory(cat.key)}
+                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${withdrawCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-white border border-gs-line text-gs-muted'}`}>
+                        {cat.icon}{cat.label}
+                      </button>
+                    ))}
+                  </div>
 
-                    <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Rekening Tujuan</label>
-                    <div className="rounded-xl p-3 bg-gs-soft border border-gs-line mb-3">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-gs-green" />
-                        <div>
-                          <span className="block text-[9px] font-bold text-gs-text">{user?.bankName || 'BCA'}</span>
-                          <span className="block text-[7px] text-gs-muted">{user?.bankAccount || '1234567890'} - {user?.bankHolder || user?.name}</span>
+                  {/* Withdraw Form Card */}
+                  <div className="rounded-2xl p-4 bg-white border border-gs-line shadow-sm mb-4">
+
+                    {/* Bank Method Grid */}
+                    {withdrawCategory === 'bank' && (
+                      <div className="mb-3">
+                        <span className="block text-[9px] font-black text-gs-muted uppercase tracking-widest mb-2">Pilih Bank Tujuan</span>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                          {[
+                            { code: 'BCA', name: 'Bank BCA', color: '#003399' },
+                            { code: 'BNI', name: 'Bank BNI', color: '#F15A22' },
+                            { code: 'BRI', name: 'Bank BRI', color: '#00529C' },
+                            { code: 'Mandiri', name: 'Bank Mandiri', color: '#003066' },
+                            { code: 'CIMB', name: 'CIMB Niaga', color: '#7B0E24' },
+                            { code: 'Permata', name: 'Bank Permata', color: '#005EAB' },
+                            { code: 'BSI', name: 'Bank BSI', color: '#00A650' },
+                            { code: 'Danamon', name: 'Bank Danamon', color: '#FDDA24' },
+                            { code: 'Panin', name: 'Bank Panin', color: '#003764' },
+                            { code: 'Maybank', name: 'Maybank', color: '#002F6C' },
+                          ].map(bank => (
+                            <button key={bank.code} onClick={() => setWithdrawBankMethod(bank.code)}
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
+                                {bank.code.slice(0, 2)}
+                              </div>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawBankMethod === bank.code ? 'text-gs-green3' : 'text-gs-muted'}`}>{bank.code}</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
+                    )}
+
+                    {/* E-Wallet Method Grid */}
+                    {withdrawCategory === 'ewallet' && (
+                      <div className="mb-3">
+                        <span className="block text-[9px] font-black text-gs-muted uppercase tracking-widest mb-2">Pilih E-Wallet</span>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                          {[
+                            { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
+                            { code: 'OVO', name: 'OVO', color: '#4C2A86' },
+                            { code: 'DANA', name: 'DANA', color: '#108EE9' },
+                            { code: 'SHOPEEPAY', name: 'ShopeePay', color: '#EE4D2D' },
+                            { code: 'LINKAJA', name: 'LinkAja', color: '#E82529' },
+                            { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
+                            { code: 'JENIUS', name: 'Jenius', color: '#00A651' },
+                            { code: 'BLU', name: 'Blu by BCA', color: '#005BAA' },
+                          ].map(ew => (
+                            <button key={ew.code} onClick={() => setWithdrawEwalletMethod(ew.code)}
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
+                                {ew.name.slice(0, 2)}
+                              </div>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawEwalletMethod === ew.code ? 'text-gs-green3' : 'text-gs-muted'}`}>{ew.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Crypto Method Grid */}
+                    {withdrawCategory === 'crypto' && (
+                      <div className="mb-3">
+                        <span className="block text-[9px] font-black text-gs-muted uppercase tracking-widest mb-2">Pilih Crypto</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { code: 'USDT_TRC20', name: 'USDT', network: 'TRC20', color: '#26A17B' },
+                            { code: 'USDT_ERC20', name: 'USDT', network: 'ERC20', color: '#627EEA' },
+                            { code: 'BTC', name: 'Bitcoin', network: 'BTC', color: '#F7931A' },
+                            { code: 'ETH', name: 'Ethereum', network: 'ERC20', color: '#627EEA' },
+                            { code: 'BNB', name: 'BNB', network: 'BEP20', color: '#F3BA2F' },
+                          ].map(cr => (
+                            <button key={cr.code} onClick={() => setWithdrawCryptoMethod(cr.code)}
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[56px] flex flex-col items-center justify-center gap-1 ${withdrawCryptoMethod === cr.code ? 'border-gs-green bg-green-50 shadow-sm' : 'border-gs-line bg-gs-soft'}`}>
+                              <div className="w-7 h-7 rounded-full grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: cr.color }}>
+                                {cr.name.slice(0, 2)}
+                              </div>
+                              <span className={`text-[8px] font-black text-center leading-tight ${withdrawCryptoMethod === cr.code ? 'text-gs-green3' : 'text-gs-text'}`}>{cr.name}</span>
+                              <span className="text-[6px] font-bold text-gs-muted">{cr.network}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Amount Input */}
+                    <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Jumlah Withdraw</label>
+                    <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder="Minimal Rp 10.000"
+                      className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors mb-2" />
+                    <div className="grid grid-cols-4 gap-1.5 mb-3">
+                      {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
+                        <button key={a} onClick={() => setWithdrawAmount(a)} className="h-8 rounded-lg bg-gs-soft border border-gs-line text-[8px] md:text-[9px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
+                          {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+                        </button>
+                      ))}
                     </div>
 
+                    {/* Account Detail Form - Dynamic based on category */}
+                    {withdrawCategory === 'bank' && (
+                      <div className="mb-3">
+                        <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Nomor Rekening</label>
+                        <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor rekening"
+                          className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors mb-2" />
+                        <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Nama Pemilik Rekening</label>
+                        <input type="text" value={withdrawAccountHolder} onChange={(e) => setWithdrawAccountHolder(e.target.value)} placeholder="Nama sesuai rekening"
+                          className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors" />
+                      </div>
+                    )}
+
+                    {withdrawCategory === 'ewallet' && (
+                      <div className="mb-3">
+                        <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Nomor HP / Email</label>
+                        <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor HP atau email e-wallet"
+                          className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors" />
+                      </div>
+                    )}
+
+                    {withdrawCategory === 'crypto' && (
+                      <div className="mb-3">
+                        <label className="block mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">Wallet Address</label>
+                        <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan alamat wallet crypto"
+                          className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green transition-colors" />
+                      </div>
+                    )}
+
+                    {/* Withdraw Button */}
                     <button onClick={handleWithdraw} disabled={withdrawLoading}
-                      className="w-full h-11 rounded-2xl bg-gs-green3 text-white text-[11px] font-bold hover:bg-gs-green transition-colors disabled:opacity-70">
-                      {withdrawLoading ? 'Memproses...' : 'Withdraw Sekarang'}
+                      className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                      style={{ background: 'linear-gradient(135deg, #6b2100 0%, #b45309 50%, #d4a331 100%)' }}>
+                      {withdrawLoading ? (
+                        <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+                      ) : (
+                        <><Minus className="w-4 h-4" />Withdraw Sekarang</>
+                      )}
                     </button>
                   </div>
 
@@ -2647,6 +2959,80 @@ function Dashboard() {
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-gs-green3/10 grid place-items-center">
                   <UserPlus className="w-5 h-5 text-gs-green3" />
+                </div>
+              </div>
+
+              {/* ====== MISI BONUS UNDANGAN ====== */}
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #1a0a00 0%, #7c3a00 54%, #d4a331 100%)' }}>
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                <div className="relative p-4 md:p-5 text-white">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-500/30 border border-yellow-400/40 grid place-items-center">
+                      <Trophy className="w-5 h-5 text-yellow-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-[14px] md:text-[16px] font-black">Misi Bonus Undangan</h3>
+                      <span className="text-[8px] font-bold text-yellow-200">Ajak lebih banyak teman, dapatkan bonus lebih besar!</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {(() => {
+                      const missions = [
+                        { target: 3, bonus: 15000, medal: '🥉', tier: 'Perunggu', color: 'from-amber-700 to-amber-500', barColor: 'bg-amber-400', borderColor: 'border-amber-400/40' },
+                        { target: 5, bonus: 35000, medal: '🥈', tier: 'Perak', color: 'from-gray-400 to-gray-300', barColor: 'bg-gray-300', borderColor: 'border-gray-300/40' },
+                        { target: 10, bonus: 75000, medal: '🥇', tier: 'Emas', color: 'from-yellow-500 to-yellow-300', barColor: 'bg-yellow-400', borderColor: 'border-yellow-400/40' },
+                        { target: 20, bonus: 150000, medal: '💎', tier: 'Berlian', color: 'from-cyan-500 to-blue-400', barColor: 'bg-cyan-400', borderColor: 'border-cyan-400/40' },
+                        { target: 50, bonus: 500000, medal: '👑', tier: 'Mahkota', color: 'from-purple-600 to-pink-400', barColor: 'bg-purple-400', borderColor: 'border-purple-400/40' },
+                        { target: 100, bonus: 1500000, medal: '🏆', tier: 'Legenda', color: 'from-gs-gold to-yellow-300', barColor: 'bg-yellow-300', borderColor: 'border-yellow-300/40' },
+                      ]
+                      const totalMembers = referralInfo.totalMembers || 0
+                      return missions.map((m) => {
+                        const progress = Math.min(totalMembers, m.target)
+                        const pct = Math.min(100, (progress / m.target) * 100)
+                        const reached = totalMembers >= m.target
+                        const claimed = claimedMissions.has(m.target)
+                        return (
+                          <div key={m.target} className={`rounded-2xl p-3 bg-white/10 border ${m.borderColor} backdrop-blur-sm`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[18px]">{m.medal}</span>
+                                <div>
+                                  <span className="block text-[10px] font-black text-white">Undang {m.target} Teman</span>
+                                  <span className="block text-[7px] font-bold text-yellow-200">{m.tier} — Bonus {formatRupiah(m.bonus)}</span>
+                                </div>
+                              </div>
+                              {claimed ? (
+                                <span className="h-7 px-3 rounded-lg bg-green-500 text-white text-[8px] font-black flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />Diklaim
+                                </span>
+                              ) : reached ? (
+                                <button
+                                  onClick={() => {
+                                    setClaimedMissions(prev => new Set(prev).add(m.target))
+                                    toast({ title: 'Bonus Diklaim!', description: `+${formatRupiah(m.bonus)} bonus undangan ${m.tier}` })
+                                  }}
+                                  className="h-7 px-3 rounded-lg bg-green-500 hover:bg-green-600 text-white text-[8px] font-black flex items-center gap-1 transition-colors"
+                                >
+                                  <DollarSign className="w-3 h-3" />Klaim
+                                </button>
+                              ) : (
+                                <span className="h-7 px-3 rounded-lg bg-white/15 text-white/50 text-[8px] font-black flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />Belum
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+                                <div className={`h-full rounded-full ${m.barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-[8px] font-bold text-white/70">{progress}/{m.target}</span>
+                            </div>
+                          </div>
+                        )
+                      })
+                    })()}
+                  </div>
                 </div>
               </div>
 

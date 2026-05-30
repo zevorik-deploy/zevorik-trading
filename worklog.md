@@ -108,3 +108,27 @@ Stage Summary:
 - Line chart has active dot on hover
 - Area chart has gradient fill with pulsing dot
 - Both product cards and detail modal have full chart controls
+
+---
+Task ID: 7
+Agent: main
+Task: Redesign referral missions, deposit, and withdraw pages with beautiful UI and mobile support
+
+Work Log:
+- Added new state variables: depositCategory, depositBankMethod, depositEwalletMethod, withdrawCategory, withdrawBankMethod, withdrawEwalletMethod, withdrawCryptoMethod, withdrawAccountNumber, withdrawAccountHolder, claimedMissions (Set<number>)
+- Added "Misi Bonus Undangan" section to undang tab: gold gradient card with 6 mission milestones (3/5/10/20/50/100 teman), each with medal emoji (🥉🥈🥇💎👑🏆), progress bar, bonus amount in Rupiah, and Klaim/Belum/Diklaim button
+- Redesigned Deposit page: balance card with wallet icon, 3 category tabs (Transfer Bank / E-Wallet / QRIS), bank grid (8 banks with color-coded cards), e-wallet grid (6 wallets), QRIS section with SVG QR code placeholder, 7 quick amount buttons (50rb-5jt), selected method info display, gradient deposit button
+- Redesigned Withdraw page: dual balance display (Dompet Utama + Dompet Penarikan), 3 category tabs (Transfer Bank / E-Wallet / Crypto), bank grid (10 banks), e-wallet grid (8 wallets), crypto grid (5 options: USDT TRC20/ERC20, BTC, ETH, BNB with network labels), dynamic account form (bank→rekening+nama, ewallet→HP/email, crypto→wallet address), quick amount buttons, gold gradient withdraw button
+- Updated handleDeposit to pass selected payment method (bank/ewallet/qris + specific method name)
+- Updated handleWithdraw to pass selected method and account details, with validation for account fields
+- All grids use responsive layout (grid-cols-3 md:grid-cols-4)
+- Touch-friendly buttons (min 44px via h-11/h-12)
+- Lint passes with no errors
+- Dev server running successfully on port 3000
+
+Stage Summary:
+- Misi Bonus Undangan: 6-tier mission system with progress tracking, medals, and claim buttons
+- Deposit: Beautiful multi-method deposit with Bank (8 banks), E-Wallet (6 wallets), QRIS with SVG QR code
+- Withdraw: Full multi-method withdrawal with Bank (10 banks), E-Wallet (8 wallets), Crypto (5 coins), dynamic account forms
+- All features fully mobile responsive
+- File grew from 4373 to 4759 lines
