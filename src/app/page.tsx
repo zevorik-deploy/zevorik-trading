@@ -639,12 +639,13 @@ function Dashboard() {
     for (let i = 0; i < 50; i++) {
       // Each tick: 50% chance to flip direction — creates natural zigzag
       const dir = Math.random() > 0.5 ? 1 : -1
-      // Step size: baseVal * 0.0005-0.0015
-      const stepSize = baseVal * (0.0005 + Math.random() * 0.001)
+      // Adaptive step: ensures ±1 visible change
+      const minStep = Math.max(1, baseVal * 0.0005)
+      const stepSize = minStep * (0.8 + Math.random() * 1.2)
       // Overall bias toward the final value
       const bias = (isUp ? 1 : -1) * baseVal * 0.00005
       // Combine: momentum carries, new direction adds, bias drifts toward target
-      momentum = momentum * 0.3 + dir * stepSize + bias
+      momentum = momentum * 0.25 + dir * stepSize + bias
       val += momentum
       // Light mean reversion — pulls toward baseVal
       val += (baseVal - val) * 0.005
@@ -658,14 +659,15 @@ function Dashboard() {
 
   // IHSG live update interval — runs independently, never stops
   useEffect(() => {
+    let ihsgMomentum = 0
     const interval = setInterval(() => {
       const ref = ihsgChartRef.current
       if (!ref.initialized) return
       // Each tick: 50% chance to go up or down — natural zigzag
       const dir = Math.random() > 0.5 ? 1 : -1
-      const stepSize = ref.baseVal * (0.0003 + Math.random() * 0.0008)
-      const d = dir * stepSize
-      ref.val += d
+      const stepSize = ref.baseVal * (0.0004 + Math.random() * 0.001)
+      ihsgMomentum = ihsgMomentum * 0.25 + dir * stepSize
+      ref.val += ihsgMomentum
       // Light mean reversion — keeps price near baseVal
       ref.val += (ref.baseVal - ref.val) * 0.004
 
@@ -694,23 +696,22 @@ function Dashboard() {
     let momentum = 0
 
     for (let i = 0; i < 25; i++) {
-      // Each tick: 50% chance to go up or down — natural zigzag
       const dir = Math.random() > 0.5 ? 1 : -1
-      // Step size proportional to price (0.1-0.3% per tick)
-      const stepSize = stock.price * (0.001 + Math.random() * 0.002)
-      // Bias toward main direction
-      const bias = mainDir * stock.price * 0.0002
-      // Combine: momentum carries, new direction adds, bias drifts toward target
-      momentum = momentum * 0.3 + dir * stepSize + bias
+      // Adaptive step: ensures ±1 visible change even for penny stocks (GOTO=74)
+      const minStep = Math.max(1, stock.price * 0.0015)
+      const stepSize = minStep * (0.8 + Math.random() * 1.2)
+      const bias = mainDir * stock.price * 0.0003
+      momentum = momentum * 0.25 + dir * stepSize + bias
       p += momentum
-      // Light mean reversion — pulls toward current price
-      p += (stock.price - p) * 0.008
+      // Adaptive mean reversion: stronger when far from target
+      const reversionStrength = 0.01 + Math.abs(stock.price - p) / stock.price * 0.1
+      p += (stock.price - p) * Math.min(reversionStrength, 0.05)
       pts.push({ i, p: Math.round(p) })
     }
     pts.push({ i: 25, p: Math.round(stock.price) })
     sparklineCache.current.set(stock.id, pts)
     // Save simulation state for live updates
-    sparklineSimRef.current.set(stock.id, { val: stock.price, prevD: momentum * 0.3, trend: mainDir * stock.price * 0.0002, momentum: 0 })
+    sparklineSimRef.current.set(stock.id, { val: stock.price, prevD: momentum * 0.25, trend: mainDir * stock.price * 0.0003, momentum: 0 })
     return pts
   }, [])
 
@@ -726,12 +727,15 @@ function Dashboard() {
 
         // Each tick: 50% chance to go up or down — natural zigzag
         const dir = Math.random() > 0.5 ? 1 : -1
-        // Step size proportional to price (0.05-0.15% per tick)
-        const stepSize = s.price * (0.0005 + Math.random() * 0.001)
-        const d = dir * stepSize
-        sim.val += d
-        // Light mean reversion
-        sim.val += (s.price - sim.val) * 0.004
+        // Adaptive step: ensures ±1 visible change even for penny stocks
+        const minStep = Math.max(1, s.price * 0.001)
+        const stepSize = minStep * (0.5 + Math.random() * 1)
+        // Use momentum carry-over for smooth movement
+        sim.momentum = sim.momentum * 0.25 + dir * stepSize
+        sim.val += sim.momentum
+        // Adaptive mean reversion
+        const reversionStrength = 0.008 + Math.abs(s.price - sim.val) / s.price * 0.08
+        sim.val += (s.price - sim.val) * Math.min(reversionStrength, 0.04)
 
         // Shift sparkline data left and add new point
         const newPts = cached.slice(1).map((pt, idx) => ({ i: idx, p: pt.p }))
@@ -777,8 +781,10 @@ function Dashboard() {
     for (let i = 40; i >= 1; i--) {
       // Each tick: 50% chance to go up or down — natural zigzag
       const dir = Math.random() > 0.5 ? 1 : -1
-      const stepSize = basePrice * (0.0008 + Math.random() * 0.0012)
-      histMomentum = histMomentum * 0.3 + dir * stepSize
+      // Adaptive step: ensures visibility for all price ranges
+      const minStep = Math.max(1, basePrice * 0.001)
+      const stepSize = minStep * (0.8 + Math.random() * 1.2)
+      histMomentum = histMomentum * 0.25 + dir * stepSize
       const mid = (tempBuy + tempSell) / 2 + histMomentum
       tempBuy = mid - spread / 2
       tempSell = mid + spread / 2
@@ -803,8 +809,10 @@ function Dashboard() {
       phase++
       // Each tick: 50% chance to go up or down — natural zigzag
       const dir = Math.random() > 0.5 ? 1 : -1
-      const stepSize = basePrice * (0.0004 + Math.random() * 0.0008)
-      momentum = momentum * 0.3 + dir * stepSize
+      // Adaptive step: ensures visibility for all price ranges
+      const minStep = Math.max(1, basePrice * 0.0008)
+      const stepSize = minStep * (0.5 + Math.random() * 1)
+      momentum = momentum * 0.25 + dir * stepSize
 
       const mid = (buyPrice + sellPrice) / 2 + momentum
       buyPrice = mid - spread / 2
