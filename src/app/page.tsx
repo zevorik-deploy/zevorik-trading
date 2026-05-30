@@ -615,6 +615,69 @@ function Dashboard() {
   const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number; momentum: number; phase: number}>({buyPrice: 0, sellPrice: 0, trend: 0, momentum: 0, phase: 0})
   const MAX_CHART_POINTS = 60
 
+  // ============ LIVE IHSG CHART STATE (stable, not regenerated on re-render) ============
+  const [ihsgChartData, setIhsgChartData] = useState<{idx: number; value: number}[]>([])
+  const ihsgChartRef = useRef<{val: number; prevD: number; trend: number; momentum: number; phase: number}>({val: 0, prevD: 0, trend: 0, momentum: 0, phase: 0})
+
+  // Initialize & update IHSG chart live
+  useEffect(() => {
+    const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
+    if (!ihsgIdx) return
+    const baseVal = ihsgIdx.value
+    const isUp = ihsgIdx.changePercent >= 0
+
+    // Initialize with smooth historical data
+    const pts: {idx: number; value: number}[] = []
+    let val = baseVal - baseVal * (isUp ? 0.003 : -0.003)
+    let prevD = 0
+    let histTrend = (isUp ? 1 : -1) * baseVal * 0.0003
+    for (let i = 0; i < 50; i++) {
+      // Switch trend phase every 12-18 points
+      if (i % 14 === 0) {
+        histTrend = (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.0002
+      }
+      const trendPush = (isUp ? 1 : -1) * baseVal * 0.00003
+      const wave = Math.sin(i * 0.2) * baseVal * 0.00008
+      const d = prevD * 0.8 + histTrend * 0.3 + (Math.random() - 0.5) * baseVal * 0.0003 + trendPush + wave
+      prevD = d
+      val += d
+      val += (baseVal - val) * 0.02
+      val = Math.max(baseVal * 0.996, Math.min(baseVal * 1.004, val))
+      pts.push({ idx: i, value: Math.round(val) })
+    }
+    pts.push({ idx: 50, value: baseVal })
+    setIhsgChartData(pts)
+
+    // Save simulation state
+    ihsgChartRef.current = { val: baseVal, prevD, trend: histTrend, momentum: 0, phase: 0 }
+
+    // Live update interval — smooth tick every 4 seconds
+    const interval = setInterval(() => {
+      const ref = ihsgChartRef.current
+      ref.phase++
+      // Trend phase switch every 10-18 ticks (40-72 seconds)
+      if (ref.phase % (10 + Math.floor(Math.random() * 8)) === 0) {
+        ref.trend = (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.0002
+      }
+      const noise = (Math.random() - 0.5) * baseVal * 0.00025
+      const delta = ref.momentum * 0.7 + ref.trend * 0.2 + noise * 0.3
+      ref.momentum = delta * 0.5
+      ref.val += delta
+      // Light mean reversion
+      ref.val += (baseVal - ref.val) * 0.01
+      // Clamp to ±0.4%
+      ref.val = Math.max(baseVal * 0.996, Math.min(baseVal * 1.004, ref.val))
+
+      setIhsgChartData(prev => {
+        const nextIdx = prev.length > 0 ? prev[prev.length - 1].idx + 1 : 0
+        const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
+        return next.length > 60 ? next.slice(-60) : next
+      })
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [indices])
+
   // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
   const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
   const sparklineStockHash = useRef<Map<string, string>>(new Map())
@@ -1248,25 +1311,9 @@ function Dashboard() {
                     </div>
                     {(() => {
                       const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
-                      if (!ihsgIdx) return null
-                      // Generate IHSG chart data — realistic with trend phases
-                      const ihsgChartPts: {idx: number; value: number}[] = []
-                      let val = ihsgIdx.value - ihsgIdx.value * 0.004
-                      let prevD = 0
-                      const ihsgTrend = ihsgIdx.changePercent >= 0 ? 1 : -1
-                      for (let i = 0; i < 40; i++) {
-                        const trendPush = ihsgTrend * ihsgIdx.value * 0.00005
-                        const wave = Math.sin(i * 0.25) * ihsgIdx.value * 0.0001
-                        const d = prevD * 0.75 + (Math.random() - 0.48) * ihsgIdx.value * 0.0004 + trendPush + wave
-                        prevD = d
-                        val += d
-                        val += (ihsgIdx.value - val) * 0.025
-                        val = Math.max(ihsgIdx.value * 0.996, Math.min(ihsgIdx.value * 1.004, val))
-                        ihsgChartPts.push({ idx: i, value: Math.round(val) })
-                      }
-                      ihsgChartPts.push({ idx: 40, value: ihsgIdx.value })
+                      if (!ihsgIdx || ihsgChartData.length < 2) return null
                       const isIhsgUp = ihsgIdx.changePercent >= 0
-                      const ihsgPrices = ihsgChartPts.map(p => p.value)
+                      const ihsgPrices = ihsgChartData.map(p => p.value)
                       const ihsgMin = Math.min(...ihsgPrices)
                       const ihsgMax = Math.max(...ihsgPrices)
                       const ihsgRange = ihsgMax - ihsgMin || 1
@@ -1274,7 +1321,7 @@ function Dashboard() {
                       return (
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(ihsgIdx.value)}</span>
+                            <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(ihsgChartData[ihsgChartData.length - 1].value)}</span>
                             <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-green-300' : 'text-red-300'}`}>
                               {isIhsgUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
                               {' '}{formatPercent(ihsgIdx.changePercent)}
@@ -1282,17 +1329,18 @@ function Dashboard() {
                           </div>
                           <div className="h-20 md:h-24">
                             <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={ihsgChartPts}>
+                              <AreaChart data={ihsgChartData} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
                                 <defs>
                                   <linearGradient id="ihsgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0.4" />
+                                    <stop offset="0%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0.45" />
+                                    <stop offset="50%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0.1" />
                                     <stop offset="100%" stopColor={isIhsgUp ? '#4ade80' : '#f87171'} stopOpacity="0" />
                                   </linearGradient>
                                 </defs>
                                 <XAxis dataKey="idx" hide />
                                 <YAxis hide domain={ihsgDomain} />
                                 <Tooltip formatter={(value: number) => [formatNumber(value), 'IHSG']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                                <Area type="monotone" dataKey="value" stroke={isIhsgUp ? '#4ade80' : '#f87171'} fill="url(#ihsgGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} />
+                                <Area type="monotone" dataKey="value" stroke={isIhsgUp ? '#4ade80' : '#f87171'} fill="url(#ihsgGrad)" strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
                               </AreaChart>
                             </ResponsiveContainer>
                           </div>
