@@ -14,7 +14,8 @@ import {
   Phone, Lock, ChevronRight, Trophy, CalendarDays, Flame,
   MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
   ListChecks, ClipboardList, PartyPopper,
-  Download, MessageSquare, Gem, Building2, Headphones, ChevronLeft
+  Download, MessageSquare, Gem, Building2, Headphones, ChevronLeft,
+  Video, Play, ThumbsUp, Eye as EyeIcon, Globe, Send
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -637,6 +638,13 @@ function Dashboard() {
 
   // ============ REFERRAL MISSION CLAIM STATE ============
   const [claimedMissions, setClaimedMissions] = useState<Set<number>>(new Set())
+
+  // ============ PROMO VIDEO MISSION STATE ============
+  const [promoPlatform, setPromoPlatform] = useState<'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'twitter'>('tiktok')
+  const [promoVideoLink, setPromoVideoLink] = useState('')
+  const [promoVideos, setPromoVideos] = useState<{ id: string; platform: string; link: string; views: number; likes: number; bonus: number; status: 'pending' | 'verified' | 'rejected'; submittedAt: string }[]>([])
+  const [promoSubmitLoading, setPromoSubmitLoading] = useState(false)
+  const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
   const [profileEdit, setProfileEdit] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
   const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[], totalMembers: 0, totalDeposit: 0, totalCommission: 0, pendingCommission: 0, claimedCommission: 0, tiers: [{ level: 1, commissionPercent: 35, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 5, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }], history: [] as { id: string; name: string; date: string; level: number; deposit: number; commission: number; status: string }[] })
@@ -3033,6 +3041,347 @@ function Dashboard() {
                       })
                     })()}
                   </div>
+                </div>
+              </div>
+
+              {/* ====== JARINGAN REFERRAL (TREE/SUN VISUAL) ====== */}
+              <div className="rounded-2xl bg-white border border-gs-line shadow-sm mb-4 overflow-hidden">
+                <div className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 grid place-items-center">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-[12px] md:text-[14px] font-black text-gs-green3">Jaringan Referral</h3>
+                      <span className="text-[7px] font-bold text-gs-gold tracking-widest uppercase">Makin Banyak, Makin Luas!</span>
+                    </div>
+                  </div>
+
+                  {/* Sun/Tree Network SVG Visualization */}
+                  <div className="rounded-xl bg-gs-soft border border-gs-line p-3 mb-3 overflow-x-auto">
+                    <svg viewBox="0 0 340 220" className="w-full min-w-[300px]" style={{ maxHeight: 220 }}>
+                      <defs>
+                        <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#17b85c" />
+                          <stop offset="100%" stopColor="#064b28" />
+                        </radialGradient>
+                        <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#d4a331" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#d4a331" stopOpacity="0" />
+                        </radialGradient>
+                        <filter id="glow">
+                          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                          <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                        </filter>
+                      </defs>
+
+                      {/* Sun glow background */}
+                      <circle cx="170" cy="110" r="100" fill="url(#sunGlow)" />
+
+                      {/* Level 3 lines (outermost, faintest) */}
+                      {(() => {
+                        const l2Positions = [
+                          { x: 56, y: 55 }, { x: 284, y: 55 }, { x: 56, y: 165 }, { x: 284, y: 165 },
+                          { x: 40, y: 110 }, { x: 300, y: 110 },
+                        ]
+                        const lines: React.ReactNode[] = []
+                        l2Positions.forEach((p, pi) => {
+                          const angle1 = Math.PI * 0.3 + (pi * 0.2)
+                          const angle2 = Math.PI * 0.3 + ((pi + 1) * 0.2)
+                          lines.push(
+                            <line key={`l3-${pi}-a`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle1) * 28} y2={p.y + Math.sin(angle1) * 28} stroke="#d4a331" strokeWidth="1" strokeOpacity="0.25" />,
+                            <circle key={`l3-${pi}-a-c`} cx={p.x + Math.cos(angle1) * 28} cy={p.y + Math.sin(angle1) * 28} r="4" fill="#d4a331" fillOpacity="0.3" />,
+                          )
+                          if (pi % 2 === 0) {
+                            lines.push(
+                              <line key={`l3-${pi}-b`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle2) * 25} y2={p.y + Math.sin(angle2) * 25} stroke="#d4a331" strokeWidth="1" strokeOpacity="0.2" />,
+                              <circle key={`l3-${pi}-b-c`} cx={p.x + Math.cos(angle2) * 25} cy={p.y + Math.sin(angle2) * 25} r="3" fill="#d4a331" fillOpacity="0.2" />,
+                            )
+                          }
+                        })
+                        return lines
+                      })()}
+
+                      {/* Level 2 lines (middle layer) */}
+                      {[
+                        { fx: 170, fy: 110, tx: 56, ty: 55, color: '#f97316' },
+                        { fx: 170, fy: 110, tx: 284, ty: 55, color: '#f97316' },
+                        { fx: 170, fy: 110, tx: 40, ty: 110, color: '#f97316' },
+                        { fx: 170, fy: 110, tx: 300, ty: 110, color: '#f97316' },
+                        { fx: 170, fy: 110, tx: 56, ty: 165, color: '#f97316' },
+                        { fx: 170, fy: 110, tx: 284, ty: 165, color: '#f97316' },
+                      ].map((l, i) => (
+                        <line key={`l2-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke={l.color} strokeWidth="1.5" strokeOpacity="0.35" strokeDasharray="4 3" />
+                      ))}
+
+                      {/* Level 1 lines (direct referrals, brightest) */}
+                      {[
+                        { fx: 170, fy: 110, tx: 90, ty: 40 },
+                        { fx: 170, fy: 110, tx: 170, ty: 25 },
+                        { fx: 170, fy: 110, tx: 250, ty: 40 },
+                        { fx: 170, fy: 110, tx: 75, ty: 110 },
+                        { fx: 170, fy: 110, tx: 265, ty: 110 },
+                        { fx: 170, fy: 110, tx: 90, ty: 180 },
+                        { fx: 170, fy: 110, tx: 170, ty: 195 },
+                        { fx: 170, fy: 110, tx: 250, ty: 180 },
+                      ].map((l, i) => (
+                        <line key={`l1-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke="#17b85c" strokeWidth="2" strokeOpacity="0.6" />
+                      ))}
+
+                      {/* Level 2 nodes (orange) */}
+                      {[
+                        { x: 56, y: 55, label: 'L2' }, { x: 284, y: 55, label: 'L2' },
+                        { x: 40, y: 110, label: 'L2' }, { x: 300, y: 110, label: 'L2' },
+                        { x: 56, y: 165, label: 'L2' }, { x: 284, y: 165, label: 'L2' },
+                      ].map((n, i) => (
+                        <g key={`n2-${i}`}>
+                          <circle cx={n.x} cy={n.y} r="10" fill="#f97316" fillOpacity="0.7" filter="url(#glow)" />
+                          <text x={n.x} y={n.y + 3} textAnchor="middle" fontSize="6" fontWeight="bold" fill="white">{n.label}</text>
+                        </g>
+                      ))}
+
+                      {/* Level 1 nodes (green, direct referrals) */}
+                      {[
+                        { x: 90, y: 40, label: '1' }, { x: 170, y: 25, label: '2' }, { x: 250, y: 40, label: '3' },
+                        { x: 75, y: 110, label: '4' }, { x: 265, y: 110, label: '5' },
+                        { x: 90, y: 180, label: '6' }, { x: 170, y: 195, label: '7' }, { x: 250, y: 180, label: '8' },
+                      ].map((n, i) => (
+                        <g key={`n1-${i}`}>
+                          <circle cx={n.x} cy={n.y} r="13" fill="#17b85c" fillOpacity="0.85" filter="url(#glow)" />
+                          <text x={n.x} y={n.y + 3.5} textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">{n.label}</text>
+                        </g>
+                      ))}
+
+                      {/* Center node (YOU) */}
+                      <circle cx="170" cy="110" r="28" fill="url(#centerGrad)" filter="url(#glow)" />
+                      <circle cx="170" cy="110" r="28" fill="none" stroke="#d4a331" strokeWidth="2" strokeOpacity="0.6" />
+                      <text x="170" y="107" textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">ANDA</text>
+                      <text x="170" y="117" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#d4a331">CENTER</text>
+
+                      {/* Animated pulse on center */}
+                      <circle cx="170" cy="110" r="28" fill="none" stroke="#17b85c" strokeWidth="2">
+                        <animate attributeName="r" from="28" to="42" dur="2s" repeatCount="indefinite" />
+                        <animate attributeName="stroke-opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                    </svg>
+                  </div>
+
+                  {/* Network Stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl p-2 bg-green-50 border border-green-200 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-gs-green2" />
+                        <span className="text-[7px] font-black text-gs-muted">LEVEL 1</span>
+                      </div>
+                      <b className="block text-[14px] font-black text-gs-green3">{referralInfo.tiers[0]?.activeMembers + referralInfo.tiers[0]?.inactiveMembers || 0}</b>
+                      <span className="block text-[6px] font-bold text-gs-muted">Langsung</span>
+                    </div>
+                    <div className="rounded-xl p-2 bg-orange-50 border border-orange-200 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                        <span className="text-[7px] font-black text-gs-muted">LEVEL 2</span>
+                      </div>
+                      <b className="block text-[14px] font-black text-orange-600">{referralInfo.tiers[1]?.activeMembers + referralInfo.tiers[1]?.inactiveMembers || 0}</b>
+                      <span className="block text-[6px] font-bold text-gs-muted">Cabang</span>
+                    </div>
+                    <div className="rounded-xl p-2 bg-yellow-50 border border-yellow-200 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-gs-gold" />
+                        <span className="text-[7px] font-black text-gs-muted">LEVEL 3</span>
+                      </div>
+                      <b className="block text-[14px] font-black text-gs-gold">{referralInfo.tiers[2]?.activeMembers + referralInfo.tiers[2]?.inactiveMembers || 0}</b>
+                      <span className="block text-[6px] font-bold text-gs-muted">Akar</span>
+                    </div>
+                  </div>
+
+                  {/* Expand hint */}
+                  <div className="mt-2 text-center">
+                    <span className="text-[7px] font-bold text-gs-muted">💡 Semakin banyak yang Anda undang, jaringan makin luas seperti akar pohon!</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ====== MISI PROMOSI VIDEO ====== */}
+              <div className="rounded-2xl bg-white border border-gs-line shadow-sm mb-4 overflow-hidden">
+                <div className="p-3 md:p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-red-500 grid place-items-center">
+                      <Video className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-[12px] md:text-[14px] font-black text-gs-green3">Misi Promosi Video</h3>
+                      <span className="text-[7px] font-bold text-pink-500 tracking-widest uppercase">Review & Dapatkan Bonus!</span>
+                    </div>
+                  </div>
+
+                  {/* How it works */}
+                  <div className="rounded-xl p-3 bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 mb-3">
+                    <div className="flex items-start gap-2">
+                      <Info className="w-4 h-4 text-pink-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="block text-[9px] font-black text-gs-text mb-1">Cara Kerja:</span>
+                        <div className="space-y-0.5">
+                          <span className="block text-[7px] font-semibold text-gs-muted">1️⃣ Upload video review tentang Global Saham ke media sosial</span>
+                          <span className="block text-[7px] font-semibold text-gs-muted">2️⃣ Kirim link video yang sudah di-upload</span>
+                          <span className="block text-[7px] font-semibold text-gs-muted">3️⃣ Bonus dihitung dari views & likes video Anda!</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reward tiers for video */}
+                  <div className="grid grid-cols-3 gap-1.5 mb-3">
+                    {[
+                      { minViews: 100, bonus: 5000, icon: '🎬', label: 'Starter' },
+                      { minViews: 1000, bonus: 25000, icon: '🔥', label: 'Viral' },
+                      { minViews: 10000, bonus: 100000, icon: '🌟', label: 'Superstar' },
+                    ].map(t => (
+                      <div key={t.label} className="rounded-xl p-2 bg-gs-soft border border-gs-line text-center">
+                        <span className="block text-[16px] mb-0.5">{t.icon}</span>
+                        <span className="block text-[7px] font-black text-gs-green3">{t.label}</span>
+                        <span className="block text-[8px] font-black text-gs-gold">{formatRupiah(t.bonus)}</span>
+                        <span className="block text-[6px] font-bold text-gs-muted">Min {t.minViews >= 1000 ? `${t.minViews / 1000}K` : t.minViews} views</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Platform selector */}
+                  <div className="mb-3">
+                    <span className="block text-[8px] font-black text-gs-muted uppercase tracking-widest mb-1.5">Pilih Platform</span>
+                    <div className="flex gap-1.5 overflow-x-auto pb-1">
+                      {[
+                        { key: 'tiktok' as const, label: 'TikTok', color: 'bg-black', icon: '🎵' },
+                        { key: 'instagram' as const, label: 'Instagram', color: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: '📸' },
+                        { key: 'youtube' as const, label: 'YouTube', color: 'bg-red-600', icon: '▶️' },
+                        { key: 'facebook' as const, label: 'Facebook', color: 'bg-blue-600', icon: '📘' },
+                        { key: 'twitter' as const, label: 'X/Twitter', color: 'bg-gray-800', icon: '🐦' },
+                      ].map(p => (
+                        <button key={p.key} onClick={() => setPromoPlatform(p.key)}
+                          className={`flex-shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-[9px] font-bold transition-all ${promoPlatform === p.key ? 'bg-gs-green3 text-white shadow-sm scale-105' : 'bg-gs-soft border border-gs-line text-gs-muted'}`}>
+                          <span className="text-[12px]">{p.icon}</span>
+                          <span>{p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Video link input */}
+                  <div className="mb-3">
+                    <span className="block text-[8px] font-black text-gs-muted uppercase tracking-widest mb-1.5">Link Video</span>
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gs-muted" />
+                        <input
+                          type="url"
+                          value={promoVideoLink}
+                          onChange={(e) => setPromoVideoLink(e.target.value)}
+                          placeholder={`Masukkan link ${promoPlatform === 'tiktok' ? 'TikTok' : promoPlatform === 'instagram' ? 'Instagram' : promoPlatform === 'youtube' ? 'YouTube' : promoPlatform === 'facebook' ? 'Facebook' : 'X/Twitter'}`}
+                          className="w-full h-10 rounded-xl bg-gs-soft border border-gs-line pl-9 pr-3 text-[11px] font-semibold text-gs-dark outline-none focus:border-gs-green focus:ring-1 focus:ring-gs-green/30 transition-all placeholder:text-gray-400"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!promoVideoLink.trim()) {
+                            toast({ title: 'Error', description: 'Masukkan link video terlebih dahulu', variant: 'destructive' })
+                            return
+                          }
+                          if (!promoVideoLink.startsWith('http')) {
+                            toast({ title: 'Error', description: 'Link video tidak valid, harus dimulai dengan http', variant: 'destructive' })
+                            return
+                          }
+                          setPromoSubmitLoading(true)
+                          setTimeout(() => {
+                            const simulatedViews = Math.floor(Math.random() * 5000) + 50
+                            const simulatedLikes = Math.floor(simulatedViews * (Math.random() * 0.15 + 0.02))
+                            let bonus = 0
+                            if (simulatedViews >= 10000) bonus = 100000
+                            else if (simulatedViews >= 1000) bonus = 25000
+                            else if (simulatedViews >= 100) bonus = 5000
+                            else bonus = 1000
+                            const newVideo = {
+                              id: `promo-${Date.now()}`,
+                              platform: promoPlatform,
+                              link: promoVideoLink,
+                              views: simulatedViews,
+                              likes: simulatedLikes,
+                              bonus,
+                              status: 'verified' as const,
+                              submittedAt: new Date().toISOString(),
+                            }
+                            setPromoVideos(prev => [newVideo, ...prev])
+                            setPromoVideoLink('')
+                            toast({ title: 'Video Terkirim! 🎬', description: `Bonus ${formatRupiah(bonus)} dari ${simulatedViews.toLocaleString()} views` })
+                            setPromoSubmitLoading(false)
+                          }, 1500)
+                        }}
+                        disabled={promoSubmitLoading}
+                        className="h-10 px-4 rounded-xl bg-gs-green3 text-white text-[9px] font-bold flex items-center gap-1.5 hover:bg-gs-green transition-colors disabled:opacity-60 flex-shrink-0"
+                      >
+                        {promoSubmitLoading ? (
+                          <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        ) : (
+                          <><Send className="w-3.5 h-3.5" />Kirim</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submitted videos list */}
+                  {promoVideos.length > 0 && (
+                    <div>
+                      <span className="block text-[8px] font-black text-gs-muted uppercase tracking-widest mb-1.5">Video Anda ({promoVideos.length})</span>
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
+                        {promoVideos.map((v) => {
+                          const platformInfo: Record<string, { label: string; icon: string; color: string }> = {
+                            tiktok: { label: 'TikTok', icon: '🎵', color: 'bg-black' },
+                            instagram: { label: 'Instagram', icon: '📸', color: 'bg-gradient-to-br from-purple-500 to-pink-500' },
+                            youtube: { label: 'YouTube', icon: '▶️', color: 'bg-red-600' },
+                            facebook: { label: 'Facebook', icon: '📘', color: 'bg-blue-600' },
+                            twitter: { label: 'X/Twitter', icon: '🐦', color: 'bg-gray-800' },
+                          }
+                          const pi = platformInfo[v.platform] || platformInfo.tiktok
+                          return (
+                            <div key={v.id} className="rounded-xl p-2.5 bg-gs-soft border border-gs-line">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-7 h-7 rounded-lg ${pi.color} grid place-items-center text-[12px]`}>
+                                    {pi.icon}
+                                  </div>
+                                  <div>
+                                    <span className="block text-[9px] font-bold text-gs-text">{pi.label}</span>
+                                    <span className="block text-[6px] text-gs-muted truncate max-w-[140px]">{v.link}</span>
+                                  </div>
+                                </div>
+                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-green-100 text-green-700' : v.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                  {v.status === 'verified' ? <><CheckCircle className="w-2.5 h-2.5" />Terverifikasi</> : v.status === 'pending' ? <><Clock className="w-2.5 h-2.5" />Diperiksa</> : <><AlertCircle className="w-2.5 h-2.5" />Ditolak</>}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                  <EyeIcon className="w-3 h-3 text-blue-500" />
+                                  <span className="text-[8px] font-black text-gs-text">{v.views.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <ThumbsUp className="w-3 h-3 text-pink-500" />
+                                  <span className="text-[8px] font-black text-gs-text">{v.likes.toLocaleString()}</span>
+                                </div>
+                                <div className="ml-auto flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3 text-gs-gold" />
+                                  <span className="text-[9px] font-black text-gs-gold">{formatRupiah(v.bonus)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Total video bonus */}
+                      <div className="mt-2 rounded-xl p-2.5 bg-gradient-to-r from-pink-50 to-yellow-50 border border-gs-gold/30 flex items-center justify-between">
+                        <span className="text-[8px] font-bold text-gs-muted">Total Bonus Video</span>
+                        <span className="text-[12px] font-black text-gs-gold">{formatRupiah(promoVideos.reduce((s, v) => s + v.bonus, 0))}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

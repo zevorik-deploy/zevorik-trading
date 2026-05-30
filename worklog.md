@@ -132,3 +132,37 @@ Stage Summary:
 - Withdraw: Full multi-method withdrawal with Bank (10 banks), E-Wallet (8 wallets), Crypto (5 coins), dynamic account forms
 - All features fully mobile responsive
 - File grew from 4373 to 4759 lines
+
+---
+Task ID: 8
+Agent: main
+Task: Add Jaringan Referral (tree/sun visual) and Misi Promosi Video system to undang tab
+
+Work Log:
+- Added new lucide-react imports: Video, Play, ThumbsUp, Eye as EyeIcon, Globe, Send
+- Added promo video state: promoPlatform, promoVideoLink, promoVideos, promoSubmitLoading, promoClaimLoadingId
+- Created "Jaringan Referral" section with SVG sun/tree network visualization:
+  - Center node (ANDA) with pulsing animation ring
+  - Level 1 nodes (green, 8 direct referrals radiating outward)
+  - Level 2 nodes (orange, 6 branch referrals further out)
+  - Level 3 nodes (gold, outermost roots expanding widest)
+  - Connection lines with varying opacity (L1 solid bright, L2 dashed, L3 faint)
+  - Radial gradient sun glow background effect
+  - SVG glow filter on all nodes
+  - Network stats grid showing L1/L2/L3 member counts
+  - Hint text: "Semakin banyak yang Anda undang, jaringan makin luas seperti akar pohon!"
+- Created "Misi Promosi Video" section with:
+  - How it works info box (3 steps: upload → submit link → earn bonus from views)
+  - 3 reward tiers: Starter (100 views → Rp 5K), Viral (1K views → Rp 25K), Superstar (10K views → Rp 100K)
+  - Platform selector: TikTok, Instagram, YouTube, Facebook, X/Twitter (with emoji icons, scrollable)
+  - Video link input with Globe icon and Send button (1.5s simulated processing)
+  - Submitted videos list: platform icon, link, views count, likes count, bonus amount, status badge
+  - Total bonus video accumulator at bottom
+- Lint passes with no errors
+- Dev server running on port 3000
+- File grew from 4759 to 5108 lines
+
+Stage Summary:
+- Jaringan Referral: Beautiful sun/tree SVG visualization with 3 levels of nodes, animated center pulse, expanding root system
+- Misi Promosi Video: Complete video review submission system with 5 platforms, view-based bonus calculation, submitted video tracking
+- All features mobile responsive (scrollable platform selector, responsive grids)
