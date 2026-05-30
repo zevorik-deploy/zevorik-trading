@@ -617,13 +617,20 @@ function Dashboard() {
 
   // ============ LIVE IHSG CHART STATE (stable, not regenerated on re-render) ============
   const [ihsgChartData, setIhsgChartData] = useState<{idx: number; value: number}[]>([])
-  const ihsgChartRef = useRef<{val: number; prevD: number; trend: number; momentum: number; phase: number}>({val: 0, prevD: 0, trend: 0, momentum: 0, phase: 0})
+  const ihsgChartRef = useRef<{val: number; prevD: number; trend: number; momentum: number; phase: number; baseVal: number; initialized: boolean}>({val: 0, prevD: 0, trend: 0, momentum: 0, phase: 0, baseVal: 0, initialized: false})
+  const ihsgIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Initialize & update IHSG chart live
+  // Initialize IHSG chart ONCE, then keep updating live
   useEffect(() => {
     const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
     if (!ihsgIdx) return
+
+    // Only initialize once — don't reset when indices refresh
+    if (ihsgChartRef.current.initialized) return
+    ihsgChartRef.current.initialized = true
+
     const baseVal = ihsgIdx.value
+    ihsgChartRef.current.baseVal = baseVal
     const isUp = ihsgIdx.changePercent >= 0
 
     // Initialize with smooth historical data
@@ -632,7 +639,6 @@ function Dashboard() {
     let prevD = 0
     let histTrend = (isUp ? 1 : -1) * baseVal * 0.0003
     for (let i = 0; i < 50; i++) {
-      // Switch trend phase every 12-18 points
       if (i % 14 === 0) {
         histTrend = (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.0002
       }
@@ -648,25 +654,21 @@ function Dashboard() {
     pts.push({ idx: 50, value: baseVal })
     setIhsgChartData(pts)
 
-    // Save simulation state
-    ihsgChartRef.current = { val: baseVal, prevD, trend: histTrend, momentum: 0, phase: 0 }
+    ihsgChartRef.current = { val: baseVal, prevD, trend: histTrend, momentum: 0, phase: 0, baseVal, initialized: true }
 
     // Live update interval — smooth tick every 4 seconds
-    const interval = setInterval(() => {
+    ihsgIntervalRef.current = setInterval(() => {
       const ref = ihsgChartRef.current
       ref.phase++
-      // Trend phase switch every 10-18 ticks (40-72 seconds)
       if (ref.phase % (10 + Math.floor(Math.random() * 8)) === 0) {
-        ref.trend = (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.0002
+        ref.trend = (Math.random() > 0.5 ? 1 : -1) * ref.baseVal * 0.0002
       }
-      const noise = (Math.random() - 0.5) * baseVal * 0.00025
+      const noise = (Math.random() - 0.5) * ref.baseVal * 0.00025
       const delta = ref.momentum * 0.7 + ref.trend * 0.2 + noise * 0.3
       ref.momentum = delta * 0.5
       ref.val += delta
-      // Light mean reversion
-      ref.val += (baseVal - ref.val) * 0.01
-      // Clamp to ±0.4%
-      ref.val = Math.max(baseVal * 0.996, Math.min(baseVal * 1.004, ref.val))
+      ref.val += (ref.baseVal - ref.val) * 0.01
+      ref.val = Math.max(ref.baseVal * 0.996, Math.min(ref.baseVal * 1.004, ref.val))
 
       setIhsgChartData(prev => {
         const nextIdx = prev.length > 0 ? prev[prev.length - 1].idx + 1 : 0
@@ -675,17 +677,17 @@ function Dashboard() {
       })
     }, 4000)
 
-    return () => clearInterval(interval)
+    return () => {
+      if (ihsgIntervalRef.current) clearInterval(ihsgIntervalRef.current)
+    }
   }, [indices])
 
   // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
   const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
-  const sparklineStockHash = useRef<Map<string, string>>(new Map())
 
   const getSparklineData = useCallback((stock: Stock) => {
-    // Only regenerate if stock price actually changed
-    const hash = `${stock.price}-${stock.open}-${stock.high}-${stock.low}`
-    if (sparklineCache.current.has(stock.id) && sparklineStockHash.current.get(stock.id) === hash) {
+    // Only generate ONCE per stock ID — never regenerate on price changes
+    if (sparklineCache.current.has(stock.id)) {
       return sparklineCache.current.get(stock.id)!
     }
     // Generate realistic stock-like sparkline with trend phases
@@ -693,23 +695,19 @@ function Dashboard() {
     const range = stock.high - stock.low
     let p = stock.open
     let prevD = 0
-    // Pick a trend direction based on whether stock is up or down
     const mainTrend = stock.changePercent >= 0 ? 1 : -1
     for (let i = 0; i < 25; i++) {
-      // Trend phase: stronger push in the trend direction, with pullbacks
       const phaseNoise = Math.sin(i * 0.4) * range * 0.03
       const trendPush = mainTrend * range * 0.008
       const d = prevD * 0.75 + (Math.random() - 0.5) * range * 0.015 + trendPush + phaseNoise
       prevD = d
       p += d
-      // Gentle mean reversion toward current price
       p += (stock.price - p) * 0.04
       p = Math.max(stock.low, Math.min(stock.high, p))
       pts.push({ i, p: Math.round(p) })
     }
     pts.push({ i: 25, p: Math.round(stock.price) })
     sparklineCache.current.set(stock.id, pts)
-    sparklineStockHash.current.set(stock.id, hash)
     return pts
   }, [])
 
