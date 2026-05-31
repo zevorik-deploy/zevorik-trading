@@ -608,7 +608,7 @@ function Dashboard() {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [showStockDetail, setShowStockDetail] = useState(false)
   const [tradeModal, setTradeModal] = useState<'buy' | 'sell' | null>(null)
-  const [tradeShares, setTradeShares] = useState('')
+  const [tradeShares, setTradeShares] = useState('') // Now stores Rupiah amount instead of lot number
   const [tradePrice, setTradePrice] = useState('')
   const [tradeOrderType, setTradeOrderType] = useState<'market' | 'limit'>('market')
   const [tradeLoading, setTradeLoading] = useState(false)
@@ -684,6 +684,24 @@ function Dashboard() {
   const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
   const [investChartType, setInvestChartType] = useState<'area' | 'line' | 'candle' | 'bar'>('area')
   const [investTimeframe, setInvestTimeframe] = useState<'1H' | '1D' | '1W' | '1M' | 'ALL'>('1D')
+
+  // ============ SINYAL PRO STATE ============
+  const [sinyalPositions, setSinyalPositions] = useState<{
+    id: string; stockId: string; stockCode: string; stockName: string;
+    direction: 'NAIK' | 'TURUN'; amount: number; duration: number;
+    startPrice: number; startTime: number; profitPercent: number;
+    status: 'active' | 'won' | 'lost';
+  }[]>([])
+  const [sinyalAutoMode, setSinyalAutoMode] = useState(false)
+  const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
+  const [sinyalAmount, setSinyalAmount] = useState('')
+  const [sinyalDuration, setSinyalDuration] = useState(30)
+  const [showSinyalModal, setShowSinyalModal] = useState(false)
+  const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
+  const [sinyalResult, setSinyalResult] = useState<{won: boolean; profit: number} | null>(null)
+  const [sinyalTimer, setSinyalTimer] = useState(0)
+  const [sinyalActive, setSinyalActive] = useState(false)
+  const [sinyalAutoPending, setSinyalAutoPending] = useState(false)
 
   // ============ LIVE INVESTMENT CHART DATA ============
   const [investChartData, setInvestChartData] = useState<Map<string, {idx: number; value: number}[]>>(new Map())
@@ -1039,6 +1057,99 @@ function Dashboard() {
     }
   }, [selectedStock, showStockDetail, tradeModal])
 
+  // ============ SINYAL PRO HELPERS & TIMER ============
+  const calcSinyalProfit = useCallback((amount: number, duration: number): number => {
+    const amountFactor = Math.min(amount / 10000000, 1)
+    const durationFactor = (duration - 10) / (300 - 10)
+    return 5 + (amountFactor * 15) + (durationFactor * 20)
+  }, [])
+
+  const openSinyalPosition = useCallback(() => {
+    if (!selectedSinyalStock || !sinyalAmount) return
+    const amount = parseInt(sinyalAmount)
+    if (amount < 100000) { toast({ title: 'Minimum Rp 100.000', variant: 'destructive' }); return }
+    if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
+    const profitPercent = calcSinyalProfit(amount, sinyalDuration)
+    const posId = `sinyal-${Date.now()}`
+    const newPosition = {
+      id: posId,
+      stockId: selectedSinyalStock.id,
+      stockCode: selectedSinyalStock.code,
+      stockName: selectedSinyalStock.name,
+      direction: sinyalDirection,
+      amount,
+      duration: sinyalDuration,
+      startPrice: selectedSinyalStock.price,
+      startTime: Date.now(),
+      profitPercent,
+      status: 'active' as const,
+    }
+    setSinyalPositions(prev => [...prev, newPosition])
+    setSinyalActive(true)
+    setSinyalResult(null)
+    setSinyalTimer(sinyalDuration)
+    toast({ title: 'Posisi Dibuka! 🎯', description: `${sinyalDirection} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${sinyalDuration}s` })
+  }, [selectedSinyalStock, sinyalAmount, sinyalDirection, sinyalDuration, user, calcSinyalProfit])
+
+  // Sinyal Pro timer
+  useEffect(() => {
+    if (!sinyalActive || sinyalPositions.length === 0) return
+    const activePos = sinyalPositions.find(p => p.status === 'active')
+    if (!activePos) return
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - activePos.startTime) / 1000)
+      const remaining = activePos.duration - elapsed
+      setSinyalTimer(remaining)
+
+      if (remaining <= 0) {
+        const currentStock = stocks.find(s => s.id === activePos.stockId)
+        if (currentStock) {
+          const endPrice = currentStock.price
+          // Rigged: ~42% win rate with some randomness
+          const finalWon = Math.random() < 0.42
+
+          const profit = finalWon ? Math.round(activePos.amount * activePos.profitPercent / 100) : -activePos.amount
+
+          setSinyalPositions(prev => prev.map(p =>
+            p.id === activePos.id ? {...p, status: finalWon ? 'won' : 'lost'} : p
+          ))
+
+          setSinyalResult({won: finalWon, profit})
+
+          if (finalWon) {
+            updateBalance((user?.balance || 0) + Math.abs(profit))
+            toast({ title: 'Prediksi Benar! 🎯', description: `Profit +${formatRupiah(Math.abs(profit))}` })
+          } else {
+            updateBalance((user?.balance || 0) - activePos.amount)
+            toast({ title: 'Prediksi Salah', description: `Kehilangan ${formatRupiah(activePos.amount)}`, variant: 'destructive' })
+          }
+
+          setSinyalActive(false)
+
+          // AUTO mode: schedule new position
+          if (sinyalAutoMode && (user?.balance || 0) >= parseInt(sinyalAmount || '0')) {
+            setSinyalAutoPending(true)
+          }
+        }
+      }
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [sinyalActive, sinyalPositions, sinyalAutoMode, sinyalAmount, stocks, user, updateBalance])
+
+  // AUTO mode: start new position after delay
+  useEffect(() => {
+    if (!sinyalAutoPending || !selectedSinyalStock) return
+    const timeout = setTimeout(() => {
+      setSinyalAutoPending(false)
+      setSinyalResult(null)
+      if (sinyalAutoMode && (user?.balance || 0) >= parseInt(sinyalAmount || '0')) {
+        openSinyalPosition()
+      }
+    }, 2000)
+    return () => clearTimeout(timeout)
+  }, [sinyalAutoPending, sinyalAutoMode, selectedSinyalStock, sinyalAmount, user, openSinyalPosition])
+
   // ============ FETCH FUNCTIONS ============
   const fetchStocks = useCallback(async () => {
     try { const r = await fetch('/api/stocks'); const d = await r.json(); if (d.stocks) setStocks(d.stocks) } catch {}
@@ -1168,18 +1279,21 @@ function Dashboard() {
   // ============ TRADE ============
   const handleTrade = async () => {
     if (!user || !selectedStock || !tradeModal || !tradeShares) return
-    const shares = parseInt(tradeShares)
-    if (shares <= 0) return
+    const amount = parseInt(tradeShares)
+    if (amount < 100000) { toast({ title: 'Minimum transaksi Rp 100.000', variant: 'destructive' }); return }
+    if (amount > (user?.balance || 0) && tradeModal === 'buy') { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
     setTradeLoading(true)
     try {
       const livePrice = tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price)
+      const fee = Math.round(amount * 0.0015)
+      const totalAmount = amount + fee
       const res = await fetch('/api/transactions', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, stockId: selectedStock.id, type: tradeModal === 'buy' ? 'BUY' : 'SELL', shares, price: tradeOrderType === 'limit' ? parseFloat(tradePrice) || livePrice : livePrice }),
+        body: JSON.stringify({ userId: user.id, stockId: selectedStock.id, type: tradeModal === 'buy' ? 'BUY' : 'SELL', shares: 1, price: totalAmount, totalAmount, fee }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Transaksi Berhasil!', description: `${tradeModal === 'buy' ? 'Beli' : 'Jual'} ${shares} lot ${selectedStock.code}` })
+      toast({ title: 'Transaksi Berhasil!', description: `${tradeModal === 'buy' ? 'Beli' : 'Jual'} ${selectedStock.code} sebesar ${formatRupiah(amount)}` })
       setTradeModal(null); setTradeShares(''); setTradePrice('')
       fetchPortfolio(); fetchTransactions(); fetchStocks()
     } catch (err: unknown) {
@@ -1743,7 +1857,7 @@ function Dashboard() {
                         </div>
                         <div>
                           <span className="block text-[9px] font-bold text-gs-text">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
-                          <span className="block text-[7px] text-gs-muted">{tx.shares} lot × {formatRupiah(tx.price)}</span>
+                          <span className="block text-[7px] text-gs-muted">{formatRupiah(tx.total)}</span>
                         </div>
                       </div>
                       <div className="text-right">
@@ -2036,7 +2150,7 @@ function Dashboard() {
                         <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg grid place-items-center text-[8px] md:text-[10px] font-black cursor-pointer ${p.profitLoss >= 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-600'}`}>{p.stock.code.slice(0, 2)}</div>
                         <div>
                           <span className="block text-[10px] md:text-xs font-black text-gs-text">{p.stock.code}</span>
-                          <span className="block text-[7px] md:text-[8px] text-gs-muted">{p.shares} lot × {formatRupiah(p.avgPrice)}</span>
+                          <span className="block text-[7px] md:text-[8px] text-gs-muted">{formatRupiah(p.currentValue)}</span>
                         </div>
                       </div>
                       <div className="text-right">
@@ -2470,6 +2584,176 @@ function Dashboard() {
                         <div className="text-right">
                           <span className="block text-[10px] font-black text-blue-600">+{formatRupiah(inv.totalClaimed)}</span>
                           <span className="block text-[7px] text-gs-muted flex items-center gap-0.5 justify-end"><CheckCircle className="w-2.5 h-2.5" />Selesai</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ====== SINYAL PRO TAB ====== */}
+          {activeTab === 'sinyal' && (
+            <motion.div key="sinyal" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              {/* Header Card */}
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #1e3a5f 54%, #3b82f6 100%)' }}>
+                <div className="p-4 text-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-yellow-300" />
+                      <h2 className="text-[16px] md:text-xl font-black">Sinyal Pro</h2>
+                    </div>
+                    <div className="flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-red-500/30 border border-red-400/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                      <span className="text-[8px] font-black text-red-300">LIVE</span>
+                    </div>
+                  </div>
+                  <p className="text-[9px] md:text-[10px] text-blue-200 leading-relaxed mb-3">Analisis arah pasar dan raih profit hingga 40%</p>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
+                      <Zap className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+                      <b className="block text-[10px] font-black">{sinyalPositions.filter(p => p.status === 'active').length}</b>
+                      <span className="block text-[7px] text-blue-200 font-bold">Posisi Aktif</span>
+                    </div>
+                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
+                      <TrendingUp className="w-4 h-4 text-green-300 mx-auto mb-0.5" />
+                      <b className="block text-[10px] font-black">{formatRupiah(sinyalPositions.filter(p => p.status === 'won').reduce((acc, p) => acc + Math.round(p.amount * p.profitPercent / 100), 0)).replace('Rp', '').trim()}</b>
+                      <span className="block text-[7px] text-blue-200 font-bold">Total Profit</span>
+                    </div>
+                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
+                      <Award className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+                      <b className="block text-[10px] font-black">{sinyalPositions.filter(p => p.status !== 'active').length > 0 ? Math.round(sinyalPositions.filter(p => p.status === 'won').length / sinyalPositions.filter(p => p.status !== 'active').length * 100) : 0}%</b>
+                      <span className="block text-[7px] text-blue-200 font-bold">Win Rate</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Position Card */}
+              {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
+                const ap = sinyalPositions.find(p => p.status === 'active')!
+                return (
+                  <div className="rounded-2xl p-4 mb-4 border-2 border-blue-500 bg-blue-50 shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-blue-600 animate-pulse" />
+                        <span className="text-[11px] font-black text-blue-700">POSISI AKTIF</span>
+                      </div>
+                      <span className="text-[9px] font-bold text-blue-500">{ap.stockCode}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className={`text-[16px] font-black ${ap.direction === 'NAIK' ? 'text-green-600' : 'text-red-600'}`}>{ap.direction}</span>
+                        <span className="block text-[8px] text-gs-muted">{formatRupiah(ap.amount)} • Profit +{ap.profitPercent.toFixed(1)}%</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="block text-[24px] font-black text-blue-700 tabular-nums">{sinyalTimer}s</span>
+                        <span className="block text-[7px] text-gs-muted">sisa waktu</span>
+                      </div>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 rounded-full bg-blue-200 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)' }} />
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Last Result */}
+              {sinyalResult && !sinyalActive && (
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-4 border-2 ${sinyalResult.won ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                  <div className="text-center">
+                    <span className="text-[24px]">{sinyalResult.won ? '🎯' : '❌'}</span>
+                    <h3 className={`text-[14px] font-black ${sinyalResult.won ? 'text-green-700' : 'text-red-700'}`}>
+                      {sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}
+                    </h3>
+                    <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-green-600' : 'text-red-600'}`}>
+                      {sinyalResult.won ? `+${formatRupiah(Math.abs(sinyalResult.profit))}` : `-${formatRupiah(Math.abs(sinyalResult.profit))}`}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Stock Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3">
+                {stocks.slice(0, 12).map(s => {
+                  const sparkData = getSparklineData(s)
+                  const isUp = s.changePercent >= 0
+                  const sparkColor = isUp ? '#3b82f6' : '#ef4444'
+
+                  return (
+                    <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-shadow cursor-pointer ${isUp ? 'border-blue-100' : 'border-red-100'}`}
+                      onClick={() => { setSelectedSinyalStock(s); setShowSinyalModal(true); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalDuration(30); setSinyalResult(null) }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl grid place-items-center text-[9px] md:text-[10px] font-black ${isUp ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-600'}`}>{s.code.slice(0, 2)}</div>
+                          <div>
+                            <span className="block text-[10px] md:text-xs font-black text-gs-text">{s.code}</span>
+                            <span className="block text-[7px] md:text-[8px] text-gs-muted max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
+                          </div>
+                        </div>
+                        <Target className="w-4 h-4 text-gs-muted" />
+                      </div>
+
+                      {/* Mini Sparkline */}
+                      <div className="h-[40px] -mx-1 mb-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                            <defs>
+                              <linearGradient id={`sinyalGrad-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
+                                <stop offset="70%" stopColor={sparkColor} stopOpacity="0.05" />
+                                <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="i" hide />
+                            <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
+                            <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sinyalGrad-${s.id})`} strokeWidth={1.5} dot={false} activeDot={false} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <span className="block text-[13px] md:text-sm font-black text-gs-text tabular-nums">{formatRupiah(s.price)}</span>
+                          <div className={`inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-md ${isUp ? 'bg-blue-50' : 'bg-red-50'}`}>
+                            {isUp ? <TrendingUp className="w-3 h-3 text-blue-600" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
+                            <span className={`text-[9px] md:text-[10px] font-bold ${isUp ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
+                          </div>
+                        </div>
+                        <span className="text-[8px] font-bold text-gs-gold">+40%</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Position History */}
+              {sinyalPositions.filter(p => p.status !== 'active').length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-[11px] md:text-sm font-black text-gs-green3 mb-2">Riwayat Posisi</h3>
+                  <div className="space-y-2">
+                    {sinyalPositions.filter(p => p.status !== 'active').slice(-5).reverse().map(pos => (
+                      <div key={pos.id} className={`rounded-2xl p-3 border ${pos.status === 'won' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-lg grid place-items-center ${pos.status === 'won' ? 'bg-green-100' : 'bg-red-100'}`}>
+                              {pos.status === 'won' ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+                            </div>
+                            <div>
+                              <span className="block text-[10px] font-black text-gs-text">{pos.stockCode} • {pos.direction}</span>
+                              <span className="block text-[7px] text-gs-muted">{formatRupiah(pos.amount)} • {pos.duration}s</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`block text-[10px] font-black ${pos.status === 'won' ? 'text-green-600' : 'text-red-600'}`}>
+                              {pos.status === 'won' ? `+${formatRupiah(Math.round(pos.amount * pos.profitPercent / 100))}` : `-${formatRupiah(pos.amount)}`}
+                            </span>
+                            <span className={`block text-[7px] font-bold ${pos.status === 'won' ? 'text-green-500' : 'text-red-500'}`}>{pos.status === 'won' ? 'BENAR' : 'SALAH'}</span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2947,7 +3231,7 @@ function Dashboard() {
                           <span className="block text-[10px] font-black text-gs-text">
                             {tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock?.code || 'N/A'}
                           </span>
-                          <span className="block text-[7px] text-gs-muted">{tx.shares} lot × {formatRupiah(tx.price)} {tx.orderType ? `(${tx.orderType})` : ''}</span>
+                          <span className="block text-[7px] text-gs-muted">{formatRupiah(tx.total)} {tx.orderType ? `(${tx.orderType})` : ''}</span>
                         </div>
                       </div>
                       <div className="text-right">
@@ -3914,8 +4198,8 @@ function Dashboard() {
           {[
             { key: 'home', label: 'Beranda', icon: HomeIcon },
             { key: 'market', label: 'Pasar', icon: BarChart3 },
+            { key: 'sinyal', label: 'Sinyal', icon: Target },
             { key: 'investasi', label: 'Investasi', icon: DollarSign },
-            { key: 'undang', label: 'Undang', icon: UserPlus },
             { key: 'more', label: 'Lainnya', icon: Menu },
           ].map(tab => (
             <button key={tab.key} onClick={() => {
@@ -3935,6 +4219,7 @@ function Dashboard() {
         {[
           { key: 'home', label: 'Beranda', icon: HomeIcon },
           { key: 'market', label: 'Pasar', icon: BarChart3 },
+          { key: 'sinyal', label: 'Sinyal', icon: Target },
           { key: 'investasi', label: 'Investasi', icon: DollarSign },
           { key: 'undang', label: 'Undang', icon: UserPlus },
           { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
@@ -3977,6 +4262,7 @@ function Dashboard() {
                 {[
                   { icon: <HomeIcon className="w-4 h-4" />, label: 'Beranda', key: 'home' },
                   { icon: <BarChart3 className="w-4 h-4" />, label: 'Pasar Saham', key: 'market' },
+                  { icon: <Target className="w-4 h-4" />, label: 'Sinyal Pro', key: 'sinyal' },
                   { icon: <DollarSign className="w-4 h-4" />, label: 'Investasi', key: 'investasi' },
                   { icon: <Briefcase className="w-4 h-4" />, label: 'Portofolio', key: 'portfolio' },
                   { icon: <Wallet className="w-4 h-4" />, label: 'Keuangan', key: 'finance' },
@@ -4417,38 +4703,34 @@ function Dashboard() {
 
                 {/* Shares */}
                 <div className="mb-3">
-                  <label className="block text-[8px] font-bold text-gs-muted mb-0.5">Jumlah Lot</label>
-                  <input type="number" value={tradeShares} onChange={(e) => setTradeShares(e.target.value)} placeholder="0"
+                  <label className="block text-[8px] font-bold text-gs-muted mb-0.5">Jumlah (Rp)</label>
+                  <input type="number" value={tradeShares} onChange={(e) => setTradeShares(e.target.value)} placeholder="Min. 100.000"
                     className="w-full h-10 rounded-xl bg-gs-soft border border-gs-line px-3 text-[12px] font-semibold outline-none focus:border-gs-green" />
                 </div>
 
-                {/* Quick Lot Buttons */}
+                {/* Quick Amount Buttons */}
                 <div className="flex gap-1.5 mb-3">
-                  {['1', '5', '10', '50', '100'].map(lot => (
-                    <button key={lot} onClick={() => setTradeShares(lot)} className="flex-1 h-7 rounded-lg bg-gs-soft border border-gs-line text-[8px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
-                      {lot}
+                  {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
+                    <button key={amt} onClick={() => setTradeShares(amt)} className="flex-1 h-7 rounded-lg bg-gs-soft border border-gs-line text-[7px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
+                      {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                     </button>
                   ))}
                 </div>
 
                 {/* Summary */}
-                {tradeShares && (
+                {tradeShares && parseInt(tradeShares) > 0 && (
                   <div className="rounded-xl p-3 bg-gs-soft mb-3">
                     <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[8px] text-gs-muted">Harga {tradeModal === 'buy' ? 'Beli' : 'Jual'}</span>
-                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : (tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price)))}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[8px] text-gs-muted">Lot</span>
-                      <span className="text-[8px] font-bold text-gs-text">{tradeShares}</span>
+                      <span className="text-[8px] text-gs-muted">Jumlah</span>
+                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(parseInt(tradeShares || '0'))}</span>
                     </div>
                     <div className="flex items-center justify-between py-0.5">
                       <span className="text-[8px] text-gs-muted">Biaya (0.15%)</span>
-                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah((tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : (tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price))) * parseInt(tradeShares || '0') * 0.0015)}</span>
+                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(Math.round(parseInt(tradeShares || '0') * 0.0015))}</span>
                     </div>
                     <div className="flex items-center justify-between pt-1 mt-1 border-t border-gs-line">
                       <span className="text-[9px] font-bold text-gs-green3">Total</span>
-                      <span className="text-[9px] font-black text-gs-green3">{formatRupiah((tradeOrderType === 'limit' && tradePrice ? parseFloat(tradePrice) : (tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price))) * parseInt(tradeShares || '0') * 1.0015)}</span>
+                      <span className="text-[9px] font-black text-gs-green3">{formatRupiah(parseInt(tradeShares || '0') + Math.round(parseInt(tradeShares || '0') * 0.0015))}</span>
                     </div>
                   </div>
                 )}
@@ -4458,6 +4740,210 @@ function Dashboard() {
                   className={`w-full h-12 rounded-xl text-white text-[12px] font-bold disabled:opacity-70 transition-colors ${tradeModal === 'buy' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-500 hover:bg-red-600'}`}>
                   {tradeLoading ? 'Memproses...' : `${tradeModal === 'buy' ? 'Beli' : 'Jual'} ${selectedStock.code}`}
                 </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Sinyal Pro Modal */}
+      <AnimatePresence>
+        {showSinyalModal && selectedSinyalStock && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false) }} />
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[90vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
+              <div className="p-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-gs-green3" />
+                    <div>
+                      <h3 className="text-[14px] font-black text-gs-green3">Sinyal Pro — {selectedSinyalStock.code}</h3>
+                      <span className="text-[8px] text-gs-muted">{selectedSinyalStock.name} • {formatRupiah(selectedSinyalStock.price)}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false) }} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft"><X className="w-4 h-4" /></button>
+                </div>
+
+                {/* Live Chart */}
+                <div className="rounded-xl p-2 bg-gs-soft mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[8px] font-bold text-gs-muted">GRAFIK LIVE</span>
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-[7px] font-bold text-blue-600">LIVE</span>
+                    </div>
+                  </div>
+                  <div className="h-[100px]">
+                    {(() => {
+                      const sparkData = getSparklineData(selectedSinyalStock)
+                      const isUp = selectedSinyalStock.changePercent >= 0
+                      const chartColor = isUp ? '#3b82f6' : '#ef4444'
+                      return (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                            <defs>
+                              <linearGradient id="sinyalModalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
+                                <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="i" hide />
+                            <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
+                            <ReferenceLine y={selectedSinyalStock.price} stroke="#3b82f6" strokeDasharray="3 3" strokeOpacity={0.3} />
+                            <Area type="monotone" dataKey="p" stroke={chartColor} fill="url(#sinyalModalGrad)" strokeWidth={2}
+                              dot={(props: Record<string, unknown>) => {
+                                const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                if (index !== sparkData.length - 1) return <g key={String(index)} />
+                                return (
+                                  <g key="sinyal-dot">
+                                    <circle cx={cx} cy={cy} r={4} fill={chartColor} opacity={0.3}>
+                                      <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#fff" strokeWidth={1} />
+                                  </g>
+                                )
+                              }}
+                              activeDot={false} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      )
+                    })()}
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[10px] font-black text-gs-text tabular-nums">{formatRupiah(selectedSinyalStock.price)}</span>
+                    <span className={`text-[9px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{formatPercent(selectedSinyalStock.changePercent)}</span>
+                  </div>
+                </div>
+
+                {/* Direction Selector */}
+                <div className="mb-3">
+                  <label className="block text-[8px] font-bold text-gs-muted mb-1">Arah Prediksi</label>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSinyalDirection('NAIK')}
+                      className={`flex-1 h-11 rounded-xl text-[12px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'NAIK' ? 'bg-green-500 text-white shadow-md shadow-green-200' : 'bg-gs-soft text-green-700 border border-green-200'}`}>
+                      <TrendingUp className="w-4 h-4" />NAIK
+                    </button>
+                    <button onClick={() => setSinyalDirection('TURUN')}
+                      className={`flex-1 h-11 rounded-xl text-[12px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'TURUN' ? 'bg-red-500 text-white shadow-md shadow-red-200' : 'bg-gs-soft text-red-700 border border-red-200'}`}>
+                      <TrendingDown className="w-4 h-4" />TURUN
+                    </button>
+                  </div>
+                </div>
+
+                {/* Amount Input */}
+                <div className="mb-3">
+                  <label className="block text-[8px] font-bold text-gs-muted mb-0.5">Jumlah (Rp)</label>
+                  <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="Min. 100.000"
+                    className="w-full h-10 rounded-xl bg-gs-soft border border-gs-line px-3 text-[12px] font-semibold outline-none focus:border-gs-green" />
+                </div>
+
+                {/* Quick Amount Buttons */}
+                <div className="flex gap-1.5 mb-3">
+                  {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
+                    <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-7 rounded-lg bg-gs-soft border border-gs-line text-[7px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
+                      {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Duration Selector */}
+                <div className="mb-3">
+                  <label className="block text-[8px] font-bold text-gs-muted mb-1">Durasi Kontrak</label>
+                  <div className="flex gap-1.5">
+                    {[10, 30, 60, 120, 300].map(dur => (
+                      <button key={dur} onClick={() => setSinyalDuration(dur)}
+                        className={`flex-1 h-8 rounded-lg text-[9px] font-bold transition-colors ${sinyalDuration === dur ? 'bg-gs-green3 text-white' : 'bg-gs-soft border border-gs-line text-gs-green3'}`}>
+                        {dur >= 60 ? `${dur/60}m` : `${dur}s`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Profit Calculator */}
+                {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
+                  <div className="rounded-xl p-3 bg-gs-soft mb-3">
+                    <div className="flex items-center justify-between py-0.5">
+                      <span className="text-[8px] text-gs-muted">Jumlah</span>
+                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(parseInt(sinyalAmount))}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-0.5">
+                      <span className="text-[8px] text-gs-muted">Durasi</span>
+                      <span className="text-[8px] font-bold text-gs-text">{sinyalDuration}s</span>
+                    </div>
+                    <div className="flex items-center justify-between py-0.5">
+                      <span className="text-[8px] text-gs-muted">Profit Rate</span>
+                      <span className="text-[8px] font-bold text-gs-green3">+{calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 mt-1 border-t border-gs-line">
+                      <span className="text-[9px] font-bold text-gs-green3">Potensi Profit</span>
+                      <span className="text-[9px] font-black text-gs-green3">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration) / 100))}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* AUTO Mode Toggle */}
+                <div className="flex items-center justify-between mb-3 p-2 rounded-xl bg-gs-soft border border-gs-line">
+                  <div className="flex items-center gap-2">
+                    <Zap className={`w-4 h-4 ${sinyalAutoMode ? 'text-gs-gold' : 'text-gs-muted'}`} />
+                    <div>
+                      <span className="block text-[9px] font-bold text-gs-text">Mode AUTO</span>
+                      <span className="block text-[7px] text-gs-muted">Otomatis buka posisi baru</span>
+                    </div>
+                  </div>
+                  <button onClick={() => setSinyalAutoMode(!sinyalAutoMode)}
+                    className={`w-10 h-5 rounded-full transition-colors flex items-center ${sinyalAutoMode ? 'bg-gs-green3 justify-end' : 'bg-gray-300 justify-start'}`}>
+                    <div className="w-4 h-4 rounded-full bg-white shadow-sm mx-0.5" />
+                  </button>
+                </div>
+
+                {/* AUTO AKTIF Indicator */}
+                {sinyalAutoMode && sinyalActive && (
+                  <div className="flex items-center justify-center gap-2 mb-3 py-2 rounded-xl bg-gs-gold/10 border border-gs-gold/30">
+                    <Zap className="w-4 h-4 text-gs-gold animate-pulse" />
+                    <span className="text-[9px] font-black text-gs-gold">AUTO AKTIF — Posisi akan dibuka ulang otomatis</span>
+                  </div>
+                )}
+
+                {/* Active Timer in Modal */}
+                {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
+                  const ap = sinyalPositions.find(p => p.status === 'active')!
+                  return (
+                    <div className="rounded-xl p-3 mb-3 border-2 border-blue-500 bg-blue-50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-[12px] font-black ${ap.direction === 'NAIK' ? 'text-green-600' : 'text-red-600'}`}>{ap.direction} {ap.stockCode}</span>
+                        <span className="text-[16px] font-black text-blue-700 tabular-nums">{sinyalTimer}s</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-blue-200 overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)' }} />
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Result in Modal */}
+                {sinyalResult && !sinyalActive && (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-xl p-3 mb-3 text-center ${sinyalResult.won ? 'bg-green-50 border-2 border-green-400' : 'bg-red-50 border-2 border-red-400'}`}>
+                    <span className="text-[20px]">{sinyalResult.won ? '🎯' : '❌'}</span>
+                    <h4 className={`text-[12px] font-black ${sinyalResult.won ? 'text-green-700' : 'text-red-700'}`}>{sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}</h4>
+                    <span className={`text-[11px] font-bold ${sinyalResult.won ? 'text-green-600' : 'text-red-600'}`}>{sinyalResult.won ? '+' : '-'}{formatRupiah(Math.abs(sinyalResult.profit))}</span>
+                  </motion.div>
+                )}
+
+                {/* Submit */}
+                <button onClick={openSinyalPosition}
+                  disabled={sinyalActive || !sinyalAmount || parseInt(sinyalAmount) < 100000 || parseInt(sinyalAmount) > (user?.balance || 0)}
+                  className="w-full h-12 rounded-xl text-white text-[12px] font-black disabled:opacity-70 transition-colors"
+                  style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)' }}>
+                  {sinyalActive ? 'Menunggu Hasil...' : 'Buka Posisi'}
+                </button>
+
+                {/* Balance info */}
+                <div className="flex items-center justify-center gap-1 mt-2">
+                  <Wallet className="w-3 h-3 text-gs-muted" />
+                  <span className="text-[8px] font-bold text-gs-muted">Saldo: {formatRupiah(user?.balance || 0)}</span>
+                </div>
               </div>
             </motion.div>
           </>
