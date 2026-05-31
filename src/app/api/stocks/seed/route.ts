@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/auth'
 
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let code = 'GS'
+  let code = 'TE'
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length))
   }
@@ -42,7 +42,7 @@ export async function POST() {
         balance: 100000000, // Rp 100,000,000
         role: 'investor',
         referralCode: generateReferralCode(),
-        email: 'demo@globalsaham.id',
+        email: 'demo@trendedge.io',
         bankName: 'Bank BCA',
         bankAccount: '1234567890',
         bankHolder: 'Demo User',
@@ -79,33 +79,33 @@ export async function POST() {
       },
     })
 
-    // Create Market Indices
+    // Create Market Indices (International)
     const marketIndices = [
-      { code: 'IHSG', name: 'Indeks Harga Saham Gabungan', value: 7245.83, change: 23.45, changePercent: 0.32 },
-      { code: 'LQ45', name: 'Indeks LQ45', value: 983.56, change: -5.12, changePercent: -0.52 },
-      { code: 'JII', name: 'Jakarta Islamic Index', value: 498.72, change: 8.34, changePercent: 1.70 },
-      { code: 'KOMPAS100', name: 'Indeks KOMPAS100', value: 1256.89, change: 12.67, changePercent: 1.02 },
-      { code: 'IDX30', name: 'Indeks IDX30', value: 512.34, change: -3.21, changePercent: -0.62 },
+      { code: 'SP500', name: 'S&P 500', value: 5321.41, change: 28.73, changePercent: 0.54 },
+      { code: 'NASDAQ', name: 'NASDAQ Composite', value: 16920.80, change: 145.62, changePercent: 0.87 },
+      { code: 'DOW', name: 'Dow Jones Industrial', value: 39512.84, change: -42.77, changePercent: -0.11 },
+      { code: 'RUSSELL', name: 'Russell 2000', value: 2067.41, change: 18.34, changePercent: 0.90 },
+      { code: 'VIX', name: 'CBOE Volatility Index', value: 13.24, change: -0.87, changePercent: -6.17 },
     ]
 
     for (const index of marketIndices) {
       await db.marketIndex.create({ data: index })
     }
 
-    // Create News entries
+    // Create News entries (International Market)
     const newsData = [
-      { title: 'IHSG Menguat di Tengah Sentimen Positif Pasar Global', content: 'Indeks Harga Saham Gabungan (IHSG) berhasil ditutup menguat pada perdagangan hari ini seiring dengan sentimen positif dari pasar global. Penguatan ini didorong oleh data ekonomi AS yang lebih baik dari ekspektasi dan optimisme terhadap pemulihan ekonomi global. Sektor perbankan dan konsumer menjadi kontributor utama penguatan indeks.', category: 'market', isPublished: true },
-      { title: 'Bank Indonesia Pertahankan Suku Bunga Acuan di 6%', content: 'Bank Indonesia memutuskan untuk mempertahankan suku bunga acuan BI Rate di level 6% pada Rapat Dewan Gubernur bulanan. Keputusan ini diambil untuk menjaga stabilitas nilai tukar rupiah dan mengendalikan inflasi yang masih berada dalam target. BI akan terus memantau perkembangan ekonomi global dan domestik untuk kebijakan mendatang.', category: 'market', isPublished: true },
-      { title: 'BBCA Catat Laba Bersih Rp 42,3 Triliun Sepanjang 2024', content: 'PT Bank Central Asia Tbk (BBCA) berhasil mencatatkan laba bersih sebesar Rp 42,3 triliun sepanjang tahun 2024, tumbuh 8,5% dibandingkan tahun sebelumnya.', category: 'company', isPublished: true },
-      { title: 'Tips Investasi Saham untuk Pemula: Mulai dari Sekarang!', content: 'Investasi saham menjadi salah satu cara yang efektif untuk membangun kekayaan jangka panjang. Bagi pemula, penting untuk memahami dasar-dasar investasi saham termasuk analisis fundamental dan teknikal.', category: 'education', isPublished: true },
-      { title: 'Sektor Energi Siap Berkinerja Positif di 2025', content: 'Analis memproyeksikan sektor energi akan berkinerja positif sepanjang 2025 didorong oleh kenaikan harga komoditas dan peningkatan permintaan domestik.', category: 'market', isPublished: true },
-      { title: 'Pembaruan Sistem Trading: Fitur Baru untuk Pengalaman Lebih Baik', content: 'Kami dengan bangga memperkenalkan pembaruan sistem trading terbaru kami. Fitur-fitur baru meliputi real-time market data, charting yang lebih canggih, dan sistem notifikasi yang lebih responsif.', category: 'system', isPublished: true },
-      { title: 'Saham Teknologi Indonesia Prospektif di Era Digital', content: 'Sektor teknologi Indonesia diprediksi akan terus tumbuh seiring dengan peningkatan adopsi digital.', category: 'market', isPublished: true },
-      { title: 'BBRI Luncurkan Program Pinjaman UMKM Baru', content: 'Bank Rakyat Indonesia meluncurkan program pinjaman khusus untuk UMKM dengan bunga ringan dan proses cepat.', category: 'company', isPublished: true },
-      { title: 'Rupiah Menguat di Tengah Arus Modal Asing Masuk', content: 'Mata uang rupiah menguat terhadap dolar AS seiring dengan masuknya arus modal asing ke pasar saham Indonesia.', category: 'market', isPublished: true },
-      { title: 'Sektor Pertambangan Emas Berkinerja Cemerlang', content: 'Saham-saham sektor pertambangan emas menunjukkan kinerja yang cemerlang sepanjang kuartal ini.', category: 'market', isPublished: true },
-      { title: 'Belajar Analisis Teknikal: Fibonacci Retracement', content: 'Fibonacci Retracement adalah salah satu tools analisis teknikal yang populer digunakan trader untuk menentukan level support dan resistance.', category: 'education', isPublished: true },
-      { title: 'GOTO Umumkan Kerjasama Strategis dengan Bank Digital', content: 'GoTo Gojek Tokopedia mengumumkan kerjasama strategis dengan beberapa bank digital untuk memperluas layanan keuangan di ekosistemnya.', category: 'company', isPublished: true },
+      { title: 'NVIDIA Surges to New All-Time High on AI Chip Demand', content: 'NVIDIA shares soared to a record high after the company reported exceptional demand for its AI accelerator chips, with data center revenue more than doubling year-over-year.', category: 'market', isPublished: true },
+      { title: 'Fed Holds Interest Rates Steady, Signals Possible Cut Later This Year', content: 'The Federal Reserve kept interest rates unchanged at its latest meeting but hinted at a potential rate cut in the coming months as inflation shows signs of cooling.', category: 'market', isPublished: true },
+      { title: 'Apple Announces Revolutionary AI Features at WWDC 2025', content: 'Apple introduced a suite of groundbreaking AI-powered features across its product lineup, sending shares higher as analysts predict strong upgrade cycle.', category: 'company', isPublished: true },
+      { title: 'Top Global Stock Picks for 2025: Analysts Reveal Favorites', content: 'Leading Wall Street analysts share their top stock picks for 2025, highlighting opportunities in AI, renewable energy, and semiconductor sectors.', category: 'education', isPublished: true },
+      { title: 'Tesla Deliveries Beat Expectations, Stock Rallies 8%', content: 'Tesla reported quarterly deliveries that exceeded analyst expectations, driven by strong demand for Model Y and the launch of new markets.', category: 'market', isPublished: true },
+      { title: 'TrendEdge Trading Platform Upgrade: New Features Released', content: 'We are proud to announce the latest upgrade to our trading platform. New features include advanced charting tools, real-time market signals, and improved order execution.', category: 'system', isPublished: true },
+      { title: 'Microsoft Cloud Revenue Hits $35 Billion, Azure Growth Accelerates', content: 'Microsoft reported strong quarterly results with Azure cloud revenue growing 31%, outpacing competitors and driving overall company growth.', category: 'company', isPublished: true },
+      { title: 'Amazon Web Services Launches Next-Gen AI Infrastructure', content: 'AWS unveiled its most powerful AI computing infrastructure yet, featuring custom-designed chips that promise 40% better performance per dollar.', category: 'company', isPublished: true },
+      { title: 'Gold Prices Reach Record High Amid Global Uncertainty', content: 'Gold prices surged to new all-time highs as investors seek safe-haven assets amid geopolitical tensions and central bank buying programs.', category: 'market', isPublished: true },
+      { title: 'Semiconductor Sector Outlook Remains Bullish for 2025', content: 'Industry experts project continued growth in the semiconductor sector, driven by AI chip demand and automotive electrification trends.', category: 'market', isPublished: true },
+      { title: 'Technical Analysis Guide: Understanding Moving Averages', content: 'Learn how to use moving averages (MA7, MA25, MA99) to identify market trends and make better trading decisions.', category: 'education', isPublished: true },
+      { title: 'Meta Platforms Reports Strong Advertising Revenue Growth', content: 'Meta Platforms exceeded expectations with 24% growth in advertising revenue, boosted by AI-powered ad targeting and Reels monetization.', category: 'company', isPublished: true },
     ]
 
     for (const news of newsData) {
@@ -138,49 +138,48 @@ export async function POST() {
       await db.notification.create({ data: notif })
     }
 
-    // Create stock data with 30+ stocks
+    // Create stock data — INTERNATIONAL / GLOBAL stocks (prices in IDR equivalent)
     const stockData = [
-      // Banking
-      { code: 'BBCA', name: 'Bank Central Asia Tbk', price: 9875, change: 75, changePercent: 0.77, open: 9800, high: 9950, low: 9800, volume: 15234500, marketCap: 1218000000000000, category: 'bluechip', sector: 'Perbankan', description: 'Bank swasta terbesar di Indonesia dengan jaringan luas dan kinerja keuangan yang konsisten.', peRatio: 22.5, pbv: 4.2, dividendYield: 2.1, lotSize: 100 },
-      { code: 'BBRI', name: 'Bank Rakyat Indonesia Tbk', price: 5825, change: -25, changePercent: -0.43, open: 5850, high: 5900, low: 5800, volume: 23456700, marketCap: 876000000000000, category: 'bluechip', sector: 'Perbankan', description: 'Bank BUMN terbesar dengan fokus pada UMKM dan jaringan terluas di Indonesia.', peRatio: 12.8, pbv: 2.1, dividendYield: 5.3, lotSize: 100 },
-      { code: 'BMRI', name: 'Bank Mandiri Tbk', price: 6250, change: 100, changePercent: 1.63, open: 6150, high: 6300, low: 6150, volume: 12345600, marketCap: 583000000000000, category: 'bluechip', sector: 'Perbankan', description: 'Bank BUMN dengan aset terbesar di Indonesia, fokus pada korporasi dan wholesale banking.', peRatio: 11.2, pbv: 1.9, dividendYield: 4.1, lotSize: 100 },
-      { code: 'BBNI', name: 'Bank Negara Indonesia Tbk', price: 4850, change: 50, changePercent: 1.04, open: 4800, high: 4900, low: 4780, volume: 8765400, marketCap: 243000000000000, category: 'banking', sector: 'Perbankan', description: 'Bank BUMN dengan fokus pada perdagangan internasional dan korporasi.', peRatio: 10.8, pbv: 1.7, dividendYield: 4.5, lotSize: 100 },
-      { code: 'ARTO', name: 'Bank Jago Tbk', price: 478, change: 12, changePercent: 2.57, open: 466, high: 485, low: 466, volume: 8765400, marketCap: 52600000000000, category: 'banking', sector: 'Perbankan', description: 'Bank digital terdepan di Indonesia dengan pendekatan berbasis teknologi dan ekosistem digital.', peRatio: 35.6, pbv: 5.2, dividendYield: 0.5, lotSize: 100 },
-      { code: 'BBTN', name: 'Bank Tabungan Negara Tbk', price: 1425, change: -15, changePercent: -1.04, open: 1440, high: 1445, low: 1415, volume: 15678000, marketCap: 135000000000000, category: 'banking', sector: 'Perbankan', description: 'Bank BUMN yang fokus pada pembiayaan perumahan dan tabungan.', peRatio: 9.5, pbv: 1.4, dividendYield: 3.8, lotSize: 100 },
-      { code: 'BRIS', name: 'Bank Syariah Indonesia Tbk', price: 2560, change: 40, changePercent: 1.59, open: 2520, high: 2580, low: 2510, volume: 6543200, marketCap: 107000000000000, category: 'banking', sector: 'Perbankan', description: 'Bank syariah terbesar di Indonesia dengan jaringan luas dan produk inovatif.', peRatio: 18.2, pbv: 3.1, dividendYield: 2.5, lotSize: 100 },
-      // Telekomunikasi & Tech
-      { code: 'TLKM', name: 'Telkom Indonesia Tbk', price: 3940, change: 40, changePercent: 1.02, open: 3900, high: 3980, low: 3900, volume: 18765400, marketCap: 389000000000000, category: 'bluechip', sector: 'Telekomunikasi', description: 'Perusahaan telekomunikasi terbesar di Indonesia dengan layanan IndiHome dan Telkomsel.', peRatio: 15.3, pbv: 2.8, dividendYield: 4.5, lotSize: 100 },
-      { code: 'GOTO', name: 'GoTo Gojek Tokopedia Tbk', price: 74, change: 2, changePercent: 2.78, open: 72, high: 76, low: 72, volume: 45678900, marketCap: 87000000000000, category: 'tech', sector: 'Teknologi', description: 'Perusahaan teknologi terbesar di Indonesia dengan ekosistem on-demand dan e-commerce.', peRatio: -45.2, pbv: 3.5, dividendYield: 0, lotSize: 100 },
-      { code: 'BUKA', name: 'Bukalapak.com Tbk', price: 106, change: -1, changePercent: -0.94, open: 107, high: 108, low: 104, volume: 12345600, marketCap: 10600000000000, category: 'tech', sector: 'Teknologi', description: 'Platform e-commerce Indonesia yang fokus pada pemberdayaan UMKM dan mitra retail.', peRatio: -28.3, pbv: 2.1, dividendYield: 0, lotSize: 100 },
-      { code: 'EMTK', name: 'Elang Mahkota Teknologi Tbk', price: 446, change: 6, changePercent: 1.36, open: 440, high: 452, low: 440, volume: 4321000, marketCap: 26700000000000, category: 'media', sector: 'Media', description: 'Grup media terbesar di Indonesia dengan Surya Citra Media dan jaringan televisi luas.', peRatio: 14.2, pbv: 2.3, dividendYield: 3.5, lotSize: 100 },
-      { code: 'DCRU', name: 'DCI Indonesia Tbk', price: 385, change: 15, changePercent: 4.05, open: 370, high: 390, low: 368, volume: 5678000, marketCap: 42000000000000, category: 'tech', sector: 'Teknologi', description: 'Penyedia layanan data center terbesar di Indonesia.', peRatio: 28.5, pbv: 4.1, dividendYield: 1.2, lotSize: 100 },
-      // Konsumer
-      { code: 'ICBP', name: 'Indofood CBP Sukses Makmur Tbk', price: 11350, change: 150, changePercent: 1.34, open: 11200, high: 11450, low: 11200, volume: 3456700, marketCap: 131000000000000, category: 'consumer', sector: 'Konsumer', description: 'Produsen makanan dan minuman terbesar di Indonesia dengan brand Indomie dan lainnya.', peRatio: 18.9, pbv: 5.6, dividendYield: 2.8, lotSize: 100 },
-      { code: 'UNVR', name: 'Unilever Indonesia Tbk', price: 2870, change: -30, changePercent: -1.03, open: 2900, high: 2920, low: 2850, volume: 5678900, marketCap: 109000000000000, category: 'consumer', sector: 'Konsumer', description: 'Perusahaan consumer goods multinasional dengan brand-brand terkenal di Indonesia.', peRatio: 25.7, pbv: 8.5, dividendYield: 3.2, lotSize: 100 },
-      { code: 'INDF', name: 'Indofood Sukses Makmur Tbk', price: 6850, change: 75, changePercent: 1.11, open: 6775, high: 6925, low: 6750, volume: 4567800, marketCap: 82600000000000, category: 'consumer', sector: 'Konsumer', description: 'Konglomerasi makanan terbesar di Indonesia.', peRatio: 14.2, pbv: 3.5, dividendYield: 3.8, lotSize: 100 },
-      { code: 'ACES', name: 'Aspirasi Hidup Indonesia Tbk', price: 670, change: -8, changePercent: -1.18, open: 678, high: 685, low: 665, volume: 5678000, marketCap: 24000000000000, category: 'consumer', sector: 'Retail', description: 'Ritel peralatan rumah tangga dan gaya hidup terbesar.', peRatio: 20.3, pbv: 4.8, dividendYield: 2.1, lotSize: 100 },
-      { code: 'ERAA', name: 'Erajaya Swasembada Tbk', price: 488, change: 12, changePercent: 2.52, open: 476, high: 495, low: 475, volume: 8765000, marketCap: 18500000000000, category: 'consumer', sector: 'Retail', description: 'Distributor dan retailer gadget terbesar di Indonesia.', peRatio: 8.5, pbv: 1.9, dividendYield: 5.2, lotSize: 100 },
-      // Otomotif & Industri
-      { code: 'ASII', name: 'Astra International Tbk', price: 5350, change: -50, changePercent: -0.93, open: 5400, high: 5450, low: 5300, volume: 9876500, marketCap: 216000000000000, category: 'bluechip', sector: 'Otomotif', description: 'Konglomerasi terbesar di Indonesia dengan bisnis otomotif, pertambangan, dan agribisnis.', peRatio: 10.5, pbv: 1.8, dividendYield: 4.8, lotSize: 100 },
-      { code: 'AUTO', name: 'Astra Otoparts Tbk', price: 1620, change: 25, changePercent: 1.57, open: 1595, high: 1640, low: 1590, volume: 3456000, marketCap: 19400000000000, category: 'consumer', sector: 'Otomotif', description: 'Produsen dan distributor suku cadang otomotif terbesar di Indonesia.', peRatio: 12.3, pbv: 2.1, dividendYield: 4.2, lotSize: 100 },
-      // Energi & Mining
-      { code: 'BREN', name: 'Barito Renewables Energy Tbk', price: 1260, change: -40, changePercent: -3.08, open: 1300, high: 1310, low: 1240, volume: 6543200, marketCap: 168000000000000, category: 'energy', sector: 'Energi', description: 'Perusahaan energi terbaruan terbesar di Indonesia.', peRatio: 42.1, pbv: 6.8, dividendYield: 0.8, lotSize: 100 },
-      { code: 'ADRO', name: 'Adaro Energy Indonesia Tbk', price: 2890, change: 45, changePercent: 1.58, open: 2845, high: 2920, low: 2830, volume: 7890000, marketCap: 95400000000000, category: 'mining', sector: 'Pertambangan', description: 'Produsen batu bara termal terbesar kedua di Indonesia.', peRatio: 6.8, pbv: 1.9, dividendYield: 8.5, lotSize: 100 },
-      { code: 'PTBA', name: 'Bukit Asam Tbk', price: 2650, change: -35, changePercent: -1.30, open: 2685, high: 2700, low: 2630, volume: 4567000, marketCap: 32500000000000, category: 'mining', sector: 'Pertambangan', description: 'Perusahaan tambang batu bara BUMN.', peRatio: 5.2, pbv: 1.3, dividendYield: 10.2, lotSize: 100 },
-      { code: 'MDKA', name: 'Merdeka Copper Gold Tbk', price: 5850, change: 100, changePercent: 1.74, open: 5750, high: 5900, low: 5720, volume: 3456000, marketCap: 64200000000000, category: 'mining', sector: 'Pertambangan', description: 'Perusahaan pertambangan emas dan tembaga.', peRatio: 15.8, pbv: 2.5, dividendYield: 1.5, lotSize: 100 },
-      { code: 'ANTM', name: 'Aneka Tambang Tbk', price: 1685, change: 20, changePercent: 1.20, open: 1665, high: 1700, low: 1655, volume: 6789000, marketCap: 40500000000000, category: 'mining', sector: 'Pertambangan', description: 'Perusahaan tambang BUMN dengan produk emas, nikel, dan bauksit.', peRatio: 8.9, pbv: 1.6, dividendYield: 3.5, lotSize: 100 },
-      // Properti & Infrastruktur
-      { code: 'BSDE', name: 'Bumi Serpong Damai Tbk', price: 1080, change: 15, changePercent: 1.41, open: 1065, high: 1090, low: 1060, volume: 9876000, marketCap: 26800000000000, category: 'property', sector: 'Properti', description: 'Pengembang properti terbesar di Indonesia dengan proyek BSD City.', peRatio: 12.5, pbv: 1.2, dividendYield: 3.2, lotSize: 100 },
-      { code: 'CTRA', name: 'Ciputra Development Tbk', price: 1150, change: -10, changePercent: -0.86, open: 1160, high: 1165, low: 1145, volume: 5678000, marketCap: 23400000000000, category: 'property', sector: 'Properti', description: 'Pengembang properti terkemuka dengan proyek CitraLand.', peRatio: 10.8, pbv: 1.0, dividendYield: 4.5, lotSize: 100 },
-      { code: 'WIKA', name: 'Wijaya Karya Tbk', price: 580, change: 8, changePercent: 1.40, open: 572, high: 585, low: 570, volume: 12345000, marketCap: 17800000000000, category: 'infrastructure', sector: 'Infrastruktur', description: 'Perusahaan konstruksi BUMN terkemuka.', peRatio: 15.2, pbv: 1.4, dividendYield: 2.8, lotSize: 100 },
-      { code: 'UNTR', name: 'United Tractors Tbk', price: 27500, change: 350, changePercent: 1.29, open: 27150, high: 27800, low: 27000, volume: 2345000, marketCap: 93500000000000, category: 'infrastructure', sector: 'Infrastruktur', description: 'Distributor alat berat terbesar dengan bisnis pertambangan dan konstruksi.', peRatio: 7.5, pbv: 1.8, dividendYield: 6.2, lotSize: 100 },
+      // Technology Giants
+      { code: 'AAPL', name: 'Apple Inc.', price: 175000, change: 3200, changePercent: 1.86, open: 172000, high: 176500, low: 171500, volume: 52345600, marketCap: 2710000000000000, category: 'bluechip', sector: 'Technology', description: 'Tech giant known for iPhone, Mac, iPad, and services. Largest company by market cap with growing AI and AR initiatives.', peRatio: 29.8, pbv: 45.2, dividendYield: 0.6, lotSize: 1 },
+      { code: 'NVDA', name: 'NVIDIA Corporation', price: 890000, change: 28500, changePercent: 3.31, open: 862000, high: 895000, low: 858000, volume: 41234500, marketCap: 2180000000000000, category: 'bluechip', sector: 'Technology', description: 'Leading AI chipmaker and GPU manufacturer. Dominant in data center AI training and inference hardware.', peRatio: 65.2, pbv: 52.8, dividendYield: 0.03, lotSize: 1 },
+      { code: 'MSFT', name: 'Microsoft Corporation', price: 415000, change: 8500, changePercent: 2.09, open: 407000, high: 418000, low: 406000, volume: 22345600, marketCap: 3080000000000000, category: 'bluechip', sector: 'Technology', description: 'Cloud computing leader with Azure. Dominant in enterprise software, AI integration via OpenAI partnership.', peRatio: 36.5, pbv: 12.8, dividendYield: 0.8, lotSize: 1 },
+      { code: 'GOOGL', name: 'Alphabet Inc.', price: 155000, change: -2800, changePercent: -1.77, open: 158000, high: 159000, low: 154000, volume: 25345600, marketCap: 1920000000000000, category: 'bluechip', sector: 'Technology', description: 'Parent company of Google, YouTube, and Waymo. Leader in search, digital advertising, and cloud computing.', peRatio: 24.2, pbv: 7.1, dividendYield: 0.5, lotSize: 1 },
+      { code: 'META', name: 'Meta Platforms Inc.', price: 505000, change: 12400, changePercent: 2.52, open: 493000, high: 508000, low: 491000, volume: 17345600, marketCap: 1280000000000000, category: 'bluechip', sector: 'Technology', description: 'Social media giant owning Facebook, Instagram, WhatsApp. Investing heavily in AI and metaverse technologies.', peRatio: 26.8, pbv: 8.5, dividendYield: 0.4, lotSize: 1 },
+      { code: 'AMZN', name: 'Amazon.com Inc.', price: 185000, change: 4100, changePercent: 2.27, open: 181000, high: 187000, low: 180000, volume: 32345600, marketCap: 1920000000000000, category: 'bluechip', sector: 'Technology', description: 'E-commerce and cloud computing giant. AWS is the largest cloud provider globally with growing AI services.', peRatio: 58.3, pbv: 9.2, dividendYield: 0.0, lotSize: 1 },
+      { code: 'TSLA', name: 'Tesla Inc.', price: 245000, change: -7800, changePercent: -3.09, open: 253000, high: 254000, low: 242000, volume: 82345600, marketCap: 780000000000000, category: 'bluechip', sector: 'Automotive', description: 'Electric vehicle pioneer and clean energy company. Leading EV manufacturer with expanding FSD and energy storage business.', peRatio: 72.5, pbv: 15.8, dividendYield: 0.0, lotSize: 1 },
+      { code: 'AMD', name: 'Advanced Micro Devices Inc.', price: 168000, change: 5200, changePercent: 3.19, open: 163000, high: 170000, low: 162000, volume: 45345600, marketCap: 272000000000000, category: 'tech', sector: 'Technology', description: 'Semiconductor company competing with NVIDIA in AI chips and Intel in CPUs. Growing data center market share.', peRatio: 45.2, pbv: 5.8, dividendYield: 0.0, lotSize: 1 },
+      // Finance
+      { code: 'JPM', name: 'JPMorgan Chase & Co.', price: 198000, change: 3600, changePercent: 1.85, open: 195000, high: 200000, low: 194000, volume: 9345600, marketCap: 572000000000000, category: 'bluechip', sector: 'Finance', description: 'Largest bank in the US by assets. Investment banking leader with strong consumer banking franchise.', peRatio: 12.1, pbv: 1.9, dividendYield: 2.3, lotSize: 1 },
+      { code: 'V', name: 'Visa Inc.', price: 280000, change: 4100, changePercent: 1.49, open: 276000, high: 282000, low: 275000, volume: 7345600, marketCap: 560000000000000, category: 'bluechip', sector: 'Finance', description: 'Global payments technology company. Dominant in electronic funds transfers worldwide.', peRatio: 30.5, pbv: 13.2, dividendYield: 0.8, lotSize: 1 },
+      { code: 'MA', name: 'Mastercard Inc.', price: 465000, change: 8200, changePercent: 1.80, open: 457000, high: 468000, low: 456000, volume: 4345600, marketCap: 432000000000000, category: 'bluechip', sector: 'Finance', description: 'Global technology company in the payments industry. Processes electronic payments worldwide.', peRatio: 35.2, pbv: 55.8, dividendYield: 0.6, lotSize: 1 },
+      { code: 'GS', name: 'Goldman Sachs Group Inc.', price: 485000, change: -8200, changePercent: -1.66, open: 494000, high: 496000, low: 482000, volume: 3345600, marketCap: 165000000000000, category: 'banking', sector: 'Finance', description: 'Premier global investment banking and securities firm. Leader in M&A advisory and trading.', peRatio: 15.8, pbv: 1.5, dividendYield: 2.6, lotSize: 1 },
       // Healthcare
-      { code: 'KLBF', name: 'Kalbe Farma Tbk', price: 1675, change: 25, changePercent: 1.52, open: 1650, high: 1685, low: 1645, volume: 8765000, marketCap: 71500000000000, category: 'healthcare', sector: 'Kesehatan', description: 'Perusahaan farmasi terbesar di Indonesia.', peRatio: 18.5, pbv: 4.2, dividendYield: 2.5, lotSize: 100 },
-      { code: 'SIDO', name: 'Industri Jamu dan Farmasi Sido Muncul Tbk', price: 780, change: -5, changePercent: -0.64, open: 785, high: 790, low: 775, volume: 3456000, marketCap: 18700000000000, category: 'healthcare', sector: 'Kesehatan', description: 'Produsen jamu dan herbal terbesar di Indonesia.', peRatio: 22.1, pbv: 5.8, dividendYield: 3.2, lotSize: 100 },
-      { code: 'HEAL', name: 'Medikaloka Hermipro Tbk', price: 156, change: 4, changePercent: 2.63, open: 152, high: 158, low: 151, volume: 5678000, marketCap: 8900000000000, category: 'healthcare', sector: 'Kesehatan', description: 'Operator rumah sakit dan klinik dengan jaringan Hermina.', peRatio: 32.5, pbv: 3.8, dividendYield: 0.8, lotSize: 100 },
-      // Infrastruktur & Utilitas
-      { code: 'TOWR', name: 'Sarana Menara Nusantara Tbk', price: 875, change: 18, changePercent: 2.10, open: 857, high: 885, low: 855, volume: 6543000, marketCap: 46700000000000, category: 'infrastructure', sector: 'Infrastruktur', description: 'Operator menara telekomunikasi terbesar di Indonesia.', peRatio: 16.8, pbv: 3.2, dividendYield: 2.8, lotSize: 100 },
-      { code: 'PGAS', name: 'Perusahaan Gas Negara Tbk', price: 2590, change: -30, changePercent: -1.15, open: 2620, high: 2635, low: 2575, volume: 5678000, marketCap: 61200000000000, category: 'energy', sector: 'Energi', description: 'Perusahaan gas BUMN terbesar yang mendistribusikan gas alam di Indonesia.', peRatio: 8.5, pbv: 1.5, dividendYield: 6.8, lotSize: 100 },
+      { code: 'UNH', name: 'UnitedHealth Group', price: 525000, change: 9800, changePercent: 1.90, open: 516000, high: 528000, low: 515000, volume: 4345600, marketCap: 485000000000000, category: 'healthcare', sector: 'Healthcare', description: 'Largest health insurer in the US. Combines insurance with healthcare services through Optum.', peRatio: 22.1, pbv: 6.8, dividendYield: 1.4, lotSize: 1 },
+      { code: 'JNJ', name: 'Johnson & Johnson', price: 162000, change: -1500, changePercent: -0.92, open: 164000, high: 165000, low: 161000, volume: 8345600, marketCap: 390000000000000, category: 'healthcare', sector: 'Healthcare', description: 'Diversified healthcare giant with pharmaceutical, medical devices, and consumer health divisions.', peRatio: 16.8, pbv: 5.2, dividendYield: 3.1, lotSize: 1 },
+      { code: 'PFE', name: 'Pfizer Inc.', price: 28500, change: 680, changePercent: 2.44, open: 27900, high: 29000, low: 27800, volume: 32345600, marketCap: 161000000000000, category: 'healthcare', sector: 'Healthcare', description: 'Global pharmaceutical company. Known for vaccines, oncology, and rare disease treatments.', peRatio: 42.5, pbv: 1.8, dividendYield: 5.8, lotSize: 1 },
+      // Consumer
+      { code: 'WMT', name: 'Walmart Inc.', price: 168000, change: 2800, changePercent: 1.69, open: 165500, high: 169000, low: 165000, volume: 9345600, marketCap: 453000000000000, category: 'consumer', sector: 'Retail', description: 'Worlds largest retailer with expanding e-commerce and grocery delivery business.', peRatio: 28.5, pbv: 7.2, dividendYield: 1.2, lotSize: 1 },
+      { code: 'COST', name: 'Costco Wholesale Corp.', price: 825000, change: 15200, changePercent: 1.88, open: 810000, high: 830000, low: 808000, volume: 2345600, marketCap: 366000000000000, category: 'consumer', sector: 'Retail', description: 'Membership warehouse club operator with loyal customer base and consistent growth.', peRatio: 52.3, pbv: 18.5, dividendYield: 0.5, lotSize: 1 },
+      { code: 'NKE', name: 'Nike Inc.', price: 98000, change: -2100, changePercent: -2.10, open: 100500, high: 101000, low: 97000, volume: 11345600, marketCap: 147000000000000, category: 'consumer', sector: 'Consumer', description: 'Global leader in athletic footwear, apparel, and equipment. Strong brand portfolio worldwide.', peRatio: 25.8, pbv: 10.2, dividendYield: 1.5, lotSize: 1 },
+      { code: 'MCD', name: 'McDonalds Corp.', price: 295000, change: 4100, changePercent: 1.41, open: 291000, high: 297000, low: 290000, volume: 5345600, marketCap: 212000000000000, category: 'consumer', sector: 'Consumer', description: 'Worlds largest fast-food restaurant chain with global brand recognition and franchise model.', peRatio: 24.2, pbv: 45.8, dividendYield: 2.3, lotSize: 1 },
+      // Energy
+      { code: 'XOM', name: 'Exxon Mobil Corp.', price: 112000, change: 1800, changePercent: 1.63, open: 110500, high: 113000, low: 110000, volume: 17345600, marketCap: 455000000000000, category: 'energy', sector: 'Energy', description: 'One of the worlds largest integrated oil and gas companies. Expanding into low-carbon solutions.', peRatio: 13.2, pbv: 2.1, dividendYield: 3.5, lotSize: 1 },
+      { code: 'CVX', name: 'Chevron Corp.', price: 158000, change: -2200, changePercent: -1.37, open: 160500, high: 161000, low: 157000, volume: 9345600, marketCap: 288000000000000, category: 'energy', sector: 'Energy', description: 'Integrated energy company with upstream, midstream, and downstream operations globally.', peRatio: 14.5, pbv: 1.8, dividendYield: 4.0, lotSize: 1 },
+      // Industrials
+      { code: 'CAT', name: 'Caterpillar Inc.', price: 345000, change: 7500, changePercent: 2.22, open: 338000, high: 348000, low: 337000, volume: 3345600, marketCap: 168000000000000, category: 'infrastructure', sector: 'Industrials', description: 'Worlds leading manufacturer of construction and mining equipment, diesel and natural gas engines.', peRatio: 17.2, pbv: 9.5, dividendYield: 1.6, lotSize: 1 },
+      { code: 'BA', name: 'Boeing Co.', price: 178000, change: -5600, changePercent: -3.05, open: 184000, high: 185000, low: 176000, volume: 8345600, marketCap: 108000000000000, category: 'infrastructure', sector: 'Industrials', description: 'Aerospace company manufacturing commercial jetliners and defense, space and security systems.', peRatio: -18.5, pbv: 8.2, dividendYield: 0.0, lotSize: 1 },
+      { code: 'GE', name: 'GE Aerospace', price: 168000, change: 3200, changePercent: 1.94, open: 165000, high: 170000, low: 164000, volume: 6345600, marketCap: 183000000000000, category: 'infrastructure', sector: 'Industrials', description: 'Global aerospace leader in jet engine manufacturing. Spun off from former GE conglomerate.', peRatio: 32.5, pbv: 8.8, dividendYield: 0.8, lotSize: 1 },
+      // Communication
+      { code: 'DIS', name: 'Walt Disney Co.', price: 112000, change: 2800, changePercent: 2.56, open: 109500, high: 113000, low: 109000, volume: 12345600, marketCap: 205000000000000, category: 'media', sector: 'Entertainment', description: 'Global entertainment conglomerate with Disney+, parks, studios, and ESPN streaming.', peRatio: 72.8, pbv: 2.1, dividendYield: 0.8, lotSize: 1 },
+      { code: 'NFLX', name: 'Netflix Inc.', price: 625000, change: 15800, changePercent: 2.59, open: 610000, high: 630000, low: 608000, volume: 5345600, marketCap: 270000000000000, category: 'media', sector: 'Entertainment', description: 'Global streaming entertainment service with 260M+ subscribers. Expanding into gaming and live events.', peRatio: 42.5, pbv: 15.2, dividendYield: 0.0, lotSize: 1 },
+      // Crypto & Payment
+      { code: 'COIN', name: 'Coinbase Global Inc.', price: 225000, change: -8500, changePercent: -3.64, open: 234000, high: 236000, low: 222000, volume: 14345600, marketCap: 56000000000000, category: 'tech', sector: 'Crypto', description: 'Largest US cryptocurrency exchange platform. Growing institutional and retail crypto trading.', peRatio: 28.2, pbv: 5.8, dividendYield: 0.0, lotSize: 1 },
+      { code: 'SQ', name: 'Block Inc.', price: 78000, change: 2100, changePercent: 2.77, open: 76000, high: 79000, low: 75500, volume: 9345600, marketCap: 48000000000000, category: 'tech', sector: 'Fintech', description: 'Financial technology company behind Square, Cash App, and Afterpay. Innovating in Bitcoin and payments.', peRatio: 55.2, pbv: 3.2, dividendYield: 0.0, lotSize: 1 },
+      // Semiconductors
+      { code: 'AVGO', name: 'Broadcom Inc.', price: 1350000, change: 32500, changePercent: 2.47, open: 1318000, high: 1360000, low: 1310000, volume: 3345600, marketCap: 625000000000000, category: 'tech', sector: 'Semiconductor', description: 'Global technology leader in semiconductor and infrastructure software solutions for data centers.', peRatio: 62.8, pbv: 8.5, dividendYield: 1.5, lotSize: 1 },
+      { code: 'INTC', name: 'Intel Corporation', price: 32000, change: -680, changePercent: -2.08, open: 32800, high: 33000, low: 31500, volume: 42345600, marketCap: 135000000000000, category: 'tech', sector: 'Semiconductor', description: 'Legacy chipmaker investing heavily in foundry business and AI accelerator chips for turnaround.', peRatio: 85.2, pbv: 1.2, dividendYield: 1.2, lotSize: 1 },
+      { code: 'TSM', name: 'Taiwan Semiconductor', price: 168000, change: 4800, changePercent: 2.94, open: 163500, high: 170000, low: 163000, volume: 18345600, marketCap: 870000000000000, category: 'tech', sector: 'Semiconductor', description: 'Worlds largest dedicated independent semiconductor foundry. Manufactures chips for Apple, NVIDIA, AMD.', peRatio: 25.8, pbv: 6.5, dividendYield: 1.5, lotSize: 1 },
     ]
 
     for (const stock of stockData) {
@@ -209,34 +208,34 @@ export async function POST() {
     }
 
     // Give demo user some initial portfolio
-    const bbca = await db.stock.findUnique({ where: { code: 'BBCA' } })
-    const tlkm = await db.stock.findUnique({ where: { code: 'TLKM' } })
-    const bbri = await db.stock.findUnique({ where: { code: 'BBRI' } })
+    const aapl = await db.stock.findUnique({ where: { code: 'AAPL' } })
+    const nvda = await db.stock.findUnique({ where: { code: 'NVDA' } })
+    const msft = await db.stock.findUnique({ where: { code: 'MSFT' } })
 
-    if (bbca) {
+    if (aapl) {
       await db.portfolio.create({
-        data: { userId: demoUser.id, stockId: bbca.id, shares: 100, avgPrice: 9750 },
+        data: { userId: demoUser.id, stockId: aapl.id, shares: 10, avgPrice: 170000 },
       })
       await db.transaction.create({
-        data: { userId: demoUser.id, stockId: bbca.id, type: 'BUY', shares: 100, price: 9750, total: 975000, fee: 1462.5, status: 'completed' },
+        data: { userId: demoUser.id, stockId: aapl.id, type: 'BUY', shares: 10, price: 170000, total: 1700000, fee: 2550, status: 'completed' },
       })
     }
 
-    if (tlkm) {
+    if (nvda) {
       await db.portfolio.create({
-        data: { userId: demoUser.id, stockId: tlkm.id, shares: 500, avgPrice: 3850 },
+        data: { userId: demoUser.id, stockId: nvda.id, shares: 5, avgPrice: 850000 },
       })
       await db.transaction.create({
-        data: { userId: demoUser.id, stockId: tlkm.id, type: 'BUY', shares: 500, price: 3850, total: 1925000, fee: 2887.5, status: 'completed' },
+        data: { userId: demoUser.id, stockId: nvda.id, type: 'BUY', shares: 5, price: 850000, total: 4250000, fee: 6375, status: 'completed' },
       })
     }
 
-    if (bbri) {
+    if (msft) {
       await db.portfolio.create({
-        data: { userId: demoUser.id, stockId: bbri.id, shares: 200, avgPrice: 5750 },
+        data: { userId: demoUser.id, stockId: msft.id, shares: 8, avgPrice: 400000 },
       })
       await db.transaction.create({
-        data: { userId: demoUser.id, stockId: bbri.id, type: 'BUY', shares: 200, price: 5750, total: 1150000, fee: 1725, status: 'completed' },
+        data: { userId: demoUser.id, stockId: msft.id, type: 'BUY', shares: 8, price: 400000, total: 3200000, fee: 4800, status: 'completed' },
       })
     }
 
