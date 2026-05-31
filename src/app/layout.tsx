@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global Saham Indonesia - Platform Investasi Saham",
+  title: "TrendEdge - Platform Investasi Saham",
   description: "Platform investasi saham terpercaya. Pantau portofolio, pergerakan saham, dan aktivitas profit Anda.",
-  keywords: ["saham", "investasi", "portofolio", "IHSG", "Global Saham"],
-  authors: [{ name: "Global Saham Indonesia" }],
+  keywords: ["saham", "investasi", "portofolio", "IHSG", "TrendEdge"],
+  authors: [{ name: "TrendEdge" }],
   icons: {
-    icon: "/logo.svg",
+    icon: "/trendedge-icon.png",
   },
 };
 

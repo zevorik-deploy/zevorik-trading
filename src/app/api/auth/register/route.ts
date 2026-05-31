@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         title: 'Selamat Datang! 🎉',
-        message: `Selamat datang di Global Saham! Anda mendapat bonus selamat datang Rp ${welcomeBonus.toLocaleString('id-ID')}. Mulai investasi Anda sekarang!`,
+        message: `Selamat datang di TrendEdge! Anda mendapat bonus selamat datang Rp ${welcomeBonus.toLocaleString('id-ID')}. Mulai investasi Anda sekarang!`,
         type: 'system',
       },
     })

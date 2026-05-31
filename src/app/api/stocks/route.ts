@@ -185,7 +185,7 @@ async function seedStocks() {
   const promoCount = await db.promo.count()
   if (promoCount === 0) {
     const promoData = [
-      { title: 'Bonus Selamat Datang', description: 'Dapatkan bonus Rp 25.000 untuk member baru yang mendaftar di Global Saham. Bonus langsung dikreditkan ke saldo akun Anda.', type: 'welcome_bonus', value: 25000, isActive: true },
+      { title: 'Bonus Selamat Datang', description: 'Dapatkan bonus Rp 25.000 untuk member baru yang mendaftar di TrendEdge. Bonus langsung dikreditkan ke saldo akun Anda.', type: 'welcome_bonus', value: 25000, isActive: true },
       { title: 'Bonus Deposit 5%', description: 'Nikmati bonus 5% untuk setiap deposit minimal Rp 1.000.000. Maksimal bonus Rp 500.000 per deposit.', type: 'deposit_bonus', value: 5, isActive: true },
       { title: 'Program Referral', description: 'Ajak teman bergabung dan dapatkan bonus Rp 50.000 untuk setiap teman yang mendaftar menggunakan kode referral Anda. Teman juga mendapat bonus yang sama!', type: 'referral_program', value: 50000, isActive: true },
       { title: 'Kompetisi Trading Bulanan', description: 'Ikuti kompetisi trading bulanan dan menangkan hadiah total Rp 10.000.000! 10 trader dengan profit tertinggi akan mendapat hadiah.', type: 'trading_competition', value: 10000000, isActive: true },

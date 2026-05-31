@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 const FAQ_DATA = [
   {
     id: 'faq_1',
-    question: 'Bagaimana cara memulai investasi di Global Saham?',
+    question: 'Bagaimana cara memulai investasi di TrendEdge?',
     answer: 'Untuk memulai investasi, Anda perlu mendaftar akun terlebih dahulu. Setelah itu, lakukan deposit dana ke akun Anda. Setelah saldo tersedia, Anda bisa langsung membeli saham yang diinginkan melalui halaman Trading.',
     category: 'getting_started',
   },
@@ -97,7 +97,7 @@ const HELP_TOPICS = [
   {
     id: 'topic_1',
     title: 'Panduan Pemula',
-    description: 'Pelajari dasar-dasar investasi saham dan cara menggunakan platform Global Saham.',
+    description: 'Pelajari dasar-dasar investasi saham dan cara menggunakan platform TrendEdge.',
     icon: 'book',
   },
   {

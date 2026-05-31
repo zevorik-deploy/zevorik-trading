@@ -114,7 +114,7 @@ export async function POST() {
 
     // Create Promos
     const promoData = [
-      { title: 'Bonus Selamat Datang', description: 'Dapatkan bonus Rp 25.000 untuk member baru yang mendaftar di Global Saham. Bonus langsung dikreditkan ke saldo akun Anda.', type: 'welcome_bonus', value: 25000, isActive: true },
+      { title: 'Bonus Selamat Datang', description: 'Dapatkan bonus Rp 25.000 untuk member baru yang mendaftar di TrendEdge. Bonus langsung dikreditkan ke saldo akun Anda.', type: 'welcome_bonus', value: 25000, isActive: true },
       { title: 'Bonus Deposit 5%', description: 'Nikmati bonus 5% untuk setiap deposit minimal Rp 1.000.000. Maksimal bonus Rp 500.000 per deposit.', type: 'deposit_bonus', value: 5, isActive: true },
       { title: 'Program Referral', description: 'Ajak teman bergabung dan dapatkan bonus Rp 50.000 untuk setiap teman yang mendaftar menggunakan kode referral Anda.', type: 'referral_program', value: 50000, isActive: true },
       { title: 'Kompetisi Trading Bulanan', description: 'Ikuti kompetisi trading bulanan dan menangkan hadiah total Rp 10.000.000!', type: 'trading_competition', value: 10000000, isActive: true },
@@ -127,7 +127,7 @@ export async function POST() {
 
     // Create Notifications for demo user
     const notifications = [
-      { userId: demoUser.id, title: 'Selamat Datang! 🎉', message: 'Selamat datang di Global Saham! Anda mendapat bonus selamat datang Rp 25.000. Mulai investasi Anda sekarang!', type: 'system' },
+      { userId: demoUser.id, title: 'Selamat Datang! 🎉', message: 'Selamat datang di TrendEdge! Anda mendapat bonus selamat datang Rp 25.000. Mulai investasi Anda sekarang!', type: 'system' },
       { userId: demoUser.id, title: 'Deposit Berhasil', message: 'Deposit sebesar Rp 100.000.000 telah berhasil dikreditkan ke akun Anda.', type: 'deposit' },
       { userId: demoUser.id, title: 'KYC Terverifikasi ✅', message: 'Verifikasi identitas Anda telah berhasil. Akun Anda sekarang telah terverifikasi penuh.', type: 'system' },
       { userId: demoUser.id, title: 'Promo Referral', message: 'Ajak teman bergabung dan dapatkan bonus referral hingga Rp 50.000 per teman!', type: 'alert' },

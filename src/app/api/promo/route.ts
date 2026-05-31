@@ -28,7 +28,7 @@ async function seedPromos() {
   const promoData = [
     {
       title: 'Bonus Selamat Datang',
-      description: 'Dapatkan bonus Rp 25.000 untuk member baru yang mendaftar di Global Saham. Bonus langsung dikreditkan ke saldo akun Anda setelah registrasi berhasil.',
+      description: 'Dapatkan bonus Rp 25.000 untuk member baru yang mendaftar di TrendEdge. Bonus langsung dikreditkan ke saldo akun Anda setelah registrasi berhasil.',
       type: 'welcome_bonus',
       value: 25000,
       isActive: true,
