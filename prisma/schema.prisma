@@ -45,6 +45,7 @@ model User {
   commissionEarned ReferralCommission[] @relation("CommissionReferrer")
   commissionGenerated ReferralCommission[] @relation("CommissionReferred")
   investments      Investment[]
+  predictionTrades PredictionTrade[]
 }
 
 model Stock {
@@ -323,4 +324,25 @@ model ReferralCommission {
 
   referrer User @relation("CommissionReferrer", fields: [referrerId], references: [id])
   referred User @relation("CommissionReferred", fields: [referredId], references: [id])
+}
+
+model PredictionTrade {
+  id            String   @id @default(cuid())
+  userId        String
+  stockCode     String
+  stockName     String
+  direction     String   // UP or DOWN
+  amount        Float    // Investment amount in IDR
+  duration      Int      // Duration in seconds
+  profitPercent Float    // Profit percentage based on duration
+  startPrice    Float    // Stock price at trade start
+  endPrice      Float    @default(0) // Stock price at trade end
+  status        String   @default("active") // active, won, lost
+  isAuto        Boolean  @default(false) // Auto-detect direction
+  profit        Float    @default(0) // Profit amount (0 if lost)
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
