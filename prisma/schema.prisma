@@ -46,6 +46,7 @@ model User {
   commissionGenerated ReferralCommission[] @relation("CommissionReferred")
   investments      Investment[]
   predictionTrades PredictionTrade[]
+  stockContracts   StockContract[]
 }
 
 model Stock {
@@ -71,9 +72,10 @@ model Stock {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  portfolios   Portfolio[]
-  transactions Transaction[]
-  watchlist    Watchlist[]
+  portfolios     Portfolio[]
+  transactions   Transaction[]
+  watchlist      Watchlist[]
+  stockContracts StockContract[]
 }
 
 model Portfolio {
@@ -324,6 +326,28 @@ model ReferralCommission {
 
   referrer User @relation("CommissionReferrer", fields: [referrerId], references: [id])
   referred User @relation("CommissionReferred", fields: [referredId], references: [id])
+}
+
+model StockContract {
+  id               String    @id @default(cuid())
+  userId           String
+  stockId          String
+  stockCode        String
+  stockName        String
+  amount           Int       // Investment amount in IDR
+  dailyProfitRate  Float     // Daily profit rate (%)
+  dailyProfitAmount Int     // Daily profit in IDR
+  totalProfit      Int       // Total expected profit over duration
+  totalReturn      Int       // Total return (amount + totalProfit)
+  duration         Int       // Duration in days (min 30)
+  daysElapsed      Int       @default(0)
+  totalClaimed     Int       @default(0)
+  status           String    @default("active") // active, completed, cancelled
+  lastClaimAt      DateTime?
+  createdAt        DateTime  @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  stock Stock @relation(fields: [stockId], references: [id])
 }
 
 model PredictionTrade {

@@ -23,3 +23,38 @@ Stage Summary:
 - New stocks added: BAC, PGR, LLY, ABBV, MRK, KO, SBUX, PEP, COP, HON, CMCSA, PYPL, UBER, NOW, CRM, ORCL, ADBE, IBM, DE
 - Sectors covered: Technology, Finance, Healthcare, Consumer, Energy, Industrials, Entertainment, Fintech, Semiconductor
 - Frontend now displays logos in: Pasar Saham grid, Trending gainers/losers, Watchlist, Portfolio, Sinyal Pro, Stock Detail modal
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Replace buy/sell trading with contract-based investment system
+
+Work Log:
+- Added StockContract model to Prisma schema with fields: userId, stockId, stockCode, stockName, amount, dailyProfitRate, dailyProfitAmount, totalProfit, totalReturn, duration, daysElapsed, totalClaimed, status, lastClaimAt
+- Added User.stockContracts and Stock.stockContracts relations to Prisma schema
+- Pushed schema changes to database (db:push)
+- Created /api/contracts/route.ts with GET (list user contracts), POST (create contract), PUT (claim daily profit)
+- Modified page.tsx with 16+ targeted edits:
+  - Added StockContract interface
+  - Replaced trade state variables (tradeModal, tradeShares, tradePrice, tradeOrderType, tradeLoading) with contract state variables (contractModal, contractAmount, contractDuration, contractLoading, userContracts, contractClaimLoadingId)
+  - Added getStockBaseRate() function (5-12% daily rate per stock, 50 stocks)
+  - Added calcContractProfit() function with duration multiplier (1x-2.5x) and amount multiplier (1x-1.5x)
+  - Replaced openTrade with openContract
+  - Replaced handleTrade with handleContract (creates contract via API)
+  - Added handleContractClaim for daily profit claiming
+  - Replaced Beli/Jual buttons on stock cards with single "Kontrak" button + rate info
+  - Replaced buy/sell charts in stock detail modal with contract profit preview
+  - Replaced trade modal with contract modal (duration grid, amount input, profit summary)
+  - Updated portfolio section to show active contracts with progress bars and claim buttons
+  - Added fetchContracts function and integrated into initial fetch cycle
+- Verified lint passes with no errors
+- Verified dev server compiles successfully
+
+Stage Summary:
+- Pasar Saham now uses contract-based investment instead of buy/sell trading
+- Minimum 30 days contract, maximum 365 days
+- Daily profit rate varies per stock (5-12% base), with duration and amount multipliers
+- Contract modal shows duration grid (30/60/90/120/180/365), profit calculation, and balance check
+- Active contracts shown in Portfolio with progress bars and daily claim buttons
+- All 50 stocks have different base rates
+- Logo files already exist for all 50 stocks

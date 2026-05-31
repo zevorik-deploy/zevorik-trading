@@ -129,6 +129,15 @@ interface TaskItem {
   reward: number; progress: number; target: number; completed: boolean; claimed: boolean;
 }
 
+interface StockContract {
+  id: string; userId: string; stockId: string; stockCode: string; stockName: string;
+  amount: number; dailyProfitRate: number; dailyProfitAmount: number;
+  totalProfit: number; totalReturn: number; duration: number;
+  daysElapsed: number; totalClaimed: number; status: string;
+  lastClaimAt: string | null; createdAt: string;
+  stock: Stock;
+}
+
 // ============================================
 // TICKER DATA (matching reference)
 // ============================================
@@ -607,11 +616,11 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState<string>('home')
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [showStockDetail, setShowStockDetail] = useState(false)
-  const [tradeModal, setTradeModal] = useState<'buy' | 'sell' | null>(null)
-  const [tradeShares, setTradeShares] = useState('') // Now stores Rupiah amount instead of lot number
-  const [tradePrice, setTradePrice] = useState('')
-  const [tradeOrderType, setTradeOrderType] = useState<'market' | 'limit'>('market')
-  const [tradeLoading, setTradeLoading] = useState(false)
+  const [contractModal, setContractModal] = useState(false)
+  const [contractAmount, setContractAmount] = useState('')
+  const [contractDuration, setContractDuration] = useState(30)
+  const [contractLoading, setContractLoading] = useState(false)
+  const [userContracts, setUserContracts] = useState<StockContract[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
@@ -661,6 +670,7 @@ function Dashboard() {
   const [investLoading, setInvestLoading] = useState(false)
   const [claimLoadingId, setClaimLoadingId] = useState<string | null>(null)
   const [investMovement, setInvestMovement] = useState<Map<string, {change: number; changePercent: number}>>(new Map())
+  const [contractClaimLoadingId, setContractClaimLoadingId] = useState<string | null>(null)
   const initialized = useRef(false)
 
   // ============ DAILY CHECK & TASKS STATE ============
@@ -970,7 +980,7 @@ function Dashboard() {
 
   // Live price simulation — REALISTIC stock movement with natural up/down zigzag
   useEffect(() => {
-    if (!selectedStock || (!showStockDetail && !tradeModal)) {
+    if (!selectedStock || (!showStockDetail && !contractModal)) {
       setLiveChartActive(false)
       return
     }
@@ -1054,7 +1064,7 @@ function Dashboard() {
       clearInterval(interval)
       setLiveChartActive(false)
     }
-  }, [selectedStock, showStockDetail, tradeModal])
+  }, [selectedStock, showStockDetail, contractModal])
 
   // ============ SINYAL PRO HELPERS & TIMER ============
   const calcSinyalProfit = useCallback((amount: number, duration: number): number => {
@@ -1062,6 +1072,36 @@ function Dashboard() {
     const durationFactor = (duration - 10) / (300 - 10)
     return 5 + (amountFactor * 15) + (durationFactor * 20)
   }, [])
+
+  // Stock base daily profit rates (varies per stock, 5-12%)
+  const getStockBaseRate = useCallback((code: string): number => {
+    const rates: Record<string, number> = {
+      AAPL: 5.2, NVDA: 8.5, MSFT: 5.8, GOOGL: 6.1, META: 7.2,
+      AMZN: 6.8, TSLA: 9.2, AMD: 8.8, JPM: 5.0, V: 5.5,
+      MA: 5.3, GS: 6.0, BAC: 5.1, PGR: 5.8, UNH: 5.5,
+      JNJ: 5.0, PFE: 6.2, LLY: 7.5, ABBV: 6.0, MRK: 5.8,
+      WMT: 5.2, COST: 5.5, NKE: 6.0, MCD: 5.0, KO: 5.1,
+      SBUX: 5.8, PEP: 5.3, XOM: 5.5, CVX: 5.8, COP: 6.0,
+      CAT: 5.8, BA: 7.2, GE: 6.5, HON: 5.5, DE: 5.8,
+      DIS: 6.0, NFLX: 7.8, CMCSA: 5.2, COIN: 10.5, SQ: 8.5,
+      PYPL: 6.5, AVGO: 8.0, INTC: 6.8, TSM: 7.5, CRM: 6.5,
+      ORCL: 5.8, ADBE: 6.2, IBM: 5.0, NOW: 7.0, UBER: 7.5
+    }
+    return rates[code] || 5.0
+  }, [])
+
+  const calcContractProfit = useCallback((stock: Stock, duration: number, amount: number) => {
+    const baseRate = getStockBaseRate(stock.code)
+    // Duration multiplier: longer = higher
+    const durMult = duration <= 30 ? 1 : duration <= 60 ? 1.15 : duration <= 90 ? 1.3 : duration <= 120 ? 1.5 : duration <= 180 ? 1.8 : 2.5
+    // Amount multiplier: more = higher
+    const amtMult = amount < 500000 ? 1 : amount < 1000000 ? 1.1 : amount < 5000000 ? 1.2 : amount < 10000000 ? 1.3 : 1.5
+    const dailyRate = baseRate * durMult * amtMult
+    const dailyProfitAmount = Math.round(amount * dailyRate / 100)
+    const totalProfit = dailyProfitAmount * duration
+    const totalReturn = amount + totalProfit
+    return { dailyRate: Math.round(dailyRate * 100) / 100, dailyProfitAmount, totalProfit, totalReturn }
+  }, [getStockBaseRate])
 
   const openSinyalPosition = useCallback(() => {
     if (!selectedSinyalStock || !sinyalAmount) return
@@ -1234,6 +1274,11 @@ function Dashboard() {
     try { const r = await fetch(`/api/tasks?userId=${user.id}`); const d = await r.json(); if (d.tasks) setTasks(d.tasks) } catch {}
   }, [user])
 
+  const fetchContracts = useCallback(async () => {
+    if (!user) return
+    try { const r = await fetch(`/api/contracts?userId=${user.id}`); const d = await r.json(); if (d.contracts) setUserContracts(d.contracts) } catch {}
+  }, [user])
+
   const refreshAll = useCallback(async () => {
     setRefreshing(true)
     try { await fetch('/api/stocks/update-prices', { method: 'POST' }) } catch {}
@@ -1248,8 +1293,8 @@ function Dashboard() {
     fetchNotifications(); fetchNews(); fetchWatchlist(); fetchDeposits()
     fetchWithdrawals(); fetchReferral(); fetchBonuses(); fetchPromos(); fetchLeaderboard()
     fetchInvestProducts(); fetchUserInvestments()
-    fetchDailyCheck(); fetchTasks()
-  }, [user, fetchStocks, fetchPortfolio, fetchTransactions, fetchIndices, fetchNotifications, fetchNews, fetchWatchlist, fetchDeposits, fetchWithdrawals, fetchReferral, fetchBonuses, fetchPromos, fetchLeaderboard, fetchInvestProducts, fetchUserInvestments, fetchDailyCheck, fetchTasks])
+    fetchDailyCheck(); fetchTasks(); fetchContracts()
+  }, [user, fetchStocks, fetchPortfolio, fetchTransactions, fetchIndices, fetchNotifications, fetchNews, fetchWatchlist, fetchDeposits, fetchWithdrawals, fetchReferral, fetchBonuses, fetchPromos, fetchLeaderboard, fetchInvestProducts, fetchUserInvestments, fetchDailyCheck, fetchTasks, fetchContracts])
 
   useEffect(() => { const iv = setInterval(refreshAll, 30000); return () => clearInterval(iv) }, [refreshAll])
 
@@ -1275,29 +1320,53 @@ function Dashboard() {
     return investChartData.get(product.id) || []
   }, [investChartData])
 
-  // ============ TRADE ============
-  const handleTrade = async () => {
-    if (!user || !selectedStock || !tradeModal || !tradeShares) return
-    const amount = parseInt(tradeShares)
-    if (amount < 100000) { toast({ title: 'Minimum transaksi Rp 100.000', variant: 'destructive' }); return }
-    if (amount > (user?.balance || 0) && tradeModal === 'buy') { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
-    setTradeLoading(true)
+  // ============ CONTRACT ============
+  const handleContract = async () => {
+    if (!user || !selectedStock || !contractAmount) return
+    const amount = parseInt(contractAmount)
+    if (amount < 100000) { toast({ title: 'Minimum investasi Rp 100.000', variant: 'destructive' }); return }
+    if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
+    if (contractDuration < 30) { toast({ title: 'Durasi minimal 30 hari', variant: 'destructive' }); return }
+    setContractLoading(true)
     try {
-      const livePrice = tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price)
-      const fee = Math.round(amount * 0.0015)
-      const totalAmount = amount + fee
-      const res = await fetch('/api/transactions', {
+      const profit = calcContractProfit(selectedStock, contractDuration, amount)
+      const res = await fetch('/api/contracts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, stockId: selectedStock.id, type: tradeModal === 'buy' ? 'BUY' : 'SELL', shares: 1, price: totalAmount, totalAmount, fee }),
+        body: JSON.stringify({
+          userId: user.id, stockId: selectedStock.id, amount, duration: contractDuration,
+          dailyProfitRate: profit.dailyRate, dailyProfitAmount: profit.dailyProfitAmount,
+          totalProfit: profit.totalProfit, totalReturn: profit.totalReturn,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Transaksi Berhasil!', description: `${tradeModal === 'buy' ? 'Beli' : 'Jual'} ${selectedStock.code} sebesar ${formatRupiah(amount)}` })
-      setTradeModal(null); setTradeShares(''); setTradePrice('')
-      fetchPortfolio(); fetchTransactions(); fetchStocks()
+      updateBalance(data.newBalance)
+      toast({ title: 'Kontrak Berhasil Dibeli!', description: `Kontrak ${selectedStock.code} • ${contractDuration} hari • Profit ${profit.dailyRate}%/hari` })
+      setContractModal(false); setContractAmount(''); setContractDuration(30)
+      fetchContracts(); fetchPortfolio()
     } catch (err: unknown) {
       toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' })
-    } finally { setTradeLoading(false) }
+    } finally { setContractLoading(false) }
+  }
+
+  const handleContractClaim = async (contractId: string) => {
+    if (!user) return
+    setContractClaimLoadingId(contractId)
+    try {
+      const res = await fetch('/api/contracts', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contractId, action: 'claim' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (data.claimedAmount) {
+        updateBalance((user?.balance || 0) + data.claimedAmount)
+        toast({ title: data.isCompleted ? 'Kontrak Selesai!' : 'Profit Diterima!', description: `+${formatRupiah(data.claimedAmount)} dari kontrak` })
+      }
+      fetchContracts(); fetchPortfolio()
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' })
+    } finally { setContractClaimLoadingId(null) }
   }
 
   // ============ DEPOSIT ============
@@ -1458,7 +1527,7 @@ function Dashboard() {
   const categories = [{ key: 'all', label: 'Semua' }, { key: 'bluechip', label: 'Blue Chip' }, { key: 'tech', label: 'Teknologi' }, { key: 'banking', label: 'Keuangan' }, { key: 'energy', label: 'Energi' }, { key: 'consumer', label: 'Konsumer' }, { key: 'healthcare', label: 'Kesehatan' }, { key: 'infrastructure', label: 'Industri' }, { key: 'media', label: 'Hiburan' }]
   const isWatched = (stockId: string) => watchlist.some(w => w.stockId === stockId)
   const openStockDetail = (stock: Stock) => { setSelectedStock(stock); setShowStockDetail(true); setLiveBuyChart([]); setLiveSellChart([]); setLiveBuyPrice(0); setLiveSellPrice(0); fetchPriceHistory(stock.id) }
-  const openTrade = (stock: Stock, type: 'buy' | 'sell') => { setSelectedStock(stock); setTradeModal(type); setTradeShares(''); setTradePrice(''); setTradeOrderType('market'); setLiveBuyChart([]); setLiveSellChart([]); setLiveBuyPrice(0); setLiveSellPrice(0); fetchPriceHistory(stock.id) }
+  const openContract = (stock: Stock) => { setSelectedStock(stock); setContractModal(true); setContractAmount(''); setContractDuration(30); fetchPriceHistory(stock.id) }
   const portfolioPieData = portfolio.map((p, i) => ({ name: p.stock.code, value: p.currentValue, color: PIE_COLORS[i % PIE_COLORS.length] }))
   const filteredTransactions = transactions.filter(t => txFilter === 'all' || t.type === txFilter)
   const topGainers = [...stocks].sort((a, b) => b.changePercent - a.changePercent).slice(0, 5)
@@ -1975,8 +2044,6 @@ function Dashboard() {
                   const sparkData = getSparklineData(s)
                   const isUp = s.changePercent >= 0
                   const sparkColor = isUp ? '#059669' : '#ef4444'
-                  const buyPrice = Math.round(s.price * 0.998)
-                  const sellPrice = Math.round(s.price * 1.002)
                   const maxVol = Math.max(...stocks.map(st => st.volume), 1)
                   const volPercent = Math.round((s.volume / maxVol) * 100)
 
@@ -2035,21 +2102,23 @@ function Dashboard() {
                             <span className={`text-[9px] md:text-[10px] font-bold ${isUp ? 'text-emerald-600' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
                           </div>
                         </div>
-                        <div className="flex gap-1 md:gap-1.5">
-                          <button onClick={() => openTrade(s, 'buy')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-emerald-600 text-white text-[8px] md:text-[9px] font-bold hover:bg-emerald-700 transition-colors">Beli</button>
-                          <button onClick={() => openTrade(s, 'sell')} className="h-7 md:h-8 px-2 md:px-3 rounded-lg bg-red-500 text-white text-[8px] md:text-[9px] font-bold hover:bg-red-600 transition-colors">Jual</button>
+                        <div className="flex flex-col items-end gap-1">
+                          <button onClick={() => openContract(s)} className="h-8 px-4 rounded-lg bg-emerald-600 text-white text-[9px] md:text-[10px] font-bold hover:bg-emerald-700 transition-colors flex items-center gap-1">
+                            <Package className="w-3.5 h-3.5" />Kontrak
+                          </button>
+                          <span className="text-[7px] font-bold text-gs-gold">Mulai 5%/hari</span>
                         </div>
                       </div>
 
-                      {/* Buy/Sell Price + Volume - Desktop extra info */}
+                      {/* Contract Info */}
                       <div className="mt-2 pt-2 border-t border-gs-line grid grid-cols-3 gap-1">
                         <div>
-                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Beli</span>
-                          <span className="block text-[8px] md:text-[9px] font-black text-emerald-700 tabular-nums">{formatRupiah(buyPrice)}</span>
+                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Rate</span>
+                          <span className="block text-[8px] md:text-[9px] font-black text-emerald-700">{getStockBaseRate(s.code)}%/hari</span>
                         </div>
                         <div>
-                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Jual</span>
-                          <span className="block text-[8px] md:text-[9px] font-black text-red-600 tabular-nums">{formatRupiah(sellPrice)}</span>
+                          <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Min. 30 Hari</span>
+                          <span className="block text-[8px] md:text-[9px] font-black text-gs-gold">s/d 365 Hari</span>
                         </div>
                         <div>
                           <span className="block text-[6px] md:text-[7px] font-bold text-gs-muted">Vol</span>
@@ -2121,8 +2190,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <button onClick={() => openTrade(p.stock, 'buy')} className="flex-1 h-7 md:h-8 rounded-lg bg-emerald-600 text-white text-[8px] md:text-[9px] font-bold">+ Tambah</button>
-                      <button onClick={() => openTrade(p.stock, 'sell')} className="flex-1 h-7 md:h-8 rounded-lg bg-red-500 text-white text-[8px] md:text-[9px] font-bold">Jual</button>
+                      <button onClick={() => openContract(p.stock)} className="flex-1 h-7 md:h-8 rounded-lg bg-emerald-600 text-white text-[8px] md:text-[9px] font-bold flex items-center justify-center gap-1"><Package className="w-3 h-3" />Kontrak</button>
                     </div>
                   </div>
                 ))}
@@ -2134,6 +2202,55 @@ function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Active Stock Contracts */}
+              {userContracts.filter(c => c.status === 'active').length > 0 && (
+                <>
+                  <h3 className="text-[11px] md:text-sm font-black text-gs-green3 mt-4 mb-2">Kontrak Saham Aktif</h3>
+                  <div className="space-y-2">
+                    {userContracts.filter(c => c.status === 'active').map(c => {
+                      const progress = Math.round((c.daysElapsed / c.duration) * 100)
+                      const canClaim = !c.lastClaimAt || new Date(c.lastClaimAt).toDateString() !== new Date().toDateString()
+                      return (
+                        <div key={c.id} className="rounded-2xl p-3 bg-white border border-emerald-200 shadow-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-emerald-50">
+                                <Package className="w-4 h-4 text-emerald-600" />
+                              </div>
+                              <div>
+                                <span className="block text-[10px] md:text-xs font-black text-gs-text">{c.stockCode}</span>
+                                <span className="block text-[7px] text-gs-muted">{c.duration} hari • {c.dailyProfitRate}%/hari</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[10px] font-black text-gs-text">{formatRupiah(c.amount)}</span>
+                              <span className="block text-[8px] font-bold text-emerald-600">+{formatRupiah(c.dailyProfitAmount)}/hari</span>
+                            </div>
+                          </div>
+                          {/* Progress */}
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-[7px] font-bold text-gs-muted">Hari {c.daysElapsed}/{c.duration}</span>
+                              <span className="text-[7px] font-bold text-gs-green3">{progress}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-gs-soft overflow-hidden">
+                              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[7px] text-gs-muted">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
+                            <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
+                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-gs-soft text-gs-muted cursor-not-allowed'}`}>
+                              {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : 'Sudah Diklaim'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
 
               {/* Active Investments in Portfolio */}
               {userInvestments.filter(i => i.status === 'active').length > 0 && (
@@ -4398,163 +4515,46 @@ function Dashboard() {
                       {' '}{formatRupiah(selectedStock.change)} ({formatPercent(selectedStock.changePercent)})
                     </span>
                   </div>
-                  {/* Live Buy/Sell Prices */}
-                  {liveChartActive && (
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl p-2 bg-emerald-50 border border-emerald-200">
-                        <div className="flex items-center gap-1">
-                          <ArrowDownRight className="w-3 h-3 text-emerald-600" />
-                          <span className="text-[7px] font-bold text-emerald-700 uppercase">Harga Beli</span>
-                        </div>
-                        <span className="block text-[13px] font-black text-emerald-700 tabular-nums mt-0.5">{formatRupiah(liveBuyPrice)}</span>
-                      </div>
-                      <div className="rounded-xl p-2 bg-red-50 border border-red-200">
-                        <div className="flex items-center gap-1">
-                          <ArrowUpRight className="w-3 h-3 text-red-500" />
-                          <span className="text-[7px] font-bold text-red-600 uppercase">Harga Jual</span>
-                        </div>
-                        <span className="block text-[13px] font-black text-red-600 tabular-nums mt-0.5">{formatRupiah(liveSellPrice)}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
-
-                {/* Live Buy/Sell Price Charts */}
-                <div className="mb-3 space-y-2">
-                  {/* Live Indicator */}
-                  <div className="flex items-center gap-2 px-1">
-                    <div className="flex items-center gap-1">
-                      <span className={`w-2 h-2 rounded-full ${liveChartActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
-                      <span className="text-[8px] font-black text-gs-green3 uppercase tracking-wider">Live</span>
+                  {/* Contract Profit Preview */}
+                  <div className="mb-3 rounded-xl p-3 border border-emerald-200 bg-gradient-to-b from-emerald-50/50 to-white">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Package className="w-4 h-4 text-emerald-600" />
+                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Info Kontrak</span>
                     </div>
-                    <span className="text-[7px] text-gs-muted">Harga berjalan real-time</span>
-                  </div>
-
-                  {/* Buy Price Chart (Green) */}
-                  <div className="rounded-2xl border border-emerald-200 bg-gradient-to-b from-emerald-50/50 to-white overflow-hidden">
-                    <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
-                      <div className="flex items-center gap-1.5">
-                        <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-wider">Grafik Harga Beli</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-lg p-2 bg-white border border-emerald-100 text-center">
+                        <span className="block text-[7px] font-bold text-gs-muted">Rate Dasar</span>
+                        <span className="block text-[12px] font-black text-emerald-700">{getStockBaseRate(selectedStock.code)}%</span>
+                        <span className="block text-[6px] text-gs-muted">per hari</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[14px] font-black text-emerald-700 tabular-nums">{formatRupiah(liveBuyPrice)}</span>
-                        {liveBuyChart.length >= 2 && (
-                          <span className={`text-[8px] font-bold ${liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? 'text-emerald-600' : 'text-red-500'}`}>
-                            {liveBuyChart[liveBuyChart.length-1]?.price >= liveBuyChart[liveBuyChart.length-2]?.price ? '▲' : '▼'}
-                          </span>
-                        )}
+                      <div className="rounded-lg p-2 bg-white border border-emerald-100 text-center">
+                        <span className="block text-[7px] font-bold text-gs-muted">Min. Durasi</span>
+                        <span className="block text-[12px] font-black text-gs-green3">30</span>
+                        <span className="block text-[6px] text-gs-muted">hari</span>
+                      </div>
+                      <div className="rounded-lg p-2 bg-white border border-emerald-100 text-center">
+                        <span className="block text-[7px] font-bold text-gs-muted">Max. Durasi</span>
+                        <span className="block text-[12px] font-black text-gs-green3">365</span>
+                        <span className="block text-[6px] text-gs-muted">hari</span>
                       </div>
                     </div>
-                    <div className="h-32 px-1 pb-1">
-                      {liveBuyChart.length > 2 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={liveBuyChart} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                            <defs>
-                              <linearGradient id="buyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#059669" stopOpacity="0.4" />
-                                <stop offset="50%" stopColor="#059669" stopOpacity="0.12" />
-                                <stop offset="100%" stopColor="#059669" stopOpacity="0" />
-                              </linearGradient>
-                            </defs>
-                            <XAxis dataKey="time" hide />
-                            <YAxis hide domain={computeYDomain(liveBuyChart, 0.12)} />
-                            <ReferenceLine y={liveBuyPrice} stroke="#059669" strokeDasharray="3 3" strokeOpacity={0.25} />
-                            <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Beli']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                            <Area type="monotone" dataKey="price" stroke="#059669" fill="url(#buyGrad)" strokeWidth={2}
-                              dot={(props: Record<string, unknown>) => {
-                                const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                if (index !== liveBuyChart.length - 1) return <g key={String(index)} />
-                                return (
-                                  <g key="live-dot-buy">
-                                    <circle cx={cx} cy={cy} r={8} fill="#059669" opacity={0.2}>
-                                      <animate attributeName="r" values="6;12;6" dur="1.8s" repeatCount="indefinite" />
-                                      <animate attributeName="opacity" values="0.35;0;0.35" dur="1.8s" repeatCount="indefinite" />
-                                    </circle>
-                                    <circle cx={cx} cy={cy} r={4} fill="#059669" stroke="#fff" strokeWidth={1.5} />
-                                  </g>
-                                )
-                              }}
-                              activeDot={false}
-                              isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-[10px] text-gs-muted">Memuat grafik beli...</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Sell Price Chart (Red) */}
-                  <div className="rounded-2xl border border-red-200 bg-gradient-to-b from-red-50/50 to-white overflow-hidden">
-                    <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
-                      <div className="flex items-center gap-1.5">
-                        <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />
-                        <span className="text-[9px] font-black text-red-600 uppercase tracking-wider">Grafik Harga Jual</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[14px] font-black text-red-600 tabular-nums">{formatRupiah(liveSellPrice)}</span>
-                        {liveSellChart.length >= 2 && (
-                          <span className={`text-[8px] font-bold ${liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? 'text-emerald-600' : 'text-red-500'}`}>
-                            {liveSellChart[liveSellChart.length-1]?.price >= liveSellChart[liveSellChart.length-2]?.price ? '▲' : '▼'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="h-32 px-1 pb-1">
-                      {liveSellChart.length > 2 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={liveSellChart} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                            <defs>
-                              <linearGradient id="sellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
-                                <stop offset="50%" stopColor="#ef4444" stopOpacity="0.12" />
-                                <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-                              </linearGradient>
-                            </defs>
-                            <XAxis dataKey="time" hide />
-                            <YAxis hide domain={computeYDomain(liveSellChart, 0.12)} />
-                            <ReferenceLine y={liveSellPrice} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.25} />
-                            <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga Jual']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2' }} />
-                            <Area type="monotone" dataKey="price" stroke="#ef4444" fill="url(#sellGrad)" strokeWidth={2}
-                              dot={(props: Record<string, unknown>) => {
-                                const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                if (index !== liveSellChart.length - 1) return <g key={String(index)} />
-                                return (
-                                  <g key="live-dot-sell">
-                                    <circle cx={cx} cy={cy} r={8} fill="#ef4444" opacity={0.2}>
-                                      <animate attributeName="r" values="6;12;6" dur="1.8s" repeatCount="indefinite" />
-                                      <animate attributeName="opacity" values="0.35;0;0.35" dur="1.8s" repeatCount="indefinite" />
-                                    </circle>
-                                    <circle cx={cx} cy={cy} r={4} fill="#ef4444" stroke="#fff" strokeWidth={1.5} />
-                                  </g>
-                                )
-                              }}
-                              activeDot={false}
-                              isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-[10px] text-gs-muted">Memuat grafik jual...</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Spread Info */}
-                  <div className="rounded-xl p-2.5 bg-gs-soft border border-gs-line">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
+                    <div className="mt-2 rounded-lg p-2 bg-emerald-50 border border-emerald-100">
+                      <div className="flex items-center gap-1 mb-1">
                         <Zap className="w-3 h-3 text-gs-gold" />
-                        <span className="text-[8px] font-bold text-gs-muted">Spread (Selisih)</span>
+                        <span className="text-[7px] font-bold text-gs-muted">Contoh: Rp 1.000.000 × 30 hari</span>
                       </div>
-                      <span className="text-[10px] font-black text-gs-gold tabular-nums">{formatRupiah(liveSellPrice - liveBuyPrice)}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-[7px] text-gs-muted">Beli: {formatRupiah(liveBuyPrice)}</span>
-                      <span className="text-[7px] text-gs-muted">Jual: {formatRupiah(liveSellPrice)}</span>
+                      {(() => {
+                        const exampleProfit = calcContractProfit(selectedStock, 30, 1000000)
+                        return (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[8px] text-gs-muted">Profit/hari: <b className="text-emerald-700">{formatRupiah(exampleProfit.dailyProfitAmount)}</b></span>
+                            <span className="text-[8px] text-gs-muted">Total: <b className="text-emerald-700">{formatRupiah(exampleProfit.totalReturn)}</b></span>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
-                </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-2 mb-3">
@@ -4589,116 +4589,140 @@ function Dashboard() {
                   </div>
                 </div>
 
-                {/* Buy/Sell Buttons */}
-                <div className="flex gap-2">
-                  <button onClick={() => { setTradeModal('buy'); setShowStockDetail(false) }} className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1">
-                    <ArrowDownRight className="w-4 h-4" />Beli
-                  </button>
-                  <button onClick={() => { setTradeModal('sell'); setShowStockDetail(false) }} className="flex-1 h-11 rounded-xl bg-red-500 text-white text-[11px] font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1">
-                    <ArrowUpRight className="w-4 h-4" />Jual
-                  </button>
-                </div>
+                {/* Contract Button */}
+                <button onClick={() => { setContractModal(true); setShowStockDetail(false) }} className="w-full h-12 rounded-xl bg-emerald-600 text-white text-[12px] font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
+                  <Package className="w-5 h-5" />Beli Kontrak {selectedStock.code}
+                </button>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* Trade Modal */}
+      {/* Contract Modal */}
       <AnimatePresence>
-        {tradeModal && selectedStock && (
+        {contractModal && selectedStock && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setTradeModal(null)} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setContractModal(false)} />
             <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center bg-white rounded-t-3xl md:rounded-3xl shadow-2xl md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
-              <div className="p-4">
+              <div className="p-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[14px] font-black text-gs-green3">
-                    {tradeModal === 'buy' ? 'Beli' : 'Jual'} {selectedStock.code}
-                  </h3>
-                  <button onClick={() => setTradeModal(null)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft"><X className="w-4 h-4" /></button>
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl overflow-hidden bg-gs-soft flex items-center justify-center">
+                      {selectedStock.logo ? <img src={selectedStock.logo} alt={selectedStock.code} className="w-full h-full object-cover" /> : <span className="text-[9px] font-black text-gs-green3">{selectedStock.code.slice(0, 2)}</span>}
+                    </div>
+                    <div>
+                      <h3 className="text-[14px] font-black text-gs-green3">Beli Kontrak {selectedStock.code}</h3>
+                      <span className="text-[8px] text-gs-muted">{selectedStock.name} • {formatRupiah(selectedStock.price)}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => setContractModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft"><X className="w-4 h-4" /></button>
                 </div>
 
-                {/* Price Info */}
+                {/* Stock Info */}
                 <div className="rounded-xl p-3 bg-gs-soft mb-3">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <span className="block text-[8px] font-bold text-gs-muted">
-                        {tradeModal === 'buy' ? 'Harga Beli (Live)' : 'Harga Jual (Live)'}
-                      </span>
-                      <span className="block text-[16px] font-black tabular-nums" style={{color: tradeModal === 'buy' ? '#15803d' : '#dc2626'}}>
-                        {formatRupiah(tradeModal === 'buy' ? (liveBuyPrice || selectedStock.price) : (liveSellPrice || selectedStock.price))}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatPercent(selectedStock.changePercent)}</span>
-                      {liveChartActive && (
-                        <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[7px] font-bold text-emerald-600">LIVE</span>
-                        </div>
-                      )}
-                    </div>
+                    <span className="text-[8px] font-bold text-gs-muted">Harga Saham</span>
+                    <span className="text-[14px] font-black text-gs-text tabular-nums">{formatRupiah(selectedStock.price)}</span>
                   </div>
-                  {liveChartActive && (
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gs-line">
-                      <span className="text-[7px] text-gs-muted">Beli: {formatRupiah(liveBuyPrice)}</span>
-                      <span className="text-[7px] text-gs-muted">Jual: {formatRupiah(liveSellPrice)}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[8px] text-gs-muted">Rate Dasar</span>
+                    <span className="text-[11px] font-black text-emerald-700">{getStockBaseRate(selectedStock.code)}% / hari</span>
+                  </div>
                 </div>
 
-                {/* Order Type */}
-                <div className="flex gap-2 mb-3">
-                  <button onClick={() => setTradeOrderType('market')} className={`flex-1 h-8 rounded-lg text-[9px] font-bold ${tradeOrderType === 'market' ? 'bg-gs-green3 text-white' : 'bg-gs-soft text-gs-muted'}`}>Market</button>
-                  <button onClick={() => setTradeOrderType('limit')} className={`flex-1 h-8 rounded-lg text-[9px] font-bold ${tradeOrderType === 'limit' ? 'bg-gs-green3 text-white' : 'bg-gs-soft text-gs-muted'}`}>Limit</button>
-                </div>
-
-                {tradeOrderType === 'limit' && (
-                  <div className="mb-3">
-                    <label className="block text-[8px] font-bold text-gs-muted mb-0.5">Harga Limit</label>
-                    <input type="number" value={tradePrice} onChange={(e) => setTradePrice(e.target.value)} placeholder={selectedStock.price.toString()}
-                      className="w-full h-10 rounded-xl bg-gs-soft border border-gs-line px-3 text-[12px] font-semibold outline-none focus:border-gs-green" />
-                  </div>
-                )}
-
-                {/* Shares */}
+                {/* Duration Selection */}
                 <div className="mb-3">
-                  <label className="block text-[8px] font-bold text-gs-muted mb-0.5">Jumlah (Rp)</label>
-                  <input type="number" value={tradeShares} onChange={(e) => setTradeShares(e.target.value)} placeholder="Min. 100.000"
+                  <label className="block text-[9px] font-black text-gs-green3 mb-1.5">Durasi Kontrak</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[30, 60, 90, 120, 180, 365].map(d => {
+                      const durMult = d <= 30 ? 1 : d <= 60 ? 1.15 : d <= 90 ? 1.3 : d <= 120 ? 1.5 : d <= 180 ? 1.8 : 2.5
+                      const effectiveRate = getStockBaseRate(selectedStock.code) * durMult
+                      return (
+                        <button key={d} onClick={() => setContractDuration(d)}
+                          className={`rounded-xl p-2 text-center border-2 transition-all ${contractDuration === d ? 'border-emerald-500 bg-emerald-50' : 'border-gs-line bg-white hover:border-emerald-200'}`}>
+                          <span className="block text-[11px] font-black text-gs-text">{d}</span>
+                          <span className="block text-[7px] font-bold text-gs-muted">hari</span>
+                          <span className="block text-[8px] font-black text-emerald-700 mt-0.5">{(effectiveRate).toFixed(1)}%</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Amount Input */}
+                <div className="mb-3">
+                  <label className="block text-[9px] font-black text-gs-green3 mb-1.5">Jumlah Investasi (Rp)</label>
+                  <input type="number" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} placeholder="Min. 100.000"
                     className="w-full h-10 rounded-xl bg-gs-soft border border-gs-line px-3 text-[12px] font-semibold outline-none focus:border-gs-green" />
                 </div>
 
                 {/* Quick Amount Buttons */}
                 <div className="flex gap-1.5 mb-3">
                   {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                    <button key={amt} onClick={() => setTradeShares(amt)} className="flex-1 h-7 rounded-lg bg-gs-soft border border-gs-line text-[7px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
+                    <button key={amt} onClick={() => setContractAmount(amt)} className="flex-1 h-7 rounded-lg bg-gs-soft border border-gs-line text-[7px] font-bold text-gs-green3 hover:bg-gs-green hover:text-white transition-colors">
                       {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                     </button>
                   ))}
                 </div>
 
-                {/* Summary */}
-                {tradeShares && parseInt(tradeShares) > 0 && (
-                  <div className="rounded-xl p-3 bg-gs-soft mb-3">
-                    <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[8px] text-gs-muted">Jumlah</span>
-                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(parseInt(tradeShares || '0'))}</span>
+                {/* Profit Summary */}
+                {contractAmount && parseInt(contractAmount) > 0 && (() => {
+                  const amount = parseInt(contractAmount)
+                  const profit = calcContractProfit(selectedStock, contractDuration, amount)
+                  return (
+                    <div className="rounded-xl p-3 border border-emerald-200 bg-emerald-50/50 mb-3">
+                      <h4 className="text-[9px] font-black text-emerald-700 mb-1.5">Ringkasan Kontrak</h4>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-gs-muted">Jumlah Investasi</span>
+                          <span className="text-[8px] font-bold text-gs-text">{formatRupiah(amount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-gs-muted">Durasi</span>
+                          <span className="text-[8px] font-bold text-gs-text">{contractDuration} hari</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-gs-muted">Rate Harian</span>
+                          <span className="text-[8px] font-black text-emerald-700">{profit.dailyRate}%/hari</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-gs-muted">Profit Harian</span>
+                          <span className="text-[8px] font-black text-emerald-700">{formatRupiah(profit.dailyProfitAmount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-gs-muted">Total Profit ({contractDuration} hari)</span>
+                          <span className="text-[9px] font-black text-emerald-700">{formatRupiah(profit.totalProfit)}</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 mt-1 border-t border-emerald-200">
+                          <span className="text-[9px] font-black text-gs-green3">Total Kembali</span>
+                          <span className="text-[11px] font-black text-gs-green3">{formatRupiah(profit.totalReturn)}</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 rounded-lg p-1.5 bg-gs-gold/10 border border-gs-gold/20">
+                        <span className="text-[7px] text-gs-gold font-bold">💡 Lebih lama kontrak & lebih besar modal = profit lebih tinggi!</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between py-0.5">
-                      <span className="text-[8px] text-gs-muted">Biaya (0.15%)</span>
-                      <span className="text-[8px] font-bold text-gs-text">{formatRupiah(Math.round(parseInt(tradeShares || '0') * 0.0015))}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-1 mt-1 border-t border-gs-line">
-                      <span className="text-[9px] font-bold text-gs-green3">Total</span>
-                      <span className="text-[9px] font-black text-gs-green3">{formatRupiah(parseInt(tradeShares || '0') + Math.round(parseInt(tradeShares || '0') * 0.0015))}</span>
-                    </div>
+                  )
+                })()}
+
+                {/* Balance Check */}
+                {contractAmount && parseInt(contractAmount) > (user?.balance || 0) && (
+                  <div className="rounded-xl p-2 bg-red-50 border border-red-200 mb-3">
+                    <span className="text-[8px] font-bold text-red-600">Saldo tidak cukup! Saldo: {formatRupiah(user?.balance || 0)}</span>
                   </div>
                 )}
 
+                <span className="block text-[8px] text-emerald-700 leading-relaxed mb-3">Profit harian dapat diklaim setiap hari pukul 00:00 WIB. Kontrak berakhir setelah {contractDuration} hari.</span>
+
                 {/* Submit */}
-                <button onClick={handleTrade} disabled={tradeLoading || !tradeShares}
-                  className={`w-full h-12 rounded-xl text-white text-[12px] font-bold disabled:opacity-70 transition-colors ${tradeModal === 'buy' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-500 hover:bg-red-600'}`}>
-                  {tradeLoading ? 'Memproses...' : `${tradeModal === 'buy' ? 'Beli' : 'Jual'} ${selectedStock.code}`}
+                <button onClick={handleContract} disabled={contractLoading || !contractAmount || parseInt(contractAmount) < 100000}
+                  className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold disabled:opacity-70 transition-colors flex items-center justify-center gap-2">
+                  {contractLoading ? (
+                    <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+                  ) : (
+                    <><Package className="w-4 h-4" />Beli Kontrak {selectedStock.code}</>
+                  )}
                 </button>
               </div>
             </motion.div>
