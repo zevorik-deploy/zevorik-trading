@@ -1,28 +1,25 @@
 ---
 Task ID: 1
-Agent: Main
-Task: Rebrand Global Saham to TrendEdge, generate logo, fix trending, remove testimonial
+Agent: Main Agent
+Task: Expand Pasar Saham to 50 foreign stocks with logos
 
 Work Log:
-- Generated TrendEdge logo using z-ai image generation CLI → /public/trendedge-logo.png
-- Generated TrendEdge app icon → /public/trendedge-icon.png
-- Delegated rebranding to full-stack-developer subagent:
-  - Replaced all "Global Saham" → "TrendEdge" (20+ instances)
-  - Updated logo references from /logo.svg → /trendedge-logo.png
-  - Changed color scheme from blue/navy to emerald green in globals.css and page.tsx
-  - Removed all Testimonial feature code (state, menu item, section, modal)
-  - Updated layout.tsx metadata and favicon
-- Verified: No "Global Saham", "testimonial", or "logo.svg" references remain
-- Verified: 22 TrendEdge references, 217 emerald color references
-- ESLint passes clean (0 errors)
-- Dev server running, GET / 200 OK, all APIs 200 OK
-- Trending/Pasar Saham feature working with emerald theme
-- Sinyal Pro prediction feature working
+- Read current page.tsx, seed API, and stocks route to understand existing state
+- Found 31 foreign stocks existed in seed API, needed 50
+- Invoked image-generation skill to understand API capabilities
+- Delegated logo generation to subagent - successfully generated all 50 logos using z-ai-web-dev-sdk
+- Updated /api/stocks/seed/route.ts with 50 foreign international stocks across 9 sectors
+- Updated /api/stocks/route.ts auto-seed function with same 50 foreign stocks (was using Indonesian stocks)
+- Added `logo` field to Stock interface in page.tsx
+- Updated 7 locations in frontend where stock icons were displayed (text-based code initials) to show actual logo images
+- Updated category filter to include new categories: Industri, Hiburan (was missing for new sectors)
+- Re-seeded database - confirmed 50 stocks created with logo paths
+- Verified all 50 logo PNG files exist in /public/stocks/
+- Verified lint passes and dev server compiles successfully
 
 Stage Summary:
-- TrendEdge branding complete with AI-generated logo and icon
-- Emerald green color scheme applied throughout
-- Testimonial feature completely removed
-- All other features preserved (Beranda, Pasar, Sinyal Pro, Investasi, Finance, Portfolio, Riwayat, Undang, Bonus, Leaderboard, Profile)
-- No Premium tab in Investasi
-- Trading uses free Rupiah amount (min 100K)
+- 50 foreign stocks now available in Pasar Saham (up from 31)
+- All 50 stocks have AI-generated logos at /stocks/{CODE}.png
+- New stocks added: BAC, PGR, LLY, ABBV, MRK, KO, SBUX, PEP, COP, HON, CMCSA, PYPL, UBER, NOW, CRM, ORCL, ADBE, IBM, DE
+- Sectors covered: Technology, Finance, Healthcare, Consumer, Energy, Industrials, Entertainment, Fintech, Semiconductor
+- Frontend now displays logos in: Pasar Saham grid, Trending gainers/losers, Watchlist, Portfolio, Sinyal Pro, Stock Detail modal

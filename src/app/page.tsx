@@ -56,7 +56,7 @@ interface Stock {
   id: string; code: string; name: string; price: number; change: number;
   changePercent: number; high: number; low: number; open: number;
   volume: number; marketCap: number; category: string; sector?: string;
-  description?: string; peRatio?: number; pbv?: number; dividendYield?: number; lotSize?: number;
+  logo?: string; description?: string; peRatio?: number; pbv?: number; dividendYield?: number; lotSize?: number;
 }
 
 interface PortfolioItem {
@@ -1455,7 +1455,7 @@ function Dashboard() {
     const mf = stockFilter === 'all' || s.category === stockFilter || s.sector === stockFilter
     return ms && mf
   })
-  const categories = [{ key: 'all', label: 'Semua' }, { key: 'bluechip', label: 'Blue Chip' }, { key: 'tech', label: 'Teknologi' }, { key: 'banking', label: 'Perbankan' }, { key: 'energy', label: 'Energi' }, { key: 'consumer', label: 'Konsumer' }, { key: 'mining', label: 'Pertambangan' }, { key: 'healthcare', label: 'Kesehatan' }]
+  const categories = [{ key: 'all', label: 'Semua' }, { key: 'bluechip', label: 'Blue Chip' }, { key: 'tech', label: 'Teknologi' }, { key: 'banking', label: 'Keuangan' }, { key: 'energy', label: 'Energi' }, { key: 'consumer', label: 'Konsumer' }, { key: 'healthcare', label: 'Kesehatan' }, { key: 'infrastructure', label: 'Industri' }, { key: 'media', label: 'Hiburan' }]
   const isWatched = (stockId: string) => watchlist.some(w => w.stockId === stockId)
   const openStockDetail = (stock: Stock) => { setSelectedStock(stock); setShowStockDetail(true); setLiveBuyChart([]); setLiveSellChart([]); setLiveBuyPrice(0); setLiveSellPrice(0); fetchPriceHistory(stock.id) }
   const openTrade = (stock: Stock, type: 'buy' | 'sell') => { setSelectedStock(stock); setTradeModal(type); setTradeShares(''); setTradePrice(''); setTradeOrderType('market'); setLiveBuyChart([]); setLiveSellChart([]); setLiveBuyPrice(0); setLiveSellPrice(0); fetchPriceHistory(stock.id) }
@@ -1752,7 +1752,7 @@ function Dashboard() {
                       {topGainers.slice(0, 3).map(s => (
                         <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-gs-line last:border-0">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg bg-emerald-50 grid place-items-center text-[7px] font-black text-emerald-600">{s.code.slice(0, 2)}</div>
+                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-emerald-50 flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-emerald-600">{s.code.slice(0, 2)}</span>}</div>
                             <span className="text-[9px] font-bold text-gs-text">{s.code}</span>
                           </div>
                           <span className="text-[8px] font-black text-emerald-600">+{s.changePercent.toFixed(2)}%</span>
@@ -1764,7 +1764,7 @@ function Dashboard() {
                       {topLosers.slice(0, 3).map(s => (
                         <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-gs-line last:border-0">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg bg-red-50 grid place-items-center text-[7px] font-black text-red-500">{s.code.slice(0, 2)}</div>
+                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-red-50 flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-red-500">{s.code.slice(0, 2)}</span>}</div>
                             <span className="text-[9px] font-bold text-gs-text">{s.code}</span>
                           </div>
                           <span className="text-[8px] font-black text-red-500">{s.changePercent.toFixed(2)}%</span>
@@ -1786,7 +1786,7 @@ function Dashboard() {
                     {watchlist.slice(0, 5).map(w => (
                       <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-1.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-gs-soft grid place-items-center text-[7px] font-black text-gs-green3">{w.stock.code.slice(0, 2)}</div>
+                          <div className="w-7 h-7 rounded-lg overflow-hidden bg-gs-soft flex items-center justify-center">{w.stock.logo ? <img src={w.stock.logo} alt={w.stock.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-gs-green3">{w.stock.code.slice(0, 2)}</span>}</div>
                           <div className="text-left">
                             <span className="block text-[9px] font-bold text-gs-text">{w.stock.code}</span>
                             <span className="block text-[7px] text-gs-muted">{w.stock.name.slice(0, 15)}</span>
@@ -1984,7 +1984,7 @@ function Dashboard() {
                     <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-shadow ${isUp ? 'border-emerald-100' : 'border-red-100'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(s)}>
-                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl grid place-items-center text-[9px] md:text-[10px] font-black ${isUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{s.code.slice(0, 2)}</div>
+                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-50' : 'bg-red-50'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[9px] md:text-[10px] font-black ${isUp ? 'text-emerald-700' : 'text-red-600'}`}>{s.code.slice(0, 2)}</span>}</div>
                           <div>
                             <span className="block text-[10px] md:text-xs font-black text-gs-text">{s.code}</span>
                             <span className="block text-[7px] md:text-[8px] text-gs-muted max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
@@ -2107,7 +2107,7 @@ function Dashboard() {
                   <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-white border border-gs-line shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg grid place-items-center text-[8px] md:text-[10px] font-black cursor-pointer ${p.profitLoss >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{p.stock.code.slice(0, 2)}</div>
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer ${p.profitLoss >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>{p.stock.logo ? <img src={p.stock.logo} alt={p.stock.code} className="w-full h-full object-cover" /> : <span className={`text-[8px] md:text-[10px] font-black ${p.profitLoss >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{p.stock.code.slice(0, 2)}</span>}</div>
                         <div>
                           <span className="block text-[10px] md:text-xs font-black text-gs-text">{p.stock.code}</span>
                           <span className="block text-[7px] md:text-[8px] text-gs-muted">{formatRupiah(p.currentValue)}</span>
@@ -2649,7 +2649,7 @@ function Dashboard() {
                       onClick={() => { setSelectedSinyalStock(s); setShowSinyalModal(true); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalDuration(30); setSinyalResult(null) }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl grid place-items-center text-[9px] md:text-[10px] font-black ${isUp ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{s.code.slice(0, 2)}</div>
+                          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-50' : 'bg-red-50'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[9px] md:text-[10px] font-black ${isUp ? 'text-emerald-700' : 'text-red-600'}`}>{s.code.slice(0, 2)}</span>}</div>
                           <div>
                             <span className="block text-[10px] md:text-xs font-black text-gs-text">{s.code}</span>
                             <span className="block text-[7px] md:text-[8px] text-gs-muted max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
@@ -4379,7 +4379,7 @@ function Dashboard() {
             <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-2xl md:mx-auto md:my-auto">
               <div className="sticky top-0 bg-white p-4 border-b border-gs-line flex items-center justify-between rounded-t-3xl">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-gs-soft grid place-items-center text-[10px] font-black text-gs-green3">{selectedStock.code.slice(0, 2)}</div>
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-gs-soft flex items-center justify-center">{selectedStock.logo ? <img src={selectedStock.logo} alt={selectedStock.code} className="w-full h-full object-cover" /> : <span className="text-[10px] font-black text-gs-green3">{selectedStock.code.slice(0, 2)}</span>}</div>
                   <div>
                     <span className="block text-[12px] font-black text-gs-text">{selectedStock.code}</span>
                     <span className="block text-[8px] text-gs-muted">{selectedStock.name}</span>
