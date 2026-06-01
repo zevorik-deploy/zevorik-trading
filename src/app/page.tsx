@@ -711,6 +711,11 @@ function Dashboard() {
   const [sinyalTimer, setSinyalTimer] = useState(0)
   const [sinyalActive, setSinyalActive] = useState(false)
   const [sinyalAutoPending, setSinyalAutoPending] = useState(false)
+  const [sinyalChartType, setSinyalChartType] = useState<'area' | 'line' | 'candle' | 'bar'>('area')
+  const [sinyalTimeframe, setSinyalTimeframe] = useState<'1H' | '1D' | '1W' | '1M' | 'ALL'>('1D')
+  const [sinyalChartData, setSinyalChartData] = useState<Map<string, {idx: number; value: number}[]>>(new Map())
+  const sinyalChartSimRef = useRef<Map<string, {val: number; baseVal: number; momentum: number; initialized: boolean}>>(new Map())
+  const [sinyalChartStock, setSinyalChartStock] = useState<Stock | null>(null)
 
   // ============ LIVE INVESTMENT CHART DATA ============
   const [investChartData, setInvestChartData] = useState<Map<string, {idx: number; value: number}[]>>(new Map())
@@ -966,6 +971,80 @@ function Dashboard() {
     }, 2500)
     return () => clearInterval(interval)
   }, []) // empty deps — uses stocksRef so interval never restarts
+
+  // ============ SINYAL PRO CHART DATA ============
+  // Initialize chart data when stocks load
+  useEffect(() => {
+    if (stocks.length === 0) return
+    setSinyalChartData(prev => {
+      const next = new Map(prev)
+      let changed = false
+      stocks.forEach(s => {
+        if (sinyalChartSimRef.current.has(s.id)) return
+        changed = true
+        const baseVal = s.price
+        const pts: {idx: number; value: number}[] = []
+        let val = baseVal * (0.96 + Math.random() * 0.08)
+        let momentum = 0
+        const mainDir = s.changePercent >= 0 ? 1 : -1
+        for (let i = 0; i < 60; i++) {
+          const dir = Math.random() > 0.45 ? 1 : -1
+          const minStep = Math.max(1, baseVal * 0.002)
+          const stepSize = minStep * (0.8 + Math.random() * 1.5)
+          const bias = mainDir * baseVal * 0.0004
+          momentum = momentum * 0.3 + dir * stepSize + bias
+          val += momentum
+          val += (baseVal - val) * 0.006
+          pts.push({ idx: i, value: Math.round(val) })
+        }
+        pts.push({ idx: 60, value: Math.round(baseVal * (0.99 + Math.random() * 0.02)) })
+        next.set(s.id, pts)
+        sinyalChartSimRef.current.set(s.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
+      })
+      return changed ? next : prev
+    })
+  }, [stocks])
+
+  // Live sinyal chart update — every 1.5 seconds for faster trending feel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const simMap = sinyalChartSimRef.current
+      if (simMap.size === 0) return
+      const updates = new Map<string, {idx: number; value: number}[]>()
+
+      simMap.forEach((sim, stockId) => {
+        const dir = Math.random() > 0.45 ? 1 : -1
+        const minStep = Math.max(1, sim.baseVal * 0.0015)
+        const stepSize = minStep * (0.6 + Math.random() * 1.2)
+        sim.momentum = sim.momentum * 0.3 + dir * stepSize
+        sim.val += sim.momentum
+        sim.val += (sim.baseVal - sim.val) * 0.005
+
+        setSinyalChartData(prev => {
+          const next = new Map(prev)
+          const existing = next.get(stockId)
+          if (!existing) return prev
+          const newPts = [...existing.slice(1), { idx: existing[existing.length - 1].idx + 1, value: Math.round(sim.val) }]
+          next.set(stockId, newPts.length > 80 ? newPts.slice(-80) : newPts)
+          updates.set(stockId, newPts)
+          return next
+        })
+      })
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Auto-select first stock for sinyal chart if none selected
+  useEffect(() => {
+    if (!sinyalChartStock && stocks.length > 0) {
+      setSinyalChartStock(stocks[0])
+    }
+  }, [stocks, sinyalChartStock])
+
+  // Helper to get sinyal chart data for a stock
+  const getSinyalChartData = useCallback((stockId: string) => {
+    return sinyalChartData.get(stockId) || []
+  }, [sinyalChartData])
 
   // ============ HELPER: compute Y-axis domain from chart data ============
   const computeYDomain = useCallback((data: {price: number}[], paddingPercent = 0.08): [number, number] => {
@@ -2709,6 +2788,264 @@ function Dashboard() {
                 </div>
               </div>
 
+              {/* ====== LIVE TRENDING CHART ====== */}
+              {sinyalChartStock && (() => {
+                const rawData = getSinyalChartData(sinyalChartStock.id)
+                const chartData = getDataForTimeframe(rawData, sinyalTimeframe)
+                const isUp = sinyalChartStock.changePercent >= 0
+                const chartColor = isUp ? '#059669' : '#ef4444'
+                const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : sinyalChartStock.price
+
+                return (
+                  <div className="rounded-2xl bg-white border border-gs-line shadow-sm overflow-hidden mb-4">
+                    {/* Chart Header — Stock Info */}
+                    <div className="px-4 pt-3 pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                            {sinyalChartStock.logo ? <img src={sinyalChartStock.logo} alt={sinyalChartStock.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] font-black ${isUp ? 'text-emerald-700' : 'text-red-600'}`}>{sinyalChartStock.code.slice(0, 2)}</span>}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[14px] md:text-base font-black text-gs-text">{sinyalChartStock.code}</span>
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-black flex items-center gap-0.5 ${isUp ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+                                {formatPercent(sinyalChartStock.changePercent)}
+                              </span>
+                            </div>
+                            <span className="block text-[8px] text-gs-muted max-w-[200px] truncate">{sinyalChartStock.name}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[16px] font-black tabular-nums" style={{ color: isUp ? '#16a34a' : '#dc2626' }}>{formatRupiah(lastValue)}</span>
+                          <div className="flex items-center gap-1 justify-end">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[7px] font-black text-emerald-600">LIVE TRENDING</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Chart Controls */}
+                    <div className="px-4 py-1">
+                      <div className="flex items-center justify-between">
+                        {/* Chart Type Selector */}
+                        <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+                          {([
+                            { type: 'area' as const, label: 'Area' },
+                            { type: 'line' as const, label: 'Line' },
+                            { type: 'candle' as const, label: 'Candle' },
+                            { type: 'bar' as const, label: 'Bar' },
+                          ]).map(ct => (
+                            <button key={ct.type} onClick={() => setSinyalChartType(ct.type)}
+                              className={`h-6 px-2 rounded-md text-[8px] font-black transition-all ${sinyalChartType === ct.type ? 'bg-white shadow-sm text-gs-green3' : 'text-gs-muted hover:text-gs-text'}`}>
+                              {ct.label}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Timeframe Selector */}
+                        <div className="flex items-center gap-0.5">
+                          {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
+                            <button key={tf} onClick={() => setSinyalTimeframe(tf)}
+                              className={`h-6 px-2 rounded-md text-[8px] font-black transition-all ${sinyalTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:text-gs-text hover:bg-gray-100'}`}>
+                              {tf}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main Chart Area */}
+                    <div className="px-2 py-2">
+                      <div className="h-[180px] md:h-[220px] w-full relative bg-gray-50/50 rounded-lg border border-gs-line/30 overflow-hidden">
+                        {chartData.length > 2 ? (() => {
+                          const values = chartData.map(d => d.value)
+                          const minV = Math.min(...values)
+                          const maxV = Math.max(...values)
+                          const rangeV = maxV - minV || 1
+                          const domain: [number, number] = [Math.floor(minV - rangeV * 0.1), Math.ceil(maxV + rangeV * 0.1)]
+
+                          // Candlestick chart
+                          if (sinyalChartType === 'candle') {
+                            const candles = getCandleData(chartData)
+                            if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-gs-muted">Memuat data...</div>
+                            const allPrices = candles.flatMap(c => [c.high, c.low])
+                            const minP = Math.min(...allPrices)
+                            const maxP = Math.max(...allPrices)
+                            const rangeP = maxP - minP || 1
+                            const totalCandles = candles.length
+                            const candleW = Math.max(4, Math.floor(200 / totalCandles))
+                            const gapW = Math.max(2, Math.floor(60 / totalCandles))
+                            const svgW = totalCandles * (candleW + gapW) + gapW * 2
+                            return (
+                              <svg className="w-full h-full" viewBox={`0 0 ${svgW} 170`} preserveAspectRatio="none">
+                                {[0, 1, 2, 3, 4, 5].map(gi => (
+                                  <line key={gi} x1="0" y1={10 + gi * 26} x2={svgW} y2={10 + gi * 26} stroke="#e5e7eb" strokeWidth="0.3" strokeDasharray="4,4" />
+                                ))}
+                                {candles.map((c, i) => {
+                                  const x = gapW + i * (candleW + gapW)
+                                  const yH = 8 + ((maxP - c.high) / rangeP) * 148
+                                  const yL = 8 + ((maxP - c.low) / rangeP) * 148
+                                  const yO = 8 + ((maxP - c.open) / rangeP) * 148
+                                  const yC = 8 + ((maxP - c.close) / rangeP) * 148
+                                  const isGreen = c.close >= c.open
+                                  const bodyTop = Math.min(yO, yC)
+                                  const bodyH = Math.max(Math.abs(yO - yC), 2)
+                                  const isLast = i === totalCandles - 1
+                                  return (
+                                    <g key={i} opacity={isLast ? 1 : 0.75}>
+                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth="1.5" />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#059669' : '#ef4444'} rx="1" />
+                                      {isLast && (
+                                        <>
+                                          <circle cx={x + candleW / 2} cy={yC} r="4" fill={isGreen ? '#059669' : '#ef4444'}>
+                                            <animate attributeName="r" values="4;7;4" dur="1.5s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+                                          </circle>
+                                          <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth="0.6" strokeDasharray="3,3" opacity="0.5" />
+                                        </>
+                                      )}
+                                    </g>
+                                  )
+                                })}
+                              </svg>
+                            )
+                          }
+
+                          // Bar chart
+                          if (sinyalChartType === 'bar') {
+                            const barData = chartData.map((d, i) => ({
+                              idx: d.idx,
+                              value: d.value,
+                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#059669' : '#ef4444'
+                            }))
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <ReBarChart data={barData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                  <XAxis dataKey="idx" hide />
+                                  <YAxis hide domain={domain} />
+                                  <Bar dataKey="value" radius={[2, 2, 0, 0]} isAnimationActive={true} animationDuration={400}
+                                    shape={(props: Record<string, unknown>) => {
+                                      const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
+                                      return <rect x={x} y={y} width={Math.max(width, 2)} height={Math.max(height, 1)} fill={_fill} rx={2} opacity={0.85} />
+                                    }}>
+                                    {barData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                  </Bar>
+                                </ReBarChart>
+                              </ResponsiveContainer>
+                            )
+                          }
+
+                          // Line chart
+                          if (sinyalChartType === 'line') {
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                  <XAxis dataKey="idx" hide />
+                                  <YAxis hide domain={domain} />
+                                  <ReferenceLine y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
+                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2.5} dot={false}
+                                    activeDot={{ r: 4, fill: chartColor, stroke: '#fff', strokeWidth: 2 }}
+                                    isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            )
+                          }
+
+                          // Area chart (default)
+                          return (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                                <defs>
+                                  <linearGradient id={`sinyalMainGrad-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.35" />
+                                    <stop offset="60%" stopColor={chartColor} stopOpacity="0.1" />
+                                    <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                <XAxis dataKey="idx" hide />
+                                <YAxis hide domain={domain} />
+                                <ReferenceLine y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.25} />
+                                <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#sinyalMainGrad-${sinyalChartStock.id})`} strokeWidth={2.5}
+                                  dot={(props: Record<string, unknown>) => {
+                                    const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                    if (index !== chartData.length - 1) return <g key={String(index)} />
+                                    return (
+                                      <g key="sinyal-main-dot">
+                                        <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.25}>
+                                          <animate attributeName="r" values="5;10;5" dur="2s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.25;0;0.25" dur="2s" repeatCount="indefinite" />
+                                        </circle>
+                                        <circle cx={cx} cy={cy} r={3.5} fill={chartColor} stroke="#fff" strokeWidth={1.5} />
+                                      </g>
+                                    )
+                                  }}
+                                  activeDot={{ r: 5, fill: chartColor, stroke: '#fff', strokeWidth: 2 }}
+                                  isAnimationActive={true} animationDuration={500} />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          )
+                        })() : (
+                          <div className="flex items-center justify-center h-full text-[9px] text-gs-muted">Memuat data grafik...</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quick Trade Button */}
+                    <div className="px-4 pb-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => { setSelectedSinyalStock(sinyalChartStock); setShowSinyalModal(true); setSinyalDirection('NAIK'); setSinyalAmount(''); setSinyalDuration(30); setSinyalResult(null) }}
+                          className="flex-1 h-10 rounded-xl bg-emerald-500 text-white text-[11px] font-black flex items-center justify-center gap-1.5 hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-200">
+                          <TrendingUp className="w-4 h-4" />NAIK
+                        </button>
+                        <button onClick={() => { setSelectedSinyalStock(sinyalChartStock); setShowSinyalModal(true); setSinyalDirection('TURUN'); setSinyalAmount(''); setSinyalDuration(30); setSinyalResult(null) }}
+                          className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[11px] font-black flex items-center justify-center gap-1.5 hover:bg-red-600 transition-colors shadow-md shadow-red-200">
+                          <TrendingDown className="w-4 h-4" />TURUN
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Stock Selector Horizontal Scroll */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-[11px] md:text-sm font-black text-gs-green3">Pilih Saham</h3>
+                  <div className="flex items-center gap-1">
+                    <BarChart3 className="w-3 h-3 text-gs-muted" />
+                    <span className="text-[8px] font-bold text-gs-muted">{stocks.length} Saham</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar" style={{ scrollSnapType: 'x mandatory' }}>
+                  {stocks.slice(0, 20).map(s => {
+                    const isUp = s.changePercent >= 0
+                    const isSelected = sinyalChartStock?.id === s.id
+                    return (
+                      <button key={s.id} onClick={() => setSinyalChartStock(s)}
+                        className={`flex-shrink-0 rounded-xl p-2.5 border transition-all text-left min-w-[120px] ${isSelected ? 'border-gs-green3 bg-emerald-50 shadow-md shadow-emerald-100' : 'border-gs-line bg-white hover:border-emerald-200 hover:shadow-sm'}`}
+                        style={{ scrollSnapAlign: 'start' }}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className={`w-6 h-6 rounded-lg overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                            {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[7px] font-black ${isUp ? 'text-emerald-700' : 'text-red-600'}`}>{s.code.slice(0, 2)}</span>}
+                          </div>
+                          <div>
+                            <span className="block text-[9px] font-black text-gs-text">{s.code}</span>
+                            <span className={`block text-[7px] font-bold ${isUp ? 'text-emerald-600' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
+                          </div>
+                        </div>
+                        <span className="block text-[10px] font-black tabular-nums text-gs-text">{formatRupiah(s.price)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Active Position Card */}
               {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
                 const ap = sinyalPositions.find(p => p.status === 'active')!
@@ -2754,16 +3091,20 @@ function Dashboard() {
                 </motion.div>
               )}
 
-              {/* Stock Grid */}
+              {/* Stock Grid — All Stocks with Mini Sparklines */}
+              <div className="mb-2">
+                <h3 className="text-[11px] md:text-sm font-black text-gs-green3 mb-2">Semua Saham</h3>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3">
-                {stocks.slice(0, 12).map(s => {
+                {stocks.slice(0, 20).map(s => {
                   const sparkData = getSparklineData(s)
                   const isUp = s.changePercent >= 0
                   const sparkColor = isUp ? '#059669' : '#ef4444'
+                  const isSelected = sinyalChartStock?.id === s.id
 
                   return (
-                    <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-shadow cursor-pointer ${isUp ? 'border-emerald-100' : 'border-red-100'}`}
-                      onClick={() => { setSelectedSinyalStock(s); setShowSinyalModal(true); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalDuration(30); setSinyalResult(null) }}>
+                    <div key={s.id} className={`rounded-2xl p-3 md:p-4 bg-white border shadow-sm hover:shadow-md transition-all cursor-pointer ${isSelected ? 'border-gs-green3 ring-1 ring-gs-green3/30' : isUp ? 'border-emerald-100' : 'border-red-100'}`}
+                      onClick={() => setSinyalChartStock(s)}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-50' : 'bg-red-50'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[9px] md:text-[10px] font-black ${isUp ? 'text-emerald-700' : 'text-red-600'}`}>{s.code.slice(0, 2)}</span>}</div>
@@ -2772,7 +3113,7 @@ function Dashboard() {
                             <span className="block text-[7px] md:text-[8px] text-gs-muted max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
                           </div>
                         </div>
-                        <Target className="w-4 h-4 text-gs-muted" />
+                        {isSelected ? <div className="w-5 h-5 rounded-full bg-gs-green3 grid place-items-center"><CheckCircle className="w-3 h-3 text-white" /></div> : <Target className="w-4 h-4 text-gs-muted" />}
                       </div>
 
                       {/* Mini Sparkline */}
@@ -4749,7 +5090,7 @@ function Dashboard() {
                   <button onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false) }} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft"><X className="w-4 h-4" /></button>
                 </div>
 
-                {/* Live Chart */}
+                {/* Live Chart — Upgraded with chart type & timeframe */}
                 <div className="rounded-xl p-2 bg-gs-soft mb-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[8px] font-bold text-gs-muted">GRAFIK LIVE</span>
@@ -4758,27 +5099,139 @@ function Dashboard() {
                       <span className="text-[7px] font-bold text-emerald-600">LIVE</span>
                     </div>
                   </div>
-                  <div className="h-[100px]">
+                  {/* Chart Controls */}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-0.5 bg-white rounded-md p-0.5">
+                      {(['area', 'line', 'candle', 'bar'] as const).map(ct => (
+                        <button key={ct} onClick={() => setSinyalChartType(ct)}
+                          className={`h-4 px-1.5 rounded text-[6px] font-black transition-all ${sinyalChartType === ct ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:text-gs-text'}`}>
+                          {ct.charAt(0).toUpperCase() + ct.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
+                        <button key={tf} onClick={() => setSinyalTimeframe(tf)}
+                          className={`h-4 px-1.5 rounded text-[6px] font-black transition-all ${sinyalTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:bg-gray-100'}`}>
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-[120px]">
                     {(() => {
-                      const sparkData = getSparklineData(selectedSinyalStock)
+                      const rawData = getSinyalChartData(selectedSinyalStock.id)
+                      const chartData = getDataForTimeframe(rawData, sinyalTimeframe)
                       const isUp = selectedSinyalStock.changePercent >= 0
                       const chartColor = isUp ? '#059669' : '#ef4444'
+                      if (chartData.length < 3) {
+                        const sparkData = getSparklineData(selectedSinyalStock)
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                              <defs>
+                                <linearGradient id="sinyalModalGradFallback" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
+                                  <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                </linearGradient>
+                              </defs>
+                              <XAxis dataKey="i" hide />
+                              <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
+                              <Area type="monotone" dataKey="p" stroke={chartColor} fill="url(#sinyalModalGradFallback)" strokeWidth={2} dot={false} activeDot={false} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        )
+                      }
+                      const values = chartData.map(d => d.value)
+                      const minV = Math.min(...values)
+                      const maxV = Math.max(...values)
+                      const rangeV = maxV - minV || 1
+                      const domain: [number, number] = [Math.floor(minV - rangeV * 0.1), Math.ceil(maxV + rangeV * 0.1)]
+
+                      if (sinyalChartType === 'candle') {
+                        const candles = getCandleData(chartData)
+                        if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[8px] text-gs-muted">Memuat...</div>
+                        const allPrices = candles.flatMap(c => [c.high, c.low])
+                        const minP = Math.min(...allPrices)
+                        const maxP = Math.max(...allPrices)
+                        const rangeP = maxP - minP || 1
+                        const totalCandles = candles.length
+                        const candleW = Math.max(3, Math.floor(100 / totalCandles))
+                        const gapW = Math.max(1, Math.floor(30 / totalCandles))
+                        const svgW = totalCandles * (candleW + gapW) + gapW * 2
+                        return (
+                          <svg className="w-full h-full" viewBox={`0 0 ${svgW} 108`} preserveAspectRatio="none">
+                            {candles.map((c, i) => {
+                              const x = gapW + i * (candleW + gapW)
+                              const yH = 4 + ((maxP - c.high) / rangeP) * 96
+                              const yL = 4 + ((maxP - c.low) / rangeP) * 96
+                              const yO = 4 + ((maxP - c.open) / rangeP) * 96
+                              const yC = 4 + ((maxP - c.close) / rangeP) * 96
+                              const isGreen = c.close >= c.open
+                              const bodyTop = Math.min(yO, yC)
+                              const bodyH = Math.max(Math.abs(yO - yC), 1.5)
+                              return (
+                                <g key={i} opacity={i === totalCandles - 1 ? 1 : 0.7}>
+                                  <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth="1" />
+                                  <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#059669' : '#ef4444'} rx="0.5" />
+                                </g>
+                              )
+                            })}
+                          </svg>
+                        )
+                      }
+
+                      if (sinyalChartType === 'bar') {
+                        const barData = chartData.map((d, i) => ({
+                          idx: d.idx, value: d.value,
+                          fill: i > 0 && d.value >= chartData[i - 1].value ? '#059669' : '#ef4444'
+                        }))
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ReBarChart data={barData} margin={{ top: 2, right: 4, bottom: 2, left: 2 }}>
+                              <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
+                              <Bar dataKey="value" radius={[1, 1, 0, 0]} isAnimationActive={true} animationDuration={400}
+                                shape={(props: Record<string, unknown>) => {
+                                  const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
+                                  return <rect x={x} y={y} width={Math.max(width, 2)} height={Math.max(height, 1)} fill={_fill} rx={1} opacity={0.8} />
+                                }}>
+                                {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
+                              </Bar>
+                            </ReBarChart>
+                          </ResponsiveContainer>
+                        )
+                      }
+
+                      if (sinyalChartType === 'line') {
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                              <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
+                              <ReferenceLine y={selectedSinyalStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
+                              <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                                activeDot={{ r: 3, fill: chartColor, stroke: '#fff', strokeWidth: 1.5 }}
+                                isAnimationActive={true} animationDuration={500} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        )
+                      }
+
+                      // Area (default)
                       return (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                          <AreaChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
                             <defs>
                               <linearGradient id="sinyalModalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
                                 <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
                               </linearGradient>
                             </defs>
-                            <XAxis dataKey="i" hide />
-                            <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
-                            <ReferenceLine y={selectedSinyalStock.price} stroke="#059669" strokeDasharray="3 3" strokeOpacity={0.3} />
-                            <Area type="monotone" dataKey="p" stroke={chartColor} fill="url(#sinyalModalGrad)" strokeWidth={2}
+                            <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
+                            <ReferenceLine y={selectedSinyalStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
+                            <Area type="monotone" dataKey="value" stroke={chartColor} fill="url(#sinyalModalGrad)" strokeWidth={2}
                               dot={(props: Record<string, unknown>) => {
                                 const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                if (index !== sparkData.length - 1) return <g key={String(index)} />
+                                if (index !== chartData.length - 1) return <g key={String(index)} />
                                 return (
                                   <g key="sinyal-dot">
                                     <circle cx={cx} cy={cy} r={4} fill={chartColor} opacity={0.3}>
@@ -4789,7 +5242,8 @@ function Dashboard() {
                                   </g>
                                 )
                               }}
-                              activeDot={false} />
+                              activeDot={{ r: 4, fill: chartColor, stroke: '#fff', strokeWidth: 1.5 }}
+                              isAnimationActive={true} animationDuration={500} />
                           </AreaChart>
                         </ResponsiveContainer>
                       )
