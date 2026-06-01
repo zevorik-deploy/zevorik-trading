@@ -347,3 +347,48 @@ Stage Summary:
 - Trend persistence 85% creates long directional phases (was 60% creating constant reversals)
 - Momentum boost makes trends strengthen over time (new feature)
 - VLM confirms: "Clear directional trend", "realistic-looking", "visually unambiguous"
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Improve candlestick chart visuals and chart movement path
+
+Work Log:
+- Upgraded getCandleData function:
+  - More candles visible (35 groups instead of 24) for smoother chart flow
+  - Realistic high/low wicks that extend beyond body (20-60% of body range)
+  - Added volume field per candle (proportional to price movement)
+- Upgraded Sinyal Pro main candlestick chart:
+  - SVG gradient fills: greenCandle (dark green→bright green), redCandle (dark red→bright red)
+  - Brighter last-candle gradients (greenCandleLast, redCandleLast)
+  - Last candle glow filter (feGaussianBlur + feComposite)
+  - Thicker wicks (1.2px for last, 1px for others, was 0.8px)
+  - Wider candle bodies (0.7 spacing ratio, was 0.65)
+  - Solid grid lines instead of dashed (cleaner look)
+  - Volume bars from candle data (aligned with each candle)
+  - Better current price tag (16px height, larger font)
+  - Smoother MA lines with strokeLinejoin="round" and strokeLinecap="round"
+  - Wider pulse animation (3→7 radius, was 2→4)
+- Upgraded Invest product card candlestick chart:
+  - SVG gradient fills (investGreenCandle, investRedCandle)
+  - Consistent candle spacing and width (0.7 ratio)
+  - Better wick rendering and last-candle pulse
+- Upgraded Sinyal Pro modal candlestick chart:
+  - SVG gradient fills (modalGreenCandle, modalRedCandle)
+  - Better candle proportions (14px spacing + 50 padding, was 12+44)
+  - Consistent styling with main chart
+- Upgraded Invest detail modal candlestick chart:
+  - SVG gradient fills (detailGreenCandle, detailRedCandle)
+  - Better candle proportions (0.7 spacing ratio, was 0.6)
+  - Solid grid lines, thicker wicks, better pulse
+- All 4 candle chart sections now use consistent gradient styling
+- Lint passes, dev server compiles successfully
+
+Stage Summary:
+- Candlestick charts now use SVG gradient fills (dark-to-light green/red) instead of flat colors
+- Realistic candle wicks that extend beyond the body (professional TradingView-style)
+- Volume data per candle for aligned volume bars
+- More candles visible (35 vs 24 groups) for smoother, flowing chart
+- Last candle has glow effect and brighter gradient
+- Wider pulse animation on current candle position
+- All 4 chart sections updated: Sinyal Pro main, Sinyal Pro modal, Invest card, Invest detail modal

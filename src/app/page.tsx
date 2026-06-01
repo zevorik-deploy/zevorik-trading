@@ -733,18 +733,26 @@ function Dashboard() {
   // Helper: derive OHLC candlestick data from line data
   const getCandleData = useCallback((data: {idx: number; value: number}[]) => {
     if (data.length < 4) return []
-    const candles: {idx: number; open: number; high: number; low: number; close: number}[] = []
-    const groupSize = Math.max(2, Math.floor(data.length / 24))
+    const candles: {idx: number; open: number; high: number; low: number; close: number; volume: number}[] = []
+    // More candles for smoother chart — 30-40 candles visible
+    const groupSize = Math.max(2, Math.floor(data.length / 35))
     for (let i = 0; i < data.length; i += groupSize) {
       const group = data.slice(i, i + groupSize)
       if (group.length < 2) continue
-      candles.push({
-        idx: candles.length,
-        open: group[0].value,
-        high: Math.max(...group.map(g => g.value)),
-        low: Math.min(...group.map(g => g.value)),
-        close: group[group.length - 1].value,
-      })
+      const open = group[0].value
+      const close = group[group.length - 1].value
+      // Realistic high/low: includes wicks beyond open/close
+      const bodyMax = Math.max(open, close)
+      const bodyMin = Math.min(open, close)
+      const midPrice = (bodyMax + bodyMin) / 2
+      const bodyRange = bodyMax - bodyMin || midPrice * 0.001
+      // Wicks extend beyond body by 20-60% (realistic candle wick behavior)
+      const wickExtension = bodyRange * (0.3 + Math.random() * 0.6)
+      const high = Math.max(bodyMax + wickExtension, ...group.map(g => g.value))
+      const low = Math.min(bodyMin - wickExtension, ...group.map(g => g.value))
+      // Volume proportional to price movement
+      const volume = Math.abs(close - open) + bodyRange * (0.5 + Math.random() * 1.5)
+      candles.push({ idx: candles.length, open, high, low, close, volume: Math.round(volume) })
     }
     return candles
   }, [])
@@ -2732,20 +2740,27 @@ function Dashboard() {
                               const totalCandles = candles.length
                               const svgW = 400
                               const priceH = 130
-                              const candleW = Math.max(3, Math.floor((svgW - 16) / totalCandles * 0.65))
-                              const gapW = Math.max(1, Math.floor((svgW - 16) / totalCandles * 0.35))
                               const padding = { top: 8, bottom: 8, left: 4, right: 42 }
+                              const drawW = svgW - padding.left - padding.right
+                              const candleSpacing = drawW / totalCandles
+                              const candleW = Math.max(4, Math.floor(candleSpacing * 0.7))
                               const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
+                              const candleVolumes = candles.map(c => c.volume || 1)
+                              const maxCandleVol = Math.max(...candleVolumes)
                               return (
                                 <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid meet">
-                                  {/* Grid lines — dashed horizontal + vertical */}
+                                  <defs>
+                                    <linearGradient id="investGreenCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                      <stop offset="0%" stopColor="#15803d" /><stop offset="100%" stopColor="#4ade80" />
+                                    </linearGradient>
+                                    <linearGradient id="investRedCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                      <stop offset="0%" stopColor="#b91c1c" /><stop offset="100%" stopColor="#f87171" />
+                                    </linearGradient>
+                                  </defs>
+                                  {/* Grid lines */}
                                   {[0, 1, 2, 3, 4].map(gi => {
                                     const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 5)
-                                    return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
-                                  })}
-                                  {[0, 1, 2, 3, 4].map(gi => {
-                                    const x = padding.left + gi * ((svgW - padding.left - padding.right) / 4)
-                                    return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.025)" strokeWidth="0.5" strokeDasharray="2,6" />
+                                    return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.035)" strokeWidth="0.5" />
                                   })}
                                   {/* Price labels with pills */}
                                   {[0, 2, 4].map(gi => {
@@ -2759,12 +2774,11 @@ function Dashboard() {
                                     )
                                   })}
                                   {/* Current price line */}
-                                  <line x1={padding.left} y1={priceToY(lastValue)} x2={svgW - padding.right} y2={priceToY(lastValue)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.35" />
+                                  <line x1={padding.left} y1={priceToY(lastValue)} x2={svgW - padding.right} y2={priceToY(lastValue)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.4" />
                                   <rect x={svgW - padding.right + 1} y={priceToY(lastValue) - 5} width={padding.right - 2} height="10" rx="3" fill={chartColor} opacity="0.85" />
                                   <text x={svgW - padding.right + 2 + (padding.right - 6) / 2} y={priceToY(lastValue) + 2.5} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="700">{formatRupiah(lastValue).replace('Rp', '').trim()}</text>
-                                  {/* Candles */}
+                                  {/* Candles with gradient */}
                                   {candles.map((c, i) => {
-                                    const candleSpacing = (svgW - padding.left - padding.right) / totalCandles
                                     const cx = padding.left + i * candleSpacing + candleSpacing / 2
                                     const x = cx - candleW / 2
                                     const yH = priceToY(c.high)
@@ -2775,18 +2789,19 @@ function Dashboard() {
                                     const bodyTop = Math.min(yO, yC)
                                     const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                                     const isLast = i === totalCandles - 1
-                                    const fillColor = isGreen ? '#22c55e' : '#ef4444'
+                                    const fill = isGreen ? 'url(#investGreenCandle)' : 'url(#investRedCandle)'
+                                    const wickColor = isGreen ? '#22c55e' : '#ef4444'
                                     return (
-                                      <g key={i} opacity={isLast ? 1 : 0.9}>
-                                        <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
-                                        <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="1" />
+                                      <g key={i} opacity={isLast ? 1 : 0.92}>
+                                        <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={wickColor} strokeWidth={isLast ? "1" : "0.8"} opacity={isLast ? 1 : 0.6} />
+                                        <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fill} rx="1" />
                                         {isLast && (
                                           <>
-                                            <circle cx={cx} cy={yC} r="2" fill={fillColor}>
-                                              <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
+                                            <circle cx={cx} cy={yC} r="2" fill={wickColor} opacity="0.3">
+                                              <animate attributeName="r" values="2;5;2" dur="2s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                                             </circle>
-                                            <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
+                                            <circle cx={cx} cy={yC} r="1.5" fill={wickColor} />
                                           </>
                                         )}
                                       </g>
@@ -3212,13 +3227,13 @@ function Dashboard() {
                           const totalCandles = candles.length
                           // Wider viewBox for sharper retina rendering
                           const svgW = 840
-                          const padding = { top: 16, bottom: 8, left: 6, right: 62 }
+                          const padding = { top: 18, bottom: 10, left: 6, right: 62 }
                           const drawW = svgW - padding.left - padding.right
                           const candleSpacing = drawW / totalCandles
-                          const candleW = Math.max(6, Math.floor(candleSpacing * 0.65))
+                          const candleW = Math.max(8, Math.floor(candleSpacing * 0.7))
                           const rsiH = sinyalShowRSI ? 64 : 0
-                          const priceH = 240
-                          const volH = sinyalShowVolume ? 44 : 0
+                          const priceH = 250
+                          const volH = sinyalShowVolume ? 48 : 0
                           const chartH = priceH + volH + rsiH + 8
 
                           // MA data for candles
@@ -3239,24 +3254,52 @@ function Dashboard() {
                           // Current price Y
                           const curPriceY = priceToY(sinyalChartStock.price)
 
+                          // Volume from candle data
+                          const candleVolumes = candles.map(c => c.volume || 1)
+                          const maxCandleVol = Math.max(...candleVolumes)
+
                           return (
                             <svg className="w-full" viewBox={`0 0 ${svgW} ${chartH}`} preserveAspectRatio="xMidYMid meet" style={{ minHeight: 280 }}>
                               <defs>
-                                {/* Subtle pulse animation for last candle dot */}
-                                <filter id="candlePulse" x="-50%" y="-50%" width="200%" height="200%">
-                                  <feGaussianBlur stdDeviation="1.5" result="blur" />
-                                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                {/* Green candle gradient — bottom to top */}
+                                <linearGradient id="greenCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                  <stop offset="0%" stopColor="#15803d" />
+                                  <stop offset="50%" stopColor="#22c55e" />
+                                  <stop offset="100%" stopColor="#4ade80" />
+                                </linearGradient>
+                                {/* Red candle gradient — bottom to top */}
+                                <linearGradient id="redCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                  <stop offset="0%" stopColor="#b91c1c" />
+                                  <stop offset="50%" stopColor="#ef4444" />
+                                  <stop offset="100%" stopColor="#f87171" />
+                                </linearGradient>
+                                {/* Last green candle — brighter */}
+                                <linearGradient id="greenCandleLast" x1="0%" y1="100%" x2="0%" y2="0%">
+                                  <stop offset="0%" stopColor="#16a34a" />
+                                  <stop offset="50%" stopColor="#2dd469" />
+                                  <stop offset="100%" stopColor="#86efac" />
+                                </linearGradient>
+                                {/* Last red candle — brighter */}
+                                <linearGradient id="redCandleLast" x1="0%" y1="100%" x2="0%" y2="0%">
+                                  <stop offset="0%" stopColor="#dc2626" />
+                                  <stop offset="50%" stopColor="#f87171" />
+                                  <stop offset="100%" stopColor="#fca5a5" />
+                                </linearGradient>
+                                {/* Subtle glow for last candle */}
+                                <filter id="lastGlow" x="-30%" y="-10%" width="160%" height="120%">
+                                  <feGaussianBlur stdDeviation="3" result="glow" />
+                                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
                                 </filter>
                               </defs>
-                              {/* Grid lines — subtle dashed horizontal */}
+                              {/* Grid lines — subtle solid horizontal */}
                               {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => {
                                 const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 8)
-                                return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
+                                return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.035)" strokeWidth="0.5" />
                               })}
-                              {/* Grid lines — subtle dashed vertical */}
+                              {/* Grid lines — subtle solid vertical */}
                               {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(gi => {
                                 const x = padding.left + gi * (drawW / 8)
-                                return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.025)" strokeWidth="0.5" strokeDasharray="2,6" />
+                                return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.02)" strokeWidth="0.5" />
                               })}
                               {/* Price labels — right side with background pills */}
                               {[0, 2, 4, 6].map(gi => {
@@ -3270,14 +3313,14 @@ function Dashboard() {
                                   </g>
                                 )
                               })}
-                              {/* Current price line — thin dashed with price tag pill */}
-                              <line x1={padding.left} y1={curPriceY} x2={svgW - padding.right} y2={curPriceY} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.35" />
-                              <rect x={svgW - padding.right + 2} y={curPriceY - 7} width={padding.right - 4} height="14" rx="3" fill={chartColor} opacity="0.9" />
-                              <text x={svgW - padding.right + 4 + (padding.right - 8) / 2} y={curPriceY + 3} textAnchor="middle" fill="white" fontSize="7" fontFamily="monospace" fontWeight="700">{formatRupiah(sinyalChartStock.price).replace('Rp', '').trim()}</text>
-                              {/* MA Lines — clean, no glow */}
-                              {sinyalShowMA7 && ma7Points.length > 1 && <polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.6" />}
-                              {sinyalShowMA25 && ma25Points.length > 1 && <polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1" opacity="0.6" />}
-                              {/* Candles — professional TradingView-style */}
+                              {/* Current price line — solid thin with price tag pill */}
+                              <line x1={padding.left} y1={curPriceY} x2={svgW - padding.right} y2={curPriceY} stroke={chartColor} strokeWidth="0.6" strokeDasharray="4,3" opacity="0.4" />
+                              <rect x={svgW - padding.right + 2} y={curPriceY - 8} width={padding.right - 4} height="16" rx="3" fill={chartColor} opacity="0.95" />
+                              <text x={svgW - padding.right + 4 + (padding.right - 8) / 2} y={curPriceY + 3.5} textAnchor="middle" fill="white" fontSize="7.5" fontFamily="monospace" fontWeight="700">{formatRupiah(sinyalChartStock.price).replace('Rp', '').trim()}</text>
+                              {/* MA Lines — smooth, slightly thicker */}
+                              {sinyalShowMA7 && ma7Points.length > 1 && <polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1.2" opacity="0.55" strokeLinejoin="round" strokeLinecap="round" />}
+                              {sinyalShowMA25 && ma25Points.length > 1 && <polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1.2" opacity="0.55" strokeLinejoin="round" strokeLinecap="round" />}
+                              {/* Candles — professional TradingView-style with gradients */}
                               {candles.map((c, i) => {
                                 const cx = padding.left + i * candleSpacing + candleSpacing / 2
                                 const x = cx - candleW / 2
@@ -3287,41 +3330,44 @@ function Dashboard() {
                                 const yC = priceToY(c.close)
                                 const isGreen = c.close >= c.open
                                 const bodyTop = Math.min(yO, yC)
-                                const bodyH = Math.max(Math.abs(yO - yC), 1.5)
+                                const bodyH = Math.max(Math.abs(yO - yC), 2)
                                 const isLast = i === totalCandles - 1
                                 const isHollow = sinyalChartType === 'hollow'
-                                const fillColor = isGreen ? (isLast ? '#2dd469' : '#22c55e') : (isLast ? '#f87171' : '#ef4444')
+                                const fillGradient = isGreen
+                                  ? (isLast ? 'url(#greenCandleLast)' : 'url(#greenCandle)')
+                                  : (isLast ? 'url(#redCandleLast)' : 'url(#redCandle)')
+                                const wickColor = isGreen ? (isLast ? '#2dd469' : '#22c55e') : (isLast ? '#f87171' : '#ef4444')
                                 return (
-                                  <g key={i} opacity={isLast ? 1 : 0.9}>
-                                    {/* Wick — thin, centered */}
-                                    <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
-                                    {/* Body — thick with subtle rounded corners */}
+                                  <g key={i} opacity={isLast ? 1 : 0.92} filter={isLast ? 'url(#lastGlow)' : undefined}>
+                                    {/* Wick — realistic thin line */}
+                                    <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={wickColor} strokeWidth={isLast ? "1.2" : "1"} opacity={isLast ? 1 : 0.6} />
+                                    {/* Body — thick with gradient fill */}
                                     {isHollow ? (
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : fillColor} stroke={fillColor} strokeWidth="0.8" rx="1" />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : fillGradient} stroke={wickColor} strokeWidth="1" rx="1.5" />
                                     ) : (
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="1" />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillGradient} rx="1.5" />
                                     )}
-                                    {/* Last candle indicator — subtle pulsing dot */}
+                                    {/* Last candle — animated pulse indicator */}
                                     {isLast && (
                                       <>
-                                        <circle cx={cx} cy={yC} r="2" fill={fillColor}>
-                                          <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
+                                        <circle cx={cx} cy={yC} r="3" fill={wickColor} opacity="0.3">
+                                          <animate attributeName="r" values="3;7;3" dur="2s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                                         </circle>
-                                        <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
+                                        <circle cx={cx} cy={yC} r="2" fill={wickColor} />
                                       </>
                                     )}
                                   </g>
                                 )
                               })}
-                              {/* Volume bars — clean, flat, aligned with candles */}
-                              {sinyalShowVolume && volData.slice(0, totalCandles * Math.ceil(chartData.length / totalCandles)).filter((_, i) => i % Math.ceil(chartData.length / totalCandles) === 0).slice(0, totalCandles).map((v, i) => {
+                              {/* Volume bars — from candle data, gradient, aligned with candles */}
+                              {sinyalShowVolume && candles.map((c, i) => {
                                 const cx = padding.left + i * candleSpacing + candleSpacing / 2
                                 const x = cx - candleW / 2
-                                const maxVol = Math.max(...volData.map(vd => vd.vol))
-                                const h = Math.max(1, (v.vol / maxVol) * volH * 0.8)
+                                const isGreen = c.close >= c.open
+                                const h = Math.max(2, (c.volume / maxCandleVol) * volH * 0.85)
                                 const volBaseY = priceH + 4
-                                return <rect key={`v${i}`} x={x} y={volBaseY - h} width={candleW} height={h} fill={v.up ? '#22c55e' : '#ef4444'} opacity={0.4} />
+                                return <rect key={`v${i}`} x={x} y={volBaseY - h} width={candleW} height={h} fill={isGreen ? '#22c55e' : '#ef4444'} opacity={0.35} rx="0.5" />
                               })}
                               {/* RSI Subplot */}
                               {sinyalShowRSI && rsiData && (() => {
@@ -5698,12 +5744,12 @@ function Dashboard() {
                         const maxP = Math.max(...allPrices)
                         const rangeP = maxP - minP || 1
                         const totalCandles = candles.length
-                        const svgW = totalCandles * 12 + 44
+                        const svgW = totalCandles * 14 + 50
                         const priceH = 120
                         const padding = { top: 6, bottom: 6, left: 4, right: 40 }
                         const drawW = svgW - padding.left - padding.right
                         const candleSpacing = drawW / totalCandles
-                        const candleW = Math.max(3, Math.floor(candleSpacing * 0.6))
+                        const candleW = Math.max(4, Math.floor(candleSpacing * 0.7))
                         const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
                         // MA for SVG candles
                         const cma7 = computeMA(chartData, 7)
@@ -5717,10 +5763,18 @@ function Dashboard() {
                         })
                         return (
                           <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid meet">
-                            {/* Grid — dashed horizontal */}
+                            <defs>
+                              <linearGradient id="modalGreenCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                <stop offset="0%" stopColor="#15803d" /><stop offset="100%" stopColor="#4ade80" />
+                              </linearGradient>
+                              <linearGradient id="modalRedCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                <stop offset="0%" stopColor="#b91c1c" /><stop offset="100%" stopColor="#f87171" />
+                              </linearGradient>
+                            </defs>
+                            {/* Grid — solid horizontal */}
                             {[0, 1, 2, 3].map(gi => {
                               const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 4)
-                              return <line key={`mgh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
+                              return <line key={`mgh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.035)" strokeWidth="0.5" />
                             })}
                             {/* Price labels */}
                             {[0, 2, 4].map(gi => {
@@ -5745,29 +5799,30 @@ function Dashboard() {
                               const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                               const isHollow = sinyalChartType === 'hollow'
                               const isLast = i === totalCandles - 1
-                              const fillColor = isGreen ? '#22c55e' : '#ef4444'
+                              const fill = isGreen ? 'url(#modalGreenCandle)' : 'url(#modalRedCandle)'
+                              const wickColor = isGreen ? '#22c55e' : '#ef4444'
                               return (
-                                <g key={i} opacity={isLast ? 1 : 0.9}>
-                                  <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
+                                <g key={i} opacity={isLast ? 1 : 0.92}>
+                                  <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={wickColor} strokeWidth={isLast ? "1" : "0.8"} opacity={isLast ? 1 : 0.6} />
                                   {isHollow ? (
-                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : fillColor} stroke={fillColor} strokeWidth="0.6" rx="0.5" />
+                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : fill} stroke={wickColor} strokeWidth="0.8" rx="0.5" />
                                   ) : (
-                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="0.5" />
+                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fill} rx="0.5" />
                                   )}
                                   {isLast && (
                                     <>
-                                      <circle cx={cx} cy={yC} r="2" fill={fillColor}>
-                                        <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
-                                        <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
+                                      <circle cx={cx} cy={yC} r="2" fill={wickColor} opacity="0.3">
+                                        <animate attributeName="r" values="2;5;2" dur="2s" repeatCount="indefinite" />
+                                        <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                                       </circle>
-                                      <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
+                                      <circle cx={cx} cy={yC} r="1.5" fill={wickColor} />
                                     </>
                                   )}
                                 </g>
                               )
                             })}
-                            {sinyalShowMA7 && ma7Pts.length > 1 && <polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="0.8" opacity="0.6" />}
-                            {sinyalShowMA25 && ma25Pts.length > 1 && <polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />}
+                            {sinyalShowMA7 && ma7Pts.length > 1 && <polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.6" strokeLinejoin="round" strokeLinecap="round" />}
+                            {sinyalShowMA25 && ma25Pts.length > 1 && <polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1" opacity="0.6" strokeLinejoin="round" strokeLinecap="round" />}
                           </svg>
                         )
                       }
@@ -6364,18 +6419,22 @@ function Dashboard() {
                             const padding = { top: 10, bottom: 10, left: 6, right: 46 }
                             const drawW = svgW - padding.left - padding.right
                             const candleSpacing = drawW / totalCandles
-                            const candleW = Math.max(6, Math.floor(candleSpacing * 0.6))
+                            const candleW = Math.max(6, Math.floor(candleSpacing * 0.7))
                             const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
                             return (
                               <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid meet">
-                                {/* Grid — dashed horizontal + vertical */}
+                                <defs>
+                                  <linearGradient id="detailGreenCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                    <stop offset="0%" stopColor="#15803d" /><stop offset="100%" stopColor="#4ade80" />
+                                  </linearGradient>
+                                  <linearGradient id="detailRedCandle" x1="0%" y1="100%" x2="0%" y2="0%">
+                                    <stop offset="0%" stopColor="#b91c1c" /><stop offset="100%" stopColor="#f87171" />
+                                  </linearGradient>
+                                </defs>
+                                {/* Grid — solid horizontal */}
                                 {[0, 1, 2, 3, 4].map(gi => {
                                   const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 4)
-                                  return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
-                                })}
-                                {[0, 1, 2, 3, 4].map(gi => {
-                                  const x = padding.left + gi * (drawW / 4)
-                                  return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.025)" strokeWidth="0.5" strokeDasharray="2,6" />
+                                  return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.035)" strokeWidth="0.5" />
                                 })}
                                 {/* Price labels with pills */}
                                 {[0, 1, 2, 3, 4].map(gi => {
@@ -6389,7 +6448,7 @@ function Dashboard() {
                                   )
                                 })}
                                 {/* Current price line with pill */}
-                                <line x1={padding.left} y1={priceToY(lastValue)} x2={svgW - padding.right} y2={priceToY(lastValue)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.35" />
+                                <line x1={padding.left} y1={priceToY(lastValue)} x2={svgW - padding.right} y2={priceToY(lastValue)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.4" />
                                 <rect x={svgW - padding.right + 1} y={priceToY(lastValue) - 5} width={padding.right - 2} height="10" rx="3" fill={chartColor} opacity="0.85" />
                                 <text x={svgW - padding.right + 2 + (padding.right - 6) / 2} y={priceToY(lastValue) + 2.5} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="700">{formatRupiah(lastValue).replace('Rp', '').trim()}</text>
                                 {candles.map((c, i) => {
@@ -6403,18 +6462,19 @@ function Dashboard() {
                                   const bodyTop = Math.min(yO, yC)
                                   const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                                   const isLast = i === totalCandles - 1
-                                  const fillColor = isGreen ? '#22c55e' : '#ef4444'
+                                  const fill = isGreen ? 'url(#detailGreenCandle)' : 'url(#detailRedCandle)'
+                                  const wickColor = isGreen ? '#22c55e' : '#ef4444'
                                   return (
-                                    <g key={i} opacity={isLast ? 1 : 0.9}>
-                                      <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="1" />
+                                    <g key={i} opacity={isLast ? 1 : 0.92}>
+                                      <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={wickColor} strokeWidth={isLast ? "1.2" : "1"} opacity={isLast ? 1 : 0.6} />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fill} rx="1" />
                                       {isLast && (
                                         <>
-                                          <circle cx={cx} cy={yC} r="2" fill={fillColor}>
-                                            <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
-                                            <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
+                                          <circle cx={cx} cy={yC} r="2" fill={wickColor} opacity="0.3">
+                                            <animate attributeName="r" values="2;5;2" dur="2s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
                                           </circle>
-                                          <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
+                                          <circle cx={cx} cy={yC} r="1.5" fill={wickColor} />
                                         </>
                                       )}
                                     </g>
