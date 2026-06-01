@@ -283,3 +283,37 @@ Stage Summary:
 - Visual rendering is clean and professional (TradingView-style)
 - More data points visible per timeframe for smoother charts
 - All chart sections updated: Sinyal Pro main, Sinyal Pro modal, Invest modal, IHSG, sparklines, live buy/sell
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Fix chart simulation - movements too small, need real trending like actual stock charts
+
+Work Log:
+- Researched real stock chart movement patterns using web search
+- Read StackOverflow about realistic stock data generation (Geometric Brownian Motion)
+- Key finding: Real intraday stocks move 0.1-0.5% per minute candle, previous simulation was only 0.04% per tick
+- Created unified gbmTick() function using Geometric Brownian Motion (GBM) with Box-Muller transform
+- GBM parameters: drift = 0.12% per tick (visible trend), volatility = 0.2-0.65% per tick (realistic range)
+- Very light mean reversion (0.05% per tick) - allows trends to develop naturally
+- No hard clamping - GBM naturally produces realistic price ranges
+- Replaced ALL chart simulations with GBM-based trending:
+  - Sinyal Pro chart initialization + live update (3s interval)
+  - Invest chart initialization + live update (3s interval)
+  - IHSG chart initialization + live update (3s interval)
+  - Sparkline live update (3s interval)
+  - Live Buy/Sell chart initialization + live update (3s interval)
+- Each simulation maintains trend state: direction, strength, volatility regime, ticks in trend, trend duration
+- Trend shifts every 10-25 ticks (30-75 seconds) creating visible up/down phases
+- Volatility clustering with smooth transitions between calm and volatile periods
+- All intervals standardized to 3 seconds (was 3-4s mixed)
+- Removed leftover old invest chart code that was causing duplicate renders
+- Lint passes, dev server compiles successfully
+
+Stage Summary:
+- Charts now use Geometric Brownian Motion (GBM) - industry standard for stock price simulation
+- Movements are 3-5x larger than before - clearly visible trending on all charts
+- Each stock shows distinct trending phases: goes up for 30-75s, then may reverse
+- No more tiny micro-movements that look like flat lines
+- Charts look like real TradingView/Binance stock charts
+- All 6 chart simulation engines unified under single gbmTick() function

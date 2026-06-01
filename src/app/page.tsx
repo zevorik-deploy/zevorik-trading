@@ -822,7 +822,7 @@ function Dashboard() {
     return results
   }, [])
 
-  // Initialize investment area chart data when products load — realistic trending
+  // Initialize investment area chart data when products load — GBM trending
   useEffect(() => {
     if (investProducts.length === 0) return
     setInvestChartData(prev => {
@@ -834,35 +834,36 @@ function Dashboard() {
         const baseVal = p.modal
         const pts: {idx: number; value: number}[] = []
         let val = baseVal * (0.98 + Math.random() * 0.04)
-        let momentum = 0
         let currentTrend = Math.random() > 0.5 ? 1 : -1
         let trendStrength = 0.4 + Math.random() * 0.5
         let volRegime = 0.5 + Math.random() * 0.5
+        let ticksInTrend = 0
+        const trendDuration = 10 + Math.floor(Math.random() * 15)
         for (let i = 0; i < 60; i++) {
-          if (i > 0 && i % (12 + Math.floor(Math.random() * 8)) === 0) {
+          ticksInTrend++
+          if (ticksInTrend >= trendDuration) {
             currentTrend = Math.random() > 0.45 ? currentTrend : -currentTrend
             trendStrength = 0.3 + Math.random() * 0.6
+            volRegime = 0.3 + Math.random() * 0.7
+            ticksInTrend = 0
           }
-          volRegime = volRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
-          const trendBias = currentTrend * baseVal * 0.0004 * trendStrength
-          const noise = (Math.random() - 0.5) * baseVal * 0.0008 * volRegime
-          momentum = momentum * 0.4 + trendBias + noise
-          val += momentum
-          val += (baseVal - val) * 0.004
-          pts.push({ idx: i, value: Math.round(val) })
+          volRegime = volRegime * 0.95 + (0.3 + Math.random() * 0.7) * 0.05
+          volRegime = Math.max(0.2, Math.min(1.5, volRegime))
+          val = gbmTick(val, baseVal, currentTrend, trendStrength, volRegime)
+          pts.push({ idx: i, value: val })
         }
         // End near current modal price
-        pts.push({ idx: 60, value: Math.round(baseVal * (0.995 + Math.random() * 0.01)) })
+        pts.push({ idx: 60, value: Math.round(baseVal * (0.998 + Math.random() * 0.004)) })
         next.set(p.id, pts)
         investChartSimRef.current.set(p.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
       })
       return changed ? next : prev
     })
-  }, [investProducts])
+  }, [investProducts, gbmTick])
 
-  // Live investment chart update — every 4s for stable trending
+  // Live investment chart update — every 3s with GBM trending
   useEffect(() => {
-    const trendState = new Map<string, {direction: number; persistence: number; volRegime: number; phase: number; volCluster: number}>()
+    const trendState = new Map<string, {direction: number; strength: number; volRegime: number; phase: number; ticksInTrend: number; trendDuration: number}>()
     const interval = setInterval(() => {
       const simMap = investChartSimRef.current
       if (simMap.size === 0) return
@@ -870,45 +871,36 @@ function Dashboard() {
       const tick = investChartTickRef.current
 
       simMap.forEach((sim, productId) => {
-        // Initialize trend state
         if (!trendState.has(productId)) {
           trendState.set(productId, {
             direction: Math.random() > 0.5 ? 1 : -1,
-            persistence: 0.6 + Math.random() * 0.3,
+            strength: 0.4 + Math.random() * 0.6,
             volRegime: 0.5 + Math.random() * 0.5,
-            phase: Math.floor(Math.random() * 20),
-            volCluster: 1
+            phase: 0,
+            ticksInTrend: 0,
+            trendDuration: 12 + Math.floor(Math.random() * 15)
           })
         }
         const ts = trendState.get(productId)!
         ts.phase++
+        ts.ticksInTrend++
 
-        // Trend shifts
-        if (ts.phase % (15 + Math.floor(Math.random() * 15)) === 0) {
+        if (ts.ticksInTrend >= ts.trendDuration) {
           ts.direction = Math.random() > 0.4 ? ts.direction : -ts.direction
-          ts.persistence = 0.5 + Math.random() * 0.4
+          ts.strength = 0.3 + Math.random() * 0.7
+          ts.ticksInTrend = 0
+          ts.trendDuration = 10 + Math.floor(Math.random() * 15)
         }
 
-        // Volatility clustering
-        ts.volCluster = ts.volCluster * 0.93 + (0.3 + Math.random() * 1.2) * 0.07
-        ts.volRegime = ts.volRegime * 0.9 + ts.volCluster * 0.1
+        ts.volRegime = ts.volRegime * 0.94 + (0.3 + Math.random() * 0.8) * 0.06
+        ts.volRegime = Math.max(0.2, Math.min(1.5, ts.volRegime))
 
-        // Trend-biased movement
-        const trendBias = ts.direction * sim.baseVal * 0.0004 * ts.persistence
-        const noise = (Math.random() - 0.5) * sim.baseVal * 0.0007 * ts.volRegime
-        sim.momentum = sim.momentum * 0.4 + trendBias + noise
-        sim.val += sim.momentum
-        // Light mean reversion
-        sim.val += (sim.baseVal - sim.val) * 0.002
-
-        // Clamp to ±4%
-        const maxDev = sim.baseVal * 0.04
-        sim.val = Math.max(sim.baseVal - maxDev, Math.min(sim.baseVal + maxDev, sim.val))
+        sim.val = gbmTick(sim.val, sim.baseVal, ts.direction, ts.strength, ts.volRegime)
 
         setInvestChartData(prev => {
           const existing = prev.get(productId)
           if (!existing) return prev
-          const next = [...existing, { idx: tick + 60, value: Math.round(sim.val) }]
+          const next = [...existing, { idx: tick + 60, value: sim.val }]
           const trimmed = next.length > 80 ? next.slice(-80) : next
           const nextMap = new Map(prev)
           nextMap.set(productId, trimmed)
@@ -925,9 +917,9 @@ function Dashboard() {
         })
         return next
       })
-    }, 4000)
+    }, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [gbmTick])
 
 
   const initialized2 = useRef(false)
@@ -957,56 +949,58 @@ function Dashboard() {
     ihsgChartRef.current.baseVal = baseVal
     const isUp = ihsgIdx.changePercent >= 0
 
-    // Generate historical data with realistic trending
+    // Generate historical data with GBM trending
     const pts: {idx: number; value: number}[] = []
-    let val = baseVal * (1 + (isUp ? -0.003 : 0.003))
-    let momentum = 0
+    let val = baseVal * (1 + (isUp ? -0.005 : 0.005))
     let currentTrend = isUp ? 1 : -1
     let trendStrength = 0.5 + Math.random() * 0.5
     let volRegime = 0.5 + Math.random() * 0.5
+    let ticksInTrend = 0
+    const trendDuration = 8 + Math.floor(Math.random() * 12)
 
     for (let i = 0; i < 50; i++) {
-      if (i > 0 && i % (10 + Math.floor(Math.random() * 8)) === 0) {
+      ticksInTrend++
+      if (ticksInTrend >= trendDuration) {
         currentTrend = Math.random() > 0.45 ? currentTrend : -currentTrend
         trendStrength = 0.3 + Math.random() * 0.6
+        volRegime = 0.3 + Math.random() * 0.7
+        ticksInTrend = 0
       }
-      volRegime = volRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
-      const trendBias = currentTrend * baseVal * 0.0003 * trendStrength
-      const noise = (Math.random() - 0.5) * baseVal * 0.0006 * volRegime
-      momentum = momentum * 0.4 + trendBias + noise
-      val += momentum
-      val += (baseVal - val) * 0.003
-      pts.push({ idx: i, value: Math.round(val) })
+      volRegime = volRegime * 0.95 + (0.3 + Math.random() * 0.7) * 0.05
+      volRegime = Math.max(0.2, Math.min(1.5, volRegime))
+      val = gbmTick(val, baseVal, currentTrend, trendStrength, volRegime)
+      pts.push({ idx: i, value: val })
     }
     // End at actual value
     pts.push({ idx: 50, value: baseVal })
     setIhsgChartData(pts)
     ihsgChartRef.current = { val: baseVal, baseVal, initialized: true }
-  }, [indices])
+  }, [indices, gbmTick])
 
-  // IHSG live update interval — runs independently, never stops, stable trending
+  // IHSG live update interval — GBM trending, 3s interval
   useEffect(() => {
-    let ihsgMomentum = 0
     let ihsgTrendDir = Math.random() > 0.5 ? 1 : -1
     let ihsgTrendStr = 0.5 + Math.random() * 0.5
     let ihsgVolRegime = 0.5 + Math.random() * 0.5
     let ihsgPhase = 0
+    let ihsgTicksInTrend = 0
+    let ihsgTrendDuration = 12 + Math.floor(Math.random() * 15)
     const interval = setInterval(() => {
       const ref = ihsgChartRef.current
       if (!ref.initialized) return
       ihsgPhase++
-      // Trend shifts every ~15-25 ticks
-      if (ihsgPhase % (15 + Math.floor(Math.random() * 10)) === 0) {
+      ihsgTicksInTrend++
+      // Shift trend when duration expires
+      if (ihsgTicksInTrend >= ihsgTrendDuration) {
         ihsgTrendDir = Math.random() > 0.4 ? ihsgTrendDir : -ihsgTrendDir
-        ihsgTrendStr = 0.4 + Math.random() * 0.6
+        ihsgTrendStr = 0.3 + Math.random() * 0.7
+        ihsgTicksInTrend = 0
+        ihsgTrendDuration = 10 + Math.floor(Math.random() * 15)
       }
-      ihsgVolRegime = ihsgVolRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
-      const trendBias = ihsgTrendDir * ref.baseVal * 0.0003 * ihsgTrendStr
-      const noise = (Math.random() - 0.5) * ref.baseVal * 0.0006 * ihsgVolRegime
-      ihsgMomentum = ihsgMomentum * 0.4 + trendBias + noise
-      ref.val += ihsgMomentum
-      // Light mean reversion
-      ref.val += (ref.baseVal - ref.val) * 0.002
+      ihsgVolRegime = ihsgVolRegime * 0.94 + (0.3 + Math.random() * 0.8) * 0.06
+      ihsgVolRegime = Math.max(0.2, Math.min(1.5, ihsgVolRegime))
+
+      ref.val = gbmTick(ref.val, ref.baseVal, ihsgTrendDir, ihsgTrendStr, ihsgVolRegime)
 
       setIhsgChartData(prev => {
         if (prev.length === 0) return prev
@@ -1014,9 +1008,9 @@ function Dashboard() {
         const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
         return next.length > 60 ? next.slice(-60) : next
       })
-    }, 4000)
+    }, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [gbmTick])
 
   // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
   const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
@@ -1052,8 +1046,9 @@ function Dashboard() {
     return pts
   }, [])
 
-  // Live sparkline update — shifts data left and adds new point every 4 seconds
+  // Live sparkline update — GBM trending every 3s
   useEffect(() => {
+    const sparkTrendState = new Map<string, {direction: number; strength: number; volRegime: number; ticksInTrend: number; trendDuration: number}>()
     const interval = setInterval(() => {
       const currentStocks = stocksRef.current
       if (currentStocks.length === 0) return
@@ -1062,29 +1057,61 @@ function Dashboard() {
         const cached = sparklineCache.current.get(s.id)
         if (!sim || !cached) return
 
-        // Use trend-biased movement with persistence
-        const trendDir = sim.trend >= 0 ? 1 : -1
-        const trendBias = trendDir * s.price * 0.0003
-        const noise = (Math.random() - 0.5) * s.price * 0.0006
-        sim.momentum = sim.momentum * 0.4 + trendBias + noise
-        sim.val += sim.momentum
-        // Light mean reversion
-        const reversionStrength = 0.005 + Math.abs(s.price - sim.val) / s.price * 0.06
-        sim.val += (s.price - sim.val) * Math.min(reversionStrength, 0.03)
+        if (!sparkTrendState.has(s.id)) {
+          sparkTrendState.set(s.id, {
+            direction: sim.trend >= 0 ? 1 : -1,
+            strength: 0.4 + Math.random() * 0.6,
+            volRegime: 0.5 + Math.random() * 0.5,
+            ticksInTrend: 0,
+            trendDuration: 8 + Math.floor(Math.random() * 12)
+          })
+        }
+        const ts = sparkTrendState.get(s.id)!
+        ts.ticksInTrend++
+        if (ts.ticksInTrend >= ts.trendDuration) {
+          ts.direction = Math.random() > 0.4 ? ts.direction : -ts.direction
+          ts.strength = 0.3 + Math.random() * 0.7
+          ts.ticksInTrend = 0
+          ts.trendDuration = 8 + Math.floor(Math.random() * 10)
+        }
+        ts.volRegime = ts.volRegime * 0.94 + (0.3 + Math.random() * 0.8) * 0.06
+        ts.volRegime = Math.max(0.2, Math.min(1.5, ts.volRegime))
+
+        sim.val = gbmTick(sim.val, s.price, ts.direction, ts.strength, ts.volRegime)
 
         // Shift sparkline data left and add new point
         const newPts = cached.slice(1).map((pt, idx) => ({ i: idx, p: pt.p }))
-        newPts.push({ i: cached.length - 1, p: Math.round(sim.val) })
+        newPts.push({ i: cached.length - 1, p: sim.val })
         sparklineCache.current.set(s.id, newPts)
       })
       // Force re-render by updating any state
       setStocks(prev => [...prev])
-    }, 4000)
+    }, 3000)
     return () => clearInterval(interval)
-  }, []) // empty deps — uses stocksRef so interval never restarts
+  }, [gbmTick])
 
   // ============ SINYAL PRO CHART DATA ============
-  // Initialize chart data when stocks load — realistic trending with trend phases
+  // GBM-based realistic stock price simulation
+  // Real stocks: ~0.1-0.5% movement per minute candle, visible trends over 20-50 candles
+  const gbmTick = useCallback((currentPrice: number, basePrice: number, trendDir: number, trendStr: number, volRegime: number): number => {
+    // Geometric Brownian Motion inspired: S(t+1) = S(t) * exp(drift + volatility * Z)
+    // drift: trend direction * strength (0.05-0.15% per tick = visible trend)
+    const drift = trendDir * 0.0012 * trendStr
+    // volatility: 0.15-0.40% per tick (realistic for intraday)
+    const vol = (0.002 + volRegime * 0.003)
+    // Box-Muller transform for normal distribution
+    const u1 = Math.random()
+    const u2 = Math.random()
+    const z = Math.sqrt(-2 * Math.log(Math.max(u1, 1e-10))) * Math.cos(2 * Math.PI * u2)
+    // GBM step
+    const returnPct = drift + vol * z
+    let newPrice = currentPrice * (1 + returnPct)
+    // Very light mean reversion (0.05% per tick) - allows trends but prevents runaway
+    newPrice += (basePrice - newPrice) * 0.0005
+    return Math.round(newPrice)
+  }, [])
+
+  // Initialize chart data when stocks load — GBM realistic trending
   useEffect(() => {
     if (stocks.length === 0) return
     setSinyalChartData(prev => {
@@ -1095,99 +1122,86 @@ function Dashboard() {
         changed = true
         const baseVal = s.price
         const pts: {idx: number; value: number}[] = []
-        let val = baseVal * (0.975 + Math.random() * 0.05)
-        let momentum = 0
+        let val = baseVal * (0.98 + Math.random() * 0.04)
         const mainDir = s.changePercent >= 0 ? 1 : -1
-        // Generate realistic multi-phase trend data
         let currentTrend = mainDir
         let trendStrength = 0.5 + Math.random() * 0.5
-        let volRegime = 0.6 + Math.random() * 0.6
+        let volRegime = 0.5 + Math.random() * 0.5
+        let ticksInTrend = 0
+        const trendDuration = 15 + Math.floor(Math.random() * 25)
         for (let i = 0; i < 120; i++) {
-          // Shift trend every ~15-25 points
-          if (i > 0 && i % (15 + Math.floor(Math.random() * 10)) === 0) {
-            currentTrend = Math.random() > 0.45 ? currentTrend : -currentTrend
-            trendStrength = 0.4 + Math.random() * 0.6
+          ticksInTrend++
+          // Shift trend periodically — creates visible up/down phases
+          if (ticksInTrend >= trendDuration) {
+            currentTrend = Math.random() > 0.4 ? currentTrend : -currentTrend
+            trendStrength = 0.3 + Math.random() * 0.7
+            volRegime = 0.3 + Math.random() * 0.7
+            ticksInTrend = 0
           }
-          // Volatility clustering
-          volRegime = volRegime * 0.93 + (0.3 + Math.random() * 1.2) * 0.07
-          // Trend-biased movement
-          const trendBias = currentTrend * baseVal * 0.0005 * trendStrength
-          const noise = (Math.random() - 0.5) * baseVal * 0.001 * volRegime
-          const minStep = Math.max(0.5, baseVal * 0.0003)
-          momentum = momentum * 0.4 + trendBias + noise
-          val += momentum
-          // Light mean reversion to keep near base price
-          val += (baseVal - val) * 0.003
-          pts.push({ idx: i, value: Math.round(val) })
+          // Volatility clustering: smooth transitions
+          volRegime = volRegime * 0.95 + (0.3 + Math.random() * 0.7) * 0.05
+          volRegime = Math.max(0.2, Math.min(1.5, volRegime))
+          val = gbmTick(val, baseVal, currentTrend, trendStrength, volRegime)
+          pts.push({ idx: i, value: val })
         }
         // End near actual price
-        pts.push({ idx: 120, value: Math.round(baseVal * (0.995 + Math.random() * 0.01)) })
+        pts.push({ idx: 120, value: Math.round(baseVal * (0.998 + Math.random() * 0.004)) })
         next.set(s.id, pts)
         sinyalChartSimRef.current.set(s.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
       })
       return changed ? next : prev
     })
-  }, [stocks])
+  }, [stocks, gbmTick])
 
-  // Live sinyal chart update — every 4s for stable, realistic trending
+  // Live sinyal chart update — every 3s with GBM trending
   useEffect(() => {
     const simMap = sinyalChartSimRef.current
-    // Trend state per stock: direction + persistence + volatility regime
-    const trendState = new Map<string, {direction: number; persistence: number; volRegime: number; phase: number; volCluster: number}>()
+    const trendState = new Map<string, {direction: number; strength: number; volRegime: number; phase: number; ticksInTrend: number; trendDuration: number}>()
     const interval = setInterval(() => {
       if (simMap.size === 0) return
 
       simMap.forEach((sim, stockId) => {
-        // Initialize trend state
         if (!trendState.has(stockId)) {
           trendState.set(stockId, {
             direction: Math.random() > 0.5 ? 1 : -1,
-            persistence: 0.6 + Math.random() * 0.3,
+            strength: 0.4 + Math.random() * 0.6,
             volRegime: 0.5 + Math.random() * 0.5,
-            phase: Math.floor(Math.random() * 20),
-            volCluster: 1
+            phase: 0,
+            ticksInTrend: 0,
+            trendDuration: 15 + Math.floor(Math.random() * 20)
           })
         }
         const ts = trendState.get(stockId)!
         ts.phase++
+        ts.ticksInTrend++
 
-        // Trend shifts: occasionally change direction (every ~20-40 ticks)
-        if (ts.phase % (20 + Math.floor(Math.random() * 20)) === 0) {
+        // Shift trend when duration expires — creates visible trending phases
+        if (ts.ticksInTrend >= ts.trendDuration) {
           ts.direction = Math.random() > 0.4 ? ts.direction : -ts.direction
-          ts.persistence = 0.55 + Math.random() * 0.35
+          ts.strength = 0.3 + Math.random() * 0.7
+          ts.ticksInTrend = 0
+          ts.trendDuration = 12 + Math.floor(Math.random() * 20)
         }
 
-        // Volatility clustering: smooth transitions between high/low vol
-        ts.volCluster = ts.volCluster * 0.95 + (0.3 + Math.random() * 1.4) * 0.05
-        ts.volRegime = ts.volRegime * 0.92 + ts.volCluster * 0.08
+        // Volatility clustering
+        ts.volRegime = ts.volRegime * 0.94 + (0.3 + Math.random() * 0.8) * 0.06
+        ts.volRegime = Math.max(0.2, Math.min(1.5, ts.volRegime))
 
-        // Trend-biased step with persistence
-        const trendBias = ts.direction * sim.baseVal * 0.0004 * ts.persistence
-        const noise = (Math.random() - 0.5) * sim.baseVal * 0.0008 * ts.volRegime
-        const minStep = Math.max(0.5, sim.baseVal * 0.0003)
-        const stepSize = trendBias + noise + (Math.random() > 0.5 ? minStep : -minStep) * 0.5
-
-        sim.momentum = sim.momentum * 0.45 + stepSize
-        sim.val += sim.momentum
-        // Very light mean reversion — allows trends to develop naturally
-        sim.val += (sim.baseVal - sim.val) * 0.001
-
-        // Clamp to ±3% of base to prevent extreme drift
-        const maxDev = sim.baseVal * 0.03
-        sim.val = Math.max(sim.baseVal - maxDev, Math.min(sim.baseVal + maxDev, sim.val))
+        // GBM tick
+        sim.val = gbmTick(sim.val, sim.baseVal, ts.direction, ts.strength, ts.volRegime)
 
         setSinyalChartData(prev => {
           const next = new Map(prev)
           const existing = next.get(stockId)
           if (!existing) return prev
-          const newPts = [...existing.slice(1), { idx: existing[existing.length - 1].idx + 1, value: Math.round(sim.val) }]
+          const newPts = [...existing.slice(1), { idx: existing[existing.length - 1].idx + 1, value: sim.val }]
           next.set(stockId, newPts.length > 150 ? newPts.slice(-150) : newPts)
           return next
         })
       })
-    }, 4000)
+    }, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [gbmTick])
 
   // Auto-select first stock for sinyal chart if none selected
   useEffect(() => {
@@ -1212,7 +1226,7 @@ function Dashboard() {
     return [Math.floor(min - pad), Math.ceil(max + pad)]
   }, [])
 
-  // Live price simulation — REALISTIC stock movement with natural up/down zigzag
+  // Live price simulation — GBM realistic stock movement
   useEffect(() => {
     if (!selectedStock || (!showStockDetail && !contractModal)) {
       setLiveChartActive(false)
@@ -1222,40 +1236,38 @@ function Dashboard() {
     const spread = basePrice * 0.002
     let buyPrice = basePrice - spread / 2
     let sellPrice = basePrice + spread / 2
-    let momentum = 0
+    let midPrice = basePrice
     let phase = 0
 
-    // Build realistic historical data with trending movement
+    // Build GBM historical data
     const initialBuy: {time: string; price: number}[] = []
     const initialSell: {time: string; price: number}[] = []
-    let tempBuy = buyPrice
-    let tempSell = sellPrice
-    let histMomentum = 0
+    let tempMid = basePrice
     let histTrendDir = Math.random() > 0.5 ? 1 : -1
     let histTrendStr = 0.4 + Math.random() * 0.5
     let histVolRegime = 0.5 + Math.random() * 0.5
+    let histTicksInTrend = 0
+    let histTrendDuration = 8 + Math.floor(Math.random() * 10)
     for (let i = 40; i >= 1; i--) {
-      if (i % (10 + Math.floor(Math.random() * 6)) === 0) {
+      histTicksInTrend++
+      if (histTicksInTrend >= histTrendDuration) {
         histTrendDir = Math.random() > 0.45 ? histTrendDir : -histTrendDir
-        histTrendStr = 0.3 + Math.random() * 0.5
+        histTrendStr = 0.3 + Math.random() * 0.6
+        histVolRegime = 0.3 + Math.random() * 0.7
+        histTicksInTrend = 0
+        histTrendDuration = 8 + Math.floor(Math.random() * 10)
       }
-      histVolRegime = histVolRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
-      const trendBias = histTrendDir * basePrice * 0.0004 * histTrendStr
-      const noise = (Math.random() - 0.5) * basePrice * 0.0007 * histVolRegime
-      histMomentum = histMomentum * 0.4 + trendBias + noise
-      const mid = (tempBuy + tempSell) / 2 + histMomentum
-      tempBuy = mid - spread / 2
-      tempSell = mid + spread / 2
-      // Light mean reversion
-      tempBuy += (basePrice - tempBuy) * 0.003
-      tempSell += (basePrice - tempSell) * 0.003
+      histVolRegime = histVolRegime * 0.95 + (0.3 + Math.random() * 0.7) * 0.05
+      histVolRegime = Math.max(0.2, Math.min(1.5, histVolRegime))
+      tempMid = gbmTick(tempMid, basePrice, histTrendDir, histTrendStr, histVolRegime)
       const now = Date.now() - i * 3000
       const timeStr = new Date(now).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
-      initialBuy.push({time: timeStr, price: Math.round(tempBuy)})
-      initialSell.push({time: timeStr, price: Math.round(tempSell)})
+      initialBuy.push({time: timeStr, price: Math.round(tempMid - spread / 2)})
+      initialSell.push({time: timeStr, price: Math.round(tempMid + spread / 2)})
     }
-    buyPrice = tempBuy
-    sellPrice = tempSell
+    buyPrice = tempMid - spread / 2
+    sellPrice = tempMid + spread / 2
+    midPrice = tempMid
     setLiveBuyChart(initialBuy)
     setLiveSellChart(initialSell)
     setLiveBuyPrice(Math.round(buyPrice))
@@ -1263,45 +1275,33 @@ function Dashboard() {
     liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum: 0, phase}
     setLiveChartActive(true)
 
-    // Live trend state for realistic movement
+    // Live GBM trending
     let liveTrendDir = Math.random() > 0.5 ? 1 : -1
     let liveTrendStr = 0.5 + Math.random() * 0.5
-    let liveVolRegime = 0.6 + Math.random() * 0.4
+    let liveVolRegime = 0.5 + Math.random() * 0.5
     let livePhase = 0
+    let liveTicksInTrend = 0
+    let liveTrendDuration = 12 + Math.floor(Math.random() * 15)
     const interval = setInterval(() => {
       phase++
       livePhase++
-      // Shift trend every ~15-25 ticks
-      if (livePhase % (15 + Math.floor(Math.random() * 10)) === 0) {
+      liveTicksInTrend++
+      // Shift trend when duration expires
+      if (liveTicksInTrend >= liveTrendDuration) {
         liveTrendDir = Math.random() > 0.4 ? liveTrendDir : -liveTrendDir
-        liveTrendStr = 0.4 + Math.random() * 0.6
+        liveTrendStr = 0.3 + Math.random() * 0.7
+        liveTicksInTrend = 0
+        liveTrendDuration = 10 + Math.floor(Math.random() * 15)
       }
-      // Volatility clustering
-      liveVolRegime = liveVolRegime * 0.92 + (0.3 + Math.random() * 1.2) * 0.08
-      // Trend-biased movement
-      const trendBias = liveTrendDir * basePrice * 0.0004 * liveTrendStr
-      const noise = (Math.random() - 0.5) * basePrice * 0.0007 * liveVolRegime
-      const minStep = Math.max(0.5, basePrice * 0.0003)
-      momentum = momentum * 0.4 + trendBias + noise + (Math.random() > 0.5 ? minStep : -minStep) * 0.3
+      liveVolRegime = liveVolRegime * 0.94 + (0.3 + Math.random() * 0.8) * 0.06
+      liveVolRegime = Math.max(0.2, Math.min(1.5, liveVolRegime))
 
-      const mid = (buyPrice + sellPrice) / 2 + momentum
-      buyPrice = mid - spread / 2
-      sellPrice = mid + spread / 2
-
-      // Ensure sell > buy
+      midPrice = gbmTick(midPrice, basePrice, liveTrendDir, liveTrendStr, liveVolRegime)
+      buyPrice = midPrice - spread / 2
+      sellPrice = midPrice + spread / 2
       if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
 
-      // Light mean reversion
-      buyPrice += (basePrice - buyPrice) * 0.002
-      sellPrice += (basePrice - sellPrice) * 0.002
-
-      // Clamp to ±3%
-      const maxDev = basePrice * 0.03
-      buyPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, buyPrice))
-      sellPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, sellPrice))
-      if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
-
-      liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum, phase}
+      liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum: 0, phase}
       const now = new Date()
       const timeStr = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
 
@@ -1315,13 +1315,13 @@ function Dashboard() {
       })
       setLiveBuyPrice(Math.round(buyPrice))
       setLiveSellPrice(Math.round(sellPrice))
-    }, 3000) // 3s interval — stable and realistic
+    }, 3000)
 
     return () => {
       clearInterval(interval)
       setLiveChartActive(false)
     }
-  }, [selectedStock, showStockDetail, contractModal])
+  }, [selectedStock, showStockDetail, contractModal, gbmTick])
 
   // ============ SINYAL PRO HELPERS & TIMER ============
   const calcSinyalProfit = useCallback((amount: number, duration: number): number => {
