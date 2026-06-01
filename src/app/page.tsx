@@ -721,6 +721,8 @@ function Dashboard() {
   const [sinyalShowMA99, setSinyalShowMA99] = useState(false)
   const [sinyalShowBB, setSinyalShowBB] = useState(false)
   const [sinyalShowVolume, setSinyalShowVolume] = useState(true)
+  const [sinyalShowRSI, setSinyalShowRSI] = useState(false)
+  const [sinyalCrosshair, setSinyalCrosshair] = useState<{x: number; y: number; idx: number} | null>(null)
 
   // ============ LIVE INVESTMENT CHART DATA ============
   const [investChartData, setInvestChartData] = useState<Map<string, {idx: number; value: number}[]>>(new Map())
@@ -795,6 +797,28 @@ function Dashboard() {
       vol: Math.round(50000 + Math.random() * 500000 + (i > 0 ? Math.abs(d.value - data[i-1].value) * 10 : 0)),
       up: i === 0 || d.value >= data[i-1].value
     }))
+  }, [])
+
+  // Helper: compute RSI (Relative Strength Index)
+  const computeRSI = useCallback((data: {idx: number; value: number}[], period: number = 14): (number | null)[] => {
+    if (data.length < period + 1) return data.map(() => null)
+    const results: (number | null)[] = data.map(() => null)
+    let avgGain = 0, avgLoss = 0
+    for (let i = 1; i <= period; i++) {
+      const diff = data[i].value - data[i-1].value
+      if (diff > 0) avgGain += diff; else avgLoss += Math.abs(diff)
+    }
+    avgGain /= period; avgLoss /= period
+    results[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss))
+    for (let i = period + 1; i < data.length; i++) {
+      const diff = data[i].value - data[i-1].value
+      const gain = diff > 0 ? diff : 0
+      const loss = diff < 0 ? Math.abs(diff) : 0
+      avgGain = (avgGain * (period - 1) + gain) / period
+      avgLoss = (avgLoss * (period - 1) + loss) / period
+      results[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss))
+    }
+    return results
   }, [])
 
   // Initialize investment area chart data when products load
@@ -2855,12 +2879,12 @@ function Dashboard() {
                 }))
 
                 return (
-                  <div className="rounded-2xl overflow-hidden mb-4 border border-gs-line shadow-sm" style={{ background: '#0d1117' }}>
-                    {/* Pro Chart Header — Dark theme */}
-                    <div className="px-3 pt-3 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-2xl overflow-hidden mb-4 shadow-lg" style={{ background: 'linear-gradient(180deg, #0d1117 0%, #161b22 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 0 20px rgba(0,0,0,0.4), 0 0 1px rgba(52,211,153,0.1)' }}>
+                    {/* Pro Chart Header — Dark theme with glow line */}
+                    <div className="px-3 pt-3 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)' }}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-900/40' : 'bg-red-900/40'}`}>
+                          <div className={`w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center ${isUp ? 'bg-emerald-900/40' : 'bg-red-900/40'}`} style={{ boxShadow: isUp ? '0 0 8px rgba(52,211,153,0.15)' : '0 0 8px rgba(248,113,113,0.15)' }}>
                             {sinyalChartStock.logo ? <img src={sinyalChartStock.logo} alt={sinyalChartStock.code} className="w-full h-full object-cover" /> : <span className={`text-[9px] font-black ${isUp ? 'text-emerald-400' : 'text-red-400'}`}>{sinyalChartStock.code.slice(0, 2)}</span>}
                           </div>
                           <div>
@@ -2875,74 +2899,109 @@ function Dashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[16px] font-black tabular-nums" style={{ color: isUp ? '#34d399' : '#f87171' }}>{formatRupiah(lastValue)}</span>
+                          <span className="block text-[16px] font-black tabular-nums font-mono" style={{ color: isUp ? '#34d399' : '#f87171', textShadow: isUp ? '0 0 12px rgba(52,211,153,0.3)' : '0 0 12px rgba(248,113,113,0.3)' }}>{formatRupiah(lastValue)}</span>
                           <div className="flex items-center gap-1 justify-end">
                             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: isUp ? '#34d399' : '#f87171' }} />
                             <span className="text-[7px] font-black" style={{ color: isUp ? '#34d399' : '#f87171' }}>REAL-TIME</span>
                           </div>
                         </div>
                       </div>
+                      {/* 24h Stats Bar */}
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[6px] text-gray-600 uppercase">Open</span>
+                          <span className="text-[8px] font-mono font-bold text-gray-400">{formatRupiah(chartData.length > 0 ? chartData[0].value : sinyalChartStock.price).replace('Rp', '').trim()}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[6px] text-gray-600 uppercase">High</span>
+                          <span className="text-[8px] font-mono font-bold text-emerald-400">{formatRupiah(Math.max(...chartData.map(d => d.value))).replace('Rp', '').trim()}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[6px] text-gray-600 uppercase">Low</span>
+                          <span className="text-[8px] font-mono font-bold text-red-400">{formatRupiah(Math.min(...chartData.map(d => d.value))).replace('Rp', '').trim()}</span>
+                        </div>
+                      </div>
                     </div>
+                    {/* Subtle glow line under header */}
+                    <div className="h-px" style={{ background: isUp ? 'linear-gradient(90deg, transparent 0%, rgba(52,211,153,0.3) 50%, transparent 100%)' : 'linear-gradient(90deg, transparent 0%, rgba(248,113,113,0.3) 50%, transparent 100%)' }} />
 
-                    {/* Chart Type + Timeframe + Indicators — All in one row */}
-                    <div className="px-3 py-1.5 flex flex-wrap items-center gap-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      {/* Chart Types */}
-                      <div className="flex items-center gap-0.5 rounded-md p-0.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    {/* Chart Type + Timeframe + Indicators — Professional Controls Bar */}
+                    <div className="px-3 py-2 flex flex-wrap items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)' }}>
+                      {/* Chart Types — Professional Pill Buttons */}
+                      <div className="flex items-center gap-1 rounded-lg p-1" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         {([
-                          { type: 'candle' as const, label: '🕯️' },
-                          { type: 'area' as const, label: '🏔️' },
-                          { type: 'line' as const, label: '📈' },
-                          { type: 'bar' as const, label: '📊' },
-                          { type: 'mountain' as const, label: '⛰️' },
-                          { type: 'step' as const, label: '📐' },
-                          { type: 'histogram' as const, label: '📏' },
-                          { type: 'hollow' as const, label: '🔲' },
+                          { type: 'candle' as const, label: 'Candle' },
+                          { type: 'area' as const, label: 'Area' },
+                          { type: 'line' as const, label: 'Line' },
+                          { type: 'bar' as const, label: 'Bar' },
+                          { type: 'mountain' as const, label: 'Mountain' },
+                          { type: 'step' as const, label: 'Step' },
+                          { type: 'histogram' as const, label: 'Histo' },
+                          { type: 'hollow' as const, label: 'Hollow' },
                         ]).map(ct => (
                           <button key={ct.type} onClick={() => setSinyalChartType(ct.type)}
-                            className={`h-5 w-6 rounded text-[9px] flex items-center justify-center transition-all ${sinyalChartType === ct.type ? 'shadow-sm' : 'opacity-50 hover:opacity-80'}`}
-                            style={{ background: sinyalChartType === ct.type ? 'rgba(5,150,105,0.3)' : 'transparent', color: sinyalChartType === ct.type ? '#34d399' : '#9ca3af' }}
-                            title={ct.type}>
+                            className={`h-6 px-2 rounded-md text-[8px] font-bold flex items-center justify-center transition-all duration-200 ${sinyalChartType === ct.type ? '' : 'opacity-50 hover:opacity-80 hover:bg-white/5'}`}
+                            style={sinyalChartType === ct.type ? { background: 'linear-gradient(135deg, rgba(5,150,105,0.35), rgba(16,185,129,0.2))', color: '#34d399', boxShadow: '0 0 8px rgba(52,211,153,0.2), inset 0 1px 0 rgba(255,255,255,0.1)', border: '1px solid rgba(52,211,153,0.25)' } : { color: '#9ca3af', border: '1px solid transparent' }}>
                             {ct.label}
                           </button>
                         ))}
                       </div>
                       {/* Separator */}
-                      <div className="w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                      <div className="w-px h-5" style={{ background: 'rgba(255,255,255,0.06)' }} />
                       {/* Timeframes */}
-                      <div className="flex items-center gap-0.5">
+                      <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         {(['1M', '5M', '15M', '1H', '4H', '1D', '1W', 'ALL'] as const).map(tf => (
                           <button key={tf} onClick={() => setSinyalTimeframe(tf)}
-                            className={`h-5 px-1.5 rounded text-[7px] font-black transition-all ${sinyalTimeframe === tf ? '' : 'opacity-50 hover:opacity-80'}`}
-                            style={{ background: sinyalTimeframe === tf ? 'rgba(5,150,105,0.25)' : 'transparent', color: sinyalTimeframe === tf ? '#34d399' : '#9ca3af' }}>
+                            className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all duration-200 ${sinyalTimeframe === tf ? '' : 'opacity-50 hover:opacity-80'}`}
+                            style={sinyalTimeframe === tf ? { background: 'rgba(5,150,105,0.3)', color: '#34d399', boxShadow: '0 0 6px rgba(52,211,153,0.15)' } : { color: '#9ca3af' }}>
                             {tf}
                           </button>
                         ))}
                       </div>
                       {/* Separator */}
-                      <div className="w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                      {/* Indicator Toggles */}
+                      <div className="w-px h-5" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                      {/* Indicator Toggles — Professional Pills */}
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setSinyalShowMA7(!sinyalShowMA7)} className={`h-5 px-1.5 rounded text-[7px] font-black transition-all ${sinyalShowMA7 ? '' : 'opacity-40'}`}
-                          style={{ background: sinyalShowMA7 ? 'rgba(251,191,36,0.15)' : 'transparent', color: sinyalShowMA7 ? '#fbbf24' : '#9ca3af' }}>MA7</button>
-                        <button onClick={() => setSinyalShowMA25(!sinyalShowMA25)} className={`h-5 px-1.5 rounded text-[7px] font-black transition-all ${sinyalShowMA25 ? '' : 'opacity-40'}`}
-                          style={{ background: sinyalShowMA25 ? 'rgba(96,165,250,0.15)' : 'transparent', color: sinyalShowMA25 ? '#60a5fa' : '#9ca3af' }}>MA25</button>
-                        <button onClick={() => setSinyalShowMA99(!sinyalShowMA99)} className={`h-5 px-1.5 rounded text-[7px] font-black transition-all ${sinyalShowMA99 ? '' : 'opacity-40'}`}
-                          style={{ background: sinyalShowMA99 ? 'rgba(192,132,252,0.15)' : 'transparent', color: sinyalShowMA99 ? '#c084fc' : '#9ca3af' }}>MA99</button>
-                        <button onClick={() => setSinyalShowBB(!sinyalShowBB)} className={`h-5 px-1.5 rounded text-[7px] font-black transition-all ${sinyalShowBB ? '' : 'opacity-40'}`}
-                          style={{ background: sinyalShowBB ? 'rgba(244,114,182,0.15)' : 'transparent', color: sinyalShowBB ? '#f472b6' : '#9ca3af' }}>BB</button>
-                        <button onClick={() => setSinyalShowVolume(!sinyalShowVolume)} className={`h-5 px-1.5 rounded text-[7px] font-black transition-all ${sinyalShowVolume ? '' : 'opacity-40'}`}
-                          style={{ background: sinyalShowVolume ? 'rgba(52,211,153,0.15)' : 'transparent', color: sinyalShowVolume ? '#34d399' : '#9ca3af' }}>VOL</button>
+                        <button onClick={() => setSinyalShowMA7(!sinyalShowMA7)} className={`h-5 px-1.5 rounded-md text-[7px] font-bold transition-all duration-200 ${sinyalShowMA7 ? '' : 'opacity-40 hover:opacity-70'}`}
+                          style={sinyalShowMA7 ? { background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)', boxShadow: '0 0 4px rgba(251,191,36,0.1)' } : { color: '#9ca3af', border: '1px solid transparent' }}>MA7</button>
+                        <button onClick={() => setSinyalShowMA25(!sinyalShowMA25)} className={`h-5 px-1.5 rounded-md text-[7px] font-bold transition-all duration-200 ${sinyalShowMA25 ? '' : 'opacity-40 hover:opacity-70'}`}
+                          style={sinyalShowMA25 ? { background: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.2)', boxShadow: '0 0 4px rgba(96,165,250,0.1)' } : { color: '#9ca3af', border: '1px solid transparent' }}>MA25</button>
+                        <button onClick={() => setSinyalShowMA99(!sinyalShowMA99)} className={`h-5 px-1.5 rounded-md text-[7px] font-bold transition-all duration-200 ${sinyalShowMA99 ? '' : 'opacity-40 hover:opacity-70'}`}
+                          style={sinyalShowMA99 ? { background: 'rgba(192,132,252,0.15)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.2)', boxShadow: '0 0 4px rgba(192,132,252,0.1)' } : { color: '#9ca3af', border: '1px solid transparent' }}>MA99</button>
+                        <button onClick={() => setSinyalShowBB(!sinyalShowBB)} className={`h-5 px-1.5 rounded-md text-[7px] font-bold transition-all duration-200 ${sinyalShowBB ? '' : 'opacity-40 hover:opacity-70'}`}
+                          style={sinyalShowBB ? { background: 'rgba(244,114,182,0.15)', color: '#f472b6', border: '1px solid rgba(244,114,182,0.2)', boxShadow: '0 0 4px rgba(244,114,182,0.1)' } : { color: '#9ca3af', border: '1px solid transparent' }}>BB</button>
+                        <button onClick={() => setSinyalShowVolume(!sinyalShowVolume)} className={`h-5 px-1.5 rounded-md text-[7px] font-bold transition-all duration-200 ${sinyalShowVolume ? '' : 'opacity-40 hover:opacity-70'}`}
+                          style={sinyalShowVolume ? { background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)', boxShadow: '0 0 4px rgba(52,211,153,0.1)' } : { color: '#9ca3af', border: '1px solid transparent' }}>VOL</button>
+                        <button onClick={() => setSinyalShowRSI(!sinyalShowRSI)} className={`h-5 px-1.5 rounded-md text-[7px] font-bold transition-all duration-200 ${sinyalShowRSI ? '' : 'opacity-40 hover:opacity-70'}`}
+                          style={sinyalShowRSI ? { background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.2)', boxShadow: '0 0 4px rgba(167,139,250,0.1)' } : { color: '#9ca3af', border: '1px solid transparent' }}>RSI</button>
                       </div>
                     </div>
 
                     {/* Main Pro Chart Area */}
-                    <div className="relative" style={{ background: '#0d1117' }}>
+                    <div className="relative" style={{ background: 'linear-gradient(180deg, rgba(13,17,23,1) 0%, rgba(22,27,34,0.8) 100%)' }}
+                      onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top, idx: Math.floor(((e.clientX - rect.left) / rect.width) * chartData.length) }) }}
+                      onMouseLeave={() => setSinyalCrosshair(null)}>
+                      {/* Crosshair overlay */}
+                      {sinyalCrosshair && chartData.length > 2 && (
+                        <div className="chart-crosshair absolute inset-0 z-10">
+                          <div className="absolute top-0 bottom-0 w-px" style={{ left: sinyalCrosshair.x, background: 'rgba(255,255,255,0.08)' }} />
+                          <div className="absolute left-0 right-0 h-px" style={{ top: sinyalCrosshair.y, background: 'rgba(255,255,255,0.08)' }} />
+                          {sinyalCrosshair.idx >= 0 && sinyalCrosshair.idx < chartData.length && (
+                            <div className="chart-tooltip absolute px-2 py-1 rounded-md text-[8px] font-mono font-bold" style={{ left: Math.min(sinyalCrosshair.x + 10, 200), top: Math.max(sinyalCrosshair.y - 28, 4), background: 'rgba(13,17,23,0.9)', border: '1px solid rgba(255,255,255,0.1)', color: chartData[sinyalCrosshair.idx].value >= (sinyalCrosshair.idx > 0 ? chartData[sinyalCrosshair.idx - 1].value : chartData[sinyalCrosshair.idx].value) ? '#34d399' : '#f87171' }}>
+                              {formatRupiah(chartData[sinyalCrosshair.idx].value)}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {chartData.length > 2 ? (() => {
                         const values = chartData.map(d => d.value)
                         const minV = Math.min(...values)
                         const maxV = Math.max(...values)
                         const rangeV = maxV - minV || 1
                         const domain: [number, number] = [Math.floor(minV - rangeV * 0.08), Math.ceil(maxV + rangeV * 0.08)]
+
+                        // RSI data
+                        const rsiData = sinyalShowRSI ? computeRSI(chartData) : null
 
                         // ---- CANDLESTICK CHART (default) ----
                         if (sinyalChartType === 'candle' || sinyalChartType === 'hollow') {
@@ -2956,8 +3015,9 @@ function Dashboard() {
                           const candleW = Math.max(3, Math.floor(280 / totalCandles))
                           const gapW = Math.max(1, Math.floor(80 / totalCandles))
                           const svgW = totalCandles * (candleW + gapW) + gapW * 2
-                          const chartH = sinyalShowVolume ? 200 : 240
-                          const priceH = sinyalShowVolume ? 160 : 200
+                          const rsiH = sinyalShowRSI ? 60 : 0
+                          const chartH = (sinyalShowVolume ? 200 : 240) + rsiH
+                          const priceH = (sinyalShowVolume ? 160 : 200)
                           const volH = sinyalShowVolume ? 40 : 0
 
                           // MA data for candles
@@ -2974,21 +3034,37 @@ function Dashboard() {
 
                           return (
                             <svg className="w-full" viewBox={`0 0 ${svgW} ${chartH}`} preserveAspectRatio="none" style={{ minHeight: chartH }}>
-                              {/* Grid lines */}
+                              <defs>
+                                {/* Glow filter for candles */}
+                                <filter id="candleGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                  <feGaussianBlur stdDeviation="2" result="blur" />
+                                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                                {/* Gradient for volume bars */}
+                                <linearGradient id="volGradUp" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="rgba(52,211,153,0.4)" />
+                                  <stop offset="100%" stopColor="rgba(52,211,153,0.05)" />
+                                </linearGradient>
+                                <linearGradient id="volGradDown" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="rgba(248,113,113,0.4)" />
+                                  <stop offset="100%" stopColor="rgba(248,113,113,0.05)" />
+                                </linearGradient>
+                              </defs>
+                              {/* Grid lines — subtle gradient */}
                               {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => (
-                                <line key={`g${gi}`} x1="0" y1={8 + gi * (priceH / 8)} x2={svgW} y2={8 + gi * (priceH / 8)} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+                                <line key={`g${gi}`} x1="0" y1={8 + gi * (priceH / 8)} x2={svgW} y2={8 + gi * (priceH / 8)} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
                               ))}
-                              {/* Price labels */}
+                              {/* Price labels — improved readability */}
                               {[0, 2, 4, 6].map(gi => {
                                 const price = maxP - (gi / 8) * rangeP
-                                return <text key={`p${gi}`} x={svgW - 2} y={8 + gi * (priceH / 8) + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="5" fontFamily="monospace">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                return <text key={`p${gi}`} x={svgW - 2} y={8 + gi * (priceH / 8) + 3} textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="5" fontFamily="monospace" fontWeight="600">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
                               })}
-                              {/* Current price line */}
-                              <line x1="0" y1={8 + ((maxP - sinyalChartStock.price) / rangeP) * (priceH - 16)} x2={svgW} y2={8 + ((maxP - sinyalChartStock.price) / rangeP) * (priceH - 16)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.4" />
-                              {/* MA Lines */}
-                              {sinyalShowMA7 && ma7Points.length > 1 && <polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.7" />}
-                              {sinyalShowMA25 && ma25Points.length > 1 && <polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1" opacity="0.7" />}
-                              {/* Candles */}
+                              {/* Current price line — enhanced */}
+                              <line x1="0" y1={8 + ((maxP - sinyalChartStock.price) / rangeP) * (priceH - 16)} x2={svgW} y2={8 + ((maxP - sinyalChartStock.price) / rangeP) * (priceH - 16)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.5" />
+                              {/* MA Lines — with glow */}
+                              {sinyalShowMA7 && ma7Points.length > 1 && <><polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="2.5" opacity="0.15" /><polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.7" /></>}
+                              {sinyalShowMA25 && ma25Points.length > 1 && <><polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="2.5" opacity="0.15" /><polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1" opacity="0.7" /></>}
+                              {/* Candles — enhanced with glow */}
                               {candles.map((c, i) => {
                                 const x = gapW + i * (candleW + gapW)
                                 const yH = 8 + ((maxP - c.high) / rangeP) * (priceH - 16)
@@ -3001,8 +3077,8 @@ function Dashboard() {
                                 const isLast = i === totalCandles - 1
                                 const isHollow = sinyalChartType === 'hollow'
                                 return (
-                                  <g key={i} opacity={isLast ? 1 : 0.85}>
-                                    <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" />
+                                  <g key={i} opacity={isLast ? 1 : 0.85} filter={isLast ? 'url(#candleGlow)' : undefined}>
+                                    <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" opacity={isLast ? 1 : 0.8} />
                                     {isHollow ? (
                                       <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : '#f87171'} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.8" rx="0.5" />
                                     ) : (
@@ -3014,21 +3090,51 @@ function Dashboard() {
                                           <animate attributeName="r" values="3;6;3" dur="1.5s" repeatCount="indefinite" />
                                           <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
                                         </circle>
-                                        <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.4" strokeDasharray="2,2" opacity="0.5" />
-                                        <rect x={svgW - 45} y={yC - 5} width="43" height="10" rx="2" fill={isGreen ? '#059669' : '#dc2626'} />
-                                        <text x={svgW - 24} y={yC + 2} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
+                                        <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.6" />
+                                        <rect x={svgW - 48} y={yC - 5} width="46" height="10" rx="2" fill={isGreen ? 'rgba(5,150,105,0.9)' : 'rgba(220,38,38,0.9)'} style={{ boxShadow: isGreen ? '0 0 6px rgba(52,211,153,0.3)' : '0 0 6px rgba(248,113,113,0.3)' }} />
+                                        <text x={svgW - 25} y={yC + 2} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
                                       </>
                                     )}
                                   </g>
                                 )
                               })}
-                              {/* Volume bars */}
+                              {/* Volume bars — gradient fill */}
                               {sinyalShowVolume && volData.slice(0, totalCandles * Math.ceil(chartData.length / totalCandles)).filter((_, i) => i % Math.ceil(chartData.length / totalCandles) === 0).slice(0, totalCandles).map((v, i) => {
                                 const x = gapW + i * (candleW + gapW)
                                 const maxVol = Math.max(...volData.map(vd => vd.vol))
                                 const h = Math.max(1, (v.vol / maxVol) * volH * 0.8)
-                                return <rect key={`v${i}`} x={x} y={chartH - h} width={candleW} height={h} fill={v.up ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)'} rx="0.5" />
+                                const volY = priceH + (sinyalShowRSI ? 0 : rsiH) + 4
+                                return <rect key={`v${i}`} x={x} y={volY - h + volH} width={candleW} height={h} fill={v.up ? 'url(#volGradUp)' : 'url(#volGradDown)'} rx="0.5" />
                               })}
+                              {/* RSI Subplot */}
+                              {sinyalShowRSI && rsiData && (() => {
+                                const rsiY = priceH + volH + 4
+                                const rsiChartH = 56
+                                return (
+                                  <g>
+                                    <line x1="0" y1={rsiY} x2={svgW} y2={rsiY} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                                    <text x={4} y={rsiY + 8} fill="rgba(167,139,250,0.5)" fontSize="5" fontFamily="monospace" fontWeight="bold">RSI(14)</text>
+                                    {/* Overbought/Oversold reference lines */}
+                                    <line x1="0" y1={rsiY + rsiChartH * (1 - 70/100)} x2={svgW} y2={rsiY + rsiChartH * (1 - 70/100)} stroke="rgba(248,113,113,0.15)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                    <line x1="0" y1={rsiY + rsiChartH * (1 - 30/100)} x2={svgW} y2={rsiY + rsiChartH * (1 - 30/100)} stroke="rgba(52,211,153,0.15)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                    <text x={svgW - 2} y={rsiY + rsiChartH * (1 - 70/100) + 3} textAnchor="end" fill="rgba(248,113,113,0.3)" fontSize="4" fontFamily="monospace">70</text>
+                                    <text x={svgW - 2} y={rsiY + rsiChartH * (1 - 30/100) + 3} textAnchor="end" fill="rgba(52,211,153,0.3)" fontSize="4" fontFamily="monospace">30</text>
+                                    {/* Fill between 30-70 */}
+                                    <rect x="0" y={rsiY + rsiChartH * (1 - 70/100)} width={svgW} height={rsiChartH * 0.4} fill="rgba(167,139,250,0.04)" />
+                                    {/* RSI Line */}
+                                    {(() => {
+                                      const rsiPts: string[] = []
+                                      rsiData.forEach((val, i) => {
+                                        if (val !== null) rsiPts.push(`${i * stepX},${rsiY + rsiChartH * (1 - val / 100)}`)
+                                      })
+                                      return rsiPts.length > 1 ? <>
+                                        <polyline points={rsiPts.join(' ')} fill="none" stroke="#a78bfa" strokeWidth="3" opacity="0.15" />
+                                        <polyline points={rsiPts.join(' ')} fill="none" stroke="#a78bfa" strokeWidth="1.2" opacity="0.8" />
+                                      </> : null
+                                    })()}
+                                  </g>
+                                )
+                              })()}
                             </svg>
                           )
                         }
@@ -3040,19 +3146,22 @@ function Dashboard() {
                         // Area / Mountain / Step chart
                         if (sinyalChartType === 'area' || sinyalChartType === 'mountain' || sinyalChartType === 'step') {
                           const areaType = sinyalChartType === 'step' ? 'stepAfter' : 'monotone'
+                          const mainChartH = sinyalShowRSI ? 'h-[180px] md:h-[220px]' : 'h-[220px] md:h-[260px]'
                           return (
                             <div className="relative">
-                              <div className="h-[220px] md:h-[260px]">
+                              <div className={mainChartH}>
                                 <ResponsiveContainer width="100%" height="100%">
                                   <AreaChart data={chartDataWithMA} margin={{ top: 8, right: 55, bottom: 0, left: 5 }}>
                                     <defs>
                                       <linearGradient id={`proGrad-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.6 : 0.25} />
-                                        <stop offset="50%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.3 : 0.08} />
+                                        <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.7 : 0.35} />
+                                        <stop offset="25%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.5 : 0.2} />
+                                        <stop offset="50%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.3 : 0.1} />
+                                        <stop offset="75%" stopColor={chartColor} stopOpacity={0.04} />
                                         <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
                                       </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.04)" />
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
                                     <XAxis dataKey="idx" hide />
                                     <YAxis hide domain={domain} />
                                     <ReferenceLine y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
@@ -3065,15 +3174,17 @@ function Dashboard() {
                                     {sinyalShowMA7 && <Line type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1.2} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA25 && <Line type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1.2} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA99 && <Line type="monotone" dataKey="ma99" stroke="#c084fc" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
+                                    {/* Glow line underneath */}
+                                    <Line type={areaType} dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.12} isAnimationActive={false} connectNulls />
                                     <Area type={areaType} dataKey="value" stroke={chartColor} fill={`url(#proGrad-${sinyalChartStock.id})`} strokeWidth={sinyalChartType === 'mountain' ? 0 : 2.5}
                                       dot={(props: Record<string, unknown>) => {
                                         const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                         if (index !== chartDataWithMA.length - 1) return <g key={String(index)} />
                                         return (
                                           <g key="pro-dot">
-                                            <circle cx={cx} cy={cy} r={6} fill={chartColor} opacity={0.2}>
-                                              <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="0.2;0;0.2" dur="2s" repeatCount="indefinite" />
+                                            <circle cx={cx} cy={cy} r={8} fill={chartColor} opacity={0.15}>
+                                              <animate attributeName="r" values="8;14;8" dur="2s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="0.15;0;0.15" dur="2s" repeatCount="indefinite" />
                                             </circle>
                                             <circle cx={cx} cy={cy} r={4} fill={chartColor} stroke="#0d1117" strokeWidth={2} />
                                           </g>
@@ -3091,16 +3202,56 @@ function Dashboard() {
                                 <div className="h-[30px] -mt-2">
                                   <ResponsiveContainer width="100%" height="100%">
                                     <ReBarChart data={volData} margin={{ top: 0, right: 55, bottom: 0, left: 5 }}>
+                                      <defs>
+                                        <linearGradient id={`volBarGradUp-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="rgba(52,211,153,0.5)" />
+                                          <stop offset="100%" stopColor="rgba(52,211,153,0.05)" />
+                                        </linearGradient>
+                                        <linearGradient id={`volBarGradDown-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="rgba(248,113,113,0.5)" />
+                                          <stop offset="100%" stopColor="rgba(248,113,113,0.05)" />
+                                        </linearGradient>
+                                      </defs>
                                       <XAxis dataKey="idx" hide /><YAxis hide />
                                       <Bar dataKey="vol" radius={[1, 1, 0, 0]} isAnimationActive={false}
                                         shape={(props: Record<string, unknown>) => {
                                           const { x, y, width, height, payload } = props as { x: number; y: number; width: number; height: number; payload: { up: boolean } }
-                                          return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={payload.up ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} rx={1} />
+                                          return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={payload.up ? `url(#volBarGradUp-${sinyalChartStock.id})` : `url(#volBarGradDown-${sinyalChartStock.id})`} rx={1} />
                                         }}>
                                         {volData.map((entry, index) => (<Cell key={`vc-${index}`} fill={entry.up ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} />))}
                                       </Bar>
                                     </ReBarChart>
                                   </ResponsiveContainer>
+                                </div>
+                              )}
+                              {/* RSI Subplot */}
+                              {sinyalShowRSI && rsiData && (
+                                <div className="h-[60px] mt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData.map((d, i) => ({ idx: d.idx, rsi: rsiData[i] }))} margin={{ top: 4, right: 55, bottom: 2, left: 5 }}>
+                                      <defs>
+                                        <linearGradient id="rsiFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.15" />
+                                          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+                                        </linearGradient>
+                                      </defs>
+                                      <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.02)" />
+                                      <XAxis dataKey="idx" hide />
+                                      <YAxis hide domain={[0, 100]} />
+                                      <ReferenceLine y={70} stroke="rgba(248,113,113,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                      <ReferenceLine y={30} stroke="rgba(52,211,153,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                      <ReferenceLine y={50} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" strokeWidth={0.5} />
+                                      <Area type="monotone" dataKey="rsi" stroke="none" fill="url(#rsiFillGrad)" dot={false} connectNulls />
+                                      {/* RSI glow line */}
+                                      <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={4} dot={false} activeDot={false} strokeOpacity={0.15} connectNulls />
+                                      <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={1.5} dot={false} activeDot={{ r: 3, fill: '#a78bfa', stroke: '#0d1117', strokeWidth: 1 }} connectNulls />
+                                      <YAxis yAxisId="rsiLabel" orientation="right" domain={[0, 100]} tickFormatter={() => ''} axisLine={false} tickLine={false} width={50} />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                  <div className="flex items-center justify-between px-2 -mt-1">
+                                    <span className="text-[6px] font-bold text-violet-400/60">RSI(14)</span>
+                                    {rsiData.filter(v => v !== null).length > 0 && <span className="text-[7px] font-mono font-bold text-violet-400">{rsiData.filter(v => v !== null).slice(-1)[0]?.toFixed(1)}</span>}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -3109,18 +3260,27 @@ function Dashboard() {
 
                         // Line chart
                         if (sinyalChartType === 'line') {
+                          const mainChartH = sinyalShowRSI ? 'h-[180px] md:h-[220px]' : 'h-[220px] md:h-[260px]'
                           return (
                             <div className="relative">
-                              <div className="h-[220px] md:h-[260px]">
+                              <div className={mainChartH}>
                                 <ResponsiveContainer width="100%" height="100%">
                                   <LineChart data={chartDataWithMA} margin={{ top: 8, right: 55, bottom: 0, left: 5 }}>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.04)" />
+                                    <defs>
+                                      <linearGradient id={`lineGlowGrad-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor={chartColor} stopOpacity="0.15" />
+                                        <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                      </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
                                     <XAxis dataKey="idx" hide />
                                     <YAxis hide domain={domain} />
                                     <ReferenceLine y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                                     {sinyalShowMA7 && <Line type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA25 && <Line type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA99 && <Line type="monotone" dataKey="ma99" stroke="#c084fc" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
+                                    {/* Glow line underneath */}
+                                    <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.12} isAnimationActive={false} />
                                     <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2.5} dot={false}
                                       activeDot={{ r: 5, fill: chartColor, stroke: '#0d1117', strokeWidth: 2 }}
                                       isAnimationActive={true} animationDuration={400} />
@@ -3132,16 +3292,53 @@ function Dashboard() {
                                 <div className="h-[30px] -mt-2">
                                   <ResponsiveContainer width="100%" height="100%">
                                     <ReBarChart data={volData} margin={{ top: 0, right: 55, bottom: 0, left: 5 }}>
+                                      <defs>
+                                        <linearGradient id={`volBarGradUpL-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="rgba(52,211,153,0.5)" />
+                                          <stop offset="100%" stopColor="rgba(52,211,153,0.05)" />
+                                        </linearGradient>
+                                        <linearGradient id={`volBarGradDownL-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="rgba(248,113,113,0.5)" />
+                                          <stop offset="100%" stopColor="rgba(248,113,113,0.05)" />
+                                        </linearGradient>
+                                      </defs>
                                       <XAxis dataKey="idx" hide /><YAxis hide />
                                       <Bar dataKey="vol" radius={[1, 1, 0, 0]} isAnimationActive={false}
                                         shape={(props: Record<string, unknown>) => {
                                           const { x, y, width, height, payload } = props as { x: number; y: number; width: number; height: number; payload: { up: boolean } }
-                                          return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={payload.up ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} rx={1} />
+                                          return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={payload.up ? `url(#volBarGradUpL-${sinyalChartStock.id})` : `url(#volBarGradDownL-${sinyalChartStock.id})`} rx={1} />
                                         }}>
                                         {volData.map((entry, index) => (<Cell key={`vc-${index}`} fill={entry.up ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} />))}
                                       </Bar>
                                     </ReBarChart>
                                   </ResponsiveContainer>
+                                </div>
+                              )}
+                              {/* RSI Subplot */}
+                              {sinyalShowRSI && rsiData && (
+                                <div className="h-[60px] mt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData.map((d, i) => ({ idx: d.idx, rsi: rsiData[i] }))} margin={{ top: 4, right: 55, bottom: 2, left: 5 }}>
+                                      <defs>
+                                        <linearGradient id="rsiFillGradL" x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.15" />
+                                          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+                                        </linearGradient>
+                                      </defs>
+                                      <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.02)" />
+                                      <XAxis dataKey="idx" hide />
+                                      <YAxis hide domain={[0, 100]} />
+                                      <ReferenceLine y={70} stroke="rgba(248,113,113,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                      <ReferenceLine y={30} stroke="rgba(52,211,153,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                      <Area type="monotone" dataKey="rsi" stroke="none" fill="url(#rsiFillGradL)" dot={false} connectNulls />
+                                      <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={4} dot={false} activeDot={false} strokeOpacity={0.15} connectNulls />
+                                      <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={1.5} dot={false} activeDot={{ r: 3, fill: '#a78bfa', stroke: '#0d1117', strokeWidth: 1 }} connectNulls />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                  <div className="flex items-center justify-between px-2 -mt-1">
+                                    <span className="text-[6px] font-bold text-violet-400/60">RSI(14)</span>
+                                    {rsiData.filter(v => v !== null).length > 0 && <span className="text-[7px] font-mono font-bold text-violet-400">{rsiData.filter(v => v !== null).slice(-1)[0]?.toFixed(1)}</span>}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -3155,12 +3352,13 @@ function Dashboard() {
                             value: d.value,
                             fill: i > 0 && d.value >= chartData[i - 1].value ? '#34d399' : '#f87171'
                           }))
+                          const mainChartH = sinyalShowRSI ? 'h-[180px] md:h-[220px]' : 'h-[220px] md:h-[260px]'
                           return (
                             <div className="relative">
-                              <div className="h-[220px] md:h-[260px]">
+                              <div className={mainChartH}>
                                 <ResponsiveContainer width="100%" height="100%">
                                   <ReBarChart data={barData} margin={{ top: 8, right: 55, bottom: 0, left: 5 }}>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.04)" />
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
                                     <XAxis dataKey="idx" hide />
                                     <YAxis hide domain={domain} />
                                     <ReferenceLine y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
@@ -3189,6 +3387,33 @@ function Dashboard() {
                                       </Bar>
                                     </ReBarChart>
                                   </ResponsiveContainer>
+                                </div>
+                              )}
+                              {/* RSI Subplot */}
+                              {sinyalShowRSI && rsiData && (
+                                <div className="h-[60px] mt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData.map((d, i) => ({ idx: d.idx, rsi: rsiData[i] }))} margin={{ top: 4, right: 55, bottom: 2, left: 5 }}>
+                                      <defs>
+                                        <linearGradient id="rsiFillGradB" x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.15" />
+                                          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+                                        </linearGradient>
+                                      </defs>
+                                      <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.02)" />
+                                      <XAxis dataKey="idx" hide />
+                                      <YAxis hide domain={[0, 100]} />
+                                      <ReferenceLine y={70} stroke="rgba(248,113,113,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                      <ReferenceLine y={30} stroke="rgba(52,211,153,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                      <Area type="monotone" dataKey="rsi" stroke="none" fill="url(#rsiFillGradB)" dot={false} connectNulls />
+                                      <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={4} dot={false} activeDot={false} strokeOpacity={0.15} connectNulls />
+                                      <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={1.5} dot={false} activeDot={{ r: 3, fill: '#a78bfa', stroke: '#0d1117', strokeWidth: 1 }} connectNulls />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                  <div className="flex items-center justify-between px-2 -mt-1">
+                                    <span className="text-[6px] font-bold text-violet-400/60">RSI(14)</span>
+                                    {rsiData.filter(v => v !== null).length > 0 && <span className="text-[7px] font-mono font-bold text-violet-400">{rsiData.filter(v => v !== null).slice(-1)[0]?.toFixed(1)}</span>}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -5297,19 +5522,19 @@ function Dashboard() {
                 </div>
 
                 {/* Live Chart — Dark Pro Theme */}
-                <div className="rounded-xl overflow-hidden mb-3" style={{ background: '#0d1117' }}>
-                  <div className="flex items-center justify-between px-2 pt-2 pb-1">
+                <div className="rounded-xl overflow-hidden mb-3" style={{ background: 'linear-gradient(180deg, #0d1117 0%, #161b22 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 0 12px rgba(0,0,0,0.3)' }}>
+                  <div className="flex items-center justify-between px-2 pt-2 pb-1" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)' }}>
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       <span className="text-[7px] font-black text-emerald-400">LIVE</span>
                     </div>
-                    {/* Mini chart type + timeframe controls */}
+                    {/* Mini chart type + timeframe controls — Professional pills */}
                     <div className="flex items-center gap-1">
-                      <div className="flex items-center gap-0.5 rounded p-0.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                      <div className="flex items-center gap-0.5 rounded-md p-0.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         {(['candle', 'area', 'line', 'bar', 'mountain', 'step', 'histogram', 'hollow'] as const).map(ct => (
                           <button key={ct} onClick={() => setSinyalChartType(ct)}
-                            className={`w-5 h-4 rounded text-[7px] flex items-center justify-center transition-all ${sinyalChartType === ct ? '' : 'opacity-40 hover:opacity-70'}`}
-                            style={{ background: sinyalChartType === ct ? 'rgba(5,150,105,0.3)' : 'transparent', color: sinyalChartType === ct ? '#34d399' : '#9ca3af' }}>
+                            className={`h-5 px-1.5 rounded text-[6px] font-bold flex items-center justify-center transition-all duration-200 ${sinyalChartType === ct ? '' : 'opacity-40 hover:opacity-70'}`}
+                            style={sinyalChartType === ct ? { background: 'linear-gradient(135deg, rgba(5,150,105,0.35), rgba(16,185,129,0.2))', color: '#34d399', boxShadow: '0 0 6px rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.2)' } : { color: '#9ca3af', border: '1px solid transparent' }}>
                             {ct.charAt(0).toUpperCase()}
                           </button>
                         ))}
@@ -5317,14 +5542,16 @@ function Dashboard() {
                       <div className="flex items-center gap-0.5">
                         {(['1M', '5M', '15M', '1H', '4H', '1D', '1W', 'ALL'] as const).map(tf => (
                           <button key={tf} onClick={() => setSinyalTimeframe(tf)}
-                            className={`h-4 px-1 rounded text-[6px] font-black transition-all ${sinyalTimeframe === tf ? '' : 'opacity-40 hover:opacity-70'}`}
-                            style={{ background: sinyalTimeframe === tf ? 'rgba(5,150,105,0.25)' : 'transparent', color: sinyalTimeframe === tf ? '#34d399' : '#9ca3af' }}>
+                            className={`h-4 px-1 rounded text-[6px] font-bold transition-all ${sinyalTimeframe === tf ? '' : 'opacity-40 hover:opacity-70'}`}
+                            style={sinyalTimeframe === tf ? { background: 'rgba(5,150,105,0.25)', color: '#34d399', boxShadow: '0 0 4px rgba(52,211,153,0.1)' } : { color: '#9ca3af' }}>
                             {tf}
                           </button>
                         ))}
                       </div>
                     </div>
                   </div>
+                  {/* Glow line under header */}
+                  <div className="h-px" style={{ background: selectedSinyalStock.changePercent >= 0 ? 'linear-gradient(90deg, transparent 0%, rgba(52,211,153,0.2) 50%, transparent 100%)' : 'linear-gradient(90deg, transparent 0%, rgba(248,113,113,0.2) 50%, transparent 100%)' }} />
                   <div className="h-[130px] px-1 pb-1">
                     {(() => {
                       const rawData = getSinyalChartData(selectedSinyalStock.id)
@@ -5340,8 +5567,9 @@ function Dashboard() {
                         return (
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
-                              <defs><linearGradient id="sinyalModalFallback" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor={chartColor} stopOpacity="0.3" /><stop offset="100%" stopColor={chartColor} stopOpacity="0" /></linearGradient></defs>
+                              <defs><linearGradient id="sinyalModalFallback" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor={chartColor} stopOpacity="0.3" /><stop offset="50%" stopColor={chartColor} stopOpacity="0.1" /><stop offset="100%" stopColor={chartColor} stopOpacity="0" /></linearGradient></defs>
                               <XAxis dataKey="i" hide /><YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
+                              <Line type="monotone" dataKey="p" stroke={chartColor} strokeWidth={4} dot={false} activeDot={false} strokeOpacity={0.12} />
                               <Area type="monotone" dataKey="p" stroke={chartColor} fill="url(#sinyalModalFallback)" strokeWidth={2} dot={false} activeDot={false} />
                             </AreaChart>
                           </ResponsiveContainer>
@@ -5376,6 +5604,16 @@ function Dashboard() {
                         })
                         return (
                           <svg className="w-full h-full" viewBox={`0 0 ${svgW} 120`} preserveAspectRatio="none">
+                            <defs>
+                              <filter id="candleGlowModal" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                              </filter>
+                            </defs>
+                            {/* Grid */}
+                            {[0, 1, 2, 3].map(gi => (
+                              <line key={`mg${gi}`} x1="0" y1={6 + gi * 28} x2={svgW} y2={6 + gi * 28} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                            ))}
                             {candles.map((c, i) => {
                               const x = gapW + i * (candleW + gapW)
                               const yH = 6 + ((maxP - c.high) / rangeP) * 96
@@ -5386,19 +5624,26 @@ function Dashboard() {
                               const bodyTop = Math.min(yO, yC)
                               const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                               const isHollow = sinyalChartType === 'hollow'
+                              const isLast = i === totalCandles - 1
                               return (
-                                <g key={i} opacity={i === totalCandles - 1 ? 1 : 0.8}>
+                                <g key={i} opacity={isLast ? 1 : 0.8} filter={isLast ? 'url(#candleGlowModal)' : undefined}>
                                   <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" />
                                   {isHollow ? (
                                     <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : '#f87171'} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.6" rx="0.3" />
                                   ) : (
                                     <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.3" />
                                   )}
+                                  {isLast && (
+                                    <circle cx={x + candleW / 2} cy={yC} r="2.5" fill={isGreen ? '#34d399' : '#f87171'}>
+                                      <animate attributeName="r" values="2.5;4.5;2.5" dur="1.5s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+                                    </circle>
+                                  )}
                                 </g>
                               )
                             })}
-                            {sinyalShowMA7 && ma7Pts.length > 1 && <polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="0.8" opacity="0.7" />}
-                            {sinyalShowMA25 && ma25Pts.length > 1 && <polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="0.8" opacity="0.7" />}
+                            {sinyalShowMA7 && ma7Pts.length > 1 && <><polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="2" opacity="0.1" /><polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="0.8" opacity="0.7" /></>}
+                            {sinyalShowMA25 && ma25Pts.length > 1 && <><polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="2" opacity="0.1" /><polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="0.8" opacity="0.7" /></>}
                           </svg>
                         )
                       }
@@ -5408,11 +5653,13 @@ function Dashboard() {
                         return (
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={enrichedData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
-                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.04)" />
+                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
                               <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
                               <ReferenceLine y={selectedSinyalStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                               {sinyalShowMA7 && <Line type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                               {sinyalShowMA25 && <Line type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
+                              {/* Glow line */}
+                              <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={5} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
                               <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
                                 activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
                                 isAnimationActive={true} animationDuration={400} />
@@ -5427,12 +5674,12 @@ function Dashboard() {
                         return (
                           <ResponsiveContainer width="100%" height="100%">
                             <ReBarChart data={barData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
-                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.04)" />
+                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
                               <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
                               <Bar dataKey="value" radius={[1, 1, 0, 0]} maxBarSize={sinyalChartType === 'histogram' ? 3 : 8} isAnimationActive={true} animationDuration={400}
                                 shape={(props: Record<string, unknown>) => {
                                   const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
-                                  return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.8} />
+                                  return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.85} />
                                 }}>
                                 {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
                               </Bar>
@@ -5449,24 +5696,28 @@ function Dashboard() {
                           <AreaChart data={enrichedData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
                             <defs>
                               <linearGradient id="sinyalModalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.5 : 0.2} />
+                                <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.6 : 0.3} />
+                                <stop offset="30%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.35 : 0.15} />
+                                <stop offset="60%" stopColor={chartColor} stopOpacity="0.05" />
                                 <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.04)" />
+                            <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
                             <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
                             <ReferenceLine y={selectedSinyalStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                             {sinyalShowMA7 && <Line type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                             {sinyalShowMA25 && <Line type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
+                            {/* Glow line */}
+                            <Line type={areaType} dataKey="value" stroke={chartColor} strokeWidth={5} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} connectNulls />
                             <Area type={areaType} dataKey="value" stroke={sinyalChartType === 'mountain' ? 'none' : chartColor} fill="url(#sinyalModalGrad)" strokeWidth={2}
                               dot={(props: Record<string, unknown>) => {
                                 const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                 if (index !== enrichedData.length - 1) return <g key={String(index)} />
                                 return (
                                   <g key="sinyal-dot">
-                                    <circle cx={cx} cy={cy} r={4} fill={chartColor} opacity={0.2}>
-                                      <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-                                      <animate attributeName="opacity" values="0.2;0;0.2" dur="2s" repeatCount="indefinite" />
+                                    <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.15}>
+                                      <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.15;0;0.15" dur="2s" repeatCount="indefinite" />
                                     </circle>
                                     <circle cx={cx} cy={cy} r={2.5} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
                                   </g>
@@ -5481,7 +5732,7 @@ function Dashboard() {
                     })()}
                   </div>
                   <div className="flex items-center justify-between px-2 pb-2">
-                    <span className="text-[10px] font-black tabular-nums" style={{ color: selectedSinyalStock.changePercent >= 0 ? '#34d399' : '#f87171' }}>{formatRupiah(selectedSinyalStock.price)}</span>
+                    <span className="text-[10px] font-black tabular-nums font-mono" style={{ color: selectedSinyalStock.changePercent >= 0 ? '#34d399' : '#f87171', textShadow: selectedSinyalStock.changePercent >= 0 ? '0 0 8px rgba(52,211,153,0.25)' : '0 0 8px rgba(248,113,113,0.25)' }}>{formatRupiah(selectedSinyalStock.price)}</span>
                     <span className={`text-[9px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatPercent(selectedSinyalStock.changePercent)}</span>
                   </div>
                 </div>

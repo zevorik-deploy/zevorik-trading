@@ -194,3 +194,24 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Chart crosshair styling */
+.chart-crosshair {
+  pointer-events: none;
+}
+
+/* Chart tooltip */
+.chart-tooltip {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Glow effect for chart lines */
+@keyframes chart-line-glow {
+  0%, 100% { filter: drop-shadow(0 0 3px currentColor); }
+  50% { filter: drop-shadow(0 0 6px currentColor); }
+}
+
+.chart-glow-line {
+  animation: chart-line-glow 2s ease-in-out infinite;
+}
