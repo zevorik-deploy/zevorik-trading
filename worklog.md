@@ -148,3 +148,74 @@ Stage Summary:
 - Crosshair on hover with price tooltip
 - RSI indicator available as toggle
 - Professional dark theme with gradients and glow effects
+
+---
+Task ID: 3
+Agent: Chart Redesign Agent
+Task: Professional Sinyal Pro chart redesign — TradingView-style clean layout
+
+Work Log:
+- Read worklog.md and relevant sections of page.tsx (state variables, helper functions, chart section)
+- Added `ComposedChart` to recharts imports
+- Redesigned header into two-row layout:
+  - Row 1: Stock info (logo, code, change badge, name) on left; Chart type selector (segmented control, hidden on mobile) in center; Price + LIVE badge + O/H/L micro stats on right
+  - Row 2: Mobile chart type selector + Timeframe selector (segmented control) on left; Indicator toggles with dot indicators on right
+- Replaced flat gradient background with clean #0d1117 background
+- Added gradient separator line between controls and chart
+- Fixed SVG candlestick chart aspect ratio distortion:
+  - Changed from dynamic viewBox with `preserveAspectRatio="none"` to fixed viewBox (600 width) with `preserveAspectRatio="xMidYMid slice"`
+  - Updated all internal position calculations to use fixed 600 width, consistent 12px offset, and 24px internal margin
+  - Set proper min-height of 280px
+  - Updated volume bar positions to align with new priceH value
+- Replaced all Recharts-based charts (Area, Line, Bar, Mountain, Step, Histogram) with ComposedChart:
+  - Volume bars integrated as overlay within the same chart (not separate div)
+  - Secondary YAxis for volume domain ([0, maxVol * 4]) keeps volume bars subtle at bottom
+  - Merged volData into composedData for single data source
+  - Created shared renderRSI() function to reduce code duplication
+  - Unified chart height: 280px mobile, 320px desktop
+  - Consistent CartesianGrid with `vertical={false}` for clean horizontal-only grid lines
+  - Price axis on right side with monospace font, consistent tick styling
+- Improved crosshair overlay with pointer-events-none and better positioning
+- Improved trade buttons: larger h-11, gap-3, shadow effects, active:scale feedback
+- All 8 chart types still working (candle, area, line, bar, mountain, step, histogram, hollow)
+- RSI subplot still working with shared renderer
+- All indicator toggles (MA7, MA25, MA99, BB, VOL, RSI) still functional
+- Lint passes with no errors
+- Dev server compiles and serves successfully
+
+Stage Summary:
+- Sinyal Pro chart section now has TradingView-style clean layout
+- Two-row controls: stock info + chart type + price on top, timeframe + indicators on bottom
+- SVG candlestick no longer distorted (fixed viewBox + preserveAspectRatio)
+- Recharts charts unified with ComposedChart + volume overlay (no separate volume div)
+- Consistent 280/320px chart height, horizontal-only grid, right-side price axis
+- Professional segmented controls with dot indicators for active states
+- Cleaner trade buttons with shadows and press feedback
+
+---
+Task ID: 3
+Agent: Main Agent + Full-stack Developer Subagent
+Task: Complete chart visual overhaul — make charts clean, organized, professional like TradingView
+
+Work Log:
+- Fixed SVG candlestick distortion: Changed preserveAspectRatio="none" to "xMidYMid slice", fixed viewBox to 600 width
+- Redesigned controls: Two-row layout — Row 1: Stock info + chart types + price, Row 2: Timeframes + indicators
+- Desktop chart type selector: Full labels (Candle, Area, Line, Bar, Mtn, Step, Histo, Hollow) centered in header
+- Mobile chart type selector: Compact single-letter (C, A, L, B, M, S, H, O) in controls bar
+- Indicator toggles: Pill buttons with colored dot indicators when active (yellow MA7, blue MA25, purple MA99, pink BB, green VOL, violet RSI)
+- Replaced separate volume ReBarChart divs with ComposedChart + volume overlay using hidden YAxis
+- Unified chart height: 280px mobile / 320px desktop (was inconsistent 180-260px)
+- Horizontal-only grid lines (vertical={false}) for cleaner look
+- Created shared renderRSI() function to eliminate code duplication
+- Crosshair improved with pointer-events-none to prevent interaction blocking
+- Trade buttons: Larger (h-11), better gap-3, shadow effects, active:scale-[0.98] press feedback
+- Gradient separator line between controls and chart area
+- Clean #0d1117 background (replaced gradient that caused visual noise)
+- Lint passes, dev server compiles successfully
+
+Stage Summary:
+- Charts now render with correct aspect ratio (no distortion)
+- Professional TradingView-style two-row control layout
+- Volume integrated into same chart (not separate div)
+- All 8 chart types + all indicators + RSI working
+- Much cleaner, more organized appearance
