@@ -248,3 +248,38 @@ Stage Summary:
 - Invest product cards now have professional dark-themed charts matching Sinyal Pro style
 - Charts are 67% larger (160px vs 96px), no distortion
 - Consistent dark theme across all chart sections (Sinyal Pro + Invest cards + Invest modal)
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix chart speed, stability, and realistic trending - make charts look professional
+
+Work Log:
+- Analyzed all chart update intervals: Sinyal (1s), Invest (2s), IHSG (2.5s), Sparkline (2.5s), Live Buy/Sell (2s) - all too fast
+- Slowed down all intervals to stable rates: Sinyal (4s), Invest (4s), IHSG (4s), Sparkline (4s), Live Buy/Sell (3s)
+- Replaced simple random walk data generation with realistic trending algorithm across ALL chart types:
+  - Trend persistence: Direction persists for 15-25 ticks before potential shift (55-65% chance to continue)
+  - Volatility clustering: Smooth transitions between high/low volatility regimes
+  - Trend-biased steps: Movement follows current trend direction with momentum carryover
+  - Very light mean reversion: Allows natural trends to develop (0.1-0.3% pull vs old 0.4-0.6%)
+  - Clamping: ±3-4% max deviation from base price prevents unrealistic drift
+- Updated all chart initialization: Sinyal, Invest, IHSG, Live Buy/Sell historical data
+- Updated all chart live updates: Each with its own trend state tracking
+- Improved candlestick grouping: Changed from 16-group to 24-group for smoother candle rendering
+- Increased data points per timeframe: 1M=15, 5M=25, 15M=35, 1H=50, 4H=75, 1D=100 (was 8/12/18/30/45/60)
+- Full-stack developer subagent improved chart visual rendering:
+  - SVG candlestick: Larger viewBox (840), better proportions, professional green (#22c55e)/red (#ef4444) colors
+  - Cleaner gridlines (both horizontal and vertical dashed), price labels with semi-transparent background pills
+  - Volume bars flat fill at 0.4 opacity (removed too-subtle gradients)
+  - MA lines single clean stroke (removed amateurish glow double-line)
+  - RSI subplot clean single line (removed glow), added 50 reference line
+  - Last candle pulse subtle (r=2→4, was 3→6)
+  - Recharts: Removed glow lines, cleaner gradient fills, smaller active dots, consistent heights
+  - Animation duration increased to 800ms for smoother transitions
+
+Stage Summary:
+- Charts now update at stable intervals (3-4s instead of 1-2.5s)
+- Price movement looks like real stock charts (trending with momentum, not random zigzag)
+- Visual rendering is clean and professional (TradingView-style)
+- More data points visible per timeframe for smoother charts
+- All chart sections updated: Sinyal Pro main, Sinyal Pro modal, Invest modal, IHSG, sparklines, live buy/sell

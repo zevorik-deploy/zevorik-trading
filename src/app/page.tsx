@@ -734,7 +734,7 @@ function Dashboard() {
   const getCandleData = useCallback((data: {idx: number; value: number}[]) => {
     if (data.length < 4) return []
     const candles: {idx: number; open: number; high: number; low: number; close: number}[] = []
-    const groupSize = Math.max(2, Math.floor(data.length / 16))
+    const groupSize = Math.max(2, Math.floor(data.length / 24))
     for (let i = 0; i < data.length; i += groupSize) {
       const group = data.slice(i, i + groupSize)
       if (group.length < 2) continue
@@ -753,12 +753,12 @@ function Dashboard() {
   const getDataForTimeframe = useCallback((data: {idx: number; value: number}[], tf: string) => {
     if (data.length === 0) return data
     switch (tf) {
-      case '1M': return data.slice(-8)
-      case '5M': return data.slice(-12)
-      case '15M': return data.slice(-18)
-      case '1H': return data.slice(-30)
-      case '4H': return data.slice(-45)
-      case '1D': return data.slice(-60)
+      case '1M': return data.slice(-15)
+      case '5M': return data.slice(-25)
+      case '15M': return data.slice(-35)
+      case '1H': return data.slice(-50)
+      case '4H': return data.slice(-75)
+      case '1D': return data.slice(-100)
       case '1W': return data
       case 'ALL': return data
       default: return data
@@ -822,7 +822,7 @@ function Dashboard() {
     return results
   }, [])
 
-  // Initialize investment area chart data when products load
+  // Initialize investment area chart data when products load — realistic trending
   useEffect(() => {
     if (investProducts.length === 0) return
     setInvestChartData(prev => {
@@ -833,20 +833,26 @@ function Dashboard() {
         changed = true
         const baseVal = p.modal
         const pts: {idx: number; value: number}[] = []
-        let val = baseVal * (0.97 + Math.random() * 0.06)
+        let val = baseVal * (0.98 + Math.random() * 0.04)
         let momentum = 0
+        let currentTrend = Math.random() > 0.5 ? 1 : -1
+        let trendStrength = 0.4 + Math.random() * 0.5
+        let volRegime = 0.5 + Math.random() * 0.5
         for (let i = 0; i < 60; i++) {
-          const dir = Math.random() > 0.5 ? 1 : -1
-          const minStep = Math.max(1, baseVal * 0.0015)
-          const stepSize = minStep * (0.8 + Math.random() * 1.2)
-          const bias = (Math.random() - 0.48) * baseVal * 0.0003
-          momentum = momentum * 0.3 + dir * stepSize + bias
+          if (i > 0 && i % (12 + Math.floor(Math.random() * 8)) === 0) {
+            currentTrend = Math.random() > 0.45 ? currentTrend : -currentTrend
+            trendStrength = 0.3 + Math.random() * 0.6
+          }
+          volRegime = volRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
+          const trendBias = currentTrend * baseVal * 0.0004 * trendStrength
+          const noise = (Math.random() - 0.5) * baseVal * 0.0008 * volRegime
+          momentum = momentum * 0.4 + trendBias + noise
           val += momentum
-          val += (baseVal - val) * 0.008
+          val += (baseVal - val) * 0.004
           pts.push({ idx: i, value: Math.round(val) })
         }
         // End near current modal price
-        pts.push({ idx: 60, value: Math.round(baseVal * (0.99 + Math.random() * 0.02)) })
+        pts.push({ idx: 60, value: Math.round(baseVal * (0.995 + Math.random() * 0.01)) })
         next.set(p.id, pts)
         investChartSimRef.current.set(p.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
       })
@@ -854,22 +860,50 @@ function Dashboard() {
     })
   }, [investProducts])
 
-  // Live investment chart update — every 2 seconds
+  // Live investment chart update — every 4s for stable trending
   useEffect(() => {
+    const trendState = new Map<string, {direction: number; persistence: number; volRegime: number; phase: number; volCluster: number}>()
     const interval = setInterval(() => {
       const simMap = investChartSimRef.current
       if (simMap.size === 0) return
       investChartTickRef.current += 1
       const tick = investChartTickRef.current
-      const updates = new Map<string, {idx: number; value: number}[]>()
 
       simMap.forEach((sim, productId) => {
-        const dir = Math.random() > 0.5 ? 1 : -1
-        const minStep = Math.max(1, sim.baseVal * 0.0012)
-        const stepSize = minStep * (0.6 + Math.random() * 1)
-        sim.momentum = sim.momentum * 0.3 + dir * stepSize
+        // Initialize trend state
+        if (!trendState.has(productId)) {
+          trendState.set(productId, {
+            direction: Math.random() > 0.5 ? 1 : -1,
+            persistence: 0.6 + Math.random() * 0.3,
+            volRegime: 0.5 + Math.random() * 0.5,
+            phase: Math.floor(Math.random() * 20),
+            volCluster: 1
+          })
+        }
+        const ts = trendState.get(productId)!
+        ts.phase++
+
+        // Trend shifts
+        if (ts.phase % (15 + Math.floor(Math.random() * 15)) === 0) {
+          ts.direction = Math.random() > 0.4 ? ts.direction : -ts.direction
+          ts.persistence = 0.5 + Math.random() * 0.4
+        }
+
+        // Volatility clustering
+        ts.volCluster = ts.volCluster * 0.93 + (0.3 + Math.random() * 1.2) * 0.07
+        ts.volRegime = ts.volRegime * 0.9 + ts.volCluster * 0.1
+
+        // Trend-biased movement
+        const trendBias = ts.direction * sim.baseVal * 0.0004 * ts.persistence
+        const noise = (Math.random() - 0.5) * sim.baseVal * 0.0007 * ts.volRegime
+        sim.momentum = sim.momentum * 0.4 + trendBias + noise
         sim.val += sim.momentum
-        sim.val += (sim.baseVal - sim.val) * 0.006
+        // Light mean reversion
+        sim.val += (sim.baseVal - sim.val) * 0.002
+
+        // Clamp to ±4%
+        const maxDev = sim.baseVal * 0.04
+        sim.val = Math.max(sim.baseVal - maxDev, Math.min(sim.baseVal + maxDev, sim.val))
 
         setInvestChartData(prev => {
           const existing = prev.get(productId)
@@ -891,7 +925,7 @@ function Dashboard() {
         })
         return next
       })
-    }, 2000)
+    }, 4000)
     return () => clearInterval(interval)
   }, [])
 
@@ -923,24 +957,25 @@ function Dashboard() {
     ihsgChartRef.current.baseVal = baseVal
     const isUp = ihsgIdx.changePercent >= 0
 
-    // Generate historical data with VISIBLE up/down zigzag
+    // Generate historical data with realistic trending
     const pts: {idx: number; value: number}[] = []
-    let val = baseVal * (1 + (isUp ? -0.005 : 0.005))
+    let val = baseVal * (1 + (isUp ? -0.003 : 0.003))
     let momentum = 0
+    let currentTrend = isUp ? 1 : -1
+    let trendStrength = 0.5 + Math.random() * 0.5
+    let volRegime = 0.5 + Math.random() * 0.5
 
     for (let i = 0; i < 50; i++) {
-      // Each tick: 50% chance to flip direction — creates natural zigzag
-      const dir = Math.random() > 0.5 ? 1 : -1
-      // Adaptive step: ensures ±1 visible change
-      const minStep = Math.max(1, baseVal * 0.0005)
-      const stepSize = minStep * (0.8 + Math.random() * 1.2)
-      // Overall bias toward the final value
-      const bias = (isUp ? 1 : -1) * baseVal * 0.00005
-      // Combine: momentum carries, new direction adds, bias drifts toward target
-      momentum = momentum * 0.25 + dir * stepSize + bias
+      if (i > 0 && i % (10 + Math.floor(Math.random() * 8)) === 0) {
+        currentTrend = Math.random() > 0.45 ? currentTrend : -currentTrend
+        trendStrength = 0.3 + Math.random() * 0.6
+      }
+      volRegime = volRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
+      const trendBias = currentTrend * baseVal * 0.0003 * trendStrength
+      const noise = (Math.random() - 0.5) * baseVal * 0.0006 * volRegime
+      momentum = momentum * 0.4 + trendBias + noise
       val += momentum
-      // Light mean reversion — pulls toward baseVal
-      val += (baseVal - val) * 0.005
+      val += (baseVal - val) * 0.003
       pts.push({ idx: i, value: Math.round(val) })
     }
     // End at actual value
@@ -949,19 +984,29 @@ function Dashboard() {
     ihsgChartRef.current = { val: baseVal, baseVal, initialized: true }
   }, [indices])
 
-  // IHSG live update interval — runs independently, never stops
+  // IHSG live update interval — runs independently, never stops, stable trending
   useEffect(() => {
     let ihsgMomentum = 0
+    let ihsgTrendDir = Math.random() > 0.5 ? 1 : -1
+    let ihsgTrendStr = 0.5 + Math.random() * 0.5
+    let ihsgVolRegime = 0.5 + Math.random() * 0.5
+    let ihsgPhase = 0
     const interval = setInterval(() => {
       const ref = ihsgChartRef.current
       if (!ref.initialized) return
-      // Each tick: 50% chance to go up or down — natural zigzag
-      const dir = Math.random() > 0.5 ? 1 : -1
-      const stepSize = ref.baseVal * (0.0004 + Math.random() * 0.001)
-      ihsgMomentum = ihsgMomentum * 0.25 + dir * stepSize
+      ihsgPhase++
+      // Trend shifts every ~15-25 ticks
+      if (ihsgPhase % (15 + Math.floor(Math.random() * 10)) === 0) {
+        ihsgTrendDir = Math.random() > 0.4 ? ihsgTrendDir : -ihsgTrendDir
+        ihsgTrendStr = 0.4 + Math.random() * 0.6
+      }
+      ihsgVolRegime = ihsgVolRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
+      const trendBias = ihsgTrendDir * ref.baseVal * 0.0003 * ihsgTrendStr
+      const noise = (Math.random() - 0.5) * ref.baseVal * 0.0006 * ihsgVolRegime
+      ihsgMomentum = ihsgMomentum * 0.4 + trendBias + noise
       ref.val += ihsgMomentum
-      // Light mean reversion — keeps price near baseVal
-      ref.val += (ref.baseVal - ref.val) * 0.004
+      // Light mean reversion
+      ref.val += (ref.baseVal - ref.val) * 0.002
 
       setIhsgChartData(prev => {
         if (prev.length === 0) return prev
@@ -969,9 +1014,9 @@ function Dashboard() {
         const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
         return next.length > 60 ? next.slice(-60) : next
       })
-    }, 2500)
+    }, 4000)
     return () => clearInterval(interval)
-  }, []) // empty deps = runs once, never restarts
+  }, [])
 
   // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
   const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
@@ -1007,7 +1052,7 @@ function Dashboard() {
     return pts
   }, [])
 
-  // Live sparkline update — shifts data left and adds new point every 2.5 seconds
+  // Live sparkline update — shifts data left and adds new point every 4 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       const currentStocks = stocksRef.current
@@ -1017,17 +1062,15 @@ function Dashboard() {
         const cached = sparklineCache.current.get(s.id)
         if (!sim || !cached) return
 
-        // Each tick: 50% chance to go up or down — natural zigzag
-        const dir = Math.random() > 0.5 ? 1 : -1
-        // Adaptive step: ensures ±1 visible change even for penny stocks
-        const minStep = Math.max(1, s.price * 0.001)
-        const stepSize = minStep * (0.5 + Math.random() * 1)
-        // Use momentum carry-over for smooth movement
-        sim.momentum = sim.momentum * 0.25 + dir * stepSize
+        // Use trend-biased movement with persistence
+        const trendDir = sim.trend >= 0 ? 1 : -1
+        const trendBias = trendDir * s.price * 0.0003
+        const noise = (Math.random() - 0.5) * s.price * 0.0006
+        sim.momentum = sim.momentum * 0.4 + trendBias + noise
         sim.val += sim.momentum
-        // Adaptive mean reversion
-        const reversionStrength = 0.008 + Math.abs(s.price - sim.val) / s.price * 0.08
-        sim.val += (s.price - sim.val) * Math.min(reversionStrength, 0.04)
+        // Light mean reversion
+        const reversionStrength = 0.005 + Math.abs(s.price - sim.val) / s.price * 0.06
+        sim.val += (s.price - sim.val) * Math.min(reversionStrength, 0.03)
 
         // Shift sparkline data left and add new point
         const newPts = cached.slice(1).map((pt, idx) => ({ i: idx, p: pt.p }))
@@ -1036,12 +1079,12 @@ function Dashboard() {
       })
       // Force re-render by updating any state
       setStocks(prev => [...prev])
-    }, 2500)
+    }, 4000)
     return () => clearInterval(interval)
   }, []) // empty deps — uses stocksRef so interval never restarts
 
   // ============ SINYAL PRO CHART DATA ============
-  // Initialize chart data when stocks load
+  // Initialize chart data when stocks load — realistic trending with trend phases
   useEffect(() => {
     if (stocks.length === 0) return
     setSinyalChartData(prev => {
@@ -1052,20 +1095,33 @@ function Dashboard() {
         changed = true
         const baseVal = s.price
         const pts: {idx: number; value: number}[] = []
-        let val = baseVal * (0.96 + Math.random() * 0.08)
+        let val = baseVal * (0.975 + Math.random() * 0.05)
         let momentum = 0
         const mainDir = s.changePercent >= 0 ? 1 : -1
+        // Generate realistic multi-phase trend data
+        let currentTrend = mainDir
+        let trendStrength = 0.5 + Math.random() * 0.5
+        let volRegime = 0.6 + Math.random() * 0.6
         for (let i = 0; i < 120; i++) {
-          const dir = Math.random() > 0.45 ? 1 : -1
-          const minStep = Math.max(1, baseVal * 0.0018)
-          const stepSize = minStep * (0.8 + Math.random() * 1.5)
-          const bias = mainDir * baseVal * 0.0003
-          momentum = momentum * 0.3 + dir * stepSize + bias
+          // Shift trend every ~15-25 points
+          if (i > 0 && i % (15 + Math.floor(Math.random() * 10)) === 0) {
+            currentTrend = Math.random() > 0.45 ? currentTrend : -currentTrend
+            trendStrength = 0.4 + Math.random() * 0.6
+          }
+          // Volatility clustering
+          volRegime = volRegime * 0.93 + (0.3 + Math.random() * 1.2) * 0.07
+          // Trend-biased movement
+          const trendBias = currentTrend * baseVal * 0.0005 * trendStrength
+          const noise = (Math.random() - 0.5) * baseVal * 0.001 * volRegime
+          const minStep = Math.max(0.5, baseVal * 0.0003)
+          momentum = momentum * 0.4 + trendBias + noise
           val += momentum
-          val += (baseVal - val) * 0.005
+          // Light mean reversion to keep near base price
+          val += (baseVal - val) * 0.003
           pts.push({ idx: i, value: Math.round(val) })
         }
-        pts.push({ idx: 120, value: Math.round(baseVal * (0.99 + Math.random() * 0.02)) })
+        // End near actual price
+        pts.push({ idx: 120, value: Math.round(baseVal * (0.995 + Math.random() * 0.01)) })
         next.set(s.id, pts)
         sinyalChartSimRef.current.set(s.id, { val: pts[pts.length - 1].value, baseVal, momentum: 0, initialized: true })
       })
@@ -1073,20 +1129,52 @@ function Dashboard() {
     })
   }, [stocks])
 
-  // Live sinyal chart update — every 1s for ultra-smooth real trending
+  // Live sinyal chart update — every 4s for stable, realistic trending
   useEffect(() => {
+    const simMap = sinyalChartSimRef.current
+    // Trend state per stock: direction + persistence + volatility regime
+    const trendState = new Map<string, {direction: number; persistence: number; volRegime: number; phase: number; volCluster: number}>()
     const interval = setInterval(() => {
-      const simMap = sinyalChartSimRef.current
       if (simMap.size === 0) return
-      const updates = new Map<string, {idx: number; value: number}[]>()
 
       simMap.forEach((sim, stockId) => {
-        const dir = Math.random() > 0.45 ? 1 : -1
-        const minStep = Math.max(1, sim.baseVal * 0.0012)
-        const stepSize = minStep * (0.6 + Math.random() * 1.2)
-        sim.momentum = sim.momentum * 0.3 + dir * stepSize
+        // Initialize trend state
+        if (!trendState.has(stockId)) {
+          trendState.set(stockId, {
+            direction: Math.random() > 0.5 ? 1 : -1,
+            persistence: 0.6 + Math.random() * 0.3,
+            volRegime: 0.5 + Math.random() * 0.5,
+            phase: Math.floor(Math.random() * 20),
+            volCluster: 1
+          })
+        }
+        const ts = trendState.get(stockId)!
+        ts.phase++
+
+        // Trend shifts: occasionally change direction (every ~20-40 ticks)
+        if (ts.phase % (20 + Math.floor(Math.random() * 20)) === 0) {
+          ts.direction = Math.random() > 0.4 ? ts.direction : -ts.direction
+          ts.persistence = 0.55 + Math.random() * 0.35
+        }
+
+        // Volatility clustering: smooth transitions between high/low vol
+        ts.volCluster = ts.volCluster * 0.95 + (0.3 + Math.random() * 1.4) * 0.05
+        ts.volRegime = ts.volRegime * 0.92 + ts.volCluster * 0.08
+
+        // Trend-biased step with persistence
+        const trendBias = ts.direction * sim.baseVal * 0.0004 * ts.persistence
+        const noise = (Math.random() - 0.5) * sim.baseVal * 0.0008 * ts.volRegime
+        const minStep = Math.max(0.5, sim.baseVal * 0.0003)
+        const stepSize = trendBias + noise + (Math.random() > 0.5 ? minStep : -minStep) * 0.5
+
+        sim.momentum = sim.momentum * 0.45 + stepSize
         sim.val += sim.momentum
-        sim.val += (sim.baseVal - sim.val) * 0.004
+        // Very light mean reversion — allows trends to develop naturally
+        sim.val += (sim.baseVal - sim.val) * 0.001
+
+        // Clamp to ±3% of base to prevent extreme drift
+        const maxDev = sim.baseVal * 0.03
+        sim.val = Math.max(sim.baseVal - maxDev, Math.min(sim.baseVal + maxDev, sim.val))
 
         setSinyalChartData(prev => {
           const next = new Map(prev)
@@ -1094,11 +1182,10 @@ function Dashboard() {
           if (!existing) return prev
           const newPts = [...existing.slice(1), { idx: existing[existing.length - 1].idx + 1, value: Math.round(sim.val) }]
           next.set(stockId, newPts.length > 150 ? newPts.slice(-150) : newPts)
-          updates.set(stockId, newPts)
           return next
         })
       })
-    }, 1000)
+    }, 4000)
     return () => clearInterval(interval)
   }, [])
 
@@ -1138,26 +1225,31 @@ function Dashboard() {
     let momentum = 0
     let phase = 0
 
-    // Build realistic historical data with VISIBLE zigzag swings
+    // Build realistic historical data with trending movement
     const initialBuy: {time: string; price: number}[] = []
     const initialSell: {time: string; price: number}[] = []
     let tempBuy = buyPrice
     let tempSell = sellPrice
     let histMomentum = 0
+    let histTrendDir = Math.random() > 0.5 ? 1 : -1
+    let histTrendStr = 0.4 + Math.random() * 0.5
+    let histVolRegime = 0.5 + Math.random() * 0.5
     for (let i = 40; i >= 1; i--) {
-      // Each tick: 50% chance to go up or down — natural zigzag
-      const dir = Math.random() > 0.5 ? 1 : -1
-      // Adaptive step: ensures visibility for all price ranges
-      const minStep = Math.max(1, basePrice * 0.001)
-      const stepSize = minStep * (0.8 + Math.random() * 1.2)
-      histMomentum = histMomentum * 0.25 + dir * stepSize
+      if (i % (10 + Math.floor(Math.random() * 6)) === 0) {
+        histTrendDir = Math.random() > 0.45 ? histTrendDir : -histTrendDir
+        histTrendStr = 0.3 + Math.random() * 0.5
+      }
+      histVolRegime = histVolRegime * 0.93 + (0.3 + Math.random() * 1.0) * 0.07
+      const trendBias = histTrendDir * basePrice * 0.0004 * histTrendStr
+      const noise = (Math.random() - 0.5) * basePrice * 0.0007 * histVolRegime
+      histMomentum = histMomentum * 0.4 + trendBias + noise
       const mid = (tempBuy + tempSell) / 2 + histMomentum
       tempBuy = mid - spread / 2
       tempSell = mid + spread / 2
       // Light mean reversion
-      tempBuy += (basePrice - tempBuy) * 0.005
-      tempSell += (basePrice - tempSell) * 0.005
-      const now = Date.now() - i * 2000
+      tempBuy += (basePrice - tempBuy) * 0.003
+      tempSell += (basePrice - tempSell) * 0.003
+      const now = Date.now() - i * 3000
       const timeStr = new Date(now).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
       initialBuy.push({time: timeStr, price: Math.round(tempBuy)})
       initialSell.push({time: timeStr, price: Math.round(tempSell)})
@@ -1171,14 +1263,26 @@ function Dashboard() {
     liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum: 0, phase}
     setLiveChartActive(true)
 
+    // Live trend state for realistic movement
+    let liveTrendDir = Math.random() > 0.5 ? 1 : -1
+    let liveTrendStr = 0.5 + Math.random() * 0.5
+    let liveVolRegime = 0.6 + Math.random() * 0.4
+    let livePhase = 0
     const interval = setInterval(() => {
       phase++
-      // Each tick: 50% chance to go up or down — natural zigzag
-      const dir = Math.random() > 0.5 ? 1 : -1
-      // Adaptive step: ensures visibility for all price ranges
-      const minStep = Math.max(1, basePrice * 0.0008)
-      const stepSize = minStep * (0.5 + Math.random() * 1)
-      momentum = momentum * 0.25 + dir * stepSize
+      livePhase++
+      // Shift trend every ~15-25 ticks
+      if (livePhase % (15 + Math.floor(Math.random() * 10)) === 0) {
+        liveTrendDir = Math.random() > 0.4 ? liveTrendDir : -liveTrendDir
+        liveTrendStr = 0.4 + Math.random() * 0.6
+      }
+      // Volatility clustering
+      liveVolRegime = liveVolRegime * 0.92 + (0.3 + Math.random() * 1.2) * 0.08
+      // Trend-biased movement
+      const trendBias = liveTrendDir * basePrice * 0.0004 * liveTrendStr
+      const noise = (Math.random() - 0.5) * basePrice * 0.0007 * liveVolRegime
+      const minStep = Math.max(0.5, basePrice * 0.0003)
+      momentum = momentum * 0.4 + trendBias + noise + (Math.random() > 0.5 ? minStep : -minStep) * 0.3
 
       const mid = (buyPrice + sellPrice) / 2 + momentum
       buyPrice = mid - spread / 2
@@ -1188,8 +1292,14 @@ function Dashboard() {
       if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
 
       // Light mean reversion
-      buyPrice += (basePrice - buyPrice) * 0.003
-      sellPrice += (basePrice - sellPrice) * 0.003
+      buyPrice += (basePrice - buyPrice) * 0.002
+      sellPrice += (basePrice - sellPrice) * 0.002
+
+      // Clamp to ±3%
+      const maxDev = basePrice * 0.03
+      buyPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, buyPrice))
+      sellPrice = Math.max(basePrice - maxDev, Math.min(basePrice + maxDev, sellPrice))
+      if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
 
       liveChartRef.current = {buyPrice, sellPrice, trend: 0, momentum, phase}
       const now = new Date()
@@ -1205,7 +1315,7 @@ function Dashboard() {
       })
       setLiveBuyPrice(Math.round(buyPrice))
       setLiveSellPrice(Math.round(sellPrice))
-    }, 2000) // 2s interval — smooth but responsive
+    }, 3000) // 3s interval — stable and realistic
 
     return () => {
       clearInterval(interval)
@@ -2590,45 +2700,61 @@ function Dashboard() {
                               const totalCandles = candles.length
                               const svgW = 400
                               const priceH = 130
-                              const candleW = Math.max(3, Math.floor((svgW - 16) / totalCandles * 0.7))
-                              const gapW = Math.max(1, Math.floor((svgW - 16) / totalCandles * 0.3))
+                              const candleW = Math.max(3, Math.floor((svgW - 16) / totalCandles * 0.65))
+                              const gapW = Math.max(1, Math.floor((svgW - 16) / totalCandles * 0.35))
+                              const padding = { top: 8, bottom: 8, left: 4, right: 42 }
+                              const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
                               return (
-                                <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid slice">
-                                  {/* Grid lines */}
-                                  {[0, 1, 2, 3, 4].map(gi => (
-                                    <line key={gi} x1="0" y1={8 + gi * (priceH / 5)} x2={svgW} y2={8 + gi * (priceH / 5)} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                  ))}
-                                  {/* Price labels */}
+                                <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid meet">
+                                  {/* Grid lines — dashed horizontal + vertical */}
+                                  {[0, 1, 2, 3, 4].map(gi => {
+                                    const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 5)
+                                    return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
+                                  })}
+                                  {[0, 1, 2, 3, 4].map(gi => {
+                                    const x = padding.left + gi * ((svgW - padding.left - padding.right) / 4)
+                                    return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.025)" strokeWidth="0.5" strokeDasharray="2,6" />
+                                  })}
+                                  {/* Price labels with pills */}
                                   {[0, 2, 4].map(gi => {
                                     const price = maxP - (gi / 5) * rangeP
-                                    return <text key={gi} x={svgW - 3} y={8 + gi * (priceH / 5) + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="5" fontFamily="monospace">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                    const y = priceToY(price)
+                                    return (
+                                      <g key={`p${gi}`}>
+                                        <rect x={svgW - padding.right + 2} y={y - 4} width={padding.right - 4} height="8" rx="2" fill="rgba(255,255,255,0.04)" />
+                                        <text x={svgW - 2} y={y + 2.5} textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="6" fontFamily="monospace" fontWeight="500">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                      </g>
+                                    )
                                   })}
                                   {/* Current price line */}
-                                  <line x1="0" y1={8 + ((maxP - lastValue) / rangeP) * (priceH - 16)} x2={svgW} y2={8 + ((maxP - lastValue) / rangeP) * (priceH - 16)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.4" />
+                                  <line x1={padding.left} y1={priceToY(lastValue)} x2={svgW - padding.right} y2={priceToY(lastValue)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.35" />
+                                  <rect x={svgW - padding.right + 1} y={priceToY(lastValue) - 5} width={padding.right - 2} height="10" rx="3" fill={chartColor} opacity="0.85" />
+                                  <text x={svgW - padding.right + 2 + (padding.right - 6) / 2} y={priceToY(lastValue) + 2.5} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="700">{formatRupiah(lastValue).replace('Rp', '').trim()}</text>
                                   {/* Candles */}
                                   {candles.map((c, i) => {
-                                    const x = 8 + i * (candleW + gapW)
-                                    const yH = 8 + ((maxP - c.high) / rangeP) * (priceH - 16)
-                                    const yL = 8 + ((maxP - c.low) / rangeP) * (priceH - 16)
-                                    const yO = 8 + ((maxP - c.open) / rangeP) * (priceH - 16)
-                                    const yC = 8 + ((maxP - c.close) / rangeP) * (priceH - 16)
+                                    const candleSpacing = (svgW - padding.left - padding.right) / totalCandles
+                                    const cx = padding.left + i * candleSpacing + candleSpacing / 2
+                                    const x = cx - candleW / 2
+                                    const yH = priceToY(c.high)
+                                    const yL = priceToY(c.low)
+                                    const yO = priceToY(c.open)
+                                    const yC = priceToY(c.close)
                                     const isGreen = c.close >= c.open
                                     const bodyTop = Math.min(yO, yC)
                                     const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                                     const isLast = i === totalCandles - 1
+                                    const fillColor = isGreen ? '#22c55e' : '#ef4444'
                                     return (
-                                      <g key={i} opacity={isLast ? 1 : 0.8}>
-                                        <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" opacity={isLast ? 1 : 0.6} />
-                                        <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.5" />
+                                      <g key={i} opacity={isLast ? 1 : 0.9}>
+                                        <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
+                                        <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="1" />
                                         {isLast && (
                                           <>
-                                            <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#34d399' : '#f87171'}>
-                                              <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                                            <circle cx={cx} cy={yC} r="2" fill={fillColor}>
+                                              <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
                                             </circle>
-                                            <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
-                                            <rect x={svgW - 50} y={yC - 5} width="48" height="10" rx="2" fill={isGreen ? 'rgba(5,150,105,0.9)' : 'rgba(220,38,38,0.9)'} />
-                                            <text x={svgW - 26} y={yC + 2.5} textAnchor="middle" fill="white" fontSize="4.5" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
+                                            <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
                                           </>
                                         )}
                                       </g>
@@ -2642,22 +2768,22 @@ function Dashboard() {
                             if (investChartType === 'bar') {
                               const barData = chartData.map((d, i) => ({
                                 idx: d.idx, value: d.value,
-                                fill: i > 0 && d.value >= chartData[i - 1].value ? '#34d399' : '#f87171'
+                                fill: i > 0 && d.value >= chartData[i - 1].value ? '#22c55e' : '#ef4444'
                               }))
                               return (
                                 <ResponsiveContainer width="100%" height="100%">
                                   <ReBarChart data={barData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                     <XAxis dataKey="idx" hide />
                                     <YAxis hide domain={domain} />
-                                    <Bar dataKey="value" radius={[1.5, 1.5, 0, 0]} maxBarSize={8} isAnimationActive={true} animationDuration={400}
+                                    <Bar dataKey="value" radius={[1, 1, 0, 0]} maxBarSize={8} isAnimationActive={true} animationDuration={800}
                                       shape={(props: Record<string, unknown>) => {
                                         const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
-                                        return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.85} />
+                                        return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={_fill} opacity={0.85} />
                                       }}>
                                       {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
                                     </Bar>
-                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
                                   </ReBarChart>
                                 </ResponsiveContainer>
                               )
@@ -2668,15 +2794,14 @@ function Dashboard() {
                               return (
                                 <ResponsiveContainer width="100%" height="100%">
                                   <LineChart data={chartData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                     <XAxis dataKey="idx" hide />
                                     <YAxis hide domain={domain} />
                                     <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                    <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
-                                    <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                                    <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={1.5} dot={false}
                                       activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
-                                      isAnimationActive={true} animationDuration={400} />
-                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                      isAnimationActive={true} animationDuration={800} />
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
                                   </LineChart>
                                 </ResponsiveContainer>
                               )
@@ -2688,33 +2813,32 @@ function Dashboard() {
                                 <AreaChart data={chartData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
                                   <defs>
                                     <linearGradient id={`investGrad-${product.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                      <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
-                                      <stop offset="40%" stopColor={chartColor} stopOpacity="0.12" />
-                                      <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                      <stop offset="0%" stopColor={chartColor} stopOpacity="0.15" />
+                                      <stop offset="50%" stopColor={chartColor} stopOpacity="0.06" />
+                                      <stop offset="100%" stopColor={chartColor} stopOpacity="0.02" />
                                     </linearGradient>
                                   </defs>
-                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                   <XAxis dataKey="idx" hide />
                                   <YAxis hide domain={domain} />
                                   <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.25} />
-                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
-                                  <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investGrad-${product.id})`} strokeWidth={2}
+                                  <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investGrad-${product.id})`} strokeWidth={1.5}
                                     dot={(props: Record<string, unknown>) => {
                                       const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                       if (index !== chartData.length - 1) return <g key={String(index)} />
                                       return (
                                         <g key={`invest-dot-${product.id}`}>
-                                          <circle cx={cx} cy={cy} r={6} fill={chartColor} opacity={0.12}>
-                                            <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
-                                            <animate attributeName="opacity" values="0.12;0;0.12" dur="2s" repeatCount="indefinite" />
+                                          <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.1}>
+                                            <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.1;0;0.1" dur="2s" repeatCount="indefinite" />
                                           </circle>
-                                          <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
+                                          <circle cx={cx} cy={cy} r={2.5} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
                                         </g>
                                       )
                                     }}
                                     activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
-                                    isAnimationActive={true} animationDuration={400} />
-                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                    isAnimationActive={true} animationDuration={800} />
+                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
                                 </AreaChart>
                               </ResponsiveContainer>
                             )
@@ -3054,14 +3178,16 @@ function Dashboard() {
                           const maxP = Math.max(...allPrices)
                           const rangeP = maxP - minP || 1
                           const totalCandles = candles.length
-                          // Fixed viewBox dimensions for consistent rendering
-                          const svgW = 600
-                          const candleW = Math.max(4, Math.floor((svgW - 20) / totalCandles * 0.7))
-                          const gapW = Math.max(2, Math.floor((svgW - 20) / totalCandles * 0.3))
-                          const rsiH = sinyalShowRSI ? 60 : 0
-                          const priceH = 220
-                          const volH = sinyalShowVolume ? 40 : 0
-                          const chartH = priceH + volH + rsiH + 4
+                          // Wider viewBox for sharper retina rendering
+                          const svgW = 840
+                          const padding = { top: 16, bottom: 8, left: 6, right: 62 }
+                          const drawW = svgW - padding.left - padding.right
+                          const candleSpacing = drawW / totalCandles
+                          const candleW = Math.max(6, Math.floor(candleSpacing * 0.65))
+                          const rsiH = sinyalShowRSI ? 64 : 0
+                          const priceH = 240
+                          const volH = sinyalShowVolume ? 44 : 0
+                          const chartH = priceH + volH + rsiH + 8
 
                           // MA data for candles
                           const candleMA7 = computeMA(chartData, 7)
@@ -3070,110 +3196,129 @@ function Dashboard() {
                           const ma25Points: string[] = []
                           const stepX = svgW / chartData.length
 
+                          // Map price to Y coordinate
+                          const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
+
                           chartData.forEach((d, i) => {
-                            if (candleMA7[i] !== null) ma7Points.push(`${i * stepX},${priceH - ((candleMA7[i]! - minP) / rangeP) * (priceH - 24) + 12}`)
-                            if (candleMA25[i] !== null) ma25Points.push(`${i * stepX},${priceH - ((candleMA25[i]! - minP) / rangeP) * (priceH - 24) + 12}`)
+                            if (candleMA7[i] !== null) ma7Points.push(`${i * stepX},${priceToY(candleMA7[i]!)}`)
+                            if (candleMA25[i] !== null) ma25Points.push(`${i * stepX},${priceToY(candleMA25[i]!)}`)
                           })
 
+                          // Current price Y
+                          const curPriceY = priceToY(sinyalChartStock.price)
+
                           return (
-                            <svg className="w-full" viewBox={`0 0 ${svgW} ${chartH}`} preserveAspectRatio="xMidYMid slice" style={{ minHeight: 280 }}>
+                            <svg className="w-full" viewBox={`0 0 ${svgW} ${chartH}`} preserveAspectRatio="xMidYMid meet" style={{ minHeight: 280 }}>
                               <defs>
-                                {/* Glow filter for candles */}
-                                <filter id="candleGlow" x="-20%" y="-20%" width="140%" height="140%">
-                                  <feGaussianBlur stdDeviation="2" result="blur" />
+                                {/* Subtle pulse animation for last candle dot */}
+                                <filter id="candlePulse" x="-50%" y="-50%" width="200%" height="200%">
+                                  <feGaussianBlur stdDeviation="1.5" result="blur" />
                                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
                                 </filter>
-                                {/* Gradient for volume bars */}
-                                <linearGradient id="volGradUp" x1="0%" y1="0%" x2="0%" y2="100%">
-                                  <stop offset="0%" stopColor="rgba(52,211,153,0.4)" />
-                                  <stop offset="100%" stopColor="rgba(52,211,153,0.05)" />
-                                </linearGradient>
-                                <linearGradient id="volGradDown" x1="0%" y1="0%" x2="0%" y2="100%">
-                                  <stop offset="0%" stopColor="rgba(248,113,113,0.4)" />
-                                  <stop offset="100%" stopColor="rgba(248,113,113,0.05)" />
-                                </linearGradient>
                               </defs>
-                              {/* Grid lines — subtle horizontal only */}
-                              {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => (
-                                <line key={`g${gi}`} x1="0" y1={12 + gi * (priceH / 8)} x2={svgW} y2={12 + gi * (priceH / 8)} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                              ))}
-                              {/* Price labels — right side monospace */}
+                              {/* Grid lines — subtle dashed horizontal */}
+                              {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => {
+                                const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 8)
+                                return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
+                              })}
+                              {/* Grid lines — subtle dashed vertical */}
+                              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(gi => {
+                                const x = padding.left + gi * (drawW / 8)
+                                return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.025)" strokeWidth="0.5" strokeDasharray="2,6" />
+                              })}
+                              {/* Price labels — right side with background pills */}
                               {[0, 2, 4, 6].map(gi => {
                                 const price = maxP - (gi / 8) * rangeP
-                                return <text key={`p${gi}`} x={svgW - 4} y={12 + gi * (priceH / 8) + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace" fontWeight="600">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 8)
+                                const label = formatRupiah(Math.round(price)).replace('Rp', '').trim()
+                                return (
+                                  <g key={`p${gi}`}>
+                                    <rect x={svgW - padding.right + 4} y={y - 5} width={padding.right - 6} height="10" rx="2" fill="rgba(255,255,255,0.04)" />
+                                    <text x={svgW - 4} y={y + 3} textAnchor="end" fill="rgba(255,255,255,0.3)" fontSize="7" fontFamily="monospace" fontWeight="500">{label}</text>
+                                  </g>
+                                )
                               })}
-                              {/* Current price line — dashed */}
-                              <line x1="0" y1={12 + ((maxP - sinyalChartStock.price) / rangeP) * (priceH - 24)} x2={svgW} y2={12 + ((maxP - sinyalChartStock.price) / rangeP) * (priceH - 24)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.4" />
-                              {/* MA Lines — with glow */}
-                              {sinyalShowMA7 && ma7Points.length > 1 && <><polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="2.5" opacity="0.15" /><polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.7" /></>}
-                              {sinyalShowMA25 && ma25Points.length > 1 && <><polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="2.5" opacity="0.15" /><polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1" opacity="0.7" /></>}
-                              {/* Candles — professional rendering */}
+                              {/* Current price line — thin dashed with price tag pill */}
+                              <line x1={padding.left} y1={curPriceY} x2={svgW - padding.right} y2={curPriceY} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.35" />
+                              <rect x={svgW - padding.right + 2} y={curPriceY - 7} width={padding.right - 4} height="14" rx="3" fill={chartColor} opacity="0.9" />
+                              <text x={svgW - padding.right + 4 + (padding.right - 8) / 2} y={curPriceY + 3} textAnchor="middle" fill="white" fontSize="7" fontFamily="monospace" fontWeight="700">{formatRupiah(sinyalChartStock.price).replace('Rp', '').trim()}</text>
+                              {/* MA Lines — clean, no glow */}
+                              {sinyalShowMA7 && ma7Points.length > 1 && <polyline points={ma7Points.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.6" />}
+                              {sinyalShowMA25 && ma25Points.length > 1 && <polyline points={ma25Points.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="1" opacity="0.6" />}
+                              {/* Candles — professional TradingView-style */}
                               {candles.map((c, i) => {
-                                const x = 10 + i * (candleW + gapW)
-                                const yH = 12 + ((maxP - c.high) / rangeP) * (priceH - 24)
-                                const yL = 12 + ((maxP - c.low) / rangeP) * (priceH - 24)
-                                const yO = 12 + ((maxP - c.open) / rangeP) * (priceH - 24)
-                                const yC = 12 + ((maxP - c.close) / rangeP) * (priceH - 24)
+                                const cx = padding.left + i * candleSpacing + candleSpacing / 2
+                                const x = cx - candleW / 2
+                                const yH = priceToY(c.high)
+                                const yL = priceToY(c.low)
+                                const yO = priceToY(c.open)
+                                const yC = priceToY(c.close)
                                 const isGreen = c.close >= c.open
                                 const bodyTop = Math.min(yO, yC)
                                 const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                                 const isLast = i === totalCandles - 1
                                 const isHollow = sinyalChartType === 'hollow'
+                                const fillColor = isGreen ? (isLast ? '#2dd469' : '#22c55e') : (isLast ? '#f87171' : '#ef4444')
                                 return (
-                                  <g key={i} opacity={isLast ? 1 : 0.85} filter={isLast ? 'url(#candleGlow)' : undefined}>
-                                    <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" opacity={isLast ? 1 : 0.8} />
+                                  <g key={i} opacity={isLast ? 1 : 0.9}>
+                                    {/* Wick — thin, centered */}
+                                    <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
+                                    {/* Body — thick with subtle rounded corners */}
                                     {isHollow ? (
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : '#f87171'} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.8" rx="0.5" />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : fillColor} stroke={fillColor} strokeWidth="0.8" rx="1" />
                                     ) : (
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.5" />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="1" />
                                     )}
+                                    {/* Last candle indicator — subtle pulsing dot */}
                                     {isLast && (
                                       <>
-                                        <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#34d399' : '#f87171'}>
-                                          <animate attributeName="r" values="3;6;3" dur="1.5s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                                        <circle cx={cx} cy={yC} r="2" fill={fillColor}>
+                                          <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
                                         </circle>
-                                        <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.6" />
-                                        <rect x={svgW - 48} y={yC - 5} width="46" height="10" rx="2" fill={isGreen ? 'rgba(5,150,105,0.9)' : 'rgba(220,38,38,0.9)'} style={{ boxShadow: isGreen ? '0 0 6px rgba(52,211,153,0.3)' : '0 0 6px rgba(248,113,113,0.3)' }} />
-                                        <text x={svgW - 25} y={yC + 2} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
+                                        <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
                                       </>
                                     )}
                                   </g>
                                 )
                               })}
-                              {/* Volume bars — subtle gradient fill */}
+                              {/* Volume bars — clean, flat, aligned with candles */}
                               {sinyalShowVolume && volData.slice(0, totalCandles * Math.ceil(chartData.length / totalCandles)).filter((_, i) => i % Math.ceil(chartData.length / totalCandles) === 0).slice(0, totalCandles).map((v, i) => {
-                                const x = 10 + i * (candleW + gapW)
+                                const cx = padding.left + i * candleSpacing + candleSpacing / 2
+                                const x = cx - candleW / 2
                                 const maxVol = Math.max(...volData.map(vd => vd.vol))
                                 const h = Math.max(1, (v.vol / maxVol) * volH * 0.8)
                                 const volBaseY = priceH + 4
-                                return <rect key={`v${i}`} x={x} y={volBaseY - h} width={candleW} height={h} fill={v.up ? 'url(#volGradUp)' : 'url(#volGradDown)'} rx="0.5" />
+                                return <rect key={`v${i}`} x={x} y={volBaseY - h} width={candleW} height={h} fill={v.up ? '#22c55e' : '#ef4444'} opacity={0.4} />
                               })}
                               {/* RSI Subplot */}
                               {sinyalShowRSI && rsiData && (() => {
-                                const rsiY = priceH + volH + 4
+                                const rsiY = priceH + volH + 8
                                 const rsiChartH = 56
+                                const rsiPadTop = 10
+                                const rsiPadBot = 6
+                                const rsiDrawH = rsiChartH - rsiPadTop - rsiPadBot
+                                const rsiToY = (val: number) => rsiY + rsiPadTop + rsiDrawH * (1 - val / 100)
                                 return (
                                   <g>
-                                    <line x1="0" y1={rsiY} x2={svgW} y2={rsiY} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-                                    <text x={4} y={rsiY + 8} fill="rgba(167,139,250,0.5)" fontSize="5" fontFamily="monospace" fontWeight="bold">RSI(14)</text>
-                                    {/* Overbought/Oversold reference lines */}
-                                    <line x1="0" y1={rsiY + rsiChartH * (1 - 70/100)} x2={svgW} y2={rsiY + rsiChartH * (1 - 70/100)} stroke="rgba(248,113,113,0.15)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                    <line x1="0" y1={rsiY + rsiChartH * (1 - 30/100)} x2={svgW} y2={rsiY + rsiChartH * (1 - 30/100)} stroke="rgba(52,211,153,0.15)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                    <text x={svgW - 2} y={rsiY + rsiChartH * (1 - 70/100) + 3} textAnchor="end" fill="rgba(248,113,113,0.3)" fontSize="4" fontFamily="monospace">70</text>
-                                    <text x={svgW - 2} y={rsiY + rsiChartH * (1 - 30/100) + 3} textAnchor="end" fill="rgba(52,211,153,0.3)" fontSize="4" fontFamily="monospace">30</text>
+                                    <line x1={padding.left} y1={rsiY} x2={svgW - padding.right} y2={rsiY} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+                                    <text x={padding.left + 2} y={rsiY + 8} fill="rgba(167,139,250,0.5)" fontSize="7" fontFamily="monospace" fontWeight="600">RSI(14)</text>
+                                    {/* Reference lines at 30 and 70 */}
+                                    <line x1={padding.left} y1={rsiToY(70)} x2={svgW - padding.right} y2={rsiToY(70)} stroke="rgba(239,68,68,0.2)" strokeWidth="0.5" strokeDasharray="3,4" />
+                                    <line x1={padding.left} y1={rsiToY(30)} x2={svgW - padding.right} y2={rsiToY(30)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.5" strokeDasharray="3,4" />
+                                    {/* RSI labels */}
+                                    <text x={svgW - padding.right + 6} y={rsiToY(70) + 3} fill="rgba(239,68,68,0.35)" fontSize="6" fontFamily="monospace">70</text>
+                                    <text x={svgW - padding.right + 6} y={rsiToY(30) + 3} fill="rgba(34,197,94,0.35)" fontSize="6" fontFamily="monospace">30</text>
+                                    <text x={svgW - padding.right + 6} y={rsiToY(50) + 3} fill="rgba(255,255,255,0.15)" fontSize="5" fontFamily="monospace">50</text>
                                     {/* Fill between 30-70 */}
-                                    <rect x="0" y={rsiY + rsiChartH * (1 - 70/100)} width={svgW} height={rsiChartH * 0.4} fill="rgba(167,139,250,0.04)" />
-                                    {/* RSI Line */}
+                                    <rect x={padding.left} y={rsiToY(70)} width={drawW} height={rsiToY(30) - rsiToY(70)} fill="rgba(167,139,250,0.03)" />
+                                    {/* RSI Line — clean, no glow */}
                                     {(() => {
                                       const rsiPts: string[] = []
                                       rsiData.forEach((val, i) => {
-                                        if (val !== null) rsiPts.push(`${i * stepX},${rsiY + rsiChartH * (1 - val / 100)}`)
+                                        if (val !== null) rsiPts.push(`${i * stepX},${rsiToY(val)}`)
                                       })
-                                      return rsiPts.length > 1 ? <>
-                                        <polyline points={rsiPts.join(' ')} fill="none" stroke="#a78bfa" strokeWidth="3" opacity="0.15" />
-                                        <polyline points={rsiPts.join(' ')} fill="none" stroke="#a78bfa" strokeWidth="1.2" opacity="0.8" />
-                                      </> : null
+                                      return rsiPts.length > 1 ? <polyline points={rsiPts.join(' ')} fill="none" stroke="#a78bfa" strokeWidth="1" opacity="0.75" /> : null
                                     })()}
                                   </g>
                                 )
@@ -3193,29 +3338,29 @@ function Dashboard() {
 
                         // Shared RSI subplot renderer
                         const renderRSI = () => sinyalShowRSI && rsiData ? (
-                          <div className="h-[50px] mt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                          <div className="h-[52px] mt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={chartData.map((d, i) => ({ idx: d.idx, rsi: rsiData[i] }))} margin={{ top: 4, right: 55, bottom: 2, left: 5 }}>
+                              <LineChart data={chartData.map((d, i) => ({ idx: d.idx, rsi: rsiData[i] }))} margin={{ top: 4, right: 52, bottom: 2, left: 8 }}>
                                 <defs>
                                   <linearGradient id="rsiFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.12" />
+                                    <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.08" />
                                     <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.02)" />
+                                <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                 <XAxis dataKey="idx" hide />
                                 <YAxis hide domain={[0, 100]} />
-                                <ReferenceLine y={70} stroke="rgba(248,113,113,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
-                                <ReferenceLine y={30} stroke="rgba(52,211,153,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                <ReferenceLine y={70} stroke="rgba(239,68,68,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                <ReferenceLine y={30} stroke="rgba(34,197,94,0.2)" strokeDasharray="3 3" strokeWidth={0.5} />
+                                <ReferenceLine y={50} stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" strokeWidth={0.5} />
                                 <Area type="monotone" dataKey="rsi" stroke="none" fill="url(#rsiFill)" dot={false} connectNulls />
-                                <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={3} dot={false} activeDot={false} strokeOpacity={0.12} connectNulls />
-                                <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={1.2} dot={false} activeDot={{ r: 2.5, fill: '#a78bfa', stroke: '#0d1117', strokeWidth: 1 }} connectNulls />
+                                <Line type="monotone" dataKey="rsi" stroke="#a78bfa" strokeWidth={1} dot={false} activeDot={{ r: 3, fill: '#a78bfa', stroke: '#0d1117', strokeWidth: 1.5 }} connectNulls />
                                 <YAxis yAxisId="rsiLabel" orientation="right" domain={[0, 100]} tickFormatter={() => ''} axisLine={false} tickLine={false} width={50} />
                               </LineChart>
                             </ResponsiveContainer>
-                            <div className="flex items-center justify-between px-1 -mt-0.5">
-                              <span className="text-[6px] font-bold text-violet-400/50">RSI(14)</span>
-                              {rsiData.filter(v => v !== null).length > 0 && <span className="text-[7px] font-mono font-bold text-violet-400">{rsiData.filter(v => v !== null).slice(-1)[0]?.toFixed(1)}</span>}
+                            <div className="flex items-center justify-between px-2 -mt-0.5">
+                              <span className="text-[7px] font-bold text-violet-400/50">RSI(14)</span>
+                              {rsiData.filter(v => v !== null).length > 0 && <span className="text-[8px] font-mono font-bold text-violet-400">{rsiData.filter(v => v !== null).slice(-1)[0]?.toFixed(1)}</span>}
                             </div>
                           </div>
                         ) : null
@@ -3224,28 +3369,27 @@ function Dashboard() {
                         if (sinyalChartType === 'area' || sinyalChartType === 'mountain' || sinyalChartType === 'step') {
                           const areaType = sinyalChartType === 'step' ? 'stepAfter' : 'monotone'
                           return (
-                            <div className="relative">
-                              <div className="h-[280px] md:h-[320px]">
+                            <div className="relative" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                              <div className="h-[260px] md:h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                  <ComposedChart data={composedData} margin={{ top: 8, right: 55, bottom: 0, left: 5 }}>
+                                  <ComposedChart data={composedData} margin={{ top: 8, right: 52, bottom: 0, left: 0 }}>
                                     <defs>
                                       <linearGradient id={`proGrad-${sinyalChartStock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.6 : 0.3} />
-                                        <stop offset="30%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.4 : 0.15} />
-                                        <stop offset="60%" stopColor={chartColor} stopOpacity={0.06} />
-                                        <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                        <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.45 : 0.15} />
+                                        <stop offset="50%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.25 : 0.06} />
+                                        <stop offset="100%" stopColor={chartColor} stopOpacity={0.02} />
                                       </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.025)" vertical={false} />
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                     <XAxis dataKey="idx" hide />
-                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 9, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={55} />
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={52} />
                                     <YAxis yAxisId="volume" orientation="right" domain={[0, maxVol * 4]} hide />
                                     <ReferenceLine yAxisId="price" y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                                     {/* Volume bars — overlaid */}
                                     {sinyalShowVolume && <Bar yAxisId="volume" dataKey="vol" maxBarSize={6} isAnimationActive={false}
                                       shape={(props: Record<string, unknown>) => {
                                         const { x, y, width, height, payload } = props as { x: number; y: number; width: number; height: number; payload: { volUp: boolean } }
-                                        return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={payload.volUp ? 'rgba(52,211,153,0.12)' : 'rgba(248,113,113,0.12)'} rx={0.5} />
+                                        return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={payload.volUp ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'} />
                                       }} />}
                                     {/* Bollinger Bands */}
                                     {sinyalShowBB && <>
@@ -3256,24 +3400,23 @@ function Dashboard() {
                                     {sinyalShowMA7 && <Line yAxisId="price" type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA25 && <Line yAxisId="price" type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA99 && <Line yAxisId="price" type="monotone" dataKey="ma99" stroke="#c084fc" strokeWidth={0.8} dot={false} activeDot={false} connectNulls />}
-                                    {/* Glow line underneath */}
-                                    <Line yAxisId="price" type={areaType} dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} connectNulls />
-                                    <Area yAxisId="price" type={areaType} dataKey="value" stroke={chartColor} fill={`url(#proGrad-${sinyalChartStock.id})`} strokeWidth={sinyalChartType === 'mountain' ? 0 : 2}
+                                    {/* Main area */}
+                                    <Area yAxisId="price" type={areaType} dataKey="value" stroke={chartColor} fill={`url(#proGrad-${sinyalChartStock.id})`} strokeWidth={sinyalChartType === 'mountain' ? 0 : 1.5}
                                       dot={(props: Record<string, unknown>) => {
                                         const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                         if (index !== composedData.length - 1) return <g key={String(index)} />
                                         return (
                                           <g key="pro-dot">
-                                            <circle cx={cx} cy={cy} r={8} fill={chartColor} opacity={0.12}>
-                                              <animate attributeName="r" values="8;14;8" dur="2s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="0.12;0;0.12" dur="2s" repeatCount="indefinite" />
+                                            <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.1}>
+                                              <animate attributeName="r" values="5;10;5" dur="2s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="0.1;0;0.1" dur="2s" repeatCount="indefinite" />
                                             </circle>
-                                            <circle cx={cx} cy={cy} r={3.5} fill={chartColor} stroke="#0d1117" strokeWidth={2} />
+                                            <circle cx={cx} cy={cy} r={2.5} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
                                           </g>
                                         )
                                       }}
-                                      activeDot={{ r: 4, fill: chartColor, stroke: '#0d1117', strokeWidth: 2 }}
-                                      isAnimationActive={true} animationDuration={400} />
+                                      activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
+                                      isAnimationActive={true} animationDuration={800} />
                                   </ComposedChart>
                                 </ResponsiveContainer>
                               </div>
@@ -3285,29 +3428,28 @@ function Dashboard() {
                         // Line chart — ComposedChart with volume overlay
                         if (sinyalChartType === 'line') {
                           return (
-                            <div className="relative">
-                              <div className="h-[280px] md:h-[320px]">
+                            <div className="relative" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                              <div className="h-[260px] md:h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                  <ComposedChart data={composedData} margin={{ top: 8, right: 55, bottom: 0, left: 5 }}>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.025)" vertical={false} />
+                                  <ComposedChart data={composedData} margin={{ top: 8, right: 52, bottom: 0, left: 0 }}>
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                     <XAxis dataKey="idx" hide />
-                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 9, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={55} />
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={52} />
                                     <YAxis yAxisId="volume" orientation="right" domain={[0, maxVol * 4]} hide />
                                     <ReferenceLine yAxisId="price" y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                                     {/* Volume bars — overlaid */}
                                     {sinyalShowVolume && <Bar yAxisId="volume" dataKey="vol" maxBarSize={6} isAnimationActive={false}
                                       shape={(props: Record<string, unknown>) => {
                                         const { x, y, width, height, payload } = props as { x: number; y: number; width: number; height: number; payload: { volUp: boolean } }
-                                        return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={payload.volUp ? 'rgba(52,211,153,0.12)' : 'rgba(248,113,113,0.12)'} rx={0.5} />
+                                        return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={payload.volUp ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'} />
                                       }} />}
                                     {sinyalShowMA7 && <Line yAxisId="price" type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA25 && <Line yAxisId="price" type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA99 && <Line yAxisId="price" type="monotone" dataKey="ma99" stroke="#c084fc" strokeWidth={0.8} dot={false} activeDot={false} connectNulls />}
-                                    {/* Glow line underneath */}
-                                    <Line yAxisId="price" type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
-                                    <Line yAxisId="price" type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
-                                      activeDot={{ r: 4, fill: chartColor, stroke: '#0d1117', strokeWidth: 2 }}
-                                      isAnimationActive={true} animationDuration={400} />
+                                    {/* Main line */}
+                                    <Line yAxisId="price" type="monotone" dataKey="value" stroke={chartColor} strokeWidth={1.5} dot={false}
+                                      activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
+                                      isAnimationActive={true} animationDuration={800} connectNulls />
                                   </ComposedChart>
                                 </ResponsiveContainer>
                               </div>
@@ -3320,32 +3462,32 @@ function Dashboard() {
                         if (sinyalChartType === 'bar' || sinyalChartType === 'histogram') {
                           const barComposedData = composedData.map((d, i) => ({
                             ...d,
-                            barFill: i > 0 && d.value >= composedData[i - 1].value ? '#34d399' : '#f87171'
+                            barFill: i > 0 && d.value >= composedData[i - 1].value ? '#22c55e' : '#ef4444'
                           }))
                           return (
-                            <div className="relative">
-                              <div className="h-[280px] md:h-[320px]">
+                            <div className="relative" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                              <div className="h-[260px] md:h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                  <ComposedChart data={barComposedData} margin={{ top: 8, right: 55, bottom: 0, left: 5 }}>
-                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.025)" vertical={false} />
+                                  <ComposedChart data={barComposedData} margin={{ top: 8, right: 52, bottom: 0, left: 0 }}>
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                     <XAxis dataKey="idx" hide />
-                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 9, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={55} />
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={52} />
                                     <YAxis yAxisId="volume" orientation="right" domain={[0, maxVol * 4]} hide />
                                     <ReferenceLine yAxisId="price" y={sinyalChartStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                                     {/* Volume bars — overlaid */}
                                     {sinyalShowVolume && <Bar yAxisId="volume" dataKey="vol" maxBarSize={6} isAnimationActive={false}
                                       shape={(props: Record<string, unknown>) => {
                                         const { x, y, width, height, payload } = props as { x: number; y: number; width: number; height: number; payload: { volUp: boolean } }
-                                        return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={payload.volUp ? 'rgba(52,211,153,0.12)' : 'rgba(248,113,113,0.12)'} rx={0.5} />
+                                        return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={payload.volUp ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'} />
                                       }} />}
                                     {/* MA Lines */}
                                     {sinyalShowMA7 && <Line yAxisId="price" type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {sinyalShowMA25 && <Line yAxisId="price" type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                                     {/* Price bars */}
-                                    <Bar yAxisId="price" dataKey="value" radius={[1.5, 1.5, 0, 0]} isAnimationActive={true} animationDuration={400} maxBarSize={sinyalChartType === 'histogram' ? 4 : 10}
+                                    <Bar yAxisId="price" dataKey="value" radius={[1, 1, 0, 0]} isAnimationActive={true} animationDuration={800} maxBarSize={sinyalChartType === 'histogram' ? 4 : 10}
                                       shape={(props: Record<string, unknown>) => {
                                         const { x, y, width, height, payload } = props as { x: number; y: number; width: number; height: number; payload: { barFill: string } }
-                                        return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={payload.barFill} rx={1} opacity={0.85} />
+                                        return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={payload.barFill} opacity={0.85} />
                                       }} />
                                   </ComposedChart>
                                 </ResponsiveContainer>
@@ -5524,9 +5666,13 @@ function Dashboard() {
                         const maxP = Math.max(...allPrices)
                         const rangeP = maxP - minP || 1
                         const totalCandles = candles.length
-                        const candleW = Math.max(2, Math.floor(120 / totalCandles))
-                        const gapW = Math.max(1, Math.floor(40 / totalCandles))
-                        const svgW = totalCandles * (candleW + gapW) + gapW * 2
+                        const svgW = totalCandles * 12 + 44
+                        const priceH = 120
+                        const padding = { top: 6, bottom: 6, left: 4, right: 40 }
+                        const drawW = svgW - padding.left - padding.right
+                        const candleSpacing = drawW / totalCandles
+                        const candleW = Math.max(3, Math.floor(candleSpacing * 0.6))
+                        const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
                         // MA for SVG candles
                         const cma7 = computeMA(chartData, 7)
                         const cma25 = computeMA(chartData, 25)
@@ -5534,51 +5680,62 @@ function Dashboard() {
                         const ma25Pts: string[] = []
                         const stX = svgW / chartData.length
                         chartData.forEach((d, i) => {
-                          if (cma7[i] !== null) ma7Pts.push(`${i * stX},${110 - ((cma7[i]! - minP) / rangeP) * 96 + 6}`)
-                          if (cma25[i] !== null) ma25Pts.push(`${i * stX},${110 - ((cma25[i]! - minP) / rangeP) * 96 + 6}`)
+                          if (cma7[i] !== null) ma7Pts.push(`${i * stX},${priceToY(cma7[i]!)}`)
+                          if (cma25[i] !== null) ma25Pts.push(`${i * stX},${priceToY(cma25[i]!)}`)
                         })
                         return (
-                          <svg className="w-full h-full" viewBox={`0 0 ${svgW} 120`} preserveAspectRatio="none">
-                            <defs>
-                              <filter id="candleGlowModal" x="-20%" y="-20%" width="140%" height="140%">
-                                <feGaussianBlur stdDeviation="1.5" result="blur" />
-                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                              </filter>
-                            </defs>
-                            {/* Grid */}
-                            {[0, 1, 2, 3].map(gi => (
-                              <line key={`mg${gi}`} x1="0" y1={6 + gi * 28} x2={svgW} y2={6 + gi * 28} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                            ))}
+                          <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid meet">
+                            {/* Grid — dashed horizontal */}
+                            {[0, 1, 2, 3].map(gi => {
+                              const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 4)
+                              return <line key={`mgh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
+                            })}
+                            {/* Price labels */}
+                            {[0, 2, 4].map(gi => {
+                              const price = maxP - (gi / 4) * rangeP
+                              const y = priceToY(price)
+                              return (
+                                <g key={`mp${gi}`}>
+                                  <rect x={svgW - padding.right + 2} y={y - 3.5} width={padding.right - 4} height="7" rx="1.5" fill="rgba(255,255,255,0.04)" />
+                                  <text x={svgW - 2} y={y + 2} textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="5" fontFamily="monospace" fontWeight="500">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                </g>
+                              )
+                            })}
                             {candles.map((c, i) => {
-                              const x = gapW + i * (candleW + gapW)
-                              const yH = 6 + ((maxP - c.high) / rangeP) * 96
-                              const yL = 6 + ((maxP - c.low) / rangeP) * 96
-                              const yO = 6 + ((maxP - c.open) / rangeP) * 96
-                              const yC = 6 + ((maxP - c.close) / rangeP) * 96
+                              const cx = padding.left + i * candleSpacing + candleSpacing / 2
+                              const x = cx - candleW / 2
+                              const yH = priceToY(c.high)
+                              const yL = priceToY(c.low)
+                              const yO = priceToY(c.open)
+                              const yC = priceToY(c.close)
                               const isGreen = c.close >= c.open
                               const bodyTop = Math.min(yO, yC)
                               const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                               const isHollow = sinyalChartType === 'hollow'
                               const isLast = i === totalCandles - 1
+                              const fillColor = isGreen ? '#22c55e' : '#ef4444'
                               return (
-                                <g key={i} opacity={isLast ? 1 : 0.8} filter={isLast ? 'url(#candleGlowModal)' : undefined}>
-                                  <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" />
+                                <g key={i} opacity={isLast ? 1 : 0.9}>
+                                  <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
                                   {isHollow ? (
-                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : '#f87171'} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.6" rx="0.3" />
+                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? 'transparent' : fillColor} stroke={fillColor} strokeWidth="0.6" rx="0.5" />
                                   ) : (
-                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.3" />
+                                    <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="0.5" />
                                   )}
                                   {isLast && (
-                                    <circle cx={x + candleW / 2} cy={yC} r="2.5" fill={isGreen ? '#34d399' : '#f87171'}>
-                                      <animate attributeName="r" values="2.5;4.5;2.5" dur="1.5s" repeatCount="indefinite" />
-                                      <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
-                                    </circle>
+                                    <>
+                                      <circle cx={cx} cy={yC} r="2" fill={fillColor}>
+                                        <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                                        <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
+                                      </circle>
+                                      <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
+                                    </>
                                   )}
                                 </g>
                               )
                             })}
-                            {sinyalShowMA7 && ma7Pts.length > 1 && <><polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="2" opacity="0.1" /><polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="0.8" opacity="0.7" /></>}
-                            {sinyalShowMA25 && ma25Pts.length > 1 && <><polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="2" opacity="0.1" /><polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="0.8" opacity="0.7" /></>}
+                            {sinyalShowMA7 && ma7Pts.length > 1 && <polyline points={ma7Pts.join(' ')} fill="none" stroke="#fbbf24" strokeWidth="0.8" opacity="0.6" />}
+                            {sinyalShowMA25 && ma25Pts.length > 1 && <polyline points={ma25Pts.join(' ')} fill="none" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />}
                           </svg>
                         )
                       }
@@ -5588,37 +5745,35 @@ function Dashboard() {
                         return (
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={enrichedData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
-                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
+                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                               <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
                               <ReferenceLine y={selectedSinyalStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                               {sinyalShowMA7 && <Line type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                               {sinyalShowMA25 && <Line type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
-                              {/* Glow line */}
-                              <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={5} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
-                              <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                              <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={1.5} dot={false}
                                 activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
-                                isAnimationActive={true} animationDuration={400} />
-                              <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                isAnimationActive={true} animationDuration={800} connectNulls />
+                              <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
                             </LineChart>
                           </ResponsiveContainer>
                         )
                       }
 
                       if (sinyalChartType === 'bar' || sinyalChartType === 'histogram') {
-                        const barData = chartData.map((d, i) => ({ idx: d.idx, value: d.value, fill: i > 0 && d.value >= chartData[i - 1].value ? '#34d399' : '#f87171' }))
+                        const barData = chartData.map((d, i) => ({ idx: d.idx, value: d.value, fill: i > 0 && d.value >= chartData[i - 1].value ? '#22c55e' : '#ef4444' }))
                         return (
                           <ResponsiveContainer width="100%" height="100%">
                             <ReBarChart data={barData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
-                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
+                              <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                               <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
-                              <Bar dataKey="value" radius={[1, 1, 0, 0]} maxBarSize={sinyalChartType === 'histogram' ? 3 : 8} isAnimationActive={true} animationDuration={400}
+                              <Bar dataKey="value" radius={[1, 1, 0, 0]} maxBarSize={sinyalChartType === 'histogram' ? 3 : 8} isAnimationActive={true} animationDuration={800}
                                 shape={(props: Record<string, unknown>) => {
                                   const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
-                                  return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.85} />
+                                  return <rect x={x} y={y} width={Math.max(width, 1)} height={Math.max(height, 0.5)} fill={_fill} opacity={0.85} />
                                 }}>
                                 {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
                               </Bar>
-                              <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                              <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
                             </ReBarChart>
                           </ResponsiveContainer>
                         )
@@ -5631,36 +5786,33 @@ function Dashboard() {
                           <AreaChart data={enrichedData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
                             <defs>
                               <linearGradient id="sinyalModalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.6 : 0.3} />
-                                <stop offset="30%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.35 : 0.15} />
-                                <stop offset="60%" stopColor={chartColor} stopOpacity="0.05" />
-                                <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                <stop offset="0%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.45 : 0.15} />
+                                <stop offset="50%" stopColor={chartColor} stopOpacity={sinyalChartType === 'mountain' ? 0.25 : 0.06} />
+                                <stop offset="100%" stopColor={chartColor} stopOpacity={0.02} />
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" />
+                            <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                             <XAxis dataKey="idx" hide /><YAxis hide domain={domain} />
                             <ReferenceLine y={selectedSinyalStock.price} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
                             {sinyalShowMA7 && <Line type="monotone" dataKey="ma7" stroke="#fbbf24" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
                             {sinyalShowMA25 && <Line type="monotone" dataKey="ma25" stroke="#60a5fa" strokeWidth={1} dot={false} activeDot={false} connectNulls />}
-                            {/* Glow line */}
-                            <Line type={areaType} dataKey="value" stroke={chartColor} strokeWidth={5} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} connectNulls />
-                            <Area type={areaType} dataKey="value" stroke={sinyalChartType === 'mountain' ? 'none' : chartColor} fill="url(#sinyalModalGrad)" strokeWidth={2}
+                            <Area type={areaType} dataKey="value" stroke={sinyalChartType === 'mountain' ? 'none' : chartColor} fill="url(#sinyalModalGrad)" strokeWidth={1.5}
                               dot={(props: Record<string, unknown>) => {
                                 const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                 if (index !== enrichedData.length - 1) return <g key={String(index)} />
                                 return (
                                   <g key="sinyal-dot">
-                                    <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.15}>
+                                    <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.1}>
                                       <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite" />
-                                      <animate attributeName="opacity" values="0.15;0;0.15" dur="2s" repeatCount="indefinite" />
+                                      <animate attributeName="opacity" values="0.1;0;0.1" dur="2s" repeatCount="indefinite" />
                                     </circle>
                                     <circle cx={cx} cy={cy} r={2.5} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
                                   </g>
                                 )
                               }}
                               activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
-                              isAnimationActive={true} animationDuration={400} />
-                            <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                              isAnimationActive={true} animationDuration={800} />
+                            <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
                           </AreaChart>
                         </ResponsiveContainer>
                       )
@@ -6175,43 +6327,62 @@ function Dashboard() {
                             const maxP = Math.max(...allPrices)
                             const rangeP = maxP - minP || 1
                             const totalCandles = candles.length
-                            const candleW = Math.max(6, Math.floor(260 / totalCandles))
-                            const gapW = Math.max(3, Math.floor(60 / totalCandles))
-                            const svgW = totalCandles * (candleW + gapW) + gapW * 2
+                            const svgW = 400
+                            const priceH = 196
+                            const padding = { top: 10, bottom: 10, left: 6, right: 46 }
+                            const drawW = svgW - padding.left - padding.right
+                            const candleSpacing = drawW / totalCandles
+                            const candleW = Math.max(6, Math.floor(candleSpacing * 0.6))
+                            const priceToY = (p: number) => padding.top + ((maxP - p) / rangeP) * (priceH - padding.top - padding.bottom)
                             return (
-                              <svg className="w-full h-full" viewBox={`0 0 400 196`} preserveAspectRatio="xMidYMid slice">
-                                {[0, 1, 2, 3, 4].map(gi => (
-                                  <g key={gi}>
-                                    <line x1="0" y1={10 + gi * 38} x2="400" y2={10 + gi * 38} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                    <text x="396" y={14 + gi * 38} fontSize="5" fill="rgba(255,255,255,0.2)" textAnchor="end" fontFamily="monospace">{formatRupiah(Math.round(maxP - (rangeP / 4) * gi)).replace('Rp', '').trim()}</text>
-                                  </g>
-                                ))}
-                                <line x1="0" y1={8 + ((maxP - lastValue) / rangeP) * 176} x2="400" y2={8 + ((maxP - lastValue) / rangeP) * 176} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.4" />
+                              <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid meet">
+                                {/* Grid — dashed horizontal + vertical */}
+                                {[0, 1, 2, 3, 4].map(gi => {
+                                  const y = padding.top + gi * ((priceH - padding.top - padding.bottom) / 4)
+                                  return <line key={`gh${gi}`} x1={padding.left} y1={y} x2={svgW - padding.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,4" />
+                                })}
+                                {[0, 1, 2, 3, 4].map(gi => {
+                                  const x = padding.left + gi * (drawW / 4)
+                                  return <line key={`gv${gi}`} x1={x} y1={padding.top} x2={x} y2={priceH - padding.bottom} stroke="rgba(255,255,255,0.025)" strokeWidth="0.5" strokeDasharray="2,6" />
+                                })}
+                                {/* Price labels with pills */}
+                                {[0, 1, 2, 3, 4].map(gi => {
+                                  const price = maxP - (gi / 4) * rangeP
+                                  const y = priceToY(price)
+                                  return (
+                                    <g key={`p${gi}`}>
+                                      <rect x={svgW - padding.right + 2} y={y - 4} width={padding.right - 4} height="8" rx="2" fill="rgba(255,255,255,0.04)" />
+                                      <text x={svgW - 2} y={y + 2.5} textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="5" fontFamily="monospace" fontWeight="500">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                    </g>
+                                  )
+                                })}
+                                {/* Current price line with pill */}
+                                <line x1={padding.left} y1={priceToY(lastValue)} x2={svgW - padding.right} y2={priceToY(lastValue)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.35" />
+                                <rect x={svgW - padding.right + 1} y={priceToY(lastValue) - 5} width={padding.right - 2} height="10" rx="3" fill={chartColor} opacity="0.85" />
+                                <text x={svgW - padding.right + 2 + (padding.right - 6) / 2} y={priceToY(lastValue) + 2.5} textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="700">{formatRupiah(lastValue).replace('Rp', '').trim()}</text>
                                 {candles.map((c, i) => {
-                                  const cw = Math.max(3, Math.floor((400 - 16) / totalCandles * 0.7))
-                                  const gw = Math.max(1, Math.floor((400 - 16) / totalCandles * 0.3))
-                                  const x = 8 + i * (cw + gw)
-                                  const yH = 8 + ((maxP - c.high) / rangeP) * 176
-                                  const yL = 8 + ((maxP - c.low) / rangeP) * 176
-                                  const yO = 8 + ((maxP - c.open) / rangeP) * 176
-                                  const yC = 8 + ((maxP - c.close) / rangeP) * 176
+                                  const cx = padding.left + i * candleSpacing + candleSpacing / 2
+                                  const x = cx - candleW / 2
+                                  const yH = priceToY(c.high)
+                                  const yL = priceToY(c.low)
+                                  const yO = priceToY(c.open)
+                                  const yC = priceToY(c.close)
                                   const isGreen = c.close >= c.open
                                   const bodyTop = Math.min(yO, yC)
                                   const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                                   const isLast = i === totalCandles - 1
+                                  const fillColor = isGreen ? '#22c55e' : '#ef4444'
                                   return (
-                                    <g key={i} opacity={isLast ? 1 : 0.8}>
-                                      <line x1={x + cw / 2} y1={yH} x2={x + cw / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" />
-                                      <rect x={x} y={bodyTop} width={cw} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.5" />
+                                    <g key={i} opacity={isLast ? 1 : 0.9}>
+                                      <line x1={cx} y1={yH} x2={cx} y2={yL} stroke={fillColor} strokeWidth="0.8" opacity={isLast ? 1 : 0.7} />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={fillColor} rx="1" />
                                       {isLast && (
                                         <>
-                                          <circle cx={x + cw / 2} cy={yC} r="3" fill={isGreen ? '#34d399' : '#f87171'}>
-                                            <animate attributeName="r" values="3;6;3" dur="1.5s" repeatCount="indefinite" />
-                                            <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                                          <circle cx={cx} cy={yC} r="2" fill={fillColor}>
+                                            <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.5s" repeatCount="indefinite" />
                                           </circle>
-                                          <line x1={x + cw + 1} y1={yC} x2="400" y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
-                                          <rect x="350" y={yC - 5} width="48" height="10" rx="2" fill={isGreen ? 'rgba(5,150,105,0.9)' : 'rgba(220,38,38,0.9)'} />
-                                          <text x="374" y={yC + 2.5} fontSize="4.5" fill="white" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
+                                          <circle cx={cx} cy={yC} r="1.5" fill={fillColor} />
                                         </>
                                       )}
                                     </g>
@@ -6226,22 +6397,22 @@ function Dashboard() {
                             const barData = chartData.map((d, i) => ({
                               idx: d.idx,
                               value: d.value,
-                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#34d399' : '#f87171'
+                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#22c55e' : '#ef4444'
                             }))
                             return (
                               <ResponsiveContainer width="100%" height="100%">
                                 <ReBarChart data={barData} margin={{ top: 5, right: 45, bottom: 0, left: 5 }}>
-                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                   <XAxis dataKey="idx" hide />
                                   <YAxis hide domain={domain} />
-                                  <Bar dataKey="value" radius={[1.5, 1.5, 0, 0]} maxBarSize={10} isAnimationActive={true} animationDuration={400}
+                                  <Bar dataKey="value" radius={[1, 1, 0, 0]} maxBarSize={10} isAnimationActive={true} animationDuration={800}
                                     shape={(props: Record<string, unknown>) => {
                                       const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
-                                      return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.85} />
+                                      return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={_fill} opacity={0.85} />
                                     }}>
                                     {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
                                   </Bar>
-                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
+                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
                                 </ReBarChart>
                               </ResponsiveContainer>
                             )
@@ -6252,15 +6423,14 @@ function Dashboard() {
                             return (
                               <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={chartData} margin={{ top: 5, right: 45, bottom: 0, left: 5 }}>
-                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                   <XAxis dataKey="idx" hide />
                                   <YAxis hide domain={domain} />
                                   <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
-                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={1.5} dot={false}
                                     activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
-                                    isAnimationActive={true} animationDuration={400} />
-                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
+                                    isAnimationActive={true} animationDuration={800} />
+                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
                                 </LineChart>
                               </ResponsiveContainer>
                             )
@@ -6272,33 +6442,32 @@ function Dashboard() {
                               <AreaChart data={chartData} margin={{ top: 5, right: 45, bottom: 0, left: 5 }}>
                                 <defs>
                                   <linearGradient id={`investDetailGrad-${selectedDetailProduct.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
-                                    <stop offset="40%" stopColor={chartColor} stopOpacity="0.12" />
-                                    <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.15" />
+                                    <stop offset="50%" stopColor={chartColor} stopOpacity="0.06" />
+                                    <stop offset="100%" stopColor={chartColor} stopOpacity="0.02" />
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" horizontal vertical={false} />
                                 <XAxis dataKey="idx" hide />
                                 <YAxis hide domain={domain} />
                                 <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.25} />
-                                <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
-                                <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investDetailGrad-${selectedDetailProduct.id})`} strokeWidth={2}
+                                <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investDetailGrad-${selectedDetailProduct.id})`} strokeWidth={1.5}
                                   dot={(props: Record<string, unknown>) => {
                                     const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                     if (index !== chartData.length - 1) return <g key={String(index)} />
                                     return (
                                       <g key={`invest-detail-dot-${selectedDetailProduct.id}`}>
-                                        <circle cx={cx} cy={cy} r={6} fill={chartColor} opacity={0.12}>
-                                          <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="0.12;0;0.12" dur="2s" repeatCount="indefinite" />
+                                        <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.1}>
+                                          <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.1;0;0.1" dur="2s" repeatCount="indefinite" />
                                         </circle>
-                                        <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
+                                        <circle cx={cx} cy={cy} r={2.5} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
                                       </g>
                                     )
                                   }}
                                   activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
-                                  isAnimationActive={true} animationDuration={400} />
-                                <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
+                                  isAnimationActive={true} animationDuration={800} />
+                                <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
                               </AreaChart>
                             </ResponsiveContainer>
                           )
