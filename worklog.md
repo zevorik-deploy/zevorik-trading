@@ -219,3 +219,32 @@ Stage Summary:
 - Volume integrated into same chart (not separate div)
 - All 8 chart types + all indicators + RSI working
 - Much cleaner, more organized appearance
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Redesign Invest/Pasar Saham product charts - dark theme, professional, larger
+
+Work Log:
+- Analyzed user screenshot showing ugly Invest chart (h-24, gray bg, distorted candlesticks)
+- Replaced the entire Invest product card chart section with professional dark theme
+- New chart: Dark background (#0d1117), rounded-xl container, border glow
+- Added chart header with LIVE indicator and professional pill-style controls
+- Chart type selector: Candle/Area/Line/Bar with emerald active state
+- Timeframe selector: 1H/1D/1W/1M/ALL
+- Gradient separator line matching chart direction
+- Chart height increased from h-24 (96px) to h-[160px] — much larger and more readable
+- Candlestick chart: Fixed viewBox 400px, preserveAspectRatio="xMidYMid slice", price labels, current price line, price tag on last candle
+- Area chart: Multi-stop gradient fill, glow line underneath, animated dot, right-side price axis
+- Line chart: Dual-stroke glow effect, right-side price axis, reference line
+- Bar chart: Color-coded bars, right-side price axis
+- Also upgraded Invest Detail Modal chart to same dark professional theme
+- Modal chart controls: Professional pill buttons replacing emoji buttons
+- Modal candlestick: Fixed viewBox, dark grid, price labels
+- Modal Recharts: Dark CartesianGrid, glow lines, price YAxis
+- Lint passes, dev server compiles
+
+Stage Summary:
+- Invest product cards now have professional dark-themed charts matching Sinyal Pro style
+- Charts are 67% larger (160px vs 96px), no distortion
+- Consistent dark theme across all chart sections (Sinyal Pro + Invest cards + Invest modal)

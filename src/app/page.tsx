@@ -2535,179 +2535,192 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Chart Controls */}
-                      <div className="px-3 py-0.5">
-                        <div className="flex items-center justify-between">
-                          {/* Chart Type Selector */}
-                          <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
-                            {([
-                              { type: 'area' as const, icon: ' area', label: 'Area' },
-                              { type: 'line' as const, icon: ' line', label: 'Line' },
-                              { type: 'candle' as const, icon: ' candle', label: 'Candle' },
-                              { type: 'bar' as const, icon: ' bar', label: 'Bar' },
-                            ]).map(ct => (
-                              <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investChartType === ct.type ? 'bg-white shadow-sm text-gs-green3' : 'text-gs-muted hover:text-gs-text'}`}>
-                                {ct.label}
-                              </button>
-                            ))}
+                      {/* Professional Dark Chart Section */}
+                      <div className="mx-3 mt-2 rounded-xl overflow-hidden" style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        {/* Chart Header — controls row */}
+                        <div className="flex items-center justify-between px-2.5 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full animate-pulse" style={{ backgroundColor: isUp ? '#34d399' : '#f87171' }} />
+                            <span className="text-[6px] font-black" style={{ color: isUp ? '#34d399' : '#f87171' }}>LIVE</span>
+                            <span className="text-[6px] font-bold text-gray-600 ml-1">MARKET</span>
                           </div>
-                          {/* Timeframe Selector */}
-                          <div className="flex items-center gap-0.5">
-                            {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
-                              <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:text-gs-text hover:bg-gray-100'}`}>
-                                {tf}
-                              </button>
-                            ))}
+                          <div className="flex items-center gap-1.5">
+                            {/* Chart Type Selector — pill style */}
+                            <div className="flex items-center rounded-md p-0.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              {(['candle', 'area', 'line', 'bar'] as const).map(ct => (
+                                <button key={ct} onClick={() => setInvestChartType(ct)}
+                                  className={`h-4 px-1.5 rounded text-[6px] font-bold transition-all duration-200 ${investChartType === ct ? '' : 'opacity-40 hover:opacity-70'}`}
+                                  style={investChartType === ct ? { background: 'rgba(5,150,105,0.3)', color: '#34d399' } : { color: '#9ca3af' }}>
+                                  {ct.charAt(0).toUpperCase() + ct.slice(1)}
+                                </button>
+                              ))}
+                            </div>
+                            {/* Timeframe Selector */}
+                            <div className="flex items-center gap-0.5">
+                              {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
+                                <button key={tf} onClick={() => setInvestTimeframe(tf)}
+                                  className={`h-4 px-1 rounded text-[6px] font-bold transition-all ${investTimeframe === tf ? '' : 'opacity-40 hover:opacity-70'}`}
+                                  style={investTimeframe === tf ? { background: 'rgba(5,150,105,0.3)', color: '#34d399' } : { color: '#9ca3af' }}>
+                                  {tf}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <div className="flex items-center gap-1">
-                            <BarChart3 className="w-2.5 h-2.5 text-gs-muted" />
-                            <span className="text-[7px] font-bold text-gs-muted uppercase tracking-wider">PERGERAKAN MARKET</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[6px] font-black text-emerald-600">LIVE</span>
-                          </div>
-                        </div>
-                      </div>
+                        {/* Gradient separator */}
+                        <div className="h-px" style={{ background: isUp ? 'linear-gradient(90deg, transparent, rgba(52,211,153,0.2), transparent)' : 'linear-gradient(90deg, transparent, rgba(248,113,113,0.2), transparent)' }} />
 
-                      {/* Live Chart */}
-                      <div className="px-3 py-1">
-                        <div className="h-24 w-full relative bg-gray-50 rounded-lg border border-gs-line/50 overflow-hidden">
+                        {/* Chart Area */}
+                        <div className="h-[160px] px-1 py-2" style={{ background: '#0d1117' }}>
                           {chartData.length > 2 ? (() => {
-                              const values = chartData.map(d => d.value)
-                              const minV = Math.min(...values)
-                              const maxV = Math.max(...values)
-                              const rangeV = maxV - minV || 1
-                              const domain: [number, number] = [Math.floor(minV - rangeV * 0.1), Math.ceil(maxV + rangeV * 0.1)]
+                            const values = chartData.map(d => d.value)
+                            const minV = Math.min(...values)
+                            const maxV = Math.max(...values)
+                            const rangeV = maxV - minV || 1
+                            const domain: [number, number] = [Math.floor(minV - rangeV * 0.08), Math.ceil(maxV + rangeV * 0.08)]
 
-                              // Candlestick chart
-                              if (investChartType === 'candle') {
-                                const candles = getCandleData(chartData)
-                                if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[8px] text-gs-muted">Data kurang...</div>
-                                const allPrices = candles.flatMap(c => [c.high, c.low])
-                                const minP = Math.min(...allPrices)
-                                const maxP = Math.max(...allPrices)
-                                const rangeP = maxP - minP || 1
-                                const candleDomain: [number, number] = [Math.floor(minP - rangeP * 0.1), Math.ceil(maxP + rangeP * 0.1)]
-                                const totalCandles = candles.length
-                                const candleW = Math.max(4, Math.floor(140 / totalCandles))
-                                const gapW = Math.max(2, Math.floor(40 / totalCandles))
-                                const svgW = totalCandles * (candleW + gapW) + gapW * 2
-                                return (
-                                  <svg className="w-full h-full" viewBox={`0 0 ${svgW} 88`} preserveAspectRatio="none">
-                                    {[0, 1, 2, 3].map(gi => (
-                                      <line key={gi} x1="0" y1={8 + gi * 20} x2={svgW} y2={8 + gi * 20} stroke="#e5e7eb" strokeWidth="0.4" strokeDasharray="3,3" />
-                                    ))}
-                                    {candles.map((c, i) => {
-                                      const x = gapW + i * (candleW + gapW)
-                                      const yH = 6 + ((maxP - c.high) / rangeP) * 72
-                                      const yL = 6 + ((maxP - c.low) / rangeP) * 72
-                                      const yO = 6 + ((maxP - c.open) / rangeP) * 72
-                                      const yC = 6 + ((maxP - c.close) / rangeP) * 72
-                                      const isGreen = c.close >= c.open
-                                      const bodyTop = Math.min(yO, yC)
-                                      const bodyH = Math.max(Math.abs(yO - yC), 1.5)
-                                      const isLast = i === totalCandles - 1
-                                      return (
-                                        <g key={i} opacity={isLast ? 1 : 0.7}>
-                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth="1.2" />
-                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#059669' : '#ef4444'} rx="0.8" />
-                                          {isLast && (
-                                            <>
-                                              <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#059669' : '#ef4444'}>
-                                                <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
-                                                <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
-                                              </circle>
-                                              <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
-                                            </>
-                                          )}
-                                        </g>
-                                      )
-                                    })}
-                                  </svg>
-                                )
-                              }
+                            // Candlestick chart
+                            if (investChartType === 'candle') {
+                              const candles = getCandleData(chartData)
+                              if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[8px] text-gray-500">Memuat...</div>
+                              const allPrices = candles.flatMap(c => [c.high, c.low])
+                              const minP = Math.min(...allPrices)
+                              const maxP = Math.max(...allPrices)
+                              const rangeP = maxP - minP || 1
+                              const totalCandles = candles.length
+                              const svgW = 400
+                              const priceH = 130
+                              const candleW = Math.max(3, Math.floor((svgW - 16) / totalCandles * 0.7))
+                              const gapW = Math.max(1, Math.floor((svgW - 16) / totalCandles * 0.3))
+                              return (
+                                <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${priceH}`} preserveAspectRatio="xMidYMid slice">
+                                  {/* Grid lines */}
+                                  {[0, 1, 2, 3, 4].map(gi => (
+                                    <line key={gi} x1="0" y1={8 + gi * (priceH / 5)} x2={svgW} y2={8 + gi * (priceH / 5)} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                  ))}
+                                  {/* Price labels */}
+                                  {[0, 2, 4].map(gi => {
+                                    const price = maxP - (gi / 5) * rangeP
+                                    return <text key={gi} x={svgW - 3} y={8 + gi * (priceH / 5) + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="5" fontFamily="monospace">{formatRupiah(Math.round(price)).replace('Rp', '').trim()}</text>
+                                  })}
+                                  {/* Current price line */}
+                                  <line x1="0" y1={8 + ((maxP - lastValue) / rangeP) * (priceH - 16)} x2={svgW} y2={8 + ((maxP - lastValue) / rangeP) * (priceH - 16)} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.4" />
+                                  {/* Candles */}
+                                  {candles.map((c, i) => {
+                                    const x = 8 + i * (candleW + gapW)
+                                    const yH = 8 + ((maxP - c.high) / rangeP) * (priceH - 16)
+                                    const yL = 8 + ((maxP - c.low) / rangeP) * (priceH - 16)
+                                    const yO = 8 + ((maxP - c.open) / rangeP) * (priceH - 16)
+                                    const yC = 8 + ((maxP - c.close) / rangeP) * (priceH - 16)
+                                    const isGreen = c.close >= c.open
+                                    const bodyTop = Math.min(yO, yC)
+                                    const bodyH = Math.max(Math.abs(yO - yC), 1.5)
+                                    const isLast = i === totalCandles - 1
+                                    return (
+                                      <g key={i} opacity={isLast ? 1 : 0.8}>
+                                        <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" opacity={isLast ? 1 : 0.6} />
+                                        <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.5" />
+                                        {isLast && (
+                                          <>
+                                            <circle cx={x + candleW / 2} cy={yC} r="3" fill={isGreen ? '#34d399' : '#f87171'}>
+                                              <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
+                                              <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                                            </circle>
+                                            <line x1={x + candleW + 1} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
+                                            <rect x={svgW - 50} y={yC - 5} width="48" height="10" rx="2" fill={isGreen ? 'rgba(5,150,105,0.9)' : 'rgba(220,38,38,0.9)'} />
+                                            <text x={svgW - 26} y={yC + 2.5} textAnchor="middle" fill="white" fontSize="4.5" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
+                                          </>
+                                        )}
+                                      </g>
+                                    )
+                                  })}
+                                </svg>
+                              )
+                            }
 
-                              // Bar chart
-                              if (investChartType === 'bar') {
-                                const barData = chartData.map((d, i) => ({
-                                  idx: d.idx,
-                                  value: d.value,
-                                  fill: i > 0 && d.value >= chartData[i - 1].value ? '#059669' : '#ef4444'
-                                }))
-                                return (
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <ReBarChart data={barData} margin={{ top: 2, right: 4, bottom: 2, left: 2 }}>
-                                      <XAxis dataKey="idx" hide />
-                                      <YAxis hide domain={domain} />
-                                      <Bar dataKey="value" radius={[2, 2, 0, 0]} isAnimationActive={true} animationDuration={400}
-                                        shape={(props: Record<string, unknown>) => {
-                                          const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
-                                          return <rect x={x} y={y} width={Math.max(width, 2)} height={Math.max(height, 1)} fill={_fill} rx={2} opacity={0.8} />
-                                        }}>
-                                        {barData.map((entry, index) => (
-                                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                      </Bar>
-                                    </ReBarChart>
-                                  </ResponsiveContainer>
-                                )
-                              }
-
-                              // Line chart
-                              if (investChartType === 'line') {
-                                return (
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
-                                      <XAxis dataKey="idx" hide />
-                                      <YAxis hide domain={domain} />
-                                      <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
-                                        activeDot={false}
-                                        isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                )
-                              }
-
-                              // Area chart (default)
+                            // Bar chart
+                            if (investChartType === 'bar') {
+                              const barData = chartData.map((d, i) => ({
+                                idx: d.idx, value: d.value,
+                                fill: i > 0 && d.value >= chartData[i - 1].value ? '#34d399' : '#f87171'
+                              }))
                               return (
                                 <ResponsiveContainer width="100%" height="100%">
-                                  <AreaChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
-                                    <defs>
-                                      <linearGradient id={`investGrad-${product.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor={chartColor} stopOpacity="0.35" />
-                                        <stop offset="70%" stopColor={chartColor} stopOpacity="0.08" />
-                                        <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
-                                      </linearGradient>
-                                    </defs>
+                                  <ReBarChart data={barData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                                     <XAxis dataKey="idx" hide />
                                     <YAxis hide domain={domain} />
-                                    <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investGrad-${product.id})`} strokeWidth={1.8}
-                                      dot={(props: Record<string, unknown>) => {
-                                        const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                        if (index !== chartData.length - 1) return <g key={String(index)} />
-                                        return (
-                                          <g key={`invest-dot-${product.id}`}>
-                                            <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.2}>
-                                              <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
-                                            </circle>
-                                            <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#fff" strokeWidth={1} />
-                                          </g>
-                                        )
-                                      }}
-                                      activeDot={false}
-                                      isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                                  </AreaChart>
+                                    <Bar dataKey="value" radius={[1.5, 1.5, 0, 0]} maxBarSize={8} isAnimationActive={true} animationDuration={400}
+                                      shape={(props: Record<string, unknown>) => {
+                                        const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
+                                        return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.85} />
+                                      }}>
+                                      {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
+                                    </Bar>
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                  </ReBarChart>
                                 </ResponsiveContainer>
                               )
-                            })() : (
-                              <div className="flex items-center justify-center h-full text-[8px] text-gs-muted">Memuat data...</div>
+                            }
+
+                            // Line chart
+                            if (investChartType === 'line') {
+                              return (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={chartData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
+                                    <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                    <XAxis dataKey="idx" hide />
+                                    <YAxis hide domain={domain} />
+                                    <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
+                                    <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
+                                    <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                                      activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
+                                      isAnimationActive={true} animationDuration={400} />
+                                    <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              )
+                            }
+
+                            // Area chart (default)
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={chartData} margin={{ top: 4, right: 40, bottom: 2, left: 2 }}>
+                                  <defs>
+                                    <linearGradient id={`investGrad-${product.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                      <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
+                                      <stop offset="40%" stopColor={chartColor} stopOpacity="0.12" />
+                                      <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
+                                    </linearGradient>
+                                  </defs>
+                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                  <XAxis dataKey="idx" hide />
+                                  <YAxis hide domain={domain} />
+                                  <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.25} />
+                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
+                                  <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investGrad-${product.id})`} strokeWidth={2}
+                                    dot={(props: Record<string, unknown>) => {
+                                      const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                      if (index !== chartData.length - 1) return <g key={String(index)} />
+                                      return (
+                                        <g key={`invest-dot-${product.id}`}>
+                                          <circle cx={cx} cy={cy} r={6} fill={chartColor} opacity={0.12}>
+                                            <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.12;0;0.12" dur="2s" repeatCount="indefinite" />
+                                          </circle>
+                                          <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
+                                        </g>
+                                      )
+                                    }}
+                                    activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
+                                    isAnimationActive={true} animationDuration={400} />
+                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 7, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={38} />
+                                </AreaChart>
+                              </ResponsiveContainer>
                             )
+                          })() : (
+                            <div className="flex items-center justify-center h-full text-[8px] text-gray-500">Memuat data...</div>
+                          )
                           }
                         </div>
                       </div>
@@ -6115,32 +6128,37 @@ function Dashboard() {
                           {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                         </span>
                       </div>
-                      {/* Chart Type & Timeframe Selectors */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-                          {([
-                            { type: 'area' as const, label: '📈 Area' },
-                            { type: 'line' as const, label: '📉 Line' },
-                            { type: 'candle' as const, label: '🕯️ Candle' },
-                            { type: 'bar' as const, label: '📊 Bar' },
-                          ]).map(ct => (
-                            <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
-                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investChartType === ct.type ? 'bg-white shadow-sm text-gs-green3' : 'text-gs-muted hover:text-gs-text'}`}>
-                              {ct.label}
-                            </button>
-                          ))}
+                      {/* Professional Dark Chart */}
+                      <div className="rounded-xl overflow-hidden" style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        {/* Chart Controls */}
+                        <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: isUp ? '#34d399' : '#f87171' }} />
+                            <span className="text-[7px] font-black" style={{ color: isUp ? '#34d399' : '#f87171' }}>LIVE</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center rounded-md p-0.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              {(['candle', 'area', 'line', 'bar'] as const).map(ct => (
+                                <button key={ct} onClick={() => setInvestChartType(ct)}
+                                  className={`h-5 px-2 rounded text-[7px] font-bold transition-all duration-200 ${investChartType === ct ? '' : 'opacity-40 hover:opacity-70'}`}
+                                  style={investChartType === ct ? { background: 'rgba(5,150,105,0.3)', color: '#34d399' } : { color: '#9ca3af' }}>
+                                  {ct.charAt(0).toUpperCase() + ct.slice(1)}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
+                                <button key={tf} onClick={() => setInvestTimeframe(tf)}
+                                  className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${investTimeframe === tf ? '' : 'opacity-40 hover:opacity-70'}`}
+                                  style={investTimeframe === tf ? { background: 'rgba(5,150,105,0.3)', color: '#34d399' } : { color: '#9ca3af' }}>
+                                  {tf}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-0.5 bg-gray-50 rounded-xl p-1">
-                          {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
-                            <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-gs-muted hover:text-gs-text'}`}>
-                              {tf}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Chart Area */}
-                      <div className="h-56 w-full rounded-2xl bg-gs-soft border border-gs-line p-2 overflow-hidden">
+                        <div className="h-px" style={{ background: isUp ? 'linear-gradient(90deg, transparent, rgba(52,211,153,0.2), transparent)' : 'linear-gradient(90deg, transparent, rgba(248,113,113,0.2), transparent)' }} />
+                        <div className="h-56 px-2 py-2" style={{ background: '#0d1117' }}>
                         {chartData.length > 2 ? (() => {
                           const values = chartData.map(d => d.value)
                           const minV = Math.min(...values)
@@ -6161,36 +6179,39 @@ function Dashboard() {
                             const gapW = Math.max(3, Math.floor(60 / totalCandles))
                             const svgW = totalCandles * (candleW + gapW) + gapW * 2
                             return (
-                              <svg className="w-full h-full" viewBox={`0 0 ${svgW} 196`} preserveAspectRatio="xMidYMid meet">
+                              <svg className="w-full h-full" viewBox={`0 0 400 196`} preserveAspectRatio="xMidYMid slice">
                                 {[0, 1, 2, 3, 4].map(gi => (
                                   <g key={gi}>
-                                    <line x1="0" y1={10 + gi * 38} x2={svgW} y2={10 + gi * 38} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="4,4" />
-                                    <text x="4" y={14 + gi * 38} fontSize="7" fill="#9ca3af">{formatRupiah(Math.round(maxP - (rangeP / 4) * gi))}</text>
+                                    <line x1="0" y1={10 + gi * 38} x2="400" y2={10 + gi * 38} stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                    <text x="396" y={14 + gi * 38} fontSize="5" fill="rgba(255,255,255,0.2)" textAnchor="end" fontFamily="monospace">{formatRupiah(Math.round(maxP - (rangeP / 4) * gi)).replace('Rp', '').trim()}</text>
                                   </g>
                                 ))}
+                                <line x1="0" y1={8 + ((maxP - lastValue) / rangeP) * 176} x2="400" y2={8 + ((maxP - lastValue) / rangeP) * 176} stroke={chartColor} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.4" />
                                 {candles.map((c, i) => {
-                                  const x = gapW + i * (candleW + gapW)
+                                  const cw = Math.max(3, Math.floor((400 - 16) / totalCandles * 0.7))
+                                  const gw = Math.max(1, Math.floor((400 - 16) / totalCandles * 0.3))
+                                  const x = 8 + i * (cw + gw)
                                   const yH = 8 + ((maxP - c.high) / rangeP) * 176
                                   const yL = 8 + ((maxP - c.low) / rangeP) * 176
                                   const yO = 8 + ((maxP - c.open) / rangeP) * 176
                                   const yC = 8 + ((maxP - c.close) / rangeP) * 176
                                   const isGreen = c.close >= c.open
                                   const bodyTop = Math.min(yO, yC)
-                                  const bodyH = Math.max(Math.abs(yO - yC), 2)
+                                  const bodyH = Math.max(Math.abs(yO - yC), 1.5)
                                   const isLast = i === totalCandles - 1
                                   return (
-                                    <g key={i} opacity={isLast ? 1 : 0.75}>
-                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth={isLast ? "2" : "1.5"} />
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#059669' : '#ef4444'} rx="1" />
+                                    <g key={i} opacity={isLast ? 1 : 0.8}>
+                                      <line x1={x + cw / 2} y1={yH} x2={x + cw / 2} y2={yL} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="1" />
+                                      <rect x={x} y={bodyTop} width={cw} height={bodyH} fill={isGreen ? '#34d399' : '#f87171'} rx="0.5" />
                                       {isLast && (
                                         <>
-                                          <circle cx={x + candleW / 2} cy={yC} r="4" fill={isGreen ? '#059669' : '#ef4444'}>
-                                            <animate attributeName="r" values="4;7;4" dur="1.5s" repeatCount="indefinite" />
+                                          <circle cx={x + cw / 2} cy={yC} r="3" fill={isGreen ? '#34d399' : '#f87171'}>
+                                            <animate attributeName="r" values="3;6;3" dur="1.5s" repeatCount="indefinite" />
                                             <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
                                           </circle>
-                                          <line x1={x + candleW + 2} y1={yC} x2={svgW} y2={yC} stroke={isGreen ? '#059669' : '#ef4444'} strokeWidth="1" strokeDasharray="4,3" opacity="0.6" />
-                                          <rect x={svgW - 70} y={yC - 8} width="68" height="16" rx="4" fill={isGreen ? '#059669' : '#ef4444'} />
-                                          <text x={svgW - 36} y={yC + 3} fontSize="8" fill="white" textAnchor="middle" fontWeight="bold">{formatRupiah(c.close)}</text>
+                                          <line x1={x + cw + 1} y1={yC} x2="400" y2={yC} stroke={isGreen ? '#34d399' : '#f87171'} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
+                                          <rect x="350" y={yC - 5} width="48" height="10" rx="2" fill={isGreen ? 'rgba(5,150,105,0.9)' : 'rgba(220,38,38,0.9)'} />
+                                          <text x="374" y={yC + 2.5} fontSize="4.5" fill="white" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{formatRupiah(c.close).replace('Rp', '').trim()}</text>
                                         </>
                                       )}
                                     </g>
@@ -6205,20 +6226,22 @@ function Dashboard() {
                             const barData = chartData.map((d, i) => ({
                               idx: d.idx,
                               value: d.value,
-                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#059669' : '#ef4444'
+                              fill: i > 0 && d.value >= chartData[i - 1].value ? '#34d399' : '#f87171'
                             }))
                             return (
                               <ResponsiveContainer width="100%" height="100%">
-                                <ReBarChart data={barData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                                <ReBarChart data={barData} margin={{ top: 5, right: 45, bottom: 0, left: 5 }}>
+                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                                   <XAxis dataKey="idx" hide />
                                   <YAxis hide domain={domain} />
-                                  <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #e5e7eb' }} />
-                                  <Bar dataKey="value" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={400}>
-                                    {barData.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
+                                  <Bar dataKey="value" radius={[1.5, 1.5, 0, 0]} maxBarSize={10} isAnimationActive={true} animationDuration={400}
+                                    shape={(props: Record<string, unknown>) => {
+                                      const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
+                                      return <rect x={x} y={y} width={Math.max(width, 1.5)} height={Math.max(height, 0.5)} fill={_fill} rx={1} opacity={0.85} />
+                                    }}>
+                                    {barData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}
                                   </Bar>
+                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
                                 </ReBarChart>
                               </ResponsiveContainer>
                             )
@@ -6228,15 +6251,16 @@ function Dashboard() {
                           if (investChartType === 'line') {
                             return (
                               <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                                <LineChart data={chartData} margin={{ top: 5, right: 45, bottom: 0, left: 5 }}>
+                                  <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                                   <XAxis dataKey="idx" hide />
                                   <YAxis hide domain={domain} />
                                   <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                  <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: `1px solid ${isUp ? '#bbf7d0' : '#fecaca'}`, background: isUp ? '#f0fdf4' : '#fef2f2' }} />
-                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2.5} dot={false}
-                                    activeDot={{ r: 5, fill: chartColor, stroke: '#fff', strokeWidth: 2 }}
-                                    isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
+                                  <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} dot={false}
+                                    activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
+                                    isAnimationActive={true} animationDuration={400} />
+                                  <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
                                 </LineChart>
                               </ResponsiveContainer>
                             )
@@ -6245,41 +6269,43 @@ function Dashboard() {
                           // Area chart (default)
                           return (
                             <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
+                              <AreaChart data={chartData} margin={{ top: 5, right: 45, bottom: 0, left: 5 }}>
                                 <defs>
                                   <linearGradient id={`investDetailGrad-${selectedDetailProduct.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.4" />
-                                    <stop offset="50%" stopColor={chartColor} stopOpacity="0.1" />
+                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.3" />
+                                    <stop offset="40%" stopColor={chartColor} stopOpacity="0.12" />
                                     <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                                <CartesianGrid strokeDasharray="1 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                                 <XAxis dataKey="idx" hide />
                                 <YAxis hide domain={domain} />
-                                <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: `1px solid ${isUp ? '#bbf7d0' : '#fecaca'}`, background: isUp ? '#f0fdf4' : '#fef2f2' }} />
-                                <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investDetailGrad-${selectedDetailProduct.id})`} strokeWidth={2.5}
+                                <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.25} />
+                                <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={6} dot={false} activeDot={false} strokeOpacity={0.1} isAnimationActive={false} />
+                                <Area type="monotone" dataKey="value" stroke={chartColor} fill={`url(#investDetailGrad-${selectedDetailProduct.id})`} strokeWidth={2}
                                   dot={(props: Record<string, unknown>) => {
                                     const { cx, cy, index } = props as { cx: number; cy: number; index: number }
                                     if (index !== chartData.length - 1) return <g key={String(index)} />
                                     return (
                                       <g key={`invest-detail-dot-${selectedDetailProduct.id}`}>
-                                        <circle cx={cx} cy={cy} r={8} fill={chartColor} opacity={0.2}>
-                                          <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
+                                        <circle cx={cx} cy={cy} r={6} fill={chartColor} opacity={0.12}>
+                                          <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
+                                          <animate attributeName="opacity" values="0.12;0;0.12" dur="2s" repeatCount="indefinite" />
                                         </circle>
-                                        <circle cx={cx} cy={cy} r={4} fill={chartColor} stroke="#fff" strokeWidth={1.5} />
+                                        <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#0d1117" strokeWidth={1.5} />
                                       </g>
                                     )
                                   }}
-                                  activeDot={false}
-                                  isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
+                                  activeDot={{ r: 3, fill: chartColor, stroke: '#0d1117', strokeWidth: 1.5 }}
+                                  isAnimationActive={true} animationDuration={400} />
+                                <YAxis yAxisId="price" orientation="right" domain={domain} tickFormatter={(v: number) => formatRupiah(v).replace('Rp', '').trim()} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 8, fontFamily: 'monospace' }} axisLine={false} tickLine={false} width={42} />
                               </AreaChart>
                             </ResponsiveContainer>
                           )
                         })() : (
-                          <div className="flex items-center justify-center h-full text-[10px] text-gs-muted">Memuat data market...</div>
+                          <div className="flex items-center justify-center h-full text-[9px] text-gray-500">Memuat data market...</div>
                         )}
+                        </div>
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1">
