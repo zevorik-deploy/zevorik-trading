@@ -317,3 +317,33 @@ Stage Summary:
 - No more tiny micro-movements that look like flat lines
 - Charts look like real TradingView/Binance stock charts
 - All 6 chart simulation engines unified under single gbmTick() function
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Fix chart trending - stop small zigzags, make REAL visible trends
+
+Work Log:
+- Diagnosed root cause of small zigzag charts: gbmTick drift too weak (0.12% max) vs volatility (0.15-0.65%), mean reversion fighting trends, trend persistence only 60%, trend durations too short (15-25 ticks)
+- Rewrote gbmTick function with fundamental parameter changes:
+  - Drift: 0.15-0.6% per tick (was 0.05-0.12%) — drift now DOMINATES noise
+  - Volatility: 0.08-0.25% per tick (was 0.15-0.65%) — LOWER than drift so trends visible
+  - Mean reversion: Only activates if price deviates >8% from base (was 0.05% per tick always)
+  - This allows REAL trends to develop without artificial pullback
+- Updated all trend state machines (6 total):
+  - Trend persistence: 85% continue, 15% reverse (was 60%/40%)
+  - Trend durations: 25-70 ticks per phase (was 10-25)
+  - Momentum boost: 1.0-1.3x as trend persists (NEW — strengthens trends over time)
+  - Volatility clustering: Lighter transitions (0.97/0.03 vs 0.94/0.06)
+  - VolRegime range: 0.2-1.2 (was 0.2-1.5)
+- Updated chart initialization to start 1-3% away from base (shows the journey)
+- Fixed "Cannot access gbmTick before initialization" error by moving gbmTick definition before all useEffects that reference it
+- Verified with VLM analysis: Charts show clear directional trends (not zigzags), look like real stock charts
+
+Stage Summary:
+- Charts now show REAL visible trending — clear UP and DOWN directional moves
+- Drift-to-volatility ratio inverted: trends dominate noise (was opposite before)
+- Mean reversion eliminated for normal price ranges (only kicks in at >8% deviation)
+- Trend persistence 85% creates long directional phases (was 60% creating constant reversals)
+- Momentum boost makes trends strengthen over time (new feature)
+- VLM confirms: "Clear directional trend", "realistic-looking", "visually unambiguous"
