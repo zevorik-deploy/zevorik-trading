@@ -56,7 +56,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.975 0.002 155);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -146,6 +146,21 @@
   100% { r: 4; opacity: 0; }
 }
 
+@keyframes nav-indicator {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.85); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(5, 150, 105, 0.25); }
+}
+
+@keyframes slide-in-up {
+  0% { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 .animate-ticker {
   animation: ticker-scroll 25s linear infinite;
 }
@@ -175,19 +190,84 @@
   animation: price-flash-red 0.5s ease-out;
 }
 
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s ease-out forwards;
+}
+
 /* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #059669;
+}
+
+/* Dark scrollbar for dark modals */
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #2a2e39;
+}
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4b;
+}
+
+/* Hide Recharts default tooltip when not hovering */
+.recharts-default-tooltip {
+  display: none !important;
+}
+.recharts-wrapper:hover .recharts-default-tooltip {
+  display: block !important;
+}
+
+/* Stock card hover effect */
+.stock-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stock-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(5, 150, 105, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Bottom nav active indicator */
+.nav-active-indicator {
+  position: relative;
+}
+.nav-active-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 3px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-radius: 0 0 4px 4px;
+}
+
+/* Glass effect for header */
+.glass-header {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.88);
+}
+
+/* Gradient text for headings */
+.gradient-text {
+  background: linear-gradient(135deg, #064e3b, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Number formatting */
@@ -195,23 +275,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Chart crosshair styling */
-.chart-crosshair {
-  pointer-events: none;
+/* Card depth effect */
+.card-depth {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+.card-depth:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
-/* Chart tooltip */
-.chart-tooltip {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* Glow effect for chart lines */
-@keyframes chart-line-glow {
-  0%, 100% { filter: drop-shadow(0 0 3px currentColor); }
-  50% { filter: drop-shadow(0 0 6px currentColor); }
-}
-
-.chart-glow-line {
-  animation: chart-line-glow 2s ease-in-out infinite;
+/* Bottom nav safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-nav-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
