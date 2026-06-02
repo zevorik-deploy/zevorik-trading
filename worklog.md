@@ -71,3 +71,40 @@ Stage Summary:
 - Gradient header cards use proper box-shadow: 0 4px 24px rgba(5,150,105,0.15)
 - Main background uses emerald-tinted gradient instead of flat gray
 - Dark-themed controls in Sinyal Pro modal: bg-[#1e222d], border-[#2a2e39]
+---
+Task ID: 2
+Agent: Main Agent
+Task: Complete dark trading terminal visual overhaul - fix "mengambang" UI for 3rd time
+
+Work Log:
+- User referenced candlecharts.com as design target - professional dark trading terminal
+- Read and analyzed entire page.tsx (6110 lines) and globals.css
+- Updated globals.css: all CSS variables changed to dark theme (#0a0e17 bg, #131722 panels, #2a2e39 borders, #26a69a accent green, #ef5350 red, #787b86 muted text)
+- Updated Dashboard main container background from light gradient to #0a0e17 (deep dark)
+- Updated header to dark glass effect (rgba(19,23,34,0.95) with blur)
+- Updated market indices bar to dark (#131722) with dark pill badges
+- Updated HOME tab: all white cards → bg-[#131722] with border-[#2a2e39], text colors updated
+- Updated MARKET tab: search input, category filters, stock cards all dark-themed
+- Updated PORTFOLIO tab: holdings cards, contracts, investments all dark-themed
+- Updated INVESTASI tab: product cards, chart controls, detail modals all dark-themed
+- Updated SINYAL tab: stock cards, position cards, history all dark-themed (modal already dark)
+- Updated FINANCE tab: deposit/withdraw forms, method selectors, QRIS all dark-themed
+- Updated HISTORY tab: filter buttons, transaction cards all dark-themed
+- Updated UNDANG tab: referral network, promo video, commission tiers all dark-themed
+- Updated NEWS tab: news cards dark-themed
+- Updated BONUS tab: promo/bonus cards dark-themed
+- Updated LEADERBOARD tab: rank cards dark-themed
+- Updated PROFILE tab: profile info, menu items, logout button dark-themed
+- Updated Bottom Navigation: dark bg with rgba(19,23,34,0.98), dark text colors
+- Updated Desktop Sidebar: bg-[#131722], dark text colors, dark active states
+- Updated Side Menu: bg-[#131722] with border, dark menu items
+- Updated all 8 modals: Welcome, Notification, Investment Confirmation, Stock Detail, Contract, Daily Check, Tasks, Investment Product Detail - all converted to dark bg-[#131722]
+- Login page kept with original green/white branding (separate page design)
+- Lint passes clean, dev server running without errors
+
+Stage Summary:
+- Complete transformation from light/white "mengambang" UI to professional dark trading terminal
+- Color scheme: #0a0e17 background, #131722 panels, #2a2e39 borders, #26a69a green accent, #ef5350 red
+- Matches professional trading platforms like candlecharts.com and TradingView
+- All tabs, cards, modals, navigation, and sidebars now use dark theme
+- No floating white cards - everything is anchored with dark panels and subtle borders

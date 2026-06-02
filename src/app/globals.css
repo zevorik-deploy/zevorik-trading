@@ -41,52 +41,56 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-gs-green: #059669;
+  /* Trading Terminal Dark Colors */
+  --color-gs-green: #26a69a;
   --color-gs-green2: #10b981;
-  --color-gs-green3: #064e3b;
+  --color-gs-green3: #059669;
   --color-gs-gold: #f59e0b;
   --color-gs-gold2: #fde68a;
-  --color-gs-red: #ef4444;
-  --color-gs-dark: #022c22;
-  --color-gs-text: #0f172a;
-  --color-gs-muted: #64748b;
-  --color-gs-line: #e2e8f0;
-  --color-gs-soft: #ecfdf5;
+  --color-gs-red: #ef5350;
+  --color-gs-dark: #0a0e17;
+  --color-gs-text: #e0e3eb;
+  --color-gs-muted: #787b86;
+  --color-gs-line: #2a2e39;
+  --color-gs-soft: #1e222d;
+  --color-gs-panel: #131722;
+  --color-gs-border: #2a2e39;
+  --color-gs-hover: #1e222d;
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.975 0.002 155);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #0a0e17;
+  --foreground: #e0e3eb;
+  --card: #131722;
+  --card-foreground: #e0e3eb;
+  --popover: #131722;
+  --popover-foreground: #e0e3eb;
+  --primary: #26a69a;
+  --primary-foreground: #ffffff;
+  --secondary: #1e222d;
+  --secondary-foreground: #e0e3eb;
+  --muted: #1e222d;
+  --muted-foreground: #787b86;
+  --accent: #1e222d;
+  --accent-foreground: #e0e3eb;
+  --destructive: #ef5350;
+  --border: #2a2e39;
+  --input: #2a2e39;
+  --ring: #26a69a;
+  --chart-1: #26a69a;
+  --chart-2: #f59e0b;
+  --chart-3: #ef5350;
+  --chart-4: #2196f3;
+  --chart-5: #9c27b0;
+  --sidebar: #0a0e17;
+  --sidebar-foreground: #e0e3eb;
+  --sidebar-primary: #26a69a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e222d;
+  --sidebar-accent-foreground: #e0e3eb;
+  --sidebar-border: #2a2e39;
+  --sidebar-ring: #26a69a;
 }
 
 @layer base {
@@ -125,12 +129,12 @@
 }
 
 @keyframes price-flash-emerald {
-  0% { background-color: rgba(5, 150, 105, 0.2); }
+  0% { background-color: rgba(38, 166, 154, 0.2); }
   100% { background-color: transparent; }
 }
 
 @keyframes price-flash-red {
-  0% { background-color: rgba(239, 68, 68, 0.2); }
+  0% { background-color: rgba(239, 83, 80, 0.2); }
   100% { background-color: transparent; }
 }
 
@@ -152,8 +156,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
-  50% { box-shadow: 0 0 12px 2px rgba(5, 150, 105, 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(38, 166, 154, 0.25); }
 }
 
 @keyframes slide-in-up {
@@ -198,7 +202,7 @@
   animation: slide-in-up 0.4s ease-out forwards;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Dark theme */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -207,11 +211,11 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #363a45;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #059669;
+  background: #26a69a;
 }
 
 /* Dark scrollbar for dark modals */
@@ -230,13 +234,14 @@
   display: block !important;
 }
 
-/* Stock card hover effect */
+/* Stock card hover effect - Dark Terminal Style */
 .stock-card {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
+  border: 1px solid #2a2e39;
 }
 .stock-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px rgba(5, 150, 105, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border-color: #363a45;
+  background-color: #1e222d !important;
 }
 
 /* Bottom nav active indicator */
@@ -251,20 +256,20 @@
   transform: translateX(-50%);
   width: 32px;
   height: 3px;
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #26a69a, #10b981);
   border-radius: 0 0 4px 4px;
 }
 
-/* Glass effect for header */
+/* Glass effect for header - Dark version */
 .glass-header {
   backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
-  background-color: rgba(255, 255, 255, 0.88);
+  background-color: rgba(19, 23, 34, 0.95);
 }
 
 /* Gradient text for headings */
 .gradient-text {
-  background: linear-gradient(135deg, #064e3b, #059669);
+  background: linear-gradient(135deg, #26a69a, #10b981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -275,13 +280,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Card depth effect */
+/* Card depth effect - Dark terminal */
 .card-depth {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s ease;
+  border: 1px solid #2a2e39;
+  transition: border-color 0.2s ease;
 }
 .card-depth:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  border-color: #363a45;
 }
 
 /* Bottom nav safe area */
@@ -289,4 +294,18 @@
   .bottom-nav-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* Trading Terminal Panel Style */
+.t-panel {
+  background: #131722;
+  border: 1px solid #2a2e39;
+  border-radius: 12px;
+}
+
+/* Trading Terminal Accent Panel (green header) */
+.t-panel-accent {
+  background: linear-gradient(145deg, #022c22 0%, #064e3b 40%, #059669 100%);
+  border: 1px solid rgba(38, 166, 154, 0.2);
+  border-radius: 12px;
 }
