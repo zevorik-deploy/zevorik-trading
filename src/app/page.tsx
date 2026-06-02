@@ -167,6 +167,32 @@ const REFERENCE_TICKERS = [
 const PIE_COLORS = ['#2563eb', '#f59e0b', '#60a5fa', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
 // ============================================
+// ZEVORIX LOGO SVG COMPONENT
+// ============================================
+function ZevorixLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg viewBox="0 0 120 120" width={size} height={size} className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="zv-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1d4ed8" />
+          <stop offset="50%" stopColor="#2563eb" />
+          <stop offset="100%" stopColor="#3b82f6" />
+        </linearGradient>
+        <linearGradient id="zv-grad-2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#60a5fa" />
+          <stop offset="100%" stopColor="#93c5fd" />
+        </linearGradient>
+      </defs>
+      {/* Shield shape */}
+      <path d="M60 8 L104 28 L104 60 C104 84 84 104 60 112 C36 104 16 84 16 60 L16 28 Z" fill="url(#zv-grad-1)" />
+      <path d="M60 16 L98 33 L98 60 C98 80 80 98 60 105 C40 98 22 80 22 60 L22 33 Z" fill="url(#zv-grad-2)" opacity="0.3" />
+      {/* Z letter */}
+      <path d="M40 45 L80 45 L80 52 L52 72 L80 72 L80 79 L40 79 L40 72 L68 52 L40 52 Z" fill="white" />
+    </svg>
+  )
+}
+
+// ============================================
 // LOGIN / REGISTER PAGE
 // ============================================
 function LoginPage() {
@@ -237,8 +263,8 @@ function LoginPage() {
       <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 text-center text-white max-w-lg">
-          <div className="w-24 h-24 rounded-full bg-white p-2 mx-auto mb-6 shadow-[0_12px_40px_rgba(0,0,0,.3)]">
-            <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
+          <div className="mx-auto mb-6">
+            <ZevorixLogo size={80} />
           </div>
           <h1 className="text-3xl lg:text-4xl font-black mb-3">ZEVORIX</h1>
           <p className="text-blue-200 text-sm lg:text-base mb-8 leading-relaxed">Future of Investing</p>
@@ -281,9 +307,7 @@ function LoginPage() {
           {/* Top Navigation - mobile only */}
           <header className="flex items-center justify-between mb-3 md:hidden">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
-                <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
-              </div>
+              <ZevorixLogo size={36} />
               <div>
                 <b className="block text-[11px] leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
                 <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
@@ -300,9 +324,7 @@ function LoginPage() {
           {/* Desktop switch button */}
           <div className="hidden md:flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
-                <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
-              </div>
+              <ZevorixLogo size={36} />
               <div>
                 <b className="block text-xs leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
                 <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
@@ -342,8 +364,8 @@ function LoginPage() {
 
             {/* Center Logo + Text */}
             <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-3">
-              <div className="w-16 h-16 rounded-full bg-white p-1.5 mb-2 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
-                <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
+              <div className="mb-2">
+                <ZevorixLogo size={56} />
               </div>
 
               {isLogin ? (
@@ -430,36 +452,36 @@ function LoginPage() {
               {/* Register: Username */}
               {!isLogin && (
                 <div>
-                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
                     <User className="w-3 h-3 text-[#3b82f6]" /> Username
                   </label>
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan username"
-                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                 </div>
               )}
 
               {/* NOMOR WHATSAPP */}
               <div>
-                <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
+                <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
                   <Phone className="w-3 h-3 text-[#3b82f6]" /> NOMOR WHATSAPP
                 </label>
-                <div className="flex items-center h-11 rounded-2xl bg-gs-soft border border-gs-line overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
-                  <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-gs-line">
+                <div className="flex items-center h-11 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
+                  <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-slate-200">
                     <span className="text-[11px] font-bold">+62</span>
                   </div>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="81234567890"
-                    className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-gs-dark outline-none placeholder:text-gray-400" />
+                    className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-slate-900 outline-none placeholder:text-gray-400" />
                 </div>
               </div>
 
               {/* KATA SANDI */}
               <div>
-                <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
+                <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
                   <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
                 </label>
                 <div className="relative">
                   <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi"
-                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 pr-16 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -470,12 +492,12 @@ function LoginPage() {
               {/* Register: Konfirmasi Sandi */}
               {!isLogin && (
                 <div>
-                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
                     <Lock className="w-3 h-3 text-[#3b82f6]" /> KONFIRMASI SANDI
                   </label>
                   <div className="relative">
                     <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi kata sandi"
-                      className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 pr-16 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+                      className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                     <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -487,18 +509,18 @@ function LoginPage() {
               {/* Register: Kode Referral */}
               {!isLogin && (
                 <div>
-                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
-                    <Gift className="w-3 h-3 text-gs-gold" /> KODE REFERRAL OPSIONAL
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Gift className="w-3 h-3 text-[#3b82f6]" /> KODE REFERRAL OPSIONAL
                   </label>
                   <input type="text" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="Masukkan kode referral"
-                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400 uppercase" />
+                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400 uppercase" />
                 </div>
               )}
 
               {/* Register: Math Verification */}
               {!isLogin && (
                 <div>
-                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
                     <Shield className="w-3 h-3 text-[#3b82f6]" /> Verifikasi Keamanan
                   </label>
                   <div className="flex items-center gap-2">
@@ -506,9 +528,9 @@ function LoginPage() {
                       <span className="text-[14px] font-black">{mathA} + {mathB}</span>
                     </div>
                     <input type="number" value={mathAnswer} onChange={(e) => setMathAnswer(e.target.value)} placeholder="Jawab"
-                      className="w-20 h-11 rounded-2xl bg-gs-soft border border-gs-line px-3 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all text-center placeholder:text-gray-400" />
+                      className="w-20 h-11 rounded-2xl bg-slate-50 border border-slate-200 px-3 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all text-center placeholder:text-gray-400" />
                     <button type="button" onClick={refreshMath}
-                      className="h-11 w-11 rounded-2xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-[#3b82f6] hover:text-white text-[#3b82f6] transition-colors">
+                      className="h-11 w-11 rounded-2xl bg-slate-50 border border-slate-200 grid place-items-center hover:bg-[#3b82f6] hover:text-white text-[#3b82f6] transition-colors">
                       <RotateCcw className="w-4 h-4" />
                     </button>
                   </div>
@@ -521,7 +543,7 @@ function LoginPage() {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 rounded accent-[#3b82f6]" />
-                    <span className="text-[10px] font-semibold text-gs-muted">Ingat akun</span>
+                    <span className="text-[10px] font-semibold text-slate-500">Ingat akun</span>
                   </label>
                   <button type="button" className="text-[10px] font-bold text-orange-500 hover:underline">Lupa sandi?</button>
                 </div>
@@ -532,7 +554,7 @@ function LoginPage() {
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)}
                     className="w-4 h-4 rounded accent-[#3b82f6] mt-0.5" />
-                  <span className="text-[9px] font-semibold text-gs-muted leading-relaxed">
+                  <span className="text-[9px] font-semibold text-slate-500 leading-relaxed">
                     Saya menyetujui proses pendaftaran dan memahami keamanan akun ZEVORIX.
                   </span>
                 </label>
@@ -541,7 +563,7 @@ function LoginPage() {
               {/* Submit Button */}
               <button type="submit" disabled={loading}
                 className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #1d4ed8 50%, #3b82f6 100%)' }}>
+                style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
                 <span className="relative z-10 flex items-center gap-2">
                   {loading ? (
@@ -556,7 +578,7 @@ function LoginPage() {
               </button>
 
               {/* Switch Login/Register */}
-              <p className="text-center text-[10px] font-semibold text-gs-muted">
+              <p className="text-center text-[10px] font-semibold text-slate-500">
                 {isLogin ? (
                   <>Belum punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => { setIsLogin(false); refreshMath(); }}>Daftar ZEVORIX</span></>
                 ) : (
@@ -565,10 +587,10 @@ function LoginPage() {
               </p>
 
               {/* Demo Account */}
-              <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line flex items-center justify-between gap-2">
+              <div className="rounded-2xl p-3 bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
                 <div>
                   <b className="block text-[10px] font-black text-[#1d4ed8]">Akun Demo</b>
-                  <span className="block mt-0.5 text-[8px] font-bold text-gs-muted">+62 81234567890 / demo123</span>
+                  <span className="block mt-0.5 text-[8px] font-bold text-slate-500">+62 81234567890 / demo123</span>
                 </div>
                 <button type="button" onClick={() => { setPhone('081234567890'); setPassword('demo123'); setIsLogin(true); }}
                   className="text-[8px] font-black text-white bg-[#3b82f6] px-3 py-1.5 rounded-lg hover:bg-[#1d4ed8] transition-colors">
@@ -583,14 +605,14 @@ function LoginPage() {
         <div className="mt-3 pb-2">
           <div className="text-center mb-2">
             <b className="block text-[9px] md:text-[10px] font-black text-[#1d4ed8]">Legalitas Perusahaan</b>
-            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-gs-muted">Halaman resmi ZEVORIX</span>
+            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-slate-500">Halaman resmi ZEVORIX</span>
           </div>
           <div className="flex items-center justify-center gap-3 mb-2">
             <Shield className="w-4 h-4 text-[#3b82f6]" />
-            <CheckCircle className="w-4 h-4 text-gs-gold" />
+            <CheckCircle className="w-4 h-4 text-amber-400" />
             <Lock className="w-4 h-4 text-[#3b82f6]" />
           </div>
-          <div className="flex items-center justify-center gap-2 text-[8px] md:text-[9px] font-bold text-gs-muted">
+          <div className="flex items-center justify-center gap-2 text-[8px] md:text-[9px] font-bold text-slate-500">
             <span>Investasi Aman</span>
             <span>•</span>
             <span>Market Live</span>
@@ -685,11 +707,18 @@ function Dashboard() {
   const initialized = useRef(false)
 
   // ============ THEME STATE ============
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('zv-theme')
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark'
+    }
+    return 'dark'
+  })
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark'
     setTheme(newTheme)
     document.documentElement.className = newTheme
+    localStorage.setItem('zv-theme', newTheme)
   }
 
   useEffect(() => {
@@ -1765,8 +1794,8 @@ function Dashboard() {
             <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
               <Menu className="w-4 h-4 text-[var(--zv-muted)]" />
             </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] p-0.5 border border-[var(--zv-border)]">
-              <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
+            <div className="flex-shrink-0">
+              <ZevorixLogo size={34} />
             </div>
             <div>
               <b className="block text-[11px] md:text-sm font-black gradient-text leading-tight">ZEVORIX</b>
@@ -1774,7 +1803,8 @@ function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-hover)] transition-colors">
+            <div className="w-px h-6 bg-[var(--zv-border)] mx-1" />
+            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-hover)] hover:scale-105 transition-all shadow-sm">
               {theme === 'dark' ? <Sun className="w-4 h-4 text-[var(--zv-gold)]" /> : <Moon className="w-4 h-4 text-[var(--zv-muted)]" />}
             </button>
             <button onClick={refreshAll} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
@@ -1818,8 +1848,8 @@ function Dashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] md:text-[11px] font-black tracking-wider">RINGKASAN SALDO</span>
-                      <span className="h-4 px-1.5 rounded-full bg-emerald-400/30 border border-emerald-400/40 text-[7px] font-black text-emerald-300 flex items-center gap-0.5">
-                        <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />AKTIF
+                      <span className="h-4 px-1.5 rounded-full bg-blue-400/30 border border-blue-400/40 text-[7px] font-black text-blue-300 flex items-center gap-0.5">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />AKTIF
                       </span>
                     </div>
                     <button onClick={() => setShowBalance(!showBalance)} className="text-white/60 hover:text-white">
@@ -1833,19 +1863,19 @@ function Dashboard() {
                     <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
                       <div className="flex items-center gap-1 mb-1">
                         <Wallet className="w-3 h-3 text-yellow-300" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-emerald-200 uppercase tracking-wider">DOMPET UTAMA</span>
+                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200 uppercase tracking-wider">DOMPET UTAMA</span>
                       </div>
                       <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••••'}</b>
-                      <span className="block text-[5px] font-semibold text-emerald-200/60 mt-0.5">Deposit untuk investasi</span>
+                      <span className="block text-[5px] font-semibold text-blue-200/60 mt-0.5">Deposit untuk investasi</span>
                     </div>
                     {/* Dompet Penarikan */}
                     <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
                       <div className="flex items-center gap-1 mb-1">
-                        <CreditCard className="w-3 h-3 text-emerald-300" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-emerald-200 uppercase tracking-wider">DOMPET PENARIKAN</span>
+                        <CreditCard className="w-3 h-3 text-blue-300" />
+                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200 uppercase tracking-wider">DOMPET PENARIKAN</span>
                       </div>
                       <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••••'}</b>
-                      <span className="block text-[5px] font-semibold text-emerald-200/60 mt-0.5">Dapat ditarik</span>
+                      <span className="block text-[5px] font-semibold text-blue-200/60 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
 
@@ -1854,7 +1884,7 @@ function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Briefcase className="w-3.5 h-3.5 text-yellow-300" />
-                        <span className="text-[8px] font-bold text-emerald-200">TOTAL INVESTASI</span>
+                        <span className="text-[8px] font-bold text-blue-200">TOTAL INVESTASI</span>
                       </div>
                       <b className="text-[12px] font-black">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••••••'}</b>
                     </div>
@@ -1862,7 +1892,7 @@ function Dashboard() {
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
-                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-gs-dark text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/20">
+                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/20">
                       <Plus className="w-4 h-4" />Isi Saldo
                     </button>
                     <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/10 border border-white/25 text-white text-[10px] font-bold hover:bg-white/20 hover:border-white/40 transition-all flex items-center justify-center gap-1.5 backdrop-blur-sm">
@@ -1873,13 +1903,13 @@ function Dashboard() {
                   {/* Regulatory Badges */}
                   <div className="flex items-center justify-center gap-3">
                     <div className="flex items-center gap-1">
-                      <Shield className="w-3 h-3 text-emerald-300" />
-                      <span className="text-[7px] font-bold text-emerald-200">Terdaftar & Diawasi</span>
+                      <Shield className="w-3 h-3 text-blue-300" />
+                      <span className="text-[7px] font-bold text-blue-200">Terdaftar & Diawasi</span>
                     </div>
                     <div className="w-px h-3 bg-white/20" />
                     <div className="flex items-center gap-1">
                       <CheckCircle className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[7px] font-bold text-emerald-200">Berlisensi Resmi</span>
+                      <span className="text-[7px] font-bold text-blue-200">Berlisensi Resmi</span>
                     </div>
                   </div>
                 </div>
@@ -1919,7 +1949,7 @@ function Dashboard() {
                       </div>
                       <div>
                         <b className="text-[12px] md:text-sm font-black">CEK HARIAN</b>
-                        <span className="block text-[9px] md:text-[10px] font-semibold text-emerald-200">
+                        <span className="block text-[9px] md:text-[10px] font-semibold text-blue-200">
                           {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
                         </span>
                       </div>
@@ -1928,17 +1958,17 @@ function Dashboard() {
                       <button
                         onClick={handleDailyCheck}
                         disabled={dailyCheckLoading}
-                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-gs-dark text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center gap-1.5 shadow-lg shadow-yellow-500/20"
+                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center gap-1.5 shadow-lg shadow-yellow-500/20"
                       >
                         {dailyCheckLoading ? (
-                          <div className="w-3.5 h-3.5 rounded-full border-2 border-gs-dark/30 border-t-gs-dark animate-spin" />
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                         ) : (
                           'Klaim Sekarang'
                         )}
                       </button>
                     ) : (
                       <div className="h-9 px-4 rounded-xl bg-white/15 border border-white/10 text-[10px] font-bold flex items-center gap-1.5">
-                        <CheckCircle className="w-4 h-4 text-emerald-300" />
+                        <CheckCircle className="w-4 h-4 text-blue-300" />
                         Sudah Dicek
                       </div>
                     )}
@@ -1955,7 +1985,7 @@ function Dashboard() {
                   )}
                   {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
                     <div className="rounded-xl p-2 bg-white/10 border border-white/15 text-center">
-                      <span className="text-[8px] text-emerald-200 font-bold">Bonus Hari Ini</span>
+                      <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
                       <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
                     </div>
                   )}
@@ -2041,7 +2071,7 @@ function Dashboard() {
                 <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Top Movers</h3>
-                    <button onClick={() => setActiveTab('market')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
+                    <button onClick={() => setActiveTab('market')} className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:underline">Lihat Semua</button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -2104,7 +2134,7 @@ function Dashboard() {
                 <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Transaksi Terakhir</h3>
-                    <button onClick={() => setActiveTab('history')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
+                    <button onClick={() => setActiveTab('history')} className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:underline">Lihat Semua</button>
                   </div>
                   {transactions.slice(0, 4).map(tx => (
                     <div key={tx.id} className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
@@ -2131,7 +2161,7 @@ function Dashboard() {
                 <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Berita Terkini</h3>
-                    <button onClick={() => setActiveTab('news')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
+                    <button onClick={() => setActiveTab('news')} className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:underline">Lihat Semua</button>
                   </div>
                   {news.slice(0, 3).map(n => (
                     <div key={n.id} className="py-2 border-b border-[var(--zv-border)] last:border-0">
@@ -2176,7 +2206,7 @@ function Dashboard() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(lastIhsgVal)}</span>
-                            <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-emerald-300' : 'text-red-300'}`}>
+                            <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-blue-300' : 'text-red-300'}`}>
                               {isIhsgUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
                               {' '}{formatPercent(ihsgIdx.changePercent)}
                             </span>
@@ -2276,7 +2306,7 @@ function Dashboard() {
                   const volPercent = Math.round((s.volume / maxVol) * 100)
 
                   return (
-                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden`}>
+                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5 transition-all`}>
                       <div className="p-3 md:p-4">
                         <div className="flex items-center justify-between mb-2.5">
                           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => openStockDetail(s)}>
@@ -2286,7 +2316,7 @@ function Dashboard() {
                               <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
                             </div>
                           </div>
-                          <button onClick={() => toggleWatchlist(s.id)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft transition-colors">
+                          <button onClick={() => toggleWatchlist(s.id)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] transition-colors">
                             <Star className={`w-4 h-4 ${isWatched(s.id) ? 'text-[#f59e0b] fill-[#f59e0b]' : 'text-[var(--zv-border)]'}`} />
                           </button>
                         </div>
@@ -2380,20 +2410,20 @@ function Dashboard() {
               <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
                 <div className="p-4 text-white relative">
                   <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-                  <span className="text-[9px] font-medium text-emerald-200">Nilai Portofolio</span>
+                  <span className="text-[9px] font-medium text-blue-200">Nilai Portofolio</span>
                   <b className="block text-2xl font-black mt-0.5">{formatRupiah(portfolioSummary.totalCurrentValue)}</b>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-blue-300' : 'text-red-300'}`}>
                       {formatRupiah(portfolioSummary.totalProfitLoss)} ({formatPercent(portfolioSummary.totalProfitLossPercent)})
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] text-emerald-200">Investasi</span>
+                      <span className="text-[7px] text-blue-200">Investasi</span>
                       <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.totalInvested)}</b>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] text-emerald-200">Saldo</span>
+                      <span className="text-[7px] text-blue-200">Saldo</span>
                       <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.cashBalance)}</b>
                     </div>
                   </div>
@@ -2404,7 +2434,7 @@ function Dashboard() {
               <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Saham Dimiliki</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
                 {portfolio.map(p => (
-                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] transition-colors hover:border-[var(--zv-border)]">
+                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] transition-all hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
                         <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer ${p.profitLoss >= 0 ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>{p.stock.logo ? <img src={p.stock.logo} alt={p.stock.code} className="w-full h-full object-cover" /> : <span className={`text-[8px] md:text-[10px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{p.stock.code.slice(0, 2)}</span>}</div>
@@ -2421,7 +2451,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <button onClick={() => openContract(p.stock)} className="flex-1 h-7 md:h-8 rounded-lg bg-emerald-600 text-white text-[8px] md:text-[9px] font-bold flex items-center justify-center gap-1"><Package className="w-3 h-3" />Kontrak</button>
+                      <button onClick={() => openContract(p.stock)} className="flex-1 h-7 md:h-8 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[8px] md:text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm shadow-blue-500/20"><Package className="w-3 h-3" />Kontrak</button>
                     </div>
                   </div>
                 ))}
@@ -2429,7 +2459,7 @@ function Dashboard() {
                   <div className="col-span-full text-center py-8">
                     <Briefcase className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
                     <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Belum ada saham di portofolio</p>
-                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gs-green3 text-white text-[9px] md:text-[10px] font-bold">Mulai Investasi</button>
+                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] md:text-[10px] font-bold shadow-md shadow-blue-500/20">Mulai Investasi</button>
                   </div>
                 )}
               </div>
@@ -2466,13 +2496,13 @@ function Dashboard() {
                               <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
                             </div>
                             <div className="h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+                              <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
                             </div>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[7px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
                             <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
+                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
                               {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : 'Sudah Diklaim'}
                             </button>
                           </div>
@@ -2534,7 +2564,7 @@ function Dashboard() {
                     <DollarSign className="w-5 h-5 text-yellow-300" />
                     <h2 className="text-[16px] md:text-xl font-black">Investasi</h2>
                   </div>
-                  <p className="text-[10px] md:text-[11px] text-emerald-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Semua profit dikreditkan ke saldo Anda setiap 24 jam.</p>
+                  <p className="text-[10px] md:text-[11px] text-blue-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Semua profit dikreditkan ke saldo Anda setiap 24 jam.</p>
 
                   {/* Pasar Aktif Stats */}
                   <div className="flex items-center gap-3">
@@ -2547,8 +2577,8 @@ function Dashboard() {
                       <span className="text-[8px] font-black text-white">{new Set(investProducts.map(p => p.category)).size} Kategori</span>
                     </div>
                     <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[8px] font-black text-emerald-300">Live 24/7</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                      <span className="text-[8px] font-black text-blue-300">Live 24/7</span>
                     </div>
                   </div>
 
@@ -2556,17 +2586,17 @@ function Dashboard() {
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Package className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{investProducts.length}</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Produk</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Produk</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Sparkles className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{userInvestments.filter(i => i.status === 'active').length}</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Aktif</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Aktif</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Wallet className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">{formatRupiah(user?.balance || 0).replace('Rp', '').trim()}</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Saldo</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Saldo</span>
                     </div>
                   </div>
                 </div>
@@ -2574,10 +2604,10 @@ function Dashboard() {
 
               {/* Category Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => setInvestCategory('potential')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${investCategory === 'potential' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                <button onClick={() => setInvestCategory('potential')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${investCategory === 'potential' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <TrendingUp className="w-3.5 h-3.5 inline mr-1" />Saham Potential
                 </button>
-                <button onClick={() => setInvestCategory('dividen')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${investCategory === 'dividen' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                <button onClick={() => setInvestCategory('dividen')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${investCategory === 'dividen' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <Award className="w-3.5 h-3.5 inline mr-1" />Saham Dividen
                 </button>
               </div>
@@ -2594,7 +2624,7 @@ function Dashboard() {
                   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].close : product.modal
 
                   return (
-                    <div key={product.id} className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:shadow-lg transition-shadow overflow-hidden card-depth">
+                    <div key={product.id} className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5 transition-all overflow-hidden card-depth">
                       {/* Top badges */}
                       <div className="px-3 pt-3 flex items-center gap-1.5 flex-wrap">
                         <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-black text-[#3b82f6] flex items-center gap-0.5">
@@ -2641,7 +2671,7 @@ function Dashboard() {
                           <div className="flex items-center gap-0.5">
                             {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
                               <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
+                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
                                 {tf}
                               </button>
                             ))}
@@ -2653,7 +2683,7 @@ function Dashboard() {
                             <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PERGERAKAN MARKET</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                             <span className="text-[6px] font-black text-[#3b82f6]">LIVE</span>
                           </div>
                         </div>
@@ -2902,7 +2932,7 @@ function Dashboard() {
                           <div className="flex items-center justify-between">
                             <span className="text-[8px] font-bold text-[var(--zv-muted)]">{progress}% selesai</span>
                             <button onClick={() => handleClaimProfit(inv.id)} disabled={claimLoadingId === inv.id || !canClaim}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-gs-green3 text-white hover:bg-gs-green' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
+                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
                               {claimLoadingId === inv.id ? 'Memproses...' : canClaim ? 'Klaim Profit' : 'Menunggu...'}
                             </button>
                           </div>
@@ -2953,24 +2983,24 @@ function Dashboard() {
                       <span className="text-[8px] font-black text-red-300">LIVE</span>
                     </div>
                   </div>
-                  <p className="text-[10px] md:text-[11px] text-emerald-200 leading-relaxed mb-3">Analisis arah pasar dan raih profit hingga 40%</p>
+                  <p className="text-[10px] md:text-[11px] text-blue-200 leading-relaxed mb-3">Analisis arah pasar dan raih profit hingga 40%</p>
 
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Zap className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[10px] font-black">{sinyalPositions.filter(p => p.status === 'active').length}</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Posisi Aktif</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Posisi Aktif</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <TrendingUp className="w-4 h-4 text-emerald-300 mx-auto mb-0.5" />
+                      <TrendingUp className="w-4 h-4 text-blue-300 mx-auto mb-0.5" />
                       <b className="block text-[10px] font-black">{formatRupiah(sinyalPositions.filter(p => p.status === 'won').reduce((acc, p) => acc + Math.round(p.amount * p.profitPercent / 100), 0)).replace('Rp', '').trim()}</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Total Profit</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Total Profit</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Award className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[10px] font-black">{sinyalPositions.filter(p => p.status !== 'active').length > 0 ? Math.round(sinyalPositions.filter(p => p.status === 'won').length / sinyalPositions.filter(p => p.status !== 'active').length * 100) : 0}%</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Win Rate</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Win Rate</span>
                     </div>
                   </div>
                 </div>
@@ -2980,7 +3010,7 @@ function Dashboard() {
               {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
                 const ap = sinyalPositions.find(p => p.status === 'active')!
                 return (
-                  <div className="rounded-2xl p-4 mb-4 border border-emerald-500/30 bg-[var(--zv-panel)]">
+                  <div className="rounded-2xl p-4 mb-4 border border-[#3b82f6]/30 bg-[var(--zv-panel)] shadow-sm shadow-blue-500/5">
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center">
@@ -3010,7 +3040,7 @@ function Dashboard() {
 
               {/* Last Result */}
               {sinyalResult && !sinyalActive && (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-4 border ${sinyalResult.won ? 'border-[#22c55e]/30 bg-[var(--zv-panel)]' : 'border-[#ef5350]/30 bg-[var(--zv-panel)]'}`}>
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-4 border shadow-sm ${sinyalResult.won ? 'border-[#3b82f6]/30 bg-[var(--zv-panel)] shadow-blue-500/5' : 'border-[#ef5350]/30 bg-[var(--zv-panel)] shadow-red-500/5'}`}>
                   <div className="text-center">
                     <span className="text-[24px]">{sinyalResult.won ? '🎯' : '❌'}</span>
                     <h3 className={`text-[14px] font-black ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
@@ -3029,7 +3059,7 @@ function Dashboard() {
                   const isUp = s.changePercent >= 0
 
                   return (
-                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border overflow-hidden cursor-pointer ${isUp ? 'border-[#22c55e]/30' : 'border-[#ef5350]/30'}`}
+                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 transition-all ${isUp ? 'border-[#22c55e]/20 hover:border-[#3b82f6]/30' : 'border-[#ef5350]/20 hover:border-[#3b82f6]/30'}`}
                       onClick={() => { setSelectedSinyalStock(s); setShowSinyalModal(true); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalDuration(30); setSinyalResult(null); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}>
                       <div className="p-3 md:p-4">
                         <div className="flex items-center justify-between mb-2.5">
@@ -3115,7 +3145,7 @@ function Dashboard() {
               {/* Position History */}
               {sinyalPositions.filter(p => p.status !== 'active').length > 0 && (
                 <div className="mt-5">
-                  <h3 className="text-[12px] md:text-sm font-black gradient-text mb-3">Riwayat Posisi</h3>
+                  <h3 className="text-[12px] md:text-sm font-black text-[#3b82f6] mb-3">Riwayat Posisi</h3>
                   <div className="space-y-2.5">
                     {sinyalPositions.filter(p => p.status !== 'active').slice(-5).reverse().map(pos => (
                       <div key={pos.id} className={`rounded-2xl p-3.5 border ${pos.status === 'won' ? 'bg-[var(--zv-panel)] border-[#22c55e]/30' : 'bg-[var(--zv-panel)] border-[#ef5350]/30'}`}>
@@ -3150,10 +3180,10 @@ function Dashboard() {
             <div className="max-w-lg mx-auto">
               {/* Finance Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'deposit' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
                 </button>
-                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'withdraw' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'withdraw' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
                 </button>
               </div>
@@ -3165,7 +3195,7 @@ function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Saldo Saat Ini</span>
-                        <b className="block text-xl font-black gradient-text">{formatRupiah(user?.balance || 0)}</b>
+                        <b className="block text-xl font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
                       </div>
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
                         <Wallet className="w-6 h-6 text-[#3b82f6]" />
@@ -3181,7 +3211,7 @@ function Dashboard() {
                       { key: 'qris' as const, label: 'QRIS', icon: <CreditCard className="w-3.5 h-3.5" /> },
                     ].map(cat => (
                       <button key={cat.key} onClick={() => setDepositCategory(cat.key)}
-                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${depositCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${depositCategory === cat.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                         {cat.icon}{cat.label}
                       </button>
                     ))}
@@ -3323,10 +3353,10 @@ function Dashboard() {
                     {/* Amount Input */}
                     <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Deposit</label>
                     <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Minimal Rp 10.000"
-                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors mb-2" />
+                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
                     <div className="grid grid-cols-4 gap-1.5 mb-4">
                       {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
-                        <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gs-green hover:text-white transition-colors">
+                        <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 hover:text-white hover:border-transparent transition-all">
                           {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
                         </button>
                       ))}
@@ -3335,7 +3365,7 @@ function Dashboard() {
                     {/* Selected Method Info */}
                     <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-gs-green" />
+                        <CreditCard className="w-4 h-4 text-[#3b82f6]" />
                         <div>
                           <span className="block text-[9px] font-bold text-[var(--zv-text)]">
                             {depositCategory === 'bank' ? `Transfer ${depositBankMethod}` : depositCategory === 'ewallet' ? depositEwalletMethod : 'QRIS'}
@@ -3403,7 +3433,7 @@ function Dashboard() {
                     {/* Transfer to withdrawal button */}
                     <button
                       onClick={() => toast({ title: 'Fitur Segera Hadir', description: 'Transfer ke penarikan akan tersedia segera' })}
-                      className="w-full h-9 rounded-xl bg-gs-green3/10 border border-gs-green3/20 text-[#3b82f6] text-[9px] font-bold flex items-center justify-center gap-1.5 hover:bg-gs-green3/20 transition-colors"
+                      className="w-full h-9 rounded-xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6] text-[9px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#3b82f6]/20 transition-all"
                     >
                       <ArrowRight className="w-3.5 h-3.5" /> Transfer ke Penarikan
                     </button>
@@ -3417,7 +3447,7 @@ function Dashboard() {
                       { key: 'crypto' as const, label: 'Crypto', icon: <Gem className="w-3.5 h-3.5" /> },
                     ].map(cat => (
                       <button key={cat.key} onClick={() => setWithdrawCategory(cat.key)}
-                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${withdrawCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${withdrawCategory === cat.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                         {cat.icon}{cat.label}
                       </button>
                     ))}
@@ -3510,10 +3540,10 @@ function Dashboard() {
                     {/* Amount Input */}
                     <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Withdraw</label>
                     <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder="Minimal Rp 10.000"
-                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors mb-2" />
+                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
                     <div className="grid grid-cols-4 gap-1.5 mb-3">
                       {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
-                        <button key={a} onClick={() => setWithdrawAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gs-green hover:text-white transition-colors">
+                        <button key={a} onClick={() => setWithdrawAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 hover:text-white hover:border-transparent transition-all">
                           {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
                         </button>
                       ))}
@@ -3524,10 +3554,10 @@ function Dashboard() {
                       <div className="mb-3">
                         <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nomor Rekening</label>
                         <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor rekening"
-                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors mb-2" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
                         <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nama Pemilik Rekening</label>
                         <input type="text" value={withdrawAccountHolder} onChange={(e) => setWithdrawAccountHolder(e.target.value)} placeholder="Nama sesuai rekening"
-                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                       </div>
                     )}
 
@@ -3535,7 +3565,7 @@ function Dashboard() {
                       <div className="mb-3">
                         <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nomor HP / Email</label>
                         <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor HP atau email e-wallet"
-                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                       </div>
                     )}
 
@@ -3543,7 +3573,7 @@ function Dashboard() {
                       <div className="mb-3">
                         <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Wallet Address</label>
                         <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan alamat wallet crypto"
-                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                       </div>
                     )}
 
@@ -3593,7 +3623,7 @@ function Dashboard() {
               <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3">
                 {[{ key: 'all', label: 'Semua' }, { key: 'BUY', label: 'Beli' }, { key: 'SELL', label: 'Jual' }, { key: 'DEPOSIT', label: 'Deposit' }, { key: 'WITHDRAW', label: 'Withdraw' }].map(f => (
                   <button key={f.key} onClick={() => setTxFilter(f.key)}
-                    className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-colors ${txFilter === f.key ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                    className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${txFilter === f.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                     {f.label}
                   </button>
                 ))}
@@ -3650,7 +3680,7 @@ function Dashboard() {
                   <span className="text-[9px] font-black text-[#f59e0b] tracking-widest uppercase">Komisi Hingga 14%</span>
                   <p className="text-[8px] font-semibold text-[var(--zv-muted)] mt-0.5">Ajak Teman, Tumbuh Bersama</p>
                 </div>
-                <div className="w-10 h-10 rounded-2xl bg-gs-green3/10 grid place-items-center">
+                <div className="w-10 h-10 rounded-2xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 grid place-items-center">
                   <UserPlus className="w-5 h-5 text-[#3b82f6]" />
                 </div>
               </div>
@@ -3675,7 +3705,7 @@ function Dashboard() {
                         { target: 5, bonus: 25000, medal: '🥉', tier: 'Perunggu', color: 'from-amber-700 to-amber-500', barColor: 'bg-amber-400', borderColor: 'border-amber-400/40' },
                         { target: 20, bonus: 75000, medal: '🥈', tier: 'Perak', color: 'from-gray-400 to-gray-300', barColor: 'bg-gray-300', borderColor: 'border-gray-300/40' },
                         { target: 50, bonus: 150000, medal: '🥇', tier: 'Emas', color: 'from-yellow-500 to-yellow-300', barColor: 'bg-yellow-400', borderColor: 'border-yellow-400/40' },
-                        { target: 100, bonus: 400000, medal: '💎', tier: 'Berlian', color: 'from-cyan-500 to-emerald-400', barColor: 'bg-cyan-400', borderColor: 'border-cyan-400/40' },
+                        { target: 100, bonus: 400000, medal: '💎', tier: 'Berlian', color: 'from-cyan-500 to-blue-400', barColor: 'bg-cyan-400', borderColor: 'border-cyan-400/40' },
                       ]
                       const totalMembers = referralInfo.totalMembers || 0
                       return missions.map((m) => {
@@ -3695,7 +3725,7 @@ function Dashboard() {
                                 </div>
                               </div>
                               {claimed ? (
-                                <span className="h-7 px-3 rounded-lg bg-emerald-500 text-white text-[8px] font-black flex items-center gap-1">
+                                <span className="h-7 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[8px] font-black flex items-center gap-1 shadow-sm shadow-blue-500/20">
                                   <CheckCircle className="w-3 h-3" />Diklaim
                                 </span>
                               ) : reached ? (
@@ -3704,7 +3734,7 @@ function Dashboard() {
                                     setClaimedMissions(prev => new Set(prev).add(m.target))
                                     toast({ title: 'Bonus Diklaim!', description: `+${formatRupiah(m.bonus)} bonus undangan ${m.tier}` })
                                   }}
-                                  className="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[8px] font-black flex items-center gap-1 transition-colors"
+                                  className="h-7 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-[8px] font-black flex items-center gap-1 transition-all shadow-sm shadow-blue-500/20"
                                 >
                                   <DollarSign className="w-3 h-3" />Klaim
                                 </button>
@@ -3854,7 +3884,7 @@ function Dashboard() {
                   <div className="grid grid-cols-3 gap-2">
                     <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-gs-green2" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
                         <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 1</span>
                       </div>
                       <b className="block text-[14px] font-black text-[#3b82f6]">{referralInfo.tiers[0]?.activeMembers + referralInfo.tiers[0]?.inactiveMembers || 0}</b>
@@ -3870,7 +3900,7 @@ function Dashboard() {
                     </div>
                     <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-gs-gold" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                         <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 3</span>
                       </div>
                       <b className="block text-[14px] font-black text-[#f59e0b]">{referralInfo.tiers[2]?.activeMembers + referralInfo.tiers[2]?.inactiveMembers || 0}</b>
@@ -3947,11 +3977,11 @@ function Dashboard() {
                         { key: 'tiktok' as const, label: 'TikTok', color: 'bg-black', icon: '🎵' },
                         { key: 'instagram' as const, label: 'Instagram', color: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: '📸' },
                         { key: 'youtube' as const, label: 'YouTube', color: 'bg-red-600', icon: '▶️' },
-                        { key: 'facebook' as const, label: 'Facebook', color: 'bg-emerald-600', icon: '📘' },
+                        { key: 'facebook' as const, label: 'Facebook', color: 'bg-blue-600', icon: '📘' },
                         { key: 'twitter' as const, label: 'X/Twitter', color: 'bg-gray-800', icon: '🐦' },
                       ].map(p => (
                         <button key={p.key} onClick={() => setPromoPlatform(p.key)}
-                          className={`flex-shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-[9px] font-bold transition-all ${promoPlatform === p.key ? 'bg-gs-green3 text-white shadow-sm scale-105' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
+                          className={`flex-shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-[9px] font-bold transition-all ${promoPlatform === p.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm scale-105' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30'}`}>
                           <span className="text-[12px]">{p.icon}</span>
                           <span>{p.label}</span>
                         </button>
@@ -4005,7 +4035,7 @@ function Dashboard() {
                           }, 1500)
                         }}
                         disabled={promoSubmitLoading}
-                        className="h-10 px-4 rounded-xl bg-gs-green3 text-white text-[9px] font-bold flex items-center gap-1.5 hover:bg-gs-green transition-colors disabled:opacity-60 flex-shrink-0"
+                        className="h-10 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] font-bold flex items-center gap-1.5 hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-60 flex-shrink-0 shadow-md shadow-blue-500/20"
                       >
                         {promoSubmitLoading ? (
                           <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -4026,7 +4056,7 @@ function Dashboard() {
                             tiktok: { label: 'TikTok', icon: '🎵', color: 'bg-black' },
                             instagram: { label: 'Instagram', icon: '📸', color: 'bg-gradient-to-br from-purple-500 to-pink-500' },
                             youtube: { label: 'YouTube', icon: '▶️', color: 'bg-red-600' },
-                            facebook: { label: 'Facebook', icon: '📘', color: 'bg-emerald-600' },
+                            facebook: { label: 'Facebook', icon: '📘', color: 'bg-blue-600' },
                             twitter: { label: 'X/Twitter', icon: '🐦', color: 'bg-gray-800' },
                           }
                           const pi = platformInfo[v.platform] || platformInfo.tiktok
@@ -4088,21 +4118,21 @@ function Dashboard() {
                   {/* Commission highlight */}
                   <div className="mb-2">
                     <span className="text-[28px] md:text-[36px] font-black text-yellow-300 drop-shadow-lg">14%</span>
-                    <span className="block text-[9px] font-bold text-emerald-200 mt-0.5">Komisi Hingga</span>
+                    <span className="block text-[9px] font-bold text-blue-200 mt-0.5">Komisi Hingga</span>
                   </div>
 
                   <h3 className="text-[14px] md:text-[16px] font-black mb-1">Ajak Teman, Tumbuh Bersama</h3>
-                  <p className="text-[9px] md:text-[10px] text-emerald-200 leading-relaxed max-w-[300px] mx-auto mb-4">
+                  <p className="text-[9px] md:text-[10px] text-blue-200 leading-relaxed max-w-[300px] mx-auto mb-4">
                     Dapatkan komisi dari setiap teman yang berinvestasi melalui tautan referral Anda.
                   </p>
 
                   {/* Total Commission */}
                   <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
-                    <span className="block text-[8px] font-bold text-emerald-200 mb-1">TOTAL KOMISI DIPEROLEH</span>
+                    <span className="block text-[8px] font-bold text-blue-200 mb-1">TOTAL KOMISI DIPEROLEH</span>
                     <b className="text-[20px] md:text-[24px] font-black text-yellow-300">{formatRupiah(referralInfo.totalCommission)}</b>
                     {referralInfo.pendingCommission > 0 && (
                       <div className="mt-1 flex items-center justify-center gap-2">
-                        <span className="text-[8px] text-emerald-200">Pending: {formatRupiah(referralInfo.pendingCommission)}</span>
+                        <span className="text-[8px] text-blue-200">Pending: {formatRupiah(referralInfo.pendingCommission)}</span>
                         <button
                           onClick={async () => {
                             if (claimLoading) return
@@ -4127,7 +4157,7 @@ function Dashboard() {
                           disabled={claimLoading}
                           className="h-6 px-3 rounded-lg bg-yellow-500 text-[var(--zv-text)] text-[8px] font-black inline-flex items-center gap-1 hover:bg-yellow-400 transition-colors disabled:opacity-50"
                         >
-                          {claimLoading ? <div className="w-3 h-3 rounded-full border-2 border-gs-dark/30 border-t-gs-dark animate-spin" /> : <><DollarSign className="w-3 h-3" />Klaim</>}
+                          {claimLoading ? <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><DollarSign className="w-3 h-3" />Klaim</>}
                         </button>
                       </div>
                     )}
@@ -4144,7 +4174,7 @@ function Dashboard() {
                   </div>
                   <button
                     onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: 'Kode disalin!' }) }}
-                    className="h-11 w-11 rounded-xl bg-gs-green3 text-white grid place-items-center hover:bg-gs-green transition-colors"
+                    className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-white grid place-items-center hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20"
                   >
                     {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                   </button>
@@ -4184,7 +4214,7 @@ function Dashboard() {
               {/* Stats Cards */}
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
-                  <Users className="w-5 h-5 text-gs-green mx-auto mb-1" />
+                  <Users className="w-5 h-5 text-[#3b82f6] mx-auto mb-1" />
                   <b className="block text-[14px] font-black text-[#3b82f6]">{referralInfo.totalMembers}</b>
                   <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Anggota</span>
                 </div>
@@ -4205,9 +4235,9 @@ function Dashboard() {
               <div className="space-y-2 mb-4">
                 {referralInfo.tiers.map((tier) => {
                   const tierColors = [
-                    { bg: 'bg-emerald-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💎', border: 'border-[var(--zv-border)]' },
+                    { bg: 'bg-blue-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💎', border: 'border-[var(--zv-border)]' },
                     { bg: 'bg-orange-500', text: 'text-[#ff9800]', light: 'bg-[var(--zv-surface)]', gem: '🔥', border: 'border-[var(--zv-border)]' },
-                    { bg: 'bg-emerald-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💚', border: 'border-[var(--zv-border)]' },
+                    { bg: 'bg-blue-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💚', border: 'border-[var(--zv-border)]' },
                   ]
                   const tc = tierColors[tier.level - 1] || tierColors[0]
                   return (
@@ -4305,7 +4335,7 @@ function Dashboard() {
                     {referralInfo.referredUsers.map((u, i) => (
                       <div key={i} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[var(--zv-surface)] grid place-items-center"><User className="w-4 h-4 text-gs-green" /></div>
+                          <div className="w-8 h-8 rounded-full bg-[var(--zv-surface)] grid place-items-center"><User className="w-4 h-4 text-[#3b82f6]" /></div>
                           <div>
                             <span className="block text-[9px] font-bold text-[var(--zv-text)]">{u.name}</span>
                             <span className="block text-[7px] text-[var(--zv-muted)]">{formatDate(u.date)}</span>
@@ -4353,7 +4383,7 @@ function Dashboard() {
                 <div className="p-4 text-white text-center">
                   <Flame className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
                   <h2 className="text-[16px] md:text-xl font-black">Bonus Harian</h2>
-                  <p className="text-[9px] md:text-[10px] text-emerald-200 mt-1">Klaim bonus check-in setiap hari</p>
+                  <p className="text-[9px] md:text-[10px] text-blue-200 mt-1">Klaim bonus check-in setiap hari</p>
                   {dailyCheckStatus.streak > 0 && (
                     <p className="text-[8px] text-yellow-300 font-bold mt-1">🔥 Streak: {dailyCheckStatus.streak} hari</p>
                   )}
@@ -4363,7 +4393,7 @@ function Dashboard() {
                     </button>
                   ) : (
                     <div className="mt-3 h-10 px-8 rounded-2xl bg-white/15 inline-flex items-center gap-1 text-[11px] font-bold">
-                      <CheckCircle className="w-4 h-4 text-emerald-300" /> Sudah Dicek ✓
+                      <CheckCircle className="w-4 h-4 text-blue-300" /> Sudah Dicek ✓
                     </div>
                   )}
                 </div>
@@ -4418,7 +4448,7 @@ function Dashboard() {
                 <div className="p-4 text-white text-center">
                   <Trophy className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
                   <h2 className="text-[16px] md:text-xl font-black">Leaderboard</h2>
-                  <p className="text-[9px] md:text-[10px] text-emerald-200 mt-1">Top investor dengan profit tertinggi</p>
+                  <p className="text-[9px] md:text-[10px] text-blue-200 mt-1">Top investor dengan profit tertinggi</p>
                 </div>
               </div>
 
@@ -4456,8 +4486,8 @@ function Dashboard() {
                   </div>
                   <h2 className="text-[14px] md:text-lg font-black">{user?.name}</h2>
                   <div className="flex items-center justify-center gap-1.5 mt-1">
-                    <span className="text-[9px] md:text-[10px] text-emerald-200">+62 {user?.phone}</span>
-                    <span className="h-4 px-1.5 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-[7px] font-black text-emerald-300 flex items-center gap-0.5">
+                    <span className="text-[9px] md:text-[10px] text-blue-200">+62 {user?.phone}</span>
+                    <span className="h-4 px-1.5 rounded-full bg-blue-500/30 border border-blue-400/40 text-[7px] font-black text-blue-300 flex items-center gap-0.5">
                       <CheckCircle className="w-2.5 h-2.5" />VERIFIED
                     </span>
                   </div>
@@ -4466,7 +4496,7 @@ function Dashboard() {
                       <Award className="w-2.5 h-2.5" />Gold VIP
                     </span>
                     {user?.kycStatus === 'verified' && (
-                      <span className="h-5 px-2 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-[7px] font-bold text-emerald-200 flex items-center gap-1">
+                      <span className="h-5 px-2 rounded-full bg-blue-500/20 border border-blue-400/30 text-[7px] font-bold text-blue-200 flex items-center gap-1">
                         <Shield className="w-2.5 h-2.5" />KYC Verified
                       </span>
                     )}
@@ -4479,7 +4509,7 @@ function Dashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-[11px] font-black text-[#3b82f6]">Informasi Profil</h3>
                   <button onClick={() => { setProfileForm({ name: user?.name || '', email: user?.email || '', bankName: user?.bankName || '', bankAccount: user?.bankAccount || '', bankHolder: user?.bankHolder || '' }); setProfileEdit(!profileEdit) }}
-                    className="text-[9px] font-bold text-gs-green hover:underline flex items-center gap-1">
+                    className="text-[9px] font-bold text-[#3b82f6] hover:underline flex items-center gap-1">
                     <Settings className="w-3 h-3" />{profileEdit ? 'Batal' : 'Edit'}
                   </button>
                 </div>
@@ -4488,29 +4518,29 @@ function Dashboard() {
                     <div>
                       <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nama</label>
                       <input type="text" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                     </div>
                     <div>
                       <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Email</label>
                       <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                     </div>
                     <div>
                       <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Bank</label>
                       <input type="text" value={profileForm.bankName} onChange={(e) => setProfileForm({ ...profileForm, bankName: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                     </div>
                     <div>
                       <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nomor Rekening</label>
                       <input type="text" value={profileForm.bankAccount} onChange={(e) => setProfileForm({ ...profileForm, bankAccount: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                     </div>
                     <div>
                       <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nama Pemilik Rekening</label>
                       <input type="text" value={profileForm.bankHolder} onChange={(e) => setProfileForm({ ...profileForm, bankHolder: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
                     </div>
-                    <button onClick={handleProfileSave} className="w-full h-10 rounded-xl bg-gs-green3 text-white text-[10px] font-bold hover:bg-gs-green transition-colors">
+                    <button onClick={handleProfileSave} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
                       Simpan Perubahan
                     </button>
                   </div>
@@ -4538,7 +4568,7 @@ function Dashboard() {
                   { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => {} },
                   { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => {} },
                   { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Bonus & Promo', desc: 'Klaim bonus harian', action: () => setActiveTab('bonus') },
-                  { icon: <UserPlus className="w-4 h-4 text-gs-green" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
+                  { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
                   { icon: <Headphones className="w-4 h-4 text-[#3b82f6]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => {} },
                   { icon: <Building2 className="w-4 h-4 text-[#3b82f6]" />, label: 'Profil Perusahaan', desc: 'Tentang ZEVORIX', action: () => {} },
                   { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => {} },
@@ -4588,10 +4618,12 @@ function Dashboard() {
               <button key={tab.key} onClick={() => {
                 if (tab.key === 'more') setShowSideMenu(true)
                 else setActiveTab(tab.key)
-              }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
+              }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[var(--zv-text)]'}`}>
                 {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-b-full" style={{ background: 'linear-gradient(135deg, #3b82f6, #60a5fa)' }} />}
-                <tab.icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
-                <span className={`text-[9px] font-bold ${isActive ? 'text-[#3b82f6]' : ''}`}>{tab.label}</span>
+                <div className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${isActive ? 'bg-[#3b82f6]/10' : ''}`}>
+                  <tab.icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+                  <span className={`text-[9px] font-bold ${isActive ? 'text-[#3b82f6]' : ''}`}>{tab.label}</span>
+                </div>
               </button>
             )
           })}
@@ -4599,7 +4631,12 @@ function Dashboard() {
       </nav>
 
       {/* Desktop Sidebar Navigation - hidden on mobile */}
-      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-16 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
+      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-4 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-1 mb-3 pb-3 border-b border-[var(--zv-border)]">
+          <ZevorixLogo size={32} />
+          <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIX</span>
+        </div>
         {[
           { key: 'home', label: 'Beranda', icon: HomeIcon },
           { key: 'market', label: 'Pasar', icon: BarChart3 },
@@ -4613,8 +4650,8 @@ function Dashboard() {
           { key: 'profile', label: 'Profil', icon: User },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
-            {activeTab === tab.key && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#3b82f6]" />}
+            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
+            {activeTab === tab.key && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #60a5fa)' }} />}
             <tab.icon className="w-5 h-5" />
             <span className="text-[7px] lg:text-[8px] font-bold">{tab.label}</span>
           </button>
@@ -4640,7 +4677,7 @@ function Dashboard() {
                     <div className="w-12 h-12 rounded-full bg-white/20 border border-white/10 grid place-items-center"><User className="w-6 h-6 text-yellow-300" /></div>
                     <div className="text-white">
                       <b className="block text-[13px] font-black">{user?.name}</b>
-                      <span className="block text-[9px] text-emerald-200">+62 {user?.phone}</span>
+                      <span className="block text-[9px] text-blue-200">+62 {user?.phone}</span>
                     </div>
                   </div>
                   <button onClick={() => setShowSideMenu(false)} className="w-8 h-8 rounded-full bg-white/10 border border-white/10 grid place-items-center text-white hover:bg-white/20 transition-colors">
@@ -4651,12 +4688,12 @@ function Dashboard() {
                   <div className="flex-1 rounded-xl p-2 bg-white/10 border border-white/15 text-center">
                     <Wallet className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                     <b className="block text-[9px] font-black text-white">{formatRupiah(user?.balance || 0).replace('Rp', '').trim()}</b>
-                    <span className="block text-[7px] text-emerald-200">Saldo</span>
+                    <span className="block text-[7px] text-blue-200">Saldo</span>
                   </div>
                   <div className="flex-1 rounded-xl p-2 bg-white/10 border border-white/15 text-center">
-                    <Briefcase className="w-4 h-4 text-emerald-300 mx-auto mb-0.5" />
+                    <Briefcase className="w-4 h-4 text-blue-300 mx-auto mb-0.5" />
                     <b className="block text-[9px] font-black text-white">{portfolioSummary.totalCurrentValue > 0 ? formatRupiah(portfolioSummary.totalCurrentValue).replace('Rp', '').trim() : '0'}</b>
-                    <span className="block text-[7px] text-emerald-200">Portofolio</span>
+                    <span className="block text-[7px] text-blue-200">Portofolio</span>
                   </div>
                 </div>
               </div>
@@ -4698,8 +4735,11 @@ function Dashboard() {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowNotifPanel(false)} />
             <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[320px] md:w-[400px] bg-[var(--zv-panel)] border-l border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
-              <div className="p-4 border-b border-[var(--zv-border)] flex items-center justify-between bg-[var(--zv-surface)]">
-                <h3 className="text-[14px] font-black gradient-text">Notifikasi</h3>
+              <div className="p-4 border-b border-[var(--zv-border)] flex items-center justify-between" style={{ background: 'linear-gradient(145deg, var(--zv-surface) 0%, var(--zv-panel) 100%)' }}>
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-[#3b82f6]" />
+                  <h3 className="text-[14px] font-black gradient-text">Notifikasi</h3>
+                </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => markNotifRead()} className="text-[9px] font-bold text-[#3b82f6] hover:underline">Tandai dibaca</button>
                   <button onClick={() => setShowNotifPanel(false)} className="w-8 h-8 rounded-xl grid place-items-center hover:bg-[var(--zv-surface)] bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
@@ -4713,7 +4753,7 @@ function Dashboard() {
                         {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'bonus' ? <Gift className="w-3 h-3 text-purple-400" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
                       </div>
                       <span className="flex-1 text-[9px] font-bold text-[var(--zv-text)]">{n.title}</span>
-                      {!n.isRead && <span className="w-2 h-2 rounded-full bg-gs-green" />}
+                      {!n.isRead && <span className="w-2 h-2 rounded-full bg-blue-500" />}
                     </div>
                     <p className="text-[8px] text-[var(--zv-muted)] leading-relaxed">{n.message}</p>
                     <span className="block text-[7px] text-[var(--zv-muted)] mt-1">{formatDateTime(n.createdAt)}</span>
@@ -4751,7 +4791,7 @@ function Dashboard() {
                       <DollarSign className="w-5 h-5 text-yellow-300" />
                       <span className="text-[13px] font-black">{selectedProduct.name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-emerald-200">Aset Saham • {selectedProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
                   </div>
                 </div>
 
@@ -5065,8 +5105,8 @@ function Dashboard() {
                 {/* Header - Dark Trading Style */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--zv-surface)] flex-shrink-0">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-600/20 border border-emerald-500/30 grid place-items-center">
-                      <Target className="w-4 h-4 text-emerald-400" />
+                    <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 grid place-items-center">
+                      <Target className="w-4 h-4 text-blue-400" />
                     </div>
                     <div>
                       <h3 className="text-[13px] font-black text-white">Sinyal Pro — {selectedSinyalStock.code}</h3>
@@ -5080,8 +5120,8 @@ function Dashboard() {
                 <div className="overflow-hidden flex-shrink-0" style={{ background: 'var(--zv-panel)', borderBottom: '1px solid var(--zv-surface)' }}>
                   <div className="flex items-center justify-between px-3 pt-2 pb-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[8px] font-black text-emerald-400 tracking-wider">LIVE</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-[8px] font-black text-blue-400 tracking-wider">LIVE</span>
                       <span className="text-[8px] font-bold text-gray-600">|</span>
                       <span className="text-[8px] font-bold text-gray-400">{selectedSinyalStock.code}/IDR</span>
                     </div>
@@ -5093,7 +5133,7 @@ function Dashboard() {
                   {/* Timeframe Selector */}
                   <div className="flex items-center gap-1 px-3 pt-0.5 pb-1.5">
                     {['1M', '5M', '15M', '1H', '1D'].map(tf => (
-                      <button key={tf} className={`h-6 px-2.5 rounded-md text-[7px] font-bold transition-colors ${tf === '1M' ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-[var(--zv-surface)]'}`}>
+                      <button key={tf} className={`h-6 px-2.5 rounded-md text-[7px] font-bold transition-colors ${tf === '1M' ? 'bg-blue-600/30 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-[var(--zv-surface)]'}`}>
                         {tf}
                       </button>
                     ))}
@@ -5111,9 +5151,9 @@ function Dashboard() {
                     return (
                       <div className="flex items-center gap-4 px-3 pb-1.5">
                         <span className="text-[8px] text-gray-500">O <span className="text-gray-300">{formatRupiah(lastOHLC.open)}</span></span>
-                        <span className="text-[8px] text-gray-500">H <span className="text-emerald-400">{formatRupiah(lastOHLC.high)}</span></span>
+                        <span className="text-[8px] text-gray-500">H <span className="text-blue-400">{formatRupiah(lastOHLC.high)}</span></span>
                         <span className="text-[8px] text-gray-500">L <span className="text-red-400">{formatRupiah(lastOHLC.low)}</span></span>
-                        <span className="text-[8px] text-gray-500">C <span className={ohlcIsGreen ? 'text-emerald-400' : 'text-red-400'}>{formatRupiah(lastOHLC.close)}</span></span>
+                        <span className="text-[8px] text-gray-500">C <span className={ohlcIsGreen ? 'text-blue-400' : 'text-red-400'}>{formatRupiah(lastOHLC.close)}</span></span>
                       </div>
                     )
                   })()}
@@ -5285,7 +5325,7 @@ function Dashboard() {
                     <span className="text-[12px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
                       {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
                     </span>
-                    <span className={`text-[9px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                    <span className={`text-[9px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-blue-500' : 'text-red-400'}`}>
                       {formatPercent(selectedSinyalStock.changePercent)}
                     </span>
                   </div>
@@ -5298,7 +5338,7 @@ function Dashboard() {
                     <label className="block text-[9px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Arah Prediksi</label>
                     <div className="flex gap-2">
                       <button onClick={() => setSinyalDirection('NAIK')}
-                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'NAIK' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-[var(--zv-surface)] text-emerald-400 border border-emerald-800/50'}`}>
+                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'NAIK' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-[var(--zv-surface)] text-blue-400 border border-blue-800/50'}`}>
                         <TrendingUp className="w-4 h-4" />NAIK
                       </button>
                       <button onClick={() => setSinyalDirection('TURUN')}
@@ -5312,13 +5352,13 @@ function Dashboard() {
                   <div className="mb-3">
                     <label className="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Jumlah (Rp)</label>
                     <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="Min. 100.000"
-                      className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[13px] font-semibold text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-gray-600" />
+                      className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[13px] font-semibold text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-gray-600" />
                   </div>
 
                   {/* Quick Amount Buttons */}
                   <div className="flex gap-1.5 mb-3">
                     {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                      <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-gray-400 hover:bg-emerald-600/20 hover:border-emerald-500/30 hover:text-emerald-400 transition-all">
+                      <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-gray-400 hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 transition-all">
                         {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                       </button>
                     ))}
@@ -5330,7 +5370,7 @@ function Dashboard() {
                     <div className="flex gap-1.5">
                       {[10, 30, 60, 120, 300].map(dur => (
                         <button key={dur} onClick={() => setSinyalDuration(dur)}
-                          className={`flex-1 h-9 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-gray-400 hover:text-gray-200'}`}>
+                          className={`flex-1 h-9 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-gray-400 hover:text-gray-200'}`}>
                           {dur >= 60 ? `${dur/60}m` : `${dur}s`}
                         </button>
                       ))}
@@ -5350,11 +5390,11 @@ function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between py-0.5">
                         <span className="text-[8px] text-gray-500">Profit Rate</span>
-                        <span className="text-[8px] font-bold text-emerald-400">+{calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(1)}%</span>
+                        <span className="text-[8px] font-bold text-blue-400">+{calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(1)}%</span>
                       </div>
                       <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-[var(--zv-border)]">
-                        <span className="text-[10px] font-bold text-emerald-400">Potensi Profit</span>
-                        <span className="text-[11px] font-black text-emerald-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration) / 100))}</span>
+                        <span className="text-[10px] font-bold text-blue-400">Potensi Profit</span>
+                        <span className="text-[11px] font-black text-blue-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration) / 100))}</span>
                       </div>
                     </div>
                   )}
@@ -5369,7 +5409,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <button onClick={() => setSinyalAutoMode(!sinyalAutoMode)}
-                      className={`w-11 h-6 rounded-full transition-colors flex items-center ${sinyalAutoMode ? 'bg-emerald-500 justify-end' : 'bg-[var(--zv-border)] justify-start'}`}>
+                      className={`w-11 h-6 rounded-full transition-all flex items-center ${sinyalAutoMode ? 'bg-gradient-to-r from-blue-600 to-blue-500 justify-end shadow-sm shadow-blue-500/30' : 'bg-[var(--zv-border)] justify-start'}`}>
                       <div className="w-5 h-5 rounded-full bg-white shadow-sm mx-0.5" />
                     </button>
                   </div>
@@ -5386,9 +5426,9 @@ function Dashboard() {
                   {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
                     const ap = sinyalPositions.find(p => p.status === 'active')!
                     return (
-                      <div className="rounded-xl p-3 mb-3 border border-emerald-500/30 bg-emerald-500/10">
+                      <div className="rounded-xl p-3 mb-3 border border-blue-500/30 bg-blue-500/10">
                         <div className="flex items-center justify-between mb-2">
-                          <span className={`text-[13px] font-black ${ap.direction === 'NAIK' ? 'text-emerald-400' : 'text-red-400'}`}>{ap.direction} {ap.stockCode}</span>
+                          <span className={`text-[13px] font-black ${ap.direction === 'NAIK' ? 'text-blue-400' : 'text-red-400'}`}>{ap.direction} {ap.stockCode}</span>
                           <span className="text-[20px] font-black text-white tabular-nums">{sinyalTimer}s</span>
                         </div>
                         <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden">
@@ -5400,10 +5440,10 @@ function Dashboard() {
 
                   {/* Result in Modal */}
                   {sinyalResult && !sinyalActive && (
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-xl p-4 mb-3 text-center ${sinyalResult.won ? 'bg-emerald-500/15 border border-emerald-500/30' : 'bg-red-500/15 border border-red-500/30'}`}>
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-xl p-4 mb-3 text-center ${sinyalResult.won ? 'bg-blue-500/15 border border-blue-500/30' : 'bg-red-500/15 border border-red-500/30'}`}>
                       <span className="text-[24px]">{sinyalResult.won ? '🎯' : '❌'}</span>
-                      <h4 className={`text-[14px] font-black ${sinyalResult.won ? 'text-emerald-400' : 'text-red-400'}`}>{sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}</h4>
-                      <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-emerald-400' : 'text-red-400'}`}>{sinyalResult.won ? '+' : '-'}{formatRupiah(Math.abs(sinyalResult.profit))}</span>
+                      <h4 className={`text-[14px] font-black ${sinyalResult.won ? 'text-blue-400' : 'text-red-400'}`}>{sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}</h4>
+                      <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-blue-400' : 'text-red-400'}`}>{sinyalResult.won ? '+' : '-'}{formatRupiah(Math.abs(sinyalResult.profit))}</span>
                     </motion.div>
                   )}
 
@@ -5450,7 +5490,7 @@ function Dashboard() {
                   <h3 className="text-lg font-black text-white mb-1">
                     {dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} Hari Berturut-turut` : 'Mulai Streak Anda!'}
                   </h3>
-                  <p className="text-[9px] text-emerald-200">Cek setiap hari untuk mendapat bonus Rp 1.000 - Rp 10.000</p>
+                  <p className="text-[9px] text-blue-200">Cek setiap hari untuk mendapat bonus Rp 1.000 - Rp 10.000</p>
 
                   {/* Streak dots */}
                   <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -5480,7 +5520,7 @@ function Dashboard() {
 
                   {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
                     <div className="mt-4 rounded-xl p-3 bg-white/10 border border-white/15">
-                      <span className="text-[9px] text-emerald-200 font-bold">Bonus Hari Ini</span>
+                      <span className="text-[9px] text-blue-200 font-bold">Bonus Hari Ini</span>
                       <b className="block text-2xl font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
                     </div>
                   )}
@@ -5582,7 +5622,7 @@ function Dashboard() {
                               <span className="block text-[8px] text-[var(--zv-muted)]">{task.description}</span>
                               <div className="flex items-center gap-1 mt-0.5">
                                 <div className="w-16 h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all duration-500 ${task.claimed ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${task.target > 0 ? (task.progress / task.target) * 100 : 0}%` }} />
+                                  <div className={`h-full rounded-full transition-all duration-500 ${task.claimed ? 'bg-blue-500' : 'bg-amber-500'}`} style={{ width: `${task.target > 0 ? (task.progress / task.target) * 100 : 0}%` }} />
                                 </div>
                                 <span className="text-[7px] font-bold text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
                               </div>
@@ -5628,11 +5668,11 @@ function Dashboard() {
                 <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="relative z-10">
-                    <div className="w-16 h-16 rounded-full bg-white p-1.5 mx-auto mb-3 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
-                      <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
+                    <div className="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <ZevorixLogo size={56} />
                     </div>
                     <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIX</h2>
-                    <p className="text-[9px] text-emerald-200 leading-relaxed max-w-[280px] mx-auto">
+                    <p className="text-[9px] text-blue-200 leading-relaxed max-w-[280px] mx-auto">
                       Platform investasi terpercaya dengan profit harian, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.
                     </p>
                   </div>
@@ -5688,7 +5728,7 @@ function Dashboard() {
                   {/* Don't show checkbox */}
                   <label className="flex items-center gap-2 cursor-pointer justify-center">
                     <input type="checkbox" checked={welcomeDontShow} onChange={(e) => setWelcomeDontShow(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded accent-gs-green" />
+                      className="w-3.5 h-3.5 rounded accent-blue-500" />
                     <span className="text-[8px] font-semibold text-[var(--zv-muted)]">Jangan tampilkan selama 30 menit</span>
                   </label>
                 </div>
@@ -5720,7 +5760,7 @@ function Dashboard() {
                       <DollarSign className="w-5 h-5 text-yellow-300" />
                       <span className="text-[14px] font-black">{selectedDetailProduct.name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-emerald-200">Aset Saham • {selectedDetailProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedDetailProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
                   </div>
                 </div>
 
@@ -5740,7 +5780,7 @@ function Dashboard() {
                           <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PERGERAKAN MARKET</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                           <span className="text-[7px] font-black text-[#3b82f6]">LIVE</span>
                         </div>
                       </div>

@@ -16,10 +16,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ZEVORIX - Future of Investing",
   description: "Platform investasi saham terpercaya. Pantau portofolio, pergerakan saham, dan aktivitas profit Anda.",
-  keywords: ["saham", "investasi", "portofolio", "IHSG", "ZEVORIX"],
+  keywords: ["saham", "investasi", "portofolio", "IHSG", "ZEVORIX", "trading", "stock"],
   authors: [{ name: "ZEVORIX" }],
   icons: {
     icon: "/zevorix-logo.png",
+    apple: "/zevorix-logo.png",
+  },
+  openGraph: {
+    title: "ZEVORIX - Future of Investing",
+    description: "Platform investasi saham terpercaya dengan profit harian dan portofolio cerdas.",
+    type: "website",
   },
 };
 
