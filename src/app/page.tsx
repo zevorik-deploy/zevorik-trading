@@ -750,10 +750,10 @@ function Dashboard() {
   const [sinyalAmount, setSinyalAmount] = useState('')
   const [sinyalDuration, setSinyalDuration] = useState(20)
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
-  const [sinyalResult, setSinyalResult] = useState<{won: boolean; profit: number} | null>(null)
-  const [sinyalTimer, setSinyalTimer] = useState(0)
-  const [sinyalActive, setSinyalActive] = useState(false)
+  const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number}[]>([])
   const [sinyalAutoPending, setSinyalAutoPending] = useState(false)
+  // Track remaining time per position
+  const [sinyalTimers, setSinyalTimers] = useState<Record<string, number>>({})
 
   // Sinyal Pro live candlestick chart
   const [sinyalCandles, setSinyalCandles] = useState<CandleData[]>([])
@@ -1248,7 +1248,7 @@ function Dashboard() {
     if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
     const dir = overrideDirection || sinyalDirection
     const profitPercent = calcSinyalProfit(amount, sinyalDuration, dir)
-    const posId = `sinyal-${Date.now()}`
+    const posId = `sinyal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     const newPosition = {
       id: posId,
       stockId: selectedSinyalStock.id,
@@ -1257,17 +1257,17 @@ function Dashboard() {
       direction: dir,
       amount,
       duration: sinyalDuration,
-      startPrice: selectedSinyalStock.price,
+      startPrice: sinyalCurrentPrice || selectedSinyalStock.price,
       startTime: Date.now(),
       profitPercent,
       status: 'active' as const,
     }
     setSinyalPositions(prev => [...prev, newPosition])
-    setSinyalActive(true)
-    setSinyalResult(null)
-    setSinyalTimer(sinyalDuration)
+    setSinyalTimers(prev => ({ ...prev, [posId]: sinyalDuration }))
+    // Deduct balance immediately when opening position
+    updateBalance((user?.balance || 0) - amount)
     toast({ title: 'Posisi Dibuka! 🎯', description: `${dir} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${sinyalDuration}s` })
-  }, [selectedSinyalStock, sinyalAmount, sinyalDirection, sinyalDuration, user, calcSinyalProfit])
+  }, [selectedSinyalStock, sinyalAmount, sinyalDirection, sinyalDuration, user, calcSinyalProfit, sinyalCurrentPrice, updateBalance])
 
   // Sinyal Pro live candlestick chart — initialize historical candles + real-time intrabar updates
   useEffect(() => {
