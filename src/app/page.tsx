@@ -167,28 +167,18 @@ const REFERENCE_TICKERS = [
 const PIE_COLORS = ['#2563eb', '#f59e0b', '#60a5fa', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
 // ============================================
-// ZEVORIX LOGO SVG COMPONENT
+// ZEVORIX LOGO COMPONENT
 // ============================================
 function ZevorixLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
   return (
-    <svg viewBox="0 0 120 120" width={size} height={size} className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="zv-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1d4ed8" />
-          <stop offset="50%" stopColor="#2563eb" />
-          <stop offset="100%" stopColor="#3b82f6" />
-        </linearGradient>
-        <linearGradient id="zv-grad-2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#60a5fa" />
-          <stop offset="100%" stopColor="#93c5fd" />
-        </linearGradient>
-      </defs>
-      {/* Shield shape */}
-      <path d="M60 8 L104 28 L104 60 C104 84 84 104 60 112 C36 104 16 84 16 60 L16 28 Z" fill="url(#zv-grad-1)" />
-      <path d="M60 16 L98 33 L98 60 C98 80 80 98 60 105 C40 98 22 80 22 60 L22 33 Z" fill="url(#zv-grad-2)" opacity="0.3" />
-      {/* Z letter */}
-      <path d="M40 45 L80 45 L80 52 L52 72 L80 72 L80 79 L40 79 L40 72 L68 52 L40 52 Z" fill="white" />
-    </svg>
+    <img
+      src="/zevorix-logo.png"
+      alt="ZEVORIX"
+      width={size}
+      height={size}
+      className={`object-contain ${className}`}
+      style={{ imageRendering: 'auto' }}
+    />
   )
 }
 
@@ -263,8 +253,8 @@ function LoginPage() {
       <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 text-center text-white max-w-lg">
-          <div className="mx-auto mb-6">
-            <ZevorixLogo size={80} />
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white p-2 shadow-[0_12px_40px_rgba(0,0,0,.3)]">
+            <ZevorixLogo size={64} />
           </div>
           <h1 className="text-3xl lg:text-4xl font-black mb-3">ZEVORIX</h1>
           <p className="text-blue-200 text-sm lg:text-base mb-8 leading-relaxed">Future of Investing</p>
@@ -307,7 +297,9 @@ function LoginPage() {
           {/* Top Navigation - mobile only */}
           <header className="flex items-center justify-between mb-3 md:hidden">
             <div className="flex items-center gap-2.5">
-              <ZevorixLogo size={36} />
+              <div className="w-9 h-9 rounded-full bg-white p-1 border border-slate-200 shadow-sm">
+                <ZevorixLogo size={32} />
+              </div>
               <div>
                 <b className="block text-[11px] leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
                 <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
@@ -324,7 +316,9 @@ function LoginPage() {
           {/* Desktop switch button */}
           <div className="hidden md:flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <ZevorixLogo size={36} />
+              <div className="w-9 h-9 rounded-full bg-white p-1 border border-slate-200 shadow-sm">
+                <ZevorixLogo size={32} />
+              </div>
               <div>
                 <b className="block text-xs leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
                 <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
@@ -364,8 +358,8 @@ function LoginPage() {
 
             {/* Center Logo + Text */}
             <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-3">
-              <div className="mb-2">
-                <ZevorixLogo size={56} />
+              <div className="w-14 h-14 rounded-full bg-white p-1.5 mb-2 shadow-[0_8px_24px_rgba(0,0,0,.3)] mx-auto">
+                <ZevorixLogo size={48} />
               </div>
 
               {isLogin ? (
@@ -1794,8 +1788,8 @@ function Dashboard() {
             <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
               <Menu className="w-4 h-4 text-[var(--zv-muted)]" />
             </button>
-            <div className="flex-shrink-0">
-              <ZevorixLogo size={34} />
+            <div className="w-9 h-9 rounded-full bg-[var(--zv-surface)] p-0.5 border border-[var(--zv-border)] flex-shrink-0">
+              <ZevorixLogo size={32} />
             </div>
             <div>
               <b className="block text-[11px] md:text-sm font-black gradient-text leading-tight">ZEVORIX</b>
@@ -4634,7 +4628,9 @@ function Dashboard() {
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-4 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
         {/* Logo */}
         <div className="flex flex-col items-center gap-1 mb-3 pb-3 border-b border-[var(--zv-border)]">
-          <ZevorixLogo size={32} />
+          <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] p-0.5 border border-[var(--zv-border)]">
+            <ZevorixLogo size={28} />
+          </div>
           <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIX</span>
         </div>
         {[
@@ -5668,8 +5664,8 @@ function Dashboard() {
                 <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="relative z-10">
-                    <div className="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <ZevorixLogo size={56} />
+                    <div className="w-16 h-16 rounded-full bg-white p-1.5 mx-auto mb-3 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
+                      <ZevorixLogo size={52} />
                     </div>
                     <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIX</h2>
                     <p className="text-[9px] text-blue-200 leading-relaxed max-w-[280px] mx-auto">
