@@ -1184,23 +1184,93 @@ function Dashboard() {
 
   // ============ SINYAL PRO HELPERS & TIMER ============
   // Stockity-style payout: NAIK profit bigger, TURUN profit smaller
-  const getPayoutRates = useCallback((): { up: number; down: number } => {
-    // Base rates that fluctuate slightly (like Stockity)
-    const upBase = 80 + Math.random() * 8  // 80-88%
-    const downBase = 55 + Math.random() * 10 // 55-65%
-    return { up: Math.round(upBase * 10) / 10, down: Math.round(downBase * 10) / 10 }
+  // Payout rates vary per stock based on volatility tier
+  const STOCK_PAYOUT_TIERS: Record<string, { upRange: [number, number]; downRange: [number, number]; volMultiplier: number }> = {
+    // High volatility - highest UP payout, lowest DOWN
+    TSLA: { upRange: [85, 92], downRange: [48, 56], volMultiplier: 1.8 },
+    NVDA: { upRange: [84, 91], downRange: [50, 58], volMultiplier: 1.7 },
+    AMD:  { upRange: [83, 90], downRange: [50, 58], volMultiplier: 1.6 },
+    COIN: { upRange: [86, 93], downRange: [45, 53], volMultiplier: 2.0 },
+    SQ:   { upRange: [84, 91], downRange: [48, 56], volMultiplier: 1.7 },
+    // Medium-high volatility
+    META: { upRange: [82, 88], downRange: [52, 60], volMultiplier: 1.4 },
+    AMZN: { upRange: [81, 87], downRange: [53, 61], volMultiplier: 1.3 },
+    NFLX: { upRange: [82, 89], downRange: [51, 59], volMultiplier: 1.5 },
+    AVGO: { upRange: [83, 89], downRange: [52, 60], volMultiplier: 1.4 },
+    INTC: { upRange: [80, 86], downRange: [54, 62], volMultiplier: 1.2 },
+    TSM:  { upRange: [81, 88], downRange: [53, 61], volMultiplier: 1.3 },
+    PYPL: { upRange: [80, 87], downRange: [54, 62], volMultiplier: 1.2 },
+    // Medium volatility
+    AAPL: { upRange: [78, 84], downRange: [56, 64], volMultiplier: 1.0 },
+    MSFT: { upRange: [77, 83], downRange: [57, 65], volMultiplier: 0.9 },
+    GOOGL:{ upRange: [78, 84], downRange: [56, 64], volMultiplier: 1.0 },
+    CRM:  { upRange: [80, 86], downRange: [54, 62], volMultiplier: 1.2 },
+    ORCL: { upRange: [79, 85], downRange: [55, 63], volMultiplier: 1.1 },
+    ADBE: { upRange: [80, 86], downRange: [54, 62], volMultiplier: 1.2 },
+    UBER: { upRange: [81, 87], downRange: [53, 61], volMultiplier: 1.3 },
+    NOW:  { upRange: [81, 87], downRange: [53, 61], volMultiplier: 1.3 },
+    // Low volatility - lower UP payout, higher DOWN (more stable)
+    JPM:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    V:    { upRange: [74, 80], downRange: [59, 67], volMultiplier: 0.6 },
+    MA:   { upRange: [74, 80], downRange: [59, 67], volMultiplier: 0.6 },
+    GS:   { upRange: [76, 82], downRange: [57, 65], volMultiplier: 0.8 },
+    BAC:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    PGR:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    UNH:  { upRange: [76, 82], downRange: [57, 65], volMultiplier: 0.8 },
+    JNJ:  { upRange: [73, 79], downRange: [60, 68], volMultiplier: 0.5 },
+    PFE:  { upRange: [76, 82], downRange: [57, 65], volMultiplier: 0.8 },
+    LLY:  { upRange: [78, 84], downRange: [56, 64], volMultiplier: 1.0 },
+    ABBV: { upRange: [76, 82], downRange: [57, 65], volMultiplier: 0.8 },
+    MRK:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    WMT:  { upRange: [73, 79], downRange: [60, 68], volMultiplier: 0.5 },
+    COST: { upRange: [74, 80], downRange: [59, 67], volMultiplier: 0.6 },
+    NKE:  { upRange: [79, 85], downRange: [55, 63], volMultiplier: 1.1 },
+    MCD:  { upRange: [73, 79], downRange: [60, 68], volMultiplier: 0.5 },
+    KO:   { upRange: [72, 78], downRange: [61, 69], volMultiplier: 0.4 },
+    SBUX: { upRange: [76, 82], downRange: [57, 65], volMultiplier: 0.8 },
+    PEP:  { upRange: [73, 79], downRange: [60, 68], volMultiplier: 0.5 },
+    XOM:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    CVX:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    COP:  { upRange: [76, 82], downRange: [57, 65], volMultiplier: 0.8 },
+    CAT:  { upRange: [77, 83], downRange: [56, 64], volMultiplier: 0.9 },
+    BA:   { upRange: [82, 88], downRange: [52, 60], volMultiplier: 1.4 },
+    GE:   { upRange: [79, 85], downRange: [55, 63], volMultiplier: 1.1 },
+    HON:  { upRange: [75, 81], downRange: [58, 66], volMultiplier: 0.7 },
+    DE:   { upRange: [77, 83], downRange: [56, 64], volMultiplier: 0.9 },
+    DIS:  { upRange: [78, 84], downRange: [56, 64], volMultiplier: 1.0 },
+    CMCSA:{ upRange: [74, 80], downRange: [59, 67], volMultiplier: 0.6 },
+    IBM:  { upRange: [74, 80], downRange: [59, 67], volMultiplier: 0.6 },
+  }
+
+  const getStockPayoutTier = useCallback((code: string) => {
+    return STOCK_PAYOUT_TIERS[code] || { upRange: [78, 84] as [number, number], downRange: [56, 64] as [number, number], volMultiplier: 1.0 }
   }, [])
 
-  const [sinyalPayoutRates, setSinyalPayoutRates] = useState<{ up: number; down: number }>({ up: 82, down: 58 })
+  const getPayoutRates = useCallback((code?: string): { up: number; down: number; upRange: [number, number]; downRange: [number, number] } => {
+    const tier = getStockPayoutTier(code || '')
+    // Fluctuate within the stock's range (like Stockity)
+    const upRate = tier.upRange[0] + Math.random() * (tier.upRange[1] - tier.upRange[0])
+    const downRate = tier.downRange[0] + Math.random() * (tier.downRange[1] - tier.downRange[0])
+    return { up: Math.round(upRate * 10) / 10, down: Math.round(downRate * 10) / 10, upRange: tier.upRange, downRange: tier.downRange }
+  }, [getStockPayoutTier])
+
+  const [sinyalPayoutRates, setSinyalPayoutRates] = useState<{ up: number; down: number; upRange: [number, number]; downRange: [number, number] }>({ up: 82, down: 58, upRange: [78, 84], downRange: [56, 64] })
 
   // Refresh payout rates periodically (like real trading platforms)
   useEffect(() => {
     if (activeTab !== 'sinyal') return
     const interval = setInterval(() => {
-      setSinyalPayoutRates(getPayoutRates())
+      setSinyalPayoutRates(getPayoutRates(selectedSinyalStock?.code))
     }, 15000) // Every 15 seconds
     return () => clearInterval(interval)
-  }, [activeTab, getPayoutRates])
+  }, [activeTab, getPayoutRates, selectedSinyalStock?.code])
+
+  // Also update payout rates when switching stocks
+  useEffect(() => {
+    if (activeTab === 'sinyal' && selectedSinyalStock) {
+      setSinyalPayoutRates(getPayoutRates(selectedSinyalStock.code))
+    }
+  }, [activeTab, selectedSinyalStock, getPayoutRates])
 
   const calcSinyalProfit = useCallback((amount: number, duration: number, direction: 'NAIK' | 'TURUN'): number => {
     const rate = direction === 'NAIK' ? sinyalPayoutRates.up : sinyalPayoutRates.down
@@ -1208,6 +1278,13 @@ function Dashboard() {
     const durationBonus = duration <= 10 ? 0 : duration <= 20 ? 2 : duration <= 30 ? 4 : 6
     return rate + durationBonus
   }, [sinyalPayoutRates])
+
+  // Get payout range display (e.g., "80%-88%")
+  const getPayoutRangeDisplay = useCallback((direction: 'NAIK' | 'TURUN'): string => {
+    const range = direction === 'NAIK' ? sinyalPayoutRates.upRange : sinyalPayoutRates.downRange
+    const durationBonus = sinyalDuration <= 10 ? 0 : sinyalDuration <= 20 ? 2 : sinyalDuration <= 30 ? 4 : 6
+    return `${Math.round(range[0] + durationBonus)}%-${Math.round(range[1] + durationBonus)}%`
+  }, [sinyalPayoutRates, sinyalDuration])
 
   // Stock base daily profit rates (varies per stock, 5-12%)
   const getStockBaseRate = useCallback((code: string): number => {
@@ -1274,12 +1351,18 @@ function Dashboard() {
     // Initialize chart simulation when first opens
     if (sinyalChartSimRef.current === null) {
       const basePrice = selectedSinyalStock.price
-      const vol = Math.round(30000 + Math.random() * 70000)
+      // Stock-specific volatility multiplier
+      const stockTier = getStockPayoutTier(selectedSinyalStock.code)
+      const volMult = stockTier.volMultiplier
+      const vol = Math.round((30000 + Math.random() * 70000) * volMult)
+      // Stock-specific initial trend bias (some stocks tend upward, some downward)
+      const stockSeed = selectedSinyalStock.code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+      const initialTrend = stockSeed % 2 === 0 ? 1 : -1
       const sim = {
         price: basePrice,
         basePrice,
         momentum: 0,
-        trend: Math.random() > 0.5 ? 1 : -1,
+        trend: initialTrend,
         phase: 1,
         phaseLen: 5,
         vol,
@@ -1296,10 +1379,11 @@ function Dashboard() {
         riggedApplied: false,
       }
 
-      // Generate historical candles
+      // Generate historical candles with stock-specific volatility
       const histCandles: CandleData[] = []
-      let prevClose = Math.round(basePrice * (0.97 + Math.random() * 0.06))
-      const histSim = { momentum: 0, trend: 0, phase: 1, phaseLen: 5, vol }
+      const histStartOffset = (stockSeed % 7 - 3) / 100 // Stock-specific start offset
+      let prevClose = Math.round(basePrice * (0.97 + histStartOffset + Math.random() * 0.04))
+      const histSim = { momentum: 0, trend: initialTrend, phase: 1, phaseLen: 5, vol }
       for (let i = 0; i < 25; i++) {
         const candle = generateCandle(prevClose, basePrice, histSim, i)
         histCandles.push(candle)
@@ -1332,7 +1416,10 @@ function Dashboard() {
 
       // Generate realistic tick movement with fake-outs
       const baseVal = sim.basePrice
-      const volatility = baseVal * 0.0015
+      // Stock-specific volatility from payout tier
+      const stockTier = getStockPayoutTier(selectedSinyalStock.code)
+      const volMult = stockTier.volMultiplier
+      const volatility = baseVal * 0.0015 * volMult
       let drift = 0
 
       const progress = cc.tickCount / cc.maxTicks
@@ -1397,7 +1484,7 @@ function Dashboard() {
     }, 500)
 
     return () => clearInterval(interval)
-  }, [activeTab, selectedSinyalStock, generateCandle])
+  }, [activeTab, selectedSinyalStock, generateCandle, getStockPayoutTier])
 
   // Sinyal Pro multi-position timer — resolve ALL active positions independently
   useEffect(() => {
@@ -2787,7 +2874,7 @@ function Dashboard() {
                                       return (
                                         <g key={i} opacity={isLast ? 1 : 0.85}>
                                           <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" />
-                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : 'var(--zv-panel)'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="0.5" />
+                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : '#ef5350'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="0.5" />
                                         </g>
                                       )
                                     })}
@@ -3007,17 +3094,21 @@ function Dashboard() {
               {/* Top Bar: Stock selector + Balance */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                  {stocks.slice(0, 10).map(s => (
-                    <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResult(null); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
-                      className={`flex-shrink-0 h-7 px-2.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border ${
+                  {stocks.slice(0, 10).map(s => {
+                    const tier = getStockPayoutTier(s.code)
+                    return (
+                    <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
+                      className={`flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border ${
                         selectedSinyalStock?.id === s.id
                           ? 'bg-blue-600 text-white border-blue-500'
                           : 'bg-[var(--zv-panel)] text-[var(--zv-text)] border-[var(--zv-border)] hover:border-blue-500/30'
                       }`}>
                       {s.changePercent >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                       <span>{s.code}</span>
+                      <span className={`text-[7px] ${selectedSinyalStock?.id === s.id ? 'text-white/70' : 'text-[#22c55e]'}`}>{tier.upRange[1]}%</span>
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                   <Wallet className="w-3 h-3 text-blue-400" />
@@ -3035,6 +3126,11 @@ function Dashboard() {
                       <span className="text-[8px] font-black text-blue-400 tracking-widest">LIVE</span>
                       <span className="text-[8px] text-[var(--zv-muted)]">|</span>
                       <span className="text-[10px] font-black text-[var(--zv-text)]">{selectedSinyalStock.code}/IDR</span>
+                      {/* Payout badge */}
+                      <div className="flex items-center gap-1 ml-1">
+                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-green-500/15 text-[#22c55e] border border-green-500/20">↑{getPayoutRangeDisplay('NAIK')}</span>
+                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-red-500/15 text-[#ef5350] border border-red-500/20">↓{getPayoutRangeDisplay('TURUN')}</span>
+                      </div>
                     </div>
                     {/* Live price */}
                     <div className="flex items-center gap-2">
@@ -3224,7 +3320,7 @@ function Dashboard() {
                               <g key={`candle-${i}`} opacity={isLast ? 1 : 0.9}>
                                 <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1.2" : "0.8"} />
                                 <rect x={x} y={bodyTop} width={candleW} height={bodyH}
-                                  fill={isGreen ? '#22c55e' : 'var(--zv-panel)'}
+                                  fill={isGreen ? '#22c55e' : '#ef5350'}
                                   stroke={isGreen ? '#22c55e' : '#ef5350'}
                                   strokeWidth="0.8" rx="0.5"
                                 />
@@ -3329,11 +3425,11 @@ function Dashboard() {
                 {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
                   <div className="flex gap-2">
                     <div className="flex-1 rounded-lg p-1.5 bg-green-500/10 border border-green-500/20 text-center">
-                      <span className="text-[7px] text-green-400/70 font-bold block">NAIK PROFIT</span>
+                      <span className="text-[7px] text-green-400/70 font-bold block">NAIK PROFIT ({getPayoutRangeDisplay('NAIK')})</span>
                       <span className="text-[11px] font-black text-[#22c55e]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration, 'NAIK') / 100))}</span>
                     </div>
                     <div className="flex-1 rounded-lg p-1.5 bg-red-500/10 border border-red-500/20 text-center">
-                      <span className="text-[7px] text-red-400/70 font-bold block">TURUN PROFIT</span>
+                      <span className="text-[7px] text-red-400/70 font-bold block">TURUN PROFIT ({getPayoutRangeDisplay('TURUN')})</span>
                       <span className="text-[11px] font-black text-[#ef5350]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration, 'TURUN') / 100))}</span>
                     </div>
                   </div>
@@ -3357,7 +3453,7 @@ function Dashboard() {
                       <TrendingUp className="w-5 h-5" />
                       <span className="text-[16px] font-black">NAIK</span>
                     </div>
-                    <span className="text-[11px] font-bold opacity-90">+{calcSinyalProfit(parseInt(sinyalAmount) || 100000, sinyalDuration, 'NAIK').toFixed(0)}%</span>
+                    <span className="text-[11px] font-bold opacity-90">+{getPayoutRangeDisplay('NAIK')}</span>
                     {/* Shine effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
                   </button>
@@ -3377,7 +3473,7 @@ function Dashboard() {
                       <TrendingDown className="w-5 h-5" />
                       <span className="text-[16px] font-black">TURUN</span>
                     </div>
-                    <span className="text-[11px] font-bold opacity-90">+{calcSinyalProfit(parseInt(sinyalAmount) || 100000, sinyalDuration, 'TURUN').toFixed(0)}%</span>
+                    <span className="text-[11px] font-bold opacity-90">+{getPayoutRangeDisplay('TURUN')}</span>
                     {/* Shine effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
                   </button>
@@ -5817,7 +5913,7 @@ function Dashboard() {
                                   return (
                                     <g key={i} opacity={isLast ? 1 : 0.9}>
                                       <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : 'var(--zv-panel)'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" rx="0.8" />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : '#ef5350'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" rx="0.8" />
                                     </g>
                                   )
                                 })}
