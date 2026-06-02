@@ -745,13 +745,11 @@ function Dashboard() {
     startPrice: number; startTime: number; profitPercent: number;
     status: 'active' | 'won' | 'lost';
   }[]>([])
-  const [sinyalAutoMode, setSinyalAutoMode] = useState(false)
   const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalAmount, setSinyalAmount] = useState('')
   const [sinyalDuration, setSinyalDuration] = useState(20)
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number}[]>([])
-  const [sinyalAutoPending, setSinyalAutoPending] = useState(false)
   // Track remaining time per position
   const [sinyalTimers, setSinyalTimers] = useState<Record<string, number>>({})
 
@@ -1273,7 +1271,7 @@ function Dashboard() {
   useEffect(() => {
     if (activeTab !== 'sinyal' || !selectedSinyalStock) return
 
-    // Initialize chart simulation when modal first opens
+    // Initialize chart simulation when first opens
     if (sinyalChartSimRef.current === null) {
       const basePrice = selectedSinyalStock.price
       const vol = Math.round(30000 + Math.random() * 70000)
@@ -1292,7 +1290,7 @@ function Dashboard() {
           close: basePrice,
           volume: 0,
           tickCount: 0,
-          maxTicks: sinyalActive ? sinyalDuration * 2 : 10,
+          maxTicks: 10,
         },
         riggedDirection: null as 'up' | 'down' | null,
         riggedApplied: false,
@@ -1319,8 +1317,9 @@ function Dashboard() {
       const cc = sim.currentCandle
       cc.tickCount++
 
-      // Determine rigged direction at ~70% of candle duration (only when a position is active)
-      if (sinyalActive && cc.tickCount >= cc.maxTicks * 0.7 && !sim.riggedApplied) {
+      // Determine rigged direction at ~70% of candle duration (when any position is active)
+      const hasActive = sinyalPositionsRef.current.some(p => p.status === 'active')
+      if (hasActive && cc.tickCount >= cc.maxTicks * 0.7 && !sim.riggedApplied) {
         const shouldWin = Math.random() < 0.42
         const activePos = sinyalPositionsRef.current.find(p => p.status === 'active')
         if (activePos) {
@@ -1390,7 +1389,7 @@ function Dashboard() {
         cc.low = cc.close
         cc.volume = 0
         cc.tickCount = 0
-        cc.maxTicks = sinyalActive ? sinyalDuration * 2 : 10
+        cc.maxTicks = 10
         sim.riggedApplied = false
         sim.riggedDirection = null
         sim.trend = Math.random() > 0.5 ? 1 : -1
@@ -1398,66 +1397,83 @@ function Dashboard() {
     }, 500)
 
     return () => clearInterval(interval)
-  }, [activeTab, selectedSinyalStock, sinyalActive, sinyalDuration, generateCandle])
+  }, [activeTab, selectedSinyalStock, generateCandle])
 
-  // Sinyal Pro timer
+  // Sinyal Pro multi-position timer — resolve ALL active positions independently
   useEffect(() => {
-    if (!sinyalActive || sinyalPositions.length === 0) return
-    const activePos = sinyalPositions.find(p => p.status === 'active')
-    if (!activePos) return
+    const activePositions = sinyalPositions.filter(p => p.status === 'active')
+    if (activePositions.length === 0) return
 
     const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - activePos.startTime) / 1000)
-      const remaining = activePos.duration - elapsed
-      setSinyalTimer(remaining)
+      const now = Date.now()
+      const currentPositions = sinyalPositionsRef.current.filter(p => p.status === 'active')
+      const newTimers: Record<string, number> = {}
+      const toResolve: string[] = []
 
-      if (remaining <= 0) {
-        const currentStock = stocks.find(s => s.id === activePos.stockId)
-        if (currentStock) {
-          const endPrice = currentStock.price
-          // Rigged: ~42% win rate with some randomness
-          const finalWon = Math.random() < 0.42
+      for (const pos of currentPositions) {
+        const elapsed = Math.floor((now - pos.startTime) / 1000)
+        const remaining = pos.duration - elapsed
+        newTimers[pos.id] = remaining
+        if (remaining <= 0) {
+          toResolve.push(pos.id)
+        }
+      }
 
-          const profit = finalWon ? Math.round(activePos.amount * activePos.profitPercent / 100) : -activePos.amount
+      setSinyalTimers(prev => ({ ...prev, ...newTimers }))
 
-          setSinyalPositions(prev => prev.map(p =>
-            p.id === activePos.id ? {...p, status: finalWon ? 'won' : 'lost'} : p
-          ))
+      // Resolve each expired position independently
+      if (toResolve.length > 0) {
+        for (const posId of toResolve) {
+          const pos = sinyalPositionsRef.current.find(p => p.id === posId)
+          if (!pos || pos.status !== 'active') continue
 
-          setSinyalResult({won: finalWon, profit})
+          // Determine win/loss based on actual price movement
+          const endPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
+          const priceWentUp = endPrice > pos.startPrice
+          const priceWentDown = endPrice < pos.startPrice
 
-          if (finalWon) {
-            updateBalance((user?.balance || 0) + Math.abs(profit))
-            toast({ title: 'Prediksi Benar! 🎯', description: `Profit +${formatRupiah(Math.abs(profit))}` })
+          // For rigged outcome (~42% win rate), mix rigged with real
+          const rigged = Math.random() < 0.42
+          let finalWon: boolean
+
+          if (pos.direction === 'NAIK') {
+            // If price actually went up, more likely to win. If rigged, always win.
+            finalWon = rigged ? true : priceWentUp
           } else {
-            updateBalance((user?.balance || 0) - activePos.amount)
-            toast({ title: 'Prediksi Salah', description: `Kehilangan ${formatRupiah(activePos.amount)}`, variant: 'destructive' })
+            // TURUN: if price went down, more likely to win
+            finalWon = rigged ? true : priceWentDown
           }
 
-          setSinyalActive(false)
+          const profit = finalWon ? Math.round(pos.amount * pos.profitPercent / 100) : 0
+          const returnAmount = finalWon ? pos.amount + profit : 0
 
-          // AUTO mode: schedule new position
-          if (sinyalAutoMode && (user?.balance || 0) >= parseInt(sinyalAmount || '0')) {
-            setSinyalAutoPending(true)
+          setSinyalPositions(prev => prev.map(p =>
+            p.id === posId ? {...p, status: finalWon ? 'won' : 'lost'} : p
+          ))
+
+          // Add result to results list
+          setSinyalResults(prev => [...prev, {
+            id: posId,
+            won: finalWon,
+            profit: finalWon ? profit : -pos.amount,
+            stockCode: pos.stockCode,
+            direction: pos.direction,
+            amount: pos.amount,
+          }])
+
+          // Return balance (already deducted when opening)
+          if (returnAmount > 0) {
+            updateBalance((user?.balance || 0) + returnAmount)
+            toast({ title: 'Benar! 🎯', description: `${pos.direction} ${pos.stockCode} +${formatRupiah(profit)}` })
+          } else {
+            toast({ title: 'Salah ❌', description: `${pos.direction} ${pos.stockCode} -${formatRupiah(pos.amount)}`, variant: 'destructive' })
           }
         }
       }
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [sinyalActive, sinyalPositions, sinyalAutoMode, sinyalAmount, stocks, user, updateBalance])
+    }, 500)
 
-  // AUTO mode: start new position after delay
-  useEffect(() => {
-    if (!sinyalAutoPending || !selectedSinyalStock) return
-    const timeout = setTimeout(() => {
-      setSinyalAutoPending(false)
-      setSinyalResult(null)
-      if (sinyalAutoMode && (user?.balance || 0) >= parseInt(sinyalAmount || '0')) {
-        openSinyalPosition()
-      }
-    }, 2000)
-    return () => clearTimeout(timeout)
-  }, [sinyalAutoPending, sinyalAutoMode, selectedSinyalStock, sinyalAmount, user, openSinyalPosition])
+    return () => clearInterval(interval)
+  }, [sinyalPositions, sinyalCurrentPrice, user, updateBalance])
 
   // ============ FETCH FUNCTIONS ============
   const fetchStocks = useCallback(async () => {
@@ -3053,27 +3069,29 @@ function Dashboard() {
                     })()}
                   </div>
 
-                  {/* ACTIVE TRADE TIMER OVERLAY */}
-                  {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
-                    const ap = sinyalPositions.find(p => p.status === 'active')!
-                    const progress = Math.max(0, (1 - sinyalTimer / ap.duration) * 100)
-                    const isUp = ap.direction === 'NAIK'
-                    return (
-                      <div className="absolute top-11 left-2.5 z-10">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`h-6 px-2 rounded-md flex items-center gap-1 ${isUp ? 'bg-green-500/20 border border-green-500/40' : 'bg-red-500/20 border border-red-500/40'}`}>
-                            {isUp ? <TrendingUp className="w-3 h-3 text-[#22c55e]" /> : <TrendingDown className="w-3 h-3 text-[#ef5350]" />}
-                            <span className={`text-[10px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{ap.direction}</span>
+                  {/* ACTIVE TRADES OVERLAY — show all active positions stacked */}
+                  {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+                    <div className="absolute top-11 left-2.5 z-10 flex flex-col gap-1">
+                      {sinyalPositions.filter(p => p.status === 'active').map(ap => {
+                        const remaining = sinyalTimers[ap.id] ?? ap.duration
+                        const progress = Math.max(0, (1 - remaining / ap.duration) * 100)
+                        const isUp = ap.direction === 'NAIK'
+                        return (
+                          <div key={ap.id} className="flex items-center gap-2">
+                            <div className={`h-5 px-1.5 rounded flex items-center gap-0.5 ${isUp ? 'bg-green-500/20 border border-green-500/40' : 'bg-red-500/20 border border-red-500/40'}`}>
+                              {isUp ? <TrendingUp className="w-2.5 h-2.5 text-[#22c55e]" /> : <TrendingDown className="w-2.5 h-2.5 text-[#ef5350]" />}
+                              <span className={`text-[8px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{ap.direction}</span>
+                            </div>
+                            <span className="text-[14px] font-black text-[var(--zv-text)] tabular-nums">{remaining}s</span>
+                            <span className="text-[8px] text-[var(--zv-muted)]">{formatRupiah(ap.amount)}</span>
+                            <div className="w-16 h-1 rounded-full bg-[var(--zv-surface)] overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: isUp ? 'linear-gradient(135deg, #16a34a, #22c55e)' : 'linear-gradient(135deg, #d32f2f, #ef5350)' }} />
+                            </div>
                           </div>
-                          <span className="text-[18px] font-black text-[var(--zv-text)] tabular-nums">{sinyalTimer}s</span>
-                        </div>
-                        <div className="w-32 h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%`, background: isUp ? 'linear-gradient(135deg, #16a34a, #22c55e)' : 'linear-gradient(135deg, #d32f2f, #ef5350)' }} />
-                        </div>
-                        <span className="text-[8px] text-[var(--zv-muted)] mt-0.5 block">{formatRupiah(ap.amount)} • +{ap.profitPercent.toFixed(0)}% profit</span>
-                      </div>
-                    )
-                  })()}
+                        )
+                      })}
+                    </div>
+                  )}
 
                   {/* Chart SVG */}
                   <div className="w-full h-full pt-12" key={`sinyal-chart-${sinyalChartTick}`}>
@@ -3240,39 +3258,41 @@ function Dashboard() {
                     })()}
                   </div>
 
-                  {/* Result overlay on chart */}
-                  {sinyalResult && !sinyalActive && (
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                      className="absolute inset-0 flex items-center justify-center z-20" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-                      <div className={`text-center p-5 rounded-2xl border ${sinyalResult.won ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10'}`}>
-                        <span className="text-[36px] block mb-1">{sinyalResult.won ? '🎯' : '❌'}</span>
-                        <h3 className={`text-[18px] font-black ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                          {sinyalResult.won ? 'BENAR!' : 'SALAH'}
-                        </h3>
-                        <span className={`text-[16px] font-bold ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                          {sinyalResult.won ? '+' : '-'}{formatRupiah(Math.abs(sinyalResult.profit))}
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
+                  {/* Result popup overlay — show latest results briefly */}
+                  {sinyalResults.length > 0 && (() => {
+                    const latest = sinyalResults[sinyalResults.length - 1]
+                    // Only show if recent (within 3 seconds)
+                    return (
+                      <motion.div key={latest.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)' }}>
+                        <div className={`text-center p-4 rounded-2xl border pointer-events-auto ${latest.won ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10'}`}>
+                          <span className="text-[32px] block mb-0.5">{latest.won ? '🎯' : '❌'}</span>
+                          <h3 className={`text-[16px] font-black ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                            {latest.won ? 'BENAR!' : 'SALAH'}
+                          </h3>
+                          <span className={`text-[14px] font-bold ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                            {latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}
+                          </span>
+                          <span className="block text-[9px] text-[var(--zv-muted)] mt-1">{latest.stockCode} {latest.direction}</span>
+                        </div>
+                      </motion.div>
+                    )
+                  })()}
                 </div>
               )}
 
-              {/* BOTTOM CONTROL PANEL - Stockity Style */}
+              {/* BOTTOM CONTROL PANEL - Stockity Style — always open for betting */}
               <div className="mt-2 space-y-2">
-                {/* Duration + Amount Row */}
-                <div className="flex gap-2">
-                  {/* Duration Selector */}
-                  <div className="flex-1">
-                    <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-1 uppercase tracking-wider">Durasi</label>
-                    <div className="flex gap-1">
-                      {[10, 20, 30, 60].map(dur => (
-                        <button key={dur} onClick={() => setSinyalDuration(dur)} disabled={sinyalActive}
-                          className={`flex-1 h-8 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]'} ${sinyalActive ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                          {dur}s
-                        </button>
-                      ))}
-                    </div>
+                {/* Duration Selector */}
+                <div>
+                  <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-1 uppercase tracking-wider">Durasi</label>
+                  <div className="flex gap-1">
+                    {[10, 20, 30, 60].map(dur => (
+                      <button key={dur} onClick={() => setSinyalDuration(dur)}
+                        className={`flex-1 h-8 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
+                        {dur}s
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -3281,24 +3301,24 @@ function Dashboard() {
                   <div className="flex gap-1.5 mb-1.5">
                     <div className="flex-1 relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[var(--zv-muted)]">Rp</span>
-                      <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="100.000" disabled={sinyalActive}
-                        className={`w-full h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-7 pr-2 text-[12px] font-semibold text-[var(--zv-text)] outline-none focus:border-blue-500 transition-all placeholder:text-[var(--zv-muted)] ${sinyalActive ? 'opacity-50' : ''}`} />
+                      <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="100.000"
+                        className="w-full h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-7 pr-2 text-[12px] font-semibold text-[var(--zv-text)] outline-none focus:border-blue-500 transition-all placeholder:text-[var(--zv-muted)]" />
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => setSinyalAmount(String(Math.min((parseInt(sinyalAmount) || 100000) * 2, (user?.balance || 0))))} disabled={sinyalActive}
-                        className={`h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all ${sinyalActive ? 'opacity-50' : ''}`}>
+                      <button onClick={() => setSinyalAmount(String(Math.min((parseInt(sinyalAmount) || 100000) * 2, (user?.balance || 0))))}
+                        className="h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all">
                         <Plus className="w-3 h-3" />
                       </button>
-                      <button onClick={() => setSinyalAmount(String(Math.max(Math.floor((parseInt(sinyalAmount) || 200000) / 2), 100000)))} disabled={sinyalActive}
-                        className={`h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all ${sinyalActive ? 'opacity-50' : ''}`}>
+                      <button onClick={() => setSinyalAmount(String(Math.max(Math.floor((parseInt(sinyalAmount) || 200000) / 2), 100000)))}
+                        className="h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all">
                         <Minus className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
                   <div className="flex gap-1">
                     {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                      <button key={amt} onClick={() => setSinyalAmount(amt)} disabled={sinyalActive}
-                        className={`flex-1 h-7 rounded-md bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-[var(--zv-muted)] hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 transition-all ${sinyalAmount === amt ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : ''} ${sinyalActive ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <button key={amt} onClick={() => setSinyalAmount(amt)}
+                        className={`flex-1 h-7 rounded-md bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-[var(--zv-muted)] hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 transition-all ${sinyalAmount === amt ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : ''}`}>
                         {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                       </button>
                     ))}
@@ -3319,51 +3339,58 @@ function Dashboard() {
                   </div>
                 )}
 
-                {/* NAIK / TURUN Buttons - BIG Stockity Style */}
+                {/* NAIK / TURUN Buttons — ALWAYS clickable as long as you have balance */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
                       setSinyalDirection('NAIK')
-                      if (!sinyalActive && sinyalAmount && parseInt(sinyalAmount) >= 100000 && parseInt(sinyalAmount) <= (user?.balance || 0)) {
+                      if (sinyalAmount && parseInt(sinyalAmount) >= 100000 && parseInt(sinyalAmount) <= (user?.balance || 0)) {
                         openSinyalPosition('NAIK')
+                      } else if (!sinyalAmount || parseInt(sinyalAmount) < 100000) {
+                        toast({ title: 'Minimum Rp 100.000', variant: 'destructive' })
+                      } else {
+                        toast({ title: 'Saldo tidak cukup', variant: 'destructive' })
                       }
                     }}
-                    disabled={sinyalActive}
-                    className={`h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden ${
-                      sinyalActive
-                        ? 'bg-[var(--zv-surface)] text-gray-600 border border-[var(--zv-border)] opacity-50 cursor-not-allowed'
-                        : 'bg-gradient-to-br from-[#22c55e] to-[#15803d] text-white shadow-lg shadow-green-600/30 hover:shadow-green-500/50 active:scale-[0.97]'
-                    }`}>
+                    className="h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-br from-[#22c55e] to-[#15803d] text-white shadow-lg shadow-green-600/30 hover:shadow-green-500/50 active:scale-[0.97]">
                     <div className="flex items-center gap-1.5">
                       <TrendingUp className="w-5 h-5" />
                       <span className="text-[16px] font-black">NAIK</span>
                     </div>
                     <span className="text-[11px] font-bold opacity-90">+{calcSinyalProfit(parseInt(sinyalAmount) || 100000, sinyalDuration, 'NAIK').toFixed(0)}%</span>
                     {/* Shine effect */}
-                    {!sinyalActive && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite]" />}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
                   </button>
                   <button
                     onClick={() => {
                       setSinyalDirection('TURUN')
-                      if (!sinyalActive && sinyalAmount && parseInt(sinyalAmount) >= 100000 && parseInt(sinyalAmount) <= (user?.balance || 0)) {
+                      if (sinyalAmount && parseInt(sinyalAmount) >= 100000 && parseInt(sinyalAmount) <= (user?.balance || 0)) {
                         openSinyalPosition('TURUN')
+                      } else if (!sinyalAmount || parseInt(sinyalAmount) < 100000) {
+                        toast({ title: 'Minimum Rp 100.000', variant: 'destructive' })
+                      } else {
+                        toast({ title: 'Saldo tidak cukup', variant: 'destructive' })
                       }
                     }}
-                    disabled={sinyalActive}
-                    className={`h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden ${
-                      sinyalActive
-                        ? 'bg-[var(--zv-surface)] text-gray-600 border border-[var(--zv-border)] opacity-50 cursor-not-allowed'
-                        : 'bg-gradient-to-br from-[#ef5350] to-[#b91c1c] text-white shadow-lg shadow-red-600/30 hover:shadow-red-500/50 active:scale-[0.97]'
-                    }`}>
+                    className="h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-br from-[#ef5350] to-[#b91c1c] text-white shadow-lg shadow-red-600/30 hover:shadow-red-500/50 active:scale-[0.97]">
                     <div className="flex items-center gap-1.5">
                       <TrendingDown className="w-5 h-5" />
                       <span className="text-[16px] font-black">TURUN</span>
                     </div>
                     <span className="text-[11px] font-bold opacity-90">+{calcSinyalProfit(parseInt(sinyalAmount) || 100000, sinyalDuration, 'TURUN').toFixed(0)}%</span>
                     {/* Shine effect */}
-                    {!sinyalActive && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
                   </button>
                 </div>
+
+                {/* Active Positions Counter */}
+                {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
+                    <span className="text-[9px] font-bold text-blue-400">{sinyalPositions.filter(p => p.status === 'active').length} posisi aktif</span>
+                    <span className="text-[8px] text-[var(--zv-muted)]">• Total: {formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + p.amount, 0))}</span>
+                  </div>
+                )}
 
                 {/* Recent Trade History - Compact */}
                 {sinyalPositions.filter(p => p.status !== 'active').length > 0 && (
