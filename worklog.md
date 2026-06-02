@@ -103,3 +103,30 @@ Stage Summary:
 - Login form inputs properly styled with slate colors
 - All broken CSS class references fixed
 - Lint passes clean, app compiles and serves correctly
+---
+Task ID: 1
+Agent: full-stack-developer
+Task: Redesign Sinyal Pro as inline trading dashboard
+
+Work Log:
+- Removed `showSinyalModal` state variable (was line 752)
+- Added auto-select useEffect: when `activeTab === 'sinyal'` and no stock selected, auto-select `stocks[0]`
+- Changed chart useEffect guard from `if (!showSinyalModal || ...)` to `if (activeTab !== 'sinyal' || ...)`
+- Changed chart useEffect dependency array from `[showSinyalModal, ...]` to `[activeTab, ...]`
+- Changed default sinyalDuration from 30 to 20 seconds
+- Replaced entire Sinyal tab content (old: header card + active position card + result card + stock grid + position history) with new inline trading dashboard layout
+- New layout: horizontal stock selector pills → live candlestick chart (SVG, same rendering logic) → NAIK/TURUN submit buttons → amount input → quick amount buttons → duration selector (10s/20s/30s/60s) → profit calculator → active position info → result display → recent history → balance info
+- Modified `openSinyalPosition` to accept optional `overrideDirection` parameter so NAIK/TURUN buttons can immediately open position with correct direction
+- NAIK/TURUN buttons now act as both direction selector AND submit button (no separate "Buka Posisi" button)
+- Removed entire Sinyal Pro modal (AnimatePresence block with overlay + full-screen modal)
+- Kept all existing chart SVG rendering code (candlesticks, MA lines, volume bars, current price line, glow effects)
+- Kept all existing logic: generateCandle, computeMA, calcSinyalProfit, rigged direction/fake-out mechanic, timer logic
+- Lint passes clean
+
+Stage Summary:
+- Sinyal Pro tab now shows a complete inline trading dashboard with live chart, no modal needed
+- Stock selector as horizontal scrollable pills at top
+- Chart renders directly in the tab using same SVG code
+- NAIK/TURUN buttons submit position immediately when amount is valid
+- Duration options simplified to 10s/20s/30s/60s with 20s default
+- File reduced from ~6156 to ~5976 lines by removing modal code

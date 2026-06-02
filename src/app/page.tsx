@@ -748,8 +748,7 @@ function Dashboard() {
   const [sinyalAutoMode, setSinyalAutoMode] = useState(false)
   const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalAmount, setSinyalAmount] = useState('')
-  const [sinyalDuration, setSinyalDuration] = useState(30)
-  const [showSinyalModal, setShowSinyalModal] = useState(false)
+  const [sinyalDuration, setSinyalDuration] = useState(20)
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
   const [sinyalResult, setSinyalResult] = useState<{won: boolean; profit: number} | null>(null)
   const [sinyalTimer, setSinyalTimer] = useState(0)
@@ -769,6 +768,13 @@ function Dashboard() {
   } | null>(null)
   const sinyalPositionsRef = useRef(sinyalPositions)
   useEffect(() => { sinyalPositionsRef.current = sinyalPositions }, [sinyalPositions])
+
+  // Auto-select first stock when entering sinyal tab
+  useEffect(() => {
+    if (activeTab === 'sinyal' && !selectedSinyalStock && stocks.length > 0) {
+      setSelectedSinyalStock(stocks[0])
+    }
+  }, [activeTab, selectedSinyalStock, stocks])
 
   // ============ LIVE INVESTMENT CHART DATA (CandleData) ============
   const [investChartData, setInvestChartData] = useState<Map<string, CandleData[]>>(new Map())
@@ -1215,11 +1221,12 @@ function Dashboard() {
     return { dailyRate: Math.round(dailyRate * 100) / 100, dailyProfitAmount, totalProfit, totalReturn }
   }, [getStockBaseRate])
 
-  const openSinyalPosition = useCallback(() => {
+  const openSinyalPosition = useCallback((overrideDirection?: 'NAIK' | 'TURUN') => {
     if (!selectedSinyalStock || !sinyalAmount) return
     const amount = parseInt(sinyalAmount)
     if (amount < 100000) { toast({ title: 'Minimum Rp 100.000', variant: 'destructive' }); return }
     if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
+    const dir = overrideDirection || sinyalDirection
     const profitPercent = calcSinyalProfit(amount, sinyalDuration)
     const posId = `sinyal-${Date.now()}`
     const newPosition = {
@@ -1227,7 +1234,7 @@ function Dashboard() {
       stockId: selectedSinyalStock.id,
       stockCode: selectedSinyalStock.code,
       stockName: selectedSinyalStock.name,
-      direction: sinyalDirection,
+      direction: dir,
       amount,
       duration: sinyalDuration,
       startPrice: selectedSinyalStock.price,
@@ -1239,12 +1246,12 @@ function Dashboard() {
     setSinyalActive(true)
     setSinyalResult(null)
     setSinyalTimer(sinyalDuration)
-    toast({ title: 'Posisi Dibuka! 🎯', description: `${sinyalDirection} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${sinyalDuration}s` })
+    toast({ title: 'Posisi Dibuka! 🎯', description: `${dir} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${sinyalDuration}s` })
   }, [selectedSinyalStock, sinyalAmount, sinyalDirection, sinyalDuration, user, calcSinyalProfit])
 
   // Sinyal Pro live candlestick chart — initialize historical candles + real-time intrabar updates
   useEffect(() => {
-    if (!showSinyalModal || !selectedSinyalStock) return
+    if (activeTab !== 'sinyal' || !selectedSinyalStock) return
 
     // Initialize chart simulation when modal first opens
     if (sinyalChartSimRef.current === null) {
@@ -1371,7 +1378,7 @@ function Dashboard() {
     }, 500)
 
     return () => clearInterval(interval)
-  }, [showSinyalModal, selectedSinyalStock, sinyalActive, sinyalDuration, generateCandle])
+  }, [activeTab, selectedSinyalStock, sinyalActive, sinyalDuration, generateCandle])
 
   // Sinyal Pro timer
   useEffect(() => {
@@ -2959,208 +2966,395 @@ function Dashboard() {
           {/* ====== SINYAL PRO TAB ====== */}
           {activeTab === 'sinyal' && (
             <motion.div key="sinyal" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Header Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
-                <div className="p-4 text-white relative">
-                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-yellow-300" />
-                      <h2 className="text-[16px] md:text-xl font-black">Sinyal Pro</h2>
-                    </div>
-                    <div className="flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-red-500/30 border border-red-400/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                      <span className="text-[8px] font-black text-red-300">LIVE</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] md:text-[11px] text-blue-200 leading-relaxed mb-3">Analisis arah pasar dan raih profit hingga 40%</p>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <Zap className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[10px] font-black">{sinyalPositions.filter(p => p.status === 'active').length}</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Posisi Aktif</span>
-                    </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <TrendingUp className="w-4 h-4 text-blue-300 mx-auto mb-0.5" />
-                      <b className="block text-[10px] font-black">{formatRupiah(sinyalPositions.filter(p => p.status === 'won').reduce((acc, p) => acc + Math.round(p.amount * p.profitPercent / 100), 0)).replace('Rp', '').trim()}</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Total Profit</span>
-                    </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <Award className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[10px] font-black">{sinyalPositions.filter(p => p.status !== 'active').length > 0 ? Math.round(sinyalPositions.filter(p => p.status === 'won').length / sinyalPositions.filter(p => p.status !== 'active').length * 100) : 0}%</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Win Rate</span>
-                    </div>
-                  </div>
+              {/* Stock Selector - Horizontal Pills */}
+              <div className="mb-3">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {stocks.slice(0, 12).map(s => (
+                    <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResult(null); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
+                      className={`flex-shrink-0 h-9 px-3.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all border ${
+                        selectedSinyalStock?.id === s.id
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white border-blue-500/50 shadow-md shadow-blue-500/20'
+                          : 'bg-[var(--zv-panel)] text-[var(--zv-text)] border-[var(--zv-border)] hover:border-blue-500/30'
+                      }`}>
+                      {s.changePercent >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                      <span>{s.code}</span>
+                      <span className={`text-[9px] ${selectedSinyalStock?.id === s.id ? 'text-white/70' : s.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                        {formatPercent(s.changePercent)}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Active Position Card */}
+              {/* Live Candlestick Chart - Full Width */}
+              {selectedSinyalStock && (
+                <div className="rounded-2xl overflow-hidden mb-3 border border-[var(--zv-border)]" style={{ background: 'var(--zv-panel)' }}>
+                  {/* Chart Header */}
+                  <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-[8px] font-black text-blue-400 tracking-wider">LIVE</span>
+                      <span className="text-[8px] font-bold text-gray-600">|</span>
+                      <span className="text-[8px] font-bold text-gray-400">{selectedSinyalStock.code}/IDR</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1"><span className="w-3 h-[2px] rounded bg-yellow-400" /><span className="text-[7px] font-bold text-yellow-400">MA7</span></div>
+                      <div className="flex items-center gap-1"><span className="w-3 h-[2px] rounded bg-blue-400" /><span className="text-[7px] font-bold text-blue-400">MA25</span></div>
+                    </div>
+                  </div>
+                  {/* OHLC Display */}
+                  {(() => {
+                    const allCandlesPeek = [...sinyalCandles]
+                    const simPeek = sinyalChartSimRef.current
+                    if (simPeek && simPeek.currentCandle.tickCount > 0) {
+                      allCandlesPeek.push({ idx: allCandlesPeek.length, open: simPeek.currentCandle.open, high: simPeek.currentCandle.high, low: simPeek.currentCandle.low, close: simPeek.currentCandle.close, volume: simPeek.currentCandle.volume, time: '' })
+                    }
+                    const lastOHLC = allCandlesPeek[allCandlesPeek.length - 1]
+                    if (!lastOHLC) return null
+                    const ohlcIsGreen = lastOHLC.close >= lastOHLC.open
+                    return (
+                      <div className="flex items-center gap-4 px-3 pb-1.5">
+                        <span className="text-[8px] text-gray-500">O <span className="text-gray-300">{formatRupiah(lastOHLC.open)}</span></span>
+                        <span className="text-[8px] text-gray-500">H <span className="text-blue-400">{formatRupiah(lastOHLC.high)}</span></span>
+                        <span className="text-[8px] text-gray-500">L <span className="text-red-400">{formatRupiah(lastOHLC.low)}</span></span>
+                        <span className="text-[8px] text-gray-500">C <span className={ohlcIsGreen ? 'text-blue-400' : 'text-red-400'}>{formatRupiah(lastOHLC.close)}</span></span>
+                      </div>
+                    )
+                  })()}
+                  {/* Chart SVG - same rendering as modal */}
+                  <div className="h-[220px] md:h-[280px] w-full relative" key={`sinyal-chart-${sinyalChartTick}`}>
+                    {(() => {
+                      const allCandles = [...sinyalCandles]
+                      const sim = sinyalChartSimRef.current
+                      if (sim) {
+                        const cc = sim.currentCandle
+                        if (cc.tickCount > 0) {
+                          allCandles.push({
+                            idx: allCandles.length,
+                            open: cc.open,
+                            high: cc.high,
+                            low: cc.low,
+                            close: cc.close,
+                            volume: cc.volume,
+                            time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+                          })
+                        }
+                      }
+
+                      if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Memuat grafik...</div>
+
+                      const allPrices = allCandles.flatMap(c => [c.high, c.low])
+                      const minP = Math.min(...allPrices)
+                      const maxP = Math.max(...allPrices)
+                      const rangeP = maxP - minP || 1
+                      const paddedMin = minP - rangeP * 0.03
+                      const paddedMax = maxP + rangeP * 0.03
+                      const paddedRange = paddedMax - paddedMin
+
+                      const totalCandles = allCandles.length
+                      const maxVol = Math.max(...allCandles.map(c => c.volume), 1)
+                      const padTop = 8
+                      const padBot = 16
+                      const priceH = 120
+                      const volH = 36
+                      const totalH = priceH + volH
+                      const svgH = padTop + totalH + padBot
+                      const priceScaleW = 64
+                      const leftPad = 6
+                      const candleW = Math.max(5, Math.floor(180 / totalCandles))
+                      const gapW = Math.max(2, Math.floor(40 / totalCandles))
+                      const chartW = totalCandles * (candleW + gapW) + gapW * 2
+                      const svgW = Math.max(chartW + priceScaleW, 280)
+
+                      const ma7 = computeMA(allCandles, 7)
+                      const ma25 = computeMA(allCandles, 25)
+
+                      const compactPrice = (p: number) => {
+                        if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
+                        if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K`
+                        return p.toFixed(0)
+                      }
+
+                      return (
+                        <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }} shapeRendering="crispEdges">
+                          <defs>
+                            <filter id="sinyal-glow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feGaussianBlur stdDeviation="2" result="blur" />
+                              <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                              </feMerge>
+                            </filter>
+                          </defs>
+                          {/* Horizontal grid lines - 8 lines with dotted style */}
+                          {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => {
+                            const gy = padTop + (gi / 7) * priceH
+                            const priceLabel = Math.round(paddedMax - (paddedRange / 7) * gi)
+                            return (
+                              <g key={`hg-${gi}`}>
+                                <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                <text x={chartW + 4} y={gy + 3} fontSize="6.5" fill="var(--zv-muted)">{compactPrice(priceLabel)}</text>
+                              </g>
+                            )
+                          })}
+                          {/* Vertical grid lines */}
+                          {allCandles.filter((_, i) => i % Math.max(1, Math.floor(totalCandles / 5)) === 0).map((c, _idx, arr) => {
+                            const indices = allCandles.map((_, i) => i).filter(i => i % Math.max(1, Math.floor(totalCandles / 5)) === 0)
+                            const i = indices[_idx] || 0
+                            const gx = leftPad + gapW + i * (candleW + gapW) + candleW / 2
+                            return (
+                              <g key={`vg-${i}`}>
+                                <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                <text x={gx} y={svgH - 4} fontSize="5.5" fill="var(--zv-muted)" textAnchor="middle">{c.time}</text>
+                              </g>
+                            )
+                          })}
+                          {/* Volume separator line */}
+                          <line x1={leftPad} y1={padTop + priceH} x2={chartW} y2={padTop + priceH} stroke="var(--zv-border)" strokeWidth="0.5" />
+                          {/* Volume bars with opacity variation & rounded top */}
+                          {allCandles.map((c, i) => {
+                            const x = leftPad + gapW + i * (candleW + gapW)
+                            const isGreen = c.close >= c.open
+                            const volBarH = (c.volume / maxVol) * volH
+                            const volY = padTop + priceH + volH - volBarH
+                            const isLast = i === totalCandles - 1 && sim !== null
+                            const volOpacity = isLast ? 0.5 : (0.2 + (i / totalCandles) * 0.2)
+                            return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={Math.max(volBarH, 1)} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="1" />
+                          })}
+                          {/* MA7 line - smoothed */}
+                          <polyline fill="none" stroke="#f5c542" strokeWidth="0.8" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
+                            points={ma7.map((v, i) => {
+                              if (v === null) return ''
+                              const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
+                              const y = padTop + ((paddedMax - v) / paddedRange) * priceH
+                              return `${x},${y}`
+                            }).filter(Boolean).join(' ')} />
+                          {/* MA25 line - smoothed */}
+                          <polyline fill="none" stroke="#2196f3" strokeWidth="0.8" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
+                            points={ma25.map((v, i) => {
+                              if (v === null) return ''
+                              const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
+                              const y = padTop + ((paddedMax - v) / paddedRange) * priceH
+                              return `${x},${y}`
+                            }).filter(Boolean).join(' ')} />
+                          {/* Candlesticks - TradingView style with hollow bearish */}
+                          {allCandles.map((c, i) => {
+                            const x = leftPad + gapW + i * (candleW + gapW)
+                            const yH = padTop + ((paddedMax - c.high) / paddedRange) * priceH
+                            const yL = padTop + ((paddedMax - c.low) / paddedRange) * priceH
+                            const yO = padTop + ((paddedMax - c.open) / paddedRange) * priceH
+                            const yC = padTop + ((paddedMax - c.close) / paddedRange) * priceH
+                            const isGreen = c.close >= c.open
+                            const bodyTop = Math.min(yO, yC)
+                            const bodyH = Math.max(Math.abs(yO - yC), 2)
+                            const isLast = i === totalCandles - 1 && sim !== null
+                            return (
+                              <g key={`candle-${i}`} opacity={isLast ? 1 : 0.9}>
+                                <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
+                                <rect x={x} y={bodyTop} width={candleW} height={bodyH}
+                                  fill={isGreen ? '#22c55e' : 'var(--zv-panel)'}
+                                  stroke={isGreen ? '#22c55e' : '#ef5350'}
+                                  strokeWidth="0.7" rx="0.5"
+                                />
+                                {isLast && (
+                                  <g filter="url(#sinyal-glow)">
+                                    <rect x={x - 1} y={bodyTop - 1} width={candleW + 2} height={bodyH + 2}
+                                      fill="none" stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="1"
+                                      opacity="0.5">
+                                      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="1s" repeatCount="indefinite" />
+                                    </rect>
+                                  </g>
+                                )}
+                              </g>
+                            )
+                          })}
+                          {/* Current price line */}
+                          {allCandles.length > 0 && (() => {
+                            const lastC = allCandles[allCandles.length - 1]
+                            const isGreen = lastC.close >= lastC.open
+                            const yLast = padTop + ((paddedMax - lastC.close) / paddedRange) * priceH
+                            return (
+                              <>
+                                <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
+                                <rect x={chartW + 1} y={yLast - 7} width={priceScaleW - 3} height="14" rx="2" fill={isGreen ? '#22c55e' : '#ef5350'} />
+                                <text x={chartW + priceScaleW / 2} y={yLast + 3.5} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastC.close)}</text>
+                              </>
+                            )
+                          })()}
+                        </svg>
+                      )
+                    })()}
+                  </div>
+                  {/* Price display below chart */}
+                  <div className="flex items-center justify-between px-3 pb-2.5">
+                    <span className="text-[13px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
+                      {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
+                    </span>
+                    <span className={`text-[10px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-blue-500' : 'text-red-400'}`}>
+                      {formatPercent(selectedSinyalStock.changePercent)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* NAIK / TURUN Buttons - These ARE the submit buttons */}
+              <div className="grid grid-cols-2 gap-2.5 mb-3">
+                <button
+                  onClick={() => {
+                    setSinyalDirection('NAIK')
+                    if (!sinyalActive && sinyalAmount && parseInt(sinyalAmount) >= 100000 && parseInt(sinyalAmount) <= (user?.balance || 0)) {
+                      openSinyalPosition('NAIK')
+                    }
+                  }}
+                  disabled={sinyalActive}
+                  className={`h-14 rounded-xl text-[14px] font-black flex items-center justify-center gap-2 transition-all ${
+                    sinyalActive
+                      ? 'bg-[var(--zv-surface)] text-gray-500 border border-[var(--zv-border)] opacity-50 cursor-not-allowed'
+                      : sinyalDirection === 'NAIK'
+                        ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-white shadow-lg shadow-green-500/30 border border-green-400/50'
+                        : 'bg-[var(--zv-surface)] text-[#22c55e] border border-green-500/30 hover:bg-green-500/10'
+                  }`}>
+                  <TrendingUp className="w-5 h-5" />
+                  NAIK
+                  <span className="text-[10px] font-bold opacity-70">+{sinyalAmount && parseInt(sinyalAmount) >= 100000 ? calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(0) : '40'}%</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSinyalDirection('TURUN')
+                    if (!sinyalActive && sinyalAmount && parseInt(sinyalAmount) >= 100000 && parseInt(sinyalAmount) <= (user?.balance || 0)) {
+                      openSinyalPosition('TURUN')
+                    }
+                  }}
+                  disabled={sinyalActive}
+                  className={`h-14 rounded-xl text-[14px] font-black flex items-center justify-center gap-2 transition-all ${
+                    sinyalActive
+                      ? 'bg-[var(--zv-surface)] text-gray-500 border border-[var(--zv-border)] opacity-50 cursor-not-allowed'
+                      : sinyalDirection === 'TURUN'
+                        ? 'bg-gradient-to-r from-[#ef5350] to-[#d32f2f] text-white shadow-lg shadow-red-500/30 border border-red-400/50'
+                        : 'bg-[var(--zv-surface)] text-[#ef5350] border border-red-500/30 hover:bg-red-500/10'
+                  }`}>
+                  <TrendingDown className="w-5 h-5" />
+                  TURUN
+                  <span className="text-[10px] font-bold opacity-70">+{sinyalAmount && parseInt(sinyalAmount) >= 100000 ? calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(0) : '40'}%</span>
+                </button>
+              </div>
+
+              {/* Amount Input */}
+              <div className="mb-2.5">
+                <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1 uppercase tracking-wider">Jumlah (Rp)</label>
+                <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="Min. 100.000"
+                  className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-[var(--zv-muted)]" />
+              </div>
+
+              {/* Quick Amount Buttons */}
+              <div className="flex gap-1.5 mb-3">
+                {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
+                  <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-[var(--zv-muted)] hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 transition-all">
+                    {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Duration Selector */}
+              <div className="mb-3">
+                <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1.5 uppercase tracking-wider">Durasi</label>
+                <div className="flex gap-1.5">
+                  {[10, 20, 30, 60].map(dur => (
+                    <button key={dur} onClick={() => setSinyalDuration(dur)}
+                      className={`flex-1 h-9 rounded-lg text-[11px] font-bold transition-all ${sinyalDuration === dur ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
+                      {dur}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Profit Calculator */}
+              {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
+                <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
+                  <div className="flex items-center justify-between py-0.5">
+                    <span className="text-[8px] text-[var(--zv-muted)]">Jumlah</span>
+                    <span className="text-[8px] font-bold text-[var(--zv-text)]">{formatRupiah(parseInt(sinyalAmount))}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-0.5">
+                    <span className="text-[8px] text-[var(--zv-muted)]">Durasi</span>
+                    <span className="text-[8px] font-bold text-[var(--zv-text)]">{sinyalDuration}s</span>
+                  </div>
+                  <div className="flex items-center justify-between py-0.5">
+                    <span className="text-[8px] text-[var(--zv-muted)]">Profit Rate</span>
+                    <span className="text-[8px] font-bold text-blue-400">+{calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-[var(--zv-border)]">
+                    <span className="text-[10px] font-bold text-blue-400">Potensi Profit</span>
+                    <span className="text-[11px] font-black text-blue-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration) / 100))}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Active Position Info */}
               {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
                 const ap = sinyalPositions.find(p => p.status === 'active')!
+                const progress = Math.max(0, (1 - sinyalTimer / ap.duration) * 100)
                 return (
-                  <div className="rounded-2xl p-4 mb-4 border border-[#3b82f6]/30 bg-[var(--zv-panel)] shadow-sm shadow-blue-500/5">
-                    <div className="flex items-center justify-between mb-2.5">
+                  <div className="rounded-2xl p-4 mb-3 border border-blue-500/30 bg-blue-500/10">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center">
-                          <Zap className="w-4 h-4 text-[#3b82f6] animate-pulse" />
-                        </div>
-                        <span className="text-[11px] font-black text-[#3b82f6]">POSISI AKTIF</span>
+                        <Zap className="w-4 h-4 text-blue-400 animate-pulse" />
+                        <span className={`text-[13px] font-black ${ap.direction === 'NAIK' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{ap.direction} {ap.stockCode}</span>
                       </div>
-                      <span className="text-[9px] font-bold text-[#3b82f6] bg-[var(--zv-surface)] px-2 py-0.5 rounded-lg">{ap.stockCode}</span>
+                      <span className="text-[22px] font-black text-[var(--zv-text)] tabular-nums">{sinyalTimer}s</span>
                     </div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div>
-                        <span className={`text-[18px] font-black ${ap.direction === 'NAIK' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{ap.direction}</span>
-                        <span className="block text-[9px] text-[var(--zv-muted)] mt-0.5">{formatRupiah(ap.amount)} • Profit +{ap.profitPercent.toFixed(1)}%</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="block text-[28px] font-black text-[#3b82f6] tabular-nums leading-none">{sinyalTimer}s</span>
-                        <span className="block text-[8px] text-[var(--zv-muted)] mt-1">sisa waktu</span>
-                      </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[9px] text-[var(--zv-muted)]">{formatRupiah(ap.amount)} • Profit +{ap.profitPercent.toFixed(1)}%</span>
+                      <span className="text-[9px] font-bold text-blue-400">{Math.round(progress)}%</span>
                     </div>
-                    {/* Progress Bar */}
                     <div className="w-full h-2.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
                     </div>
                   </div>
                 )
               })()}
 
-              {/* Last Result */}
+              {/* Result Display */}
               {sinyalResult && !sinyalActive && (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-4 border shadow-sm ${sinyalResult.won ? 'border-[#3b82f6]/30 bg-[var(--zv-panel)] shadow-blue-500/5' : 'border-[#ef5350]/30 bg-[var(--zv-panel)] shadow-red-500/5'}`}>
-                  <div className="text-center">
-                    <span className="text-[24px]">{sinyalResult.won ? '🎯' : '❌'}</span>
-                    <h3 className={`text-[14px] font-black ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                      {sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}
-                    </h3>
-                    <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                      {sinyalResult.won ? `+${formatRupiah(Math.abs(sinyalResult.profit))}` : `-${formatRupiah(Math.abs(sinyalResult.profit))}`}
-                    </span>
-                  </div>
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-3 text-center border ${sinyalResult.won ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                  <span className="text-[28px]">{sinyalResult.won ? '🎯' : '❌'}</span>
+                  <h3 className={`text-[15px] font-black ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                    {sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}
+                  </h3>
+                  <span className={`text-[13px] font-bold ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                    {sinyalResult.won ? '+' : '-'}{formatRupiah(Math.abs(sinyalResult.profit))}
+                  </span>
                 </motion.div>
               )}
 
-              {/* Stock Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                {stocks.slice(0, 12).map(s => {
-                  const isUp = s.changePercent >= 0
-
-                  return (
-                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 transition-all ${isUp ? 'border-[#22c55e]/20 hover:border-[#3b82f6]/30' : 'border-[#ef5350]/20 hover:border-[#3b82f6]/30'}`}
-                      onClick={() => { setSelectedSinyalStock(s); setShowSinyalModal(true); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalDuration(30); setSinyalResult(null); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}>
-                      <div className="p-3 md:p-4">
-                        <div className="flex items-center justify-between mb-2.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl overflow-hidden flex items-center justify-center border ${isUp ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] md:text-[11px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>}</div>
-                            <div>
-                              <span className="block text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
-                              <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
-                            </div>
-                          </div>
-                          <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
-                            <Target className="w-4 h-4 text-[#3b82f6]" />
-                          </div>
-                        </div>
-
-                        {/* Mini Candlestick Chart */}
-                        <div className="h-[52px] -mx-1 mb-2.5 px-1 py-0.5" style={{ background: 'var(--zv-panel)', borderRadius: '8px', border: '1px solid var(--zv-surface)' }}>
-                          {(() => {
-                            const miniCandles: CandleData[] = []
-                            let mcPrev = Math.round(s.price * (0.97 + Math.random() * 0.06))
-                            const mcSim = { momentum: 0, trend: 0, phase: 1, phaseLen: 5, vol: Math.round(20000 + Math.random() * 50000) }
-                            for (let mi = 0; mi < 12; mi++) {
-                              const mc = generateCandle(mcPrev, s.price, mcSim, mi)
-                              miniCandles.push(mc)
-                              mcPrev = mc.close
-                            }
-                            const mcAllP = miniCandles.flatMap(c => [c.high, c.low])
-                            const mcMinP = Math.min(...mcAllP)
-                            const mcMaxP = Math.max(...mcAllP)
-                            const mcRange = mcMaxP - mcMinP || 1
-                            const mcPad = mcRange * 0.05
-                            const mcPaddedMin = mcMinP - mcPad
-                            const mcPaddedRange = mcMaxP + mcPad - mcPaddedMin
-                            const mcCandleW = 5
-                            const mcGapW = 2
-                            const mcW = miniCandles.length * (mcCandleW + mcGapW) + mcGapW
-                            const mcH = 50
-                            const mcTop = 2
-                            const mcChartH = mcH - 4
-                            return (
-                              <svg className="w-full h-full" viewBox={`0 0 ${mcW} ${mcH}`} preserveAspectRatio="none">
-                                {miniCandles.map((c, ci) => {
-                                  const mx = mcGapW + ci * (mcCandleW + mcGapW)
-                                  const myH = mcTop + ((mcMaxP + mcPad - c.high) / mcPaddedRange) * mcChartH
-                                  const myL = mcTop + ((mcMaxP + mcPad - c.low) / mcPaddedRange) * mcChartH
-                                  const myO = mcTop + ((mcMaxP + mcPad - c.open) / mcPaddedRange) * mcChartH
-                                  const myC = mcTop + ((mcMaxP + mcPad - c.close) / mcPaddedRange) * mcChartH
-                                  const mIsGreen = c.close >= c.open
-                                  const mBodyTop = Math.min(myO, myC)
-                                  const mBodyH = Math.max(Math.abs(myO - myC), 1)
-                                  const mcOpacity = 0.6 + (ci / miniCandles.length) * 0.4
-                                  return (
-                                    <g key={`mc-${ci}`} opacity={mcOpacity}>
-                                      <line x1={mx + mcCandleW / 2} y1={myH} x2={mx + mcCandleW / 2} y2={myL} stroke={mIsGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.6" />
-                                      <rect x={mx} y={mBodyTop} width={mcCandleW} height={mBodyH} fill={mIsGreen ? '#22c55e' : '#ef5350'} rx="0.5" />
-                                    </g>
-                                  )
-                                })}
-                              </svg>
-                            )
-                          })()}
-                        </div>
-
-                        <div className="flex items-end justify-between">
-                          <div>
-                            <span className="block text-[14px] md:text-base font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(s.price)}</span>
-                            <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
-                              {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
-                              <span className={`text-[10px] md:text-[11px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 bg-[var(--zv-surface)] border border-[var(--zv-border)] rounded-lg px-2.5 py-1.5">
-                            <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
-                            <span className="text-[10px] font-black text-[#22c55e]">+40%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Position History */}
+              {/* Recent History */}
               {sinyalPositions.filter(p => p.status !== 'active').length > 0 && (
-                <div className="mt-5">
-                  <h3 className="text-[12px] md:text-sm font-black text-[#3b82f6] mb-3">Riwayat Posisi</h3>
-                  <div className="space-y-2.5">
+                <div className="mb-3">
+                  <h3 className="text-[11px] font-black text-[var(--zv-muted)] mb-2 uppercase tracking-wider">Riwayat Terakhir</h3>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
                     {sinyalPositions.filter(p => p.status !== 'active').slice(-5).reverse().map(pos => (
-                      <div key={pos.id} className={`rounded-2xl p-3.5 border ${pos.status === 'won' ? 'bg-[var(--zv-panel)] border-[#22c55e]/30' : 'bg-[var(--zv-panel)] border-[#ef5350]/30'}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-9 h-9 rounded-xl grid place-items-center ${pos.status === 'won' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
-                              {pos.status === 'won' ? <TrendingUp className="w-4.5 h-4.5 text-[#22c55e]" /> : <TrendingDown className="w-4.5 h-4.5 text-[#ef5350]" />}
-                            </div>
-                            <div>
-                              <span className="block text-[11px] font-black text-[var(--zv-text)]">{pos.stockCode} • {pos.direction}</span>
-                              <span className="block text-[9px] text-[var(--zv-muted)]">{formatRupiah(pos.amount)} • {pos.duration}s</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className={`block text-[11px] font-black ${pos.status === 'won' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                              {pos.status === 'won' ? `+${formatRupiah(Math.round(pos.amount * pos.profitPercent / 100))}` : `-${formatRupiah(pos.amount)}`}
-                            </span>
-                            <span className={`block text-[9px] font-bold ${pos.status === 'won' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{pos.status === 'won' ? 'BENAR' : 'SALAH'}</span>
+                      <div key={pos.id} className={`rounded-xl p-2.5 border flex items-center justify-between ${pos.status === 'won' ? 'bg-[var(--zv-surface)] border-green-500/20' : 'bg-[var(--zv-surface)] border-red-500/20'}`}>
+                        <div className="flex items-center gap-2">
+                          {pos.status === 'won' ? <CheckCircle className="w-4 h-4 text-[#22c55e]" /> : <X className="w-4 h-4 text-[#ef5350]" />}
+                          <div>
+                            <span className="block text-[10px] font-black text-[var(--zv-text)]">{pos.stockCode} {pos.direction}</span>
+                            <span className="block text-[8px] text-[var(--zv-muted)]">{formatRupiah(pos.amount)} • {pos.duration}s</span>
                           </div>
                         </div>
+                        <span className={`text-[10px] font-black ${pos.status === 'won' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                          {pos.status === 'won' ? `+${formatRupiah(Math.round(pos.amount * pos.profitPercent / 100))}` : `-${formatRupiah(pos.amount)}`}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* Balance Info */}
+              <div className="flex items-center justify-center gap-1.5 py-2">
+                <Wallet className="w-3.5 h-3.5 text-[var(--zv-muted)]" />
+                <span className="text-[9px] font-bold text-[var(--zv-muted)]">Saldo: {formatRupiah(user?.balance || 0)}</span>
+              </div>
             </motion.div>
           )}
 
@@ -5079,380 +5273,6 @@ function Dashboard() {
                     <><Package className="w-4 h-4" />Beli Kontrak {selectedStock.code}</>
                   )}
                 </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Sinyal Pro Modal */}
-      <AnimatePresence>
-        {showSinyalModal && selectedSinyalStock && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 inset-0 md:inset-0 bg-[#0d1117] overflow-y-auto custom-scrollbar md:flex md:items-center md:justify-center">
-              <div className="min-h-screen md:min-h-0 md:max-h-[92vh] md:rounded-2xl md:max-w-xl md:mx-auto md:my-auto md:shadow-2xl flex flex-col" style={{ background: '#0d1117' }}>
-                {/* Header - Dark Trading Style */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--zv-surface)] flex-shrink-0">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 grid place-items-center">
-                      <Target className="w-4 h-4 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-[13px] font-black text-white">Sinyal Pro — {selectedSinyalStock.code}</h3>
-                      <span className="text-[9px] text-gray-500">{selectedSinyalStock.name} • {formatRupiah(selectedSinyalStock.price)}</span>
-                    </div>
-                  </div>
-                  <button onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-gray-500 hover:text-white transition-colors"><X className="w-4 h-4" /></button>
-                </div>
-
-                {/* Live Candlestick Chart - Full width dark */}
-                <div className="overflow-hidden flex-shrink-0" style={{ background: 'var(--zv-panel)', borderBottom: '1px solid var(--zv-surface)' }}>
-                  <div className="flex items-center justify-between px-3 pt-2 pb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                      <span className="text-[8px] font-black text-blue-400 tracking-wider">LIVE</span>
-                      <span className="text-[8px] font-bold text-gray-600">|</span>
-                      <span className="text-[8px] font-bold text-gray-400">{selectedSinyalStock.code}/IDR</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1"><span className="w-3 h-[2px] rounded bg-yellow-400" /><span className="text-[7px] font-bold text-yellow-400">MA7</span></div>
-                      <div className="flex items-center gap-1"><span className="w-3 h-[2px] rounded bg-blue-400" /><span className="text-[7px] font-bold text-blue-400">MA25</span></div>
-                    </div>
-                  </div>
-                  {/* Timeframe Selector */}
-                  <div className="flex items-center gap-1 px-3 pt-0.5 pb-1.5">
-                    {['1M', '5M', '15M', '1H', '1D'].map(tf => (
-                      <button key={tf} className={`h-6 px-2.5 rounded-md text-[7px] font-bold transition-colors ${tf === '1M' ? 'bg-blue-600/30 text-blue-400 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-[var(--zv-surface)]'}`}>
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                  {/* OHLC Display */}
-                  {(() => {
-                    const allCandlesPeek = [...sinyalCandles]
-                    const simPeek = sinyalChartSimRef.current
-                    if (simPeek && simPeek.currentCandle.tickCount > 0) {
-                      allCandlesPeek.push({ idx: allCandlesPeek.length, open: simPeek.currentCandle.open, high: simPeek.currentCandle.high, low: simPeek.currentCandle.low, close: simPeek.currentCandle.close, volume: simPeek.currentCandle.volume, time: '' })
-                    }
-                    const lastOHLC = allCandlesPeek[allCandlesPeek.length - 1]
-                    if (!lastOHLC) return null
-                    const ohlcIsGreen = lastOHLC.close >= lastOHLC.open
-                    return (
-                      <div className="flex items-center gap-4 px-3 pb-1.5">
-                        <span className="text-[8px] text-gray-500">O <span className="text-gray-300">{formatRupiah(lastOHLC.open)}</span></span>
-                        <span className="text-[8px] text-gray-500">H <span className="text-blue-400">{formatRupiah(lastOHLC.high)}</span></span>
-                        <span className="text-[8px] text-gray-500">L <span className="text-red-400">{formatRupiah(lastOHLC.low)}</span></span>
-                        <span className="text-[8px] text-gray-500">C <span className={ohlcIsGreen ? 'text-blue-400' : 'text-red-400'}>{formatRupiah(lastOHLC.close)}</span></span>
-                      </div>
-                    )
-                  })()}
-                  <div className="h-[220px] md:h-[260px] w-full relative" key={`sinyal-chart-${sinyalChartTick}`}>
-                    {(() => {
-                      const allCandles = [...sinyalCandles]
-                      const sim = sinyalChartSimRef.current
-                      if (sim) {
-                        const cc = sim.currentCandle
-                        if (cc.tickCount > 0) {
-                          allCandles.push({
-                            idx: allCandles.length,
-                            open: cc.open,
-                            high: cc.high,
-                            low: cc.low,
-                            close: cc.close,
-                            volume: cc.volume,
-                            time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
-                          })
-                        }
-                      }
-
-                      if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Memuat grafik...</div>
-
-                      const allPrices = allCandles.flatMap(c => [c.high, c.low])
-                      const minP = Math.min(...allPrices)
-                      const maxP = Math.max(...allPrices)
-                      const rangeP = maxP - minP || 1
-                      const paddedMin = minP - rangeP * 0.03
-                      const paddedMax = maxP + rangeP * 0.03
-                      const paddedRange = paddedMax - paddedMin
-
-                      const totalCandles = allCandles.length
-                      const maxVol = Math.max(...allCandles.map(c => c.volume), 1)
-                      const padTop = 8
-                      const padBot = 16
-                      const priceH = 120
-                      const volH = 36
-                      const totalH = priceH + volH
-                      const svgH = padTop + totalH + padBot
-                      const priceScaleW = 64
-                      const leftPad = 6
-                      const candleW = Math.max(5, Math.floor(180 / totalCandles))
-                      const gapW = Math.max(2, Math.floor(40 / totalCandles))
-                      const chartW = totalCandles * (candleW + gapW) + gapW * 2
-                      const svgW = Math.max(chartW + priceScaleW, 280)
-
-                      const ma7 = computeMA(allCandles, 7)
-                      const ma25 = computeMA(allCandles, 25)
-
-                      const compactPrice = (p: number) => {
-                        if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
-                        if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K`
-                        return p.toFixed(0)
-                      }
-
-                      return (
-                        <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }} shapeRendering="crispEdges">
-                          <defs>
-                            <filter id="sinyal-glow" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="2" result="blur" />
-                              <feMerge>
-                                <feMergeNode in="blur" />
-                                <feMergeNode in="SourceGraphic" />
-                              </feMerge>
-                            </filter>
-                          </defs>
-                          {/* Horizontal grid lines - 8 lines with dotted style */}
-                          {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => {
-                            const gy = padTop + (gi / 7) * priceH
-                            const priceLabel = Math.round(paddedMax - (paddedRange / 7) * gi)
-                            return (
-                              <g key={`hg-${gi}`}>
-                                <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                <text x={chartW + 4} y={gy + 3} fontSize="6.5" fill="var(--zv-muted)">{compactPrice(priceLabel)}</text>
-                              </g>
-                            )
-                          })}
-                          {/* Vertical grid lines */}
-                          {allCandles.filter((_, i) => i % Math.max(1, Math.floor(totalCandles / 5)) === 0).map((c, _idx, arr) => {
-                            const indices = allCandles.map((_, i) => i).filter(i => i % Math.max(1, Math.floor(totalCandles / 5)) === 0)
-                            const i = indices[_idx] || 0
-                            const gx = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                            return (
-                              <g key={`vg-${i}`}>
-                                <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                <text x={gx} y={svgH - 4} fontSize="5.5" fill="var(--zv-muted)" textAnchor="middle">{c.time}</text>
-                              </g>
-                            )
-                          })}
-                          {/* Volume separator line */}
-                          <line x1={leftPad} y1={padTop + priceH} x2={chartW} y2={padTop + priceH} stroke="var(--zv-border)" strokeWidth="0.5" />
-                          {/* Volume bars with opacity variation & rounded top */}
-                          {allCandles.map((c, i) => {
-                            const x = leftPad + gapW + i * (candleW + gapW)
-                            const isGreen = c.close >= c.open
-                            const volBarH = (c.volume / maxVol) * volH
-                            const volY = padTop + priceH + volH - volBarH
-                            const isLast = i === totalCandles - 1 && sim !== null
-                            const volOpacity = isLast ? 0.5 : (0.2 + (i / totalCandles) * 0.2)
-                            return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={Math.max(volBarH, 1)} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="1" />
-                          })}
-                          {/* MA7 line - smoothed */}
-                          <polyline fill="none" stroke="#f5c542" strokeWidth="0.8" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
-                            points={ma7.map((v, i) => {
-                              if (v === null) return ''
-                              const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                              const y = padTop + ((paddedMax - v) / paddedRange) * priceH
-                              return `${x},${y}`
-                            }).filter(Boolean).join(' ')} />
-                          {/* MA25 line - smoothed */}
-                          <polyline fill="none" stroke="#2196f3" strokeWidth="0.8" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
-                            points={ma25.map((v, i) => {
-                              if (v === null) return ''
-                              const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                              const y = padTop + ((paddedMax - v) / paddedRange) * priceH
-                              return `${x},${y}`
-                            }).filter(Boolean).join(' ')} />
-                          {/* Candlesticks - TradingView style with hollow bearish */}
-                          {allCandles.map((c, i) => {
-                            const x = leftPad + gapW + i * (candleW + gapW)
-                            const yH = padTop + ((paddedMax - c.high) / paddedRange) * priceH
-                            const yL = padTop + ((paddedMax - c.low) / paddedRange) * priceH
-                            const yO = padTop + ((paddedMax - c.open) / paddedRange) * priceH
-                            const yC = padTop + ((paddedMax - c.close) / paddedRange) * priceH
-                            const isGreen = c.close >= c.open
-                            const bodyTop = Math.min(yO, yC)
-                            const bodyH = Math.max(Math.abs(yO - yC), 2)
-                            const isLast = i === totalCandles - 1 && sim !== null
-                            return (
-                              <g key={`candle-${i}`} opacity={isLast ? 1 : 0.9}>
-                                <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
-                                <rect x={x} y={bodyTop} width={candleW} height={bodyH}
-                                  fill={isGreen ? '#22c55e' : 'var(--zv-panel)'}
-                                  stroke={isGreen ? '#22c55e' : '#ef5350'}
-                                  strokeWidth="0.7" rx="0.5"
-                                />
-                                {isLast && (
-                                  <g filter="url(#sinyal-glow)">
-                                    <rect x={x - 1} y={bodyTop - 1} width={candleW + 2} height={bodyH + 2}
-                                      fill="none" stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="1"
-                                      opacity="0.5">
-                                      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="1s" repeatCount="indefinite" />
-                                    </rect>
-                                  </g>
-                                )}
-                              </g>
-                            )
-                          })}
-                          {/* Current price line */}
-                          {allCandles.length > 0 && (() => {
-                            const lastC = allCandles[allCandles.length - 1]
-                            const isGreen = lastC.close >= lastC.open
-                            const yLast = padTop + ((paddedMax - lastC.close) / paddedRange) * priceH
-                            return (
-                              <>
-                                <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
-                                <rect x={chartW + 1} y={yLast - 7} width={priceScaleW - 3} height="14" rx="2" fill={isGreen ? '#22c55e' : '#ef5350'} />
-                                <text x={chartW + priceScaleW / 2} y={yLast + 3.5} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastC.close)}</text>
-                              </>
-                            )
-                          })()}
-                        </svg>
-                      )
-                    })()}
-                  </div>
-                  {/* Price display below chart */}
-                  <div className="flex items-center justify-between px-3 pb-2">
-                    <span className="text-[12px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
-                      {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
-                    </span>
-                    <span className={`text-[9px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-blue-500' : 'text-red-400'}`}>
-                      {formatPercent(selectedSinyalStock.changePercent)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Trading Controls - Dark themed */}
-                <div className="p-4 flex-1">
-                  {/* Direction Selector */}
-                  <div className="mb-3">
-                    <label className="block text-[9px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Arah Prediksi</label>
-                    <div className="flex gap-2">
-                      <button onClick={() => setSinyalDirection('NAIK')}
-                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'NAIK' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-[var(--zv-surface)] text-blue-400 border border-blue-800/50'}`}>
-                        <TrendingUp className="w-4 h-4" />NAIK
-                      </button>
-                      <button onClick={() => setSinyalDirection('TURUN')}
-                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'TURUN' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-[var(--zv-surface)] text-red-400 border border-red-800/50'}`}>
-                        <TrendingDown className="w-4 h-4" />TURUN
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Amount Input */}
-                  <div className="mb-3">
-                    <label className="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Jumlah (Rp)</label>
-                    <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="Min. 100.000"
-                      className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[13px] font-semibold text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-gray-600" />
-                  </div>
-
-                  {/* Quick Amount Buttons */}
-                  <div className="flex gap-1.5 mb-3">
-                    {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                      <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-gray-400 hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 transition-all">
-                        {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Duration Selector */}
-                  <div className="mb-3">
-                    <label className="block text-[9px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Durasi</label>
-                    <div className="flex gap-1.5">
-                      {[10, 30, 60, 120, 300].map(dur => (
-                        <button key={dur} onClick={() => setSinyalDuration(dur)}
-                          className={`flex-1 h-9 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-gray-400 hover:text-gray-200'}`}>
-                          {dur >= 60 ? `${dur/60}m` : `${dur}s`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Profit Calculator */}
-                  {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
-                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
-                      <div className="flex items-center justify-between py-0.5">
-                        <span className="text-[8px] text-gray-500">Jumlah</span>
-                        <span className="text-[8px] font-bold text-gray-300">{formatRupiah(parseInt(sinyalAmount))}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-0.5">
-                        <span className="text-[8px] text-gray-500">Durasi</span>
-                        <span className="text-[8px] font-bold text-gray-300">{sinyalDuration}s</span>
-                      </div>
-                      <div className="flex items-center justify-between py-0.5">
-                        <span className="text-[8px] text-gray-500">Profit Rate</span>
-                        <span className="text-[8px] font-bold text-blue-400">+{calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(1)}%</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-[var(--zv-border)]">
-                        <span className="text-[10px] font-bold text-blue-400">Potensi Profit</span>
-                        <span className="text-[11px] font-black text-blue-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration) / 100))}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AUTO Mode Toggle */}
-                  <div className="flex items-center justify-between mb-3 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                    <div className="flex items-center gap-2">
-                      <Zap className={`w-4 h-4 ${sinyalAutoMode ? 'text-yellow-400' : 'text-gray-500'}`} />
-                      <div>
-                        <span className="block text-[10px] font-bold text-gray-200">Mode AUTO</span>
-                        <span className="block text-[8px] text-gray-500">Otomatis buka posisi baru</span>
-                      </div>
-                    </div>
-                    <button onClick={() => setSinyalAutoMode(!sinyalAutoMode)}
-                      className={`w-11 h-6 rounded-full transition-all flex items-center ${sinyalAutoMode ? 'bg-gradient-to-r from-blue-600 to-blue-500 justify-end shadow-sm shadow-blue-500/30' : 'bg-[var(--zv-border)] justify-start'}`}>
-                      <div className="w-5 h-5 rounded-full bg-white shadow-sm mx-0.5" />
-                    </button>
-                  </div>
-
-                  {/* AUTO AKTIF Indicator */}
-                  {sinyalAutoMode && sinyalActive && (
-                    <div className="flex items-center justify-center gap-2 mb-3 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                      <Zap className="w-4 h-4 text-yellow-400 animate-pulse" />
-                      <span className="text-[9px] font-black text-yellow-400">AUTO AKTIF — Posisi akan dibuka ulang otomatis</span>
-                    </div>
-                  )}
-
-                  {/* Active Timer in Modal */}
-                  {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
-                    const ap = sinyalPositions.find(p => p.status === 'active')!
-                    return (
-                      <div className="rounded-xl p-3 mb-3 border border-blue-500/30 bg-blue-500/10">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`text-[13px] font-black ${ap.direction === 'NAIK' ? 'text-blue-400' : 'text-red-400'}`}>{ap.direction} {ap.stockCode}</span>
-                          <span className="text-[20px] font-black text-white tabular-nums">{sinyalTimer}s</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }} />
-                        </div>
-                      </div>
-                    )
-                  })()}
-
-                  {/* Result in Modal */}
-                  {sinyalResult && !sinyalActive && (
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-xl p-4 mb-3 text-center ${sinyalResult.won ? 'bg-blue-500/15 border border-blue-500/30' : 'bg-red-500/15 border border-red-500/30'}`}>
-                      <span className="text-[24px]">{sinyalResult.won ? '🎯' : '❌'}</span>
-                      <h4 className={`text-[14px] font-black ${sinyalResult.won ? 'text-blue-400' : 'text-red-400'}`}>{sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}</h4>
-                      <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-blue-400' : 'text-red-400'}`}>{sinyalResult.won ? '+' : '-'}{formatRupiah(Math.abs(sinyalResult.profit))}</span>
-                    </motion.div>
-                  )}
-
-                  {/* Submit */}
-                  <button onClick={openSinyalPosition}
-                    disabled={sinyalActive || !sinyalAmount || parseInt(sinyalAmount) < 100000 || parseInt(sinyalAmount) > (user?.balance || 0)}
-                    className="w-full h-13 rounded-xl text-white text-[13px] font-black disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                    style={{ background: sinyalActive ? 'var(--zv-surface)' : 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}>
-                    {sinyalActive ? (
-                      <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /><span>Menunggu Hasil...</span></>
-                    ) : 'Buka Posisi'}
-                  </button>
-
-                  {/* Balance info */}
-                  <div className="flex items-center justify-center gap-1.5 mt-3">
-                    <Wallet className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-[9px] font-bold text-gray-500">Saldo: {formatRupiah(user?.balance || 0)}</span>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </>
