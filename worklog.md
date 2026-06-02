@@ -108,3 +108,44 @@ Stage Summary:
 - Matches professional trading platforms like candlecharts.com and TradingView
 - All tabs, cards, modals, navigation, and sidebars now use dark theme
 - No floating white cards - everything is anchored with dark panels and subtle borders
+---
+Task ID: 3
+Agent: Main Agent
+Task: Rebrand to ZEVORIX with blue theme, add light/dark mode toggle, premium design
+
+Work Log:
+- Analyzed uploaded logo with VLM: Brand is "ZEVORIX" with blue gradient (#3b82f6, #1d4ed8), silver text, "FUTURE OF INVESTING" tagline
+- Copied logo to public/zevorix-logo.png
+- Updated globals.css: Complete blue theme system with light/dark CSS variables
+  - Dark mode: #020617 bg, #0f172a panels, #1e293b surfaces, #334155 borders
+  - Light mode: #f8fafc bg, #ffffff panels, #f1f5f9 surfaces, #e2e8f0 borders
+  - Blue accent: #3b82f6 primary, #1d4ed8 dark, #60a5fa light
+  - Trading colors: #22c55e green (up), #ef5350 red (down), #f59e0b gold
+  - Added --zv-* custom properties for theme-aware styling
+  - Added glass-header, gradient-text, premium-glow, theme-transition utilities
+- Updated layout.tsx: Changed metadata to ZEVORIX branding, favicon to zevorix-logo.png
+- Updated page.tsx:
+  - Added theme state (dark/light) with toggleTheme function
+  - Added useEffect to sync theme class on documentElement
+  - Added Sun/Moon icons to lucide-react import
+  - Added theme toggle button in header (Sun icon in dark mode, Moon in light)
+  - Replaced ALL "TrendEdge" → "ZEVORIX" (18+ occurrences)
+  - Replaced ALL "trendedge-logo.png" → "zevorix-logo.png"
+  - Replaced ALL "TRENDEDGE" → "ZEVORIX"
+  - Changed all emerald green → blue (#26a69a→#3b82f6, #059669→#2563eb, #064e3b→#1e3a5f, #022c22→#0c1a2e)
+  - Replaced ALL hardcoded dark colors with CSS variables (#131722→var(--zv-panel), #1e222d→var(--zv-surface), #2a2e39→var(--zv-border), etc.)
+  - Fixed trading indicator colors: green (#22c55e) for UP/profit, red (#ef5350) for DOWN/loss
+  - Blue (#3b82f6) used only for brand elements (headings, buttons, links)
+  - Updated LoginPage: green gradients → blue gradients, all emerald → blue classes
+  - Candlestick charts: green (#22c55e) for up candles, red (#ef5350) for down candles
+  - Gradient headers: dark blue gradient (#0c1a2e → #1e3a5f → #2563eb)
+  - Glass-header class for blur effects on header, bottom nav
+  - All 523 var(--zv-*) references for proper theme switching
+
+Stage Summary:
+- Complete rebrand from TrendEdge (emerald green) to ZEVORIX (blue)
+- Light/Dark mode toggle working via CSS custom properties
+- Logo updated to zevorix-logo.png throughout
+- Trading colors properly differentiated: blue=brand, green=up, red=down, gold=accent
+- All panels/cards use theme-aware CSS variables for automatic light/dark switching
+- Lint passes clean, dev server compiles successfully

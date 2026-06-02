@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TrendEdge - Platform Investasi Saham",
+  title: "ZEVORIX - Future of Investing",
   description: "Platform investasi saham terpercaya. Pantau portofolio, pergerakan saham, dan aktivitas profit Anda.",
-  keywords: ["saham", "investasi", "portofolio", "IHSG", "TrendEdge"],
-  authors: [{ name: "TrendEdge" }],
+  keywords: ["saham", "investasi", "portofolio", "IHSG", "ZEVORIX"],
+  authors: [{ name: "ZEVORIX" }],
   icons: {
-    icon: "/trendedge-icon.png",
+    icon: "/zevorix-logo.png",
   },
 };
 

@@ -41,56 +41,135 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  /* Trading Terminal Dark Colors */
-  --color-gs-green: #26a69a;
-  --color-gs-green2: #10b981;
-  --color-gs-green3: #059669;
-  --color-gs-gold: #f59e0b;
-  --color-gs-gold2: #fde68a;
-  --color-gs-red: #ef5350;
-  --color-gs-dark: #0a0e17;
-  --color-gs-text: #e0e3eb;
-  --color-gs-muted: #787b86;
-  --color-gs-line: #2a2e39;
-  --color-gs-soft: #1e222d;
-  --color-gs-panel: #131722;
-  --color-gs-border: #2a2e39;
-  --color-gs-hover: #1e222d;
+  /* ZEVORIX Brand Colors */
+  --color-zv-blue: #3b82f6;
+  --color-zv-blue2: #60a5fa;
+  --color-zv-blue3: #1d4ed8;
+  --color-zv-blue4: #2563eb;
+  --color-zv-cyan: #06b6d4;
+  --color-zv-gold: #f59e0b;
+  --color-zv-gold2: #fde68a;
+  --color-zv-red: #ef4444;
+  --color-zv-green: #22c55e;
+  --color-zv-dark: #020617;
+  --color-zv-panel: #0f172a;
+  --color-zv-surface: #1e293b;
+  --color-zv-border: #334155;
+  --color-zv-text: #e2e8f0;
+  --color-zv-muted: #94a3b8;
+  --color-zv-subtle: #64748b;
+  /* Light mode */
+  --color-zv-lt-bg: #f8fafc;
+  --color-zv-lt-panel: #ffffff;
+  --color-zv-lt-surface: #f1f5f9;
+  --color-zv-lt-border: #e2e8f0;
+  --color-zv-lt-text: #0f172a;
+  --color-zv-lt-muted: #64748b;
 }
 
+/* ===== DARK MODE (default) ===== */
 :root {
   --radius: 0.625rem;
-  --background: #0a0e17;
-  --foreground: #e0e3eb;
-  --card: #131722;
-  --card-foreground: #e0e3eb;
-  --popover: #131722;
-  --popover-foreground: #e0e3eb;
-  --primary: #26a69a;
+  --background: #020617;
+  --foreground: #e2e8f0;
+  --card: #0f172a;
+  --card-foreground: #e2e8f0;
+  --popover: #0f172a;
+  --popover-foreground: #e2e8f0;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #1e222d;
-  --secondary-foreground: #e0e3eb;
-  --muted: #1e222d;
-  --muted-foreground: #787b86;
-  --accent: #1e222d;
-  --accent-foreground: #e0e3eb;
-  --destructive: #ef5350;
-  --border: #2a2e39;
-  --input: #2a2e39;
-  --ring: #26a69a;
-  --chart-1: #26a69a;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #e2e8f0;
+  --destructive: #ef4444;
+  --border: #334155;
+  --input: #334155;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
   --chart-2: #f59e0b;
-  --chart-3: #ef5350;
-  --chart-4: #2196f3;
-  --chart-5: #9c27b0;
-  --sidebar: #0a0e17;
-  --sidebar-foreground: #e0e3eb;
-  --sidebar-primary: #26a69a;
+  --chart-3: #ef4444;
+  --chart-4: #06b6d4;
+  --chart-5: #a855f7;
+  --sidebar: #020617;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e222d;
-  --sidebar-accent-foreground: #e0e3eb;
-  --sidebar-border: #2a2e39;
-  --sidebar-ring: #26a69a;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3b82f6;
+  /* Theme-aware custom props */
+  --zv-bg: #020617;
+  --zv-panel: #0f172a;
+  --zv-surface: #1e293b;
+  --zv-border: #334155;
+  --zv-text: #e2e8f0;
+  --zv-muted: #94a3b8;
+  --zv-subtle: #64748b;
+  --zv-input-bg: #1e293b;
+  --zv-hover: #1e293b;
+  --zv-blue: #3b82f6;
+  --zv-gold: #f59e0b;
+  --zv-green: #22c55e;
+  --zv-red: #ef4444;
+  --zv-header-bg: rgba(15, 23, 42, 0.95);
+  --zv-nav-bg: rgba(15, 23, 42, 0.98);
+  --zv-accent-gradient: linear-gradient(145deg, #1e3a5f 0%, #1d4ed8 40%, #3b82f6 100%);
+}
+
+/* ===== LIGHT MODE ===== */
+:root.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #f59e0b;
+  --chart-3: #ef4444;
+  --chart-4: #06b6d4;
+  --chart-5: #a855f7;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #3b82f6;
+  /* Theme-aware custom props */
+  --zv-bg: #f8fafc;
+  --zv-panel: #ffffff;
+  --zv-surface: #f1f5f9;
+  --zv-border: #e2e8f0;
+  --zv-text: #0f172a;
+  --zv-muted: #64748b;
+  --zv-subtle: #94a3b8;
+  --zv-input-bg: #f1f5f9;
+  --zv-hover: #f1f5f9;
+  --zv-blue: #2563eb;
+  --zv-gold: #f59e0b;
+  --zv-green: #16a34a;
+  --zv-red: #ef4444;
+  --zv-header-bg: rgba(255, 255, 255, 0.95);
+  --zv-nav-bg: rgba(255, 255, 255, 0.98);
+  --zv-accent-gradient: linear-gradient(145deg, #1e3a5f 0%, #1d4ed8 40%, #3b82f6 100%);
 }
 
 @layer base {
@@ -99,6 +178,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -113,7 +193,7 @@
   100% { transform: translateX(100%); }
 }
 
-@keyframes pulse-emerald {
+@keyframes pulse-blue {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
@@ -128,13 +208,13 @@
   100% { stroke-dashoffset: 0; }
 }
 
-@keyframes price-flash-emerald {
-  0% { background-color: rgba(38, 166, 154, 0.2); }
+@keyframes price-flash-blue {
+  0% { background-color: rgba(59, 130, 246, 0.2); }
   100% { background-color: transparent; }
 }
 
 @keyframes price-flash-red {
-  0% { background-color: rgba(239, 83, 80, 0.2); }
+  0% { background-color: rgba(239, 68, 68, 0.2); }
   100% { background-color: transparent; }
 }
 
@@ -144,25 +224,19 @@
   100% { r: 4; opacity: 1; }
 }
 
-@keyframes live-dot-ring {
-  0% { r: 4; opacity: 0.6; }
-  80% { r: 12; opacity: 0; }
-  100% { r: 4; opacity: 0; }
-}
-
-@keyframes nav-indicator {
-  0%, 100% { transform: scaleX(1); }
-  50% { transform: scaleX(0.85); }
-}
-
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0); }
-  50% { box-shadow: 0 0 12px 2px rgba(38, 166, 154, 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.25); }
 }
 
 @keyframes slide-in-up {
   0% { transform: translateY(8px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes glow-border {
+  0%, 100% { border-color: rgba(59, 130, 246, 0.3); }
+  50% { border-color: rgba(59, 130, 246, 0.6); }
 }
 
 .animate-ticker {
@@ -173,8 +247,8 @@
   animation: shimmer 3.5s linear infinite;
 }
 
-.animate-pulse-emerald {
-  animation: pulse-emerald 2s ease-in-out infinite;
+.animate-pulse-blue {
+  animation: pulse-blue 2s ease-in-out infinite;
 }
 
 .animate-float-up {
@@ -186,8 +260,8 @@
   animation: chart-draw 2s ease-out forwards;
 }
 
-.animate-price-flash-emerald {
-  animation: price-flash-emerald 0.5s ease-out;
+.animate-price-flash-blue {
+  animation: price-flash-blue 0.5s ease-out;
 }
 
 .animate-price-flash-red {
@@ -202,7 +276,11 @@
   animation: slide-in-up 0.4s ease-out forwards;
 }
 
-/* Custom scrollbar - Dark theme */
+.animate-glow-border {
+  animation: glow-border 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar - Dark */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -211,19 +289,27 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #363a45;
+  background: #475569;
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #26a69a;
+  background: #3b82f6;
 }
 
-/* Dark scrollbar for dark modals */
+/* Light mode scrollbar */
+.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Dark scrollbar for modals */
 .dark-scrollbar::-webkit-scrollbar-thumb {
-  background: #2a2e39;
+  background: #334155;
 }
 .dark-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3a3f4b;
+  background: #475569;
 }
 
 /* Hide Recharts default tooltip when not hovering */
@@ -234,42 +320,32 @@
   display: block !important;
 }
 
-/* Stock card hover effect - Dark Terminal Style */
+/* Stock card hover effect */
 .stock-card {
   transition: all 0.2s ease;
-  border: 1px solid #2a2e39;
+  border: 1px solid var(--zv-border);
 }
 .stock-card:hover {
-  border-color: #363a45;
-  background-color: #1e222d !important;
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.1);
 }
 
-/* Bottom nav active indicator */
-.nav-active-indicator {
-  position: relative;
-}
-.nav-active-indicator::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 32px;
-  height: 3px;
-  background: linear-gradient(135deg, #26a69a, #10b981);
-  border-radius: 0 0 4px 4px;
+/* Light mode stock card hover */
+.light .stock-card:hover {
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 16px -4px rgba(37, 99, 235, 0.1);
 }
 
-/* Glass effect for header - Dark version */
+/* Glass effect for header */
 .glass-header {
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  background-color: rgba(19, 23, 34, 0.95);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background-color: var(--zv-header-bg);
 }
 
 /* Gradient text for headings */
 .gradient-text {
-  background: linear-gradient(135deg, #26a69a, #10b981);
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -280,13 +356,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Card depth effect - Dark terminal */
+/* Card depth effect */
 .card-depth {
-  border: 1px solid #2a2e39;
+  border: 1px solid var(--zv-border);
   transition: border-color 0.2s ease;
 }
 .card-depth:hover {
-  border-color: #363a45;
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 /* Bottom nav safe area */
@@ -296,16 +372,27 @@
   }
 }
 
-/* Trading Terminal Panel Style */
+/* Premium panel style */
 .t-panel {
-  background: #131722;
-  border: 1px solid #2a2e39;
-  border-radius: 12px;
+  background: var(--zv-panel);
+  border: 1px solid var(--zv-border);
+  border-radius: 16px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Trading Terminal Accent Panel (green header) */
+/* Premium accent panel (blue gradient header) */
 .t-panel-accent {
-  background: linear-gradient(145deg, #022c22 0%, #064e3b 40%, #059669 100%);
-  border: 1px solid rgba(38, 166, 154, 0.2);
-  border-radius: 12px;
+  background: linear-gradient(145deg, #1e3a5f 0%, #1d4ed8 40%, #3b82f6 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 16px;
+}
+
+/* Premium glow effect */
+.premium-glow {
+  box-shadow: 0 0 30px -10px rgba(59, 130, 246, 0.15);
+}
+
+/* Theme transition */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }

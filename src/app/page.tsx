@@ -15,7 +15,8 @@ import {
   MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
   ListChecks, ClipboardList,
   Download, Gem, Building2, Headphones, ChevronLeft,
-  Video, Play, ThumbsUp, Eye as EyeIcon, Globe, Send
+  Video, Play, ThumbsUp, Eye as EyeIcon, Globe, Send,
+  Sun, Moon
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -163,7 +164,7 @@ const REFERENCE_TICKERS = [
   { code: 'TE', change: '+2.86%', up: true },
 ]
 
-const PIE_COLORS = ['#059669', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
+const PIE_COLORS = ['#2563eb', '#f59e0b', '#60a5fa', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
 // ============================================
 // LOGIN / REGISTER PAGE
@@ -231,31 +232,31 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #f5f0e8 0%, #d1fae5 50%, #a7f3d0 100%)' }}>
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
       {/* Desktop Left Branding Panel - hidden on mobile */}
-      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 text-center text-white max-w-lg">
           <div className="w-24 h-24 rounded-full bg-white p-2 mx-auto mb-6 shadow-[0_12px_40px_rgba(0,0,0,.3)]">
-            <img src="/trendedge-logo.png" alt="TrendEdge" className="w-full h-full object-contain" />
+            <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-3xl lg:text-4xl font-black mb-3">TrendEdge</h1>
-          <p className="text-emerald-200 text-sm lg:text-base mb-8 leading-relaxed">Platform investasi saham terpercaya dengan akses pasar real-time, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.</p>
+          <h1 className="text-3xl lg:text-4xl font-black mb-3">ZEVORIX</h1>
+          <p className="text-blue-200 text-sm lg:text-base mb-8 leading-relaxed">Future of Investing</p>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <BarChart3 className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
               <b className="block text-sm font-black">Market</b>
-              <span className="block text-xs text-emerald-200 font-bold">Live</span>
+              <span className="block text-xs text-blue-200 font-bold">Live</span>
             </div>
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <Users className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
               <b className="block text-sm font-black">125K++</b>
-              <span className="block text-xs text-emerald-200 font-bold">Pengguna</span>
+              <span className="block text-xs text-blue-200 font-bold">Pengguna</span>
             </div>
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <Shield className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
               <b className="block text-sm font-black">Aman</b>
-              <span className="block text-xs text-emerald-200 font-bold">Terjamin</span>
+              <span className="block text-xs text-blue-200 font-bold">Terjamin</span>
             </div>
           </div>
           {/* Decorative chart line */}
@@ -281,16 +282,16 @@ function LoginPage() {
           <header className="flex items-center justify-between mb-3 md:hidden">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
-                <img src="/trendedge-logo.png" alt="TrendEdge" className="w-full h-full object-contain" />
+                <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
               </div>
               <div>
-                <b className="block text-[11px] leading-tight font-black text-gs-green3 tracking-wide">TRENDEDGE</b>
-                <span className="block text-[7px] font-bold text-gs-green uppercase tracking-widest">TrendEdge Pro</span>
+                <b className="block text-[11px] leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
+                <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
               </div>
             </div>
             <button
               onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
-              className="h-8 px-4 rounded-xl bg-gs-green3 text-white text-[10px] font-bold hover:bg-gs-green transition-colors flex items-center gap-1"
+              className="h-8 px-4 rounded-xl bg-[#1d4ed8] text-white text-[10px] font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1"
             >
               {isLogin ? <><UserPlus className="w-3 h-3" />Daftar</> : <><LogIn className="w-3 h-3" />Masuk</>}
             </button>
@@ -300,16 +301,16 @@ function LoginPage() {
           <div className="hidden md:flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-full bg-white p-1 border border-gs-line shadow-sm">
-                <img src="/trendedge-logo.png" alt="TrendEdge" className="w-full h-full object-contain" />
+                <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
               </div>
               <div>
-                <b className="block text-xs leading-tight font-black text-gs-green3 tracking-wide">TRENDEDGE</b>
-                <span className="block text-[9px] font-bold text-gs-green uppercase tracking-widest">TrendEdge Pro</span>
+                <b className="block text-xs leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
+                <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
               </div>
             </div>
             <button
               onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
-              className="h-9 px-5 rounded-xl bg-gs-green3 text-white text-xs font-bold hover:bg-gs-green transition-colors flex items-center gap-1.5"
+              className="h-9 px-5 rounded-xl bg-[#1d4ed8] text-white text-xs font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1.5"
             >
               {isLogin ? <><UserPlus className="w-3.5 h-3.5" />Daftar</> : <><LogIn className="w-3.5 h-3.5" />Masuk</>}
             </button>
@@ -318,7 +319,7 @@ function LoginPage() {
         {/* Main Card */}
         <div className="rounded-3xl bg-white shadow-xl overflow-hidden flex-1 md:flex-none flex flex-col">
           {/* Green Header Section */}
-          <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+          <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
             {/* LIVE Badge + Ticker */}
@@ -330,8 +331,8 @@ function LoginPage() {
               <div className="flex-1 overflow-hidden h-6 rounded-full bg-white/10 border border-white/15">
                 <div className="flex items-center gap-3 whitespace-nowrap animate-ticker px-2 h-full">
                   {[...REFERENCE_TICKERS, ...REFERENCE_TICKERS].map((item, i) => (
-                    <span key={i} className={`flex items-center gap-1 text-[8px] font-bold ${item.up ? 'text-emerald-300' : 'text-red-300'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${item.up ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span key={i} className={`flex items-center gap-1 text-[8px] font-bold ${item.up ? 'text-blue-300' : 'text-red-300'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${item.up ? 'bg-blue-400' : 'bg-red-400'}`} />
                       {item.code} {item.change}
                     </span>
                   ))}
@@ -342,14 +343,14 @@ function LoginPage() {
             {/* Center Logo + Text */}
             <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-3">
               <div className="w-16 h-16 rounded-full bg-white p-1.5 mb-2 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
-                <img src="/trendedge-logo.png" alt="TrendEdge" className="w-full h-full object-contain" />
+                <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
               </div>
 
               {isLogin ? (
                 <>
-                  <h1 className="text-[18px] font-black text-center leading-tight">Masuk Investor<br />TrendEdge</h1>
-                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-emerald-200 leading-relaxed">
-                    Akses akun TrendEdge untuk memantau portofolio, pergerakan saham, aktivitas profit, dan layanan Investor.
+                  <h1 className="text-[18px] font-black text-center leading-tight">Masuk Investor<br />ZEVORIX</h1>
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
+                    Akses akun ZEVORIX untuk memantau portofolio, pergerakan saham, aktivitas profit, dan layanan Investor.
                   </p>
                 </>
               ) : (
@@ -358,9 +359,9 @@ function LoginPage() {
                     <Shield className="w-3 h-3 text-yellow-300" />
                     <span className="text-[8px] font-black text-yellow-300 tracking-wide">REGISTRASI INVESTOR</span>
                   </div>
-                  <h1 className="text-[18px] font-black text-center leading-tight">Daftar TrendEdge</h1>
-                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-emerald-200 leading-relaxed">
-                    Buat akun investor untuk akses portofolio, produk aktif, dan program reward TrendEdge.
+                  <h1 className="text-[18px] font-black text-center leading-tight">Daftar ZEVORIX</h1>
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
+                    Buat akun investor untuk akses portofolio, produk aktif, dan program reward ZEVORIX.
                   </p>
                 </>
               )}
@@ -372,17 +373,17 @@ function LoginPage() {
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <BarChart3 className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">Market</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Live</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Live</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">125K++</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Pengguna</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Pengguna</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <Briefcase className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">Portofolio</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">Akses</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">Akses</span>
                     </div>
                   </>
                 ) : (
@@ -390,17 +391,17 @@ function LoginPage() {
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">PENDUDUKA</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">125K++</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">125K++</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <TrendingUp className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">MARKET</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">+4.18%</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">+4.18%</span>
                     </div>
                     <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
                       <CheckCircle className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
                       <b className="block text-[8px] font-black">STATUS</b>
-                      <span className="block text-[7px] text-emerald-200 font-bold">OPEN</span>
+                      <span className="block text-[7px] text-blue-200 font-bold">OPEN</span>
                     </div>
                   </>
                 )}
@@ -430,20 +431,20 @@ function LoginPage() {
               {!isLogin && (
                 <div>
                   <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
-                    <User className="w-3 h-3 text-gs-green" /> Username
+                    <User className="w-3 h-3 text-[#3b82f6]" /> Username
                   </label>
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan username"
-                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green focus:ring-1 focus:ring-gs-green/30 transition-all placeholder:text-gray-400" />
+                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                 </div>
               )}
 
               {/* NOMOR WHATSAPP */}
               <div>
                 <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
-                  <Phone className="w-3 h-3 text-gs-green" /> NOMOR WHATSAPP
+                  <Phone className="w-3 h-3 text-[#3b82f6]" /> NOMOR WHATSAPP
                 </label>
-                <div className="flex items-center h-11 rounded-2xl bg-gs-soft border border-gs-line overflow-hidden focus-within:border-gs-green focus-within:ring-1 focus-within:ring-gs-green/30 transition-all">
-                  <div className="h-full px-3 flex items-center bg-gs-green3 text-white border-r border-gs-line">
+                <div className="flex items-center h-11 rounded-2xl bg-gs-soft border border-gs-line overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
+                  <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-gs-line">
                     <span className="text-[11px] font-bold">+62</span>
                   </div>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="81234567890"
@@ -454,13 +455,13 @@ function LoginPage() {
               {/* KATA SANDI */}
               <div>
                 <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
-                  <Lock className="w-3 h-3 text-gs-green" /> KATA SANDI
+                  <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
                 </label>
                 <div className="relative">
                   <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi"
-                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 pr-16 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green focus:ring-1 focus:ring-gs-green/30 transition-all placeholder:text-gray-400" />
+                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 pr-16 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gs-green hover:text-gs-green3 transition-colors">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -470,13 +471,13 @@ function LoginPage() {
               {!isLogin && (
                 <div>
                   <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
-                    <Lock className="w-3 h-3 text-gs-green" /> KONFIRMASI SANDI
+                    <Lock className="w-3 h-3 text-[#3b82f6]" /> KONFIRMASI SANDI
                   </label>
                   <div className="relative">
                     <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi kata sandi"
-                      className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 pr-16 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green focus:ring-1 focus:ring-gs-green/30 transition-all placeholder:text-gray-400" />
+                      className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 pr-16 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                     <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gs-green hover:text-gs-green3 transition-colors">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -490,7 +491,7 @@ function LoginPage() {
                     <Gift className="w-3 h-3 text-gs-gold" /> KODE REFERRAL OPSIONAL
                   </label>
                   <input type="text" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="Masukkan kode referral"
-                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green focus:ring-1 focus:ring-gs-green/30 transition-all placeholder:text-gray-400 uppercase" />
+                    className="w-full h-11 rounded-2xl bg-gs-soft border border-gs-line px-4 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400 uppercase" />
                 </div>
               )}
 
@@ -498,16 +499,16 @@ function LoginPage() {
               {!isLogin && (
                 <div>
                   <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-gs-muted uppercase tracking-widest">
-                    <Shield className="w-3 h-3 text-gs-green" /> Verifikasi Keamanan
+                    <Shield className="w-3 h-3 text-[#3b82f6]" /> Verifikasi Keamanan
                   </label>
                   <div className="flex items-center gap-2">
-                    <div className="h-11 px-4 rounded-2xl bg-gs-green3 text-white flex items-center gap-2">
+                    <div className="h-11 px-4 rounded-2xl bg-[#1d4ed8] text-white flex items-center gap-2">
                       <span className="text-[14px] font-black">{mathA} + {mathB}</span>
                     </div>
                     <input type="number" value={mathAnswer} onChange={(e) => setMathAnswer(e.target.value)} placeholder="Jawab"
-                      className="w-20 h-11 rounded-2xl bg-gs-soft border border-gs-line px-3 text-[13px] font-semibold text-gs-dark outline-none focus:border-gs-green focus:ring-1 focus:ring-gs-green/30 transition-all text-center placeholder:text-gray-400" />
+                      className="w-20 h-11 rounded-2xl bg-gs-soft border border-gs-line px-3 text-[13px] font-semibold text-gs-dark outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all text-center placeholder:text-gray-400" />
                     <button type="button" onClick={refreshMath}
-                      className="h-11 w-11 rounded-2xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-gs-green hover:text-white text-gs-green transition-colors">
+                      className="h-11 w-11 rounded-2xl bg-gs-soft border border-gs-line grid place-items-center hover:bg-[#3b82f6] hover:text-white text-[#3b82f6] transition-colors">
                       <RotateCcw className="w-4 h-4" />
                     </button>
                   </div>
@@ -519,7 +520,7 @@ function LoginPage() {
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded accent-gs-green" />
+                      className="w-4 h-4 rounded accent-[#3b82f6]" />
                     <span className="text-[10px] font-semibold text-gs-muted">Ingat akun</span>
                   </label>
                   <button type="button" className="text-[10px] font-bold text-orange-500 hover:underline">Lupa sandi?</button>
@@ -530,9 +531,9 @@ function LoginPage() {
               {!isLogin && (
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="w-4 h-4 rounded accent-gs-green mt-0.5" />
+                    className="w-4 h-4 rounded accent-[#3b82f6] mt-0.5" />
                   <span className="text-[9px] font-semibold text-gs-muted leading-relaxed">
-                    Saya menyetujui proses pendaftaran dan memahami keamanan akun TrendEdge.
+                    Saya menyetujui proses pendaftaran dan memahami keamanan akun ZEVORIX.
                   </span>
                 </label>
               )}
@@ -540,7 +541,7 @@ function LoginPage() {
               {/* Submit Button */}
               <button type="submit" disabled={loading}
                 className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}>
+                style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #1d4ed8 50%, #3b82f6 100%)' }}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
                 <span className="relative z-10 flex items-center gap-2">
                   {loading ? (
@@ -557,20 +558,20 @@ function LoginPage() {
               {/* Switch Login/Register */}
               <p className="text-center text-[10px] font-semibold text-gs-muted">
                 {isLogin ? (
-                  <>Belum punya akun? <span className="text-gs-green font-black cursor-pointer hover:underline" onClick={() => { setIsLogin(false); refreshMath(); }}>Daftar TrendEdge</span></>
+                  <>Belum punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => { setIsLogin(false); refreshMath(); }}>Daftar ZEVORIX</span></>
                 ) : (
-                  <>Sudah punya akun? <span className="text-gs-green font-black cursor-pointer hover:underline" onClick={() => setIsLogin(true)}>Masuk TrendEdge</span></>
+                  <>Sudah punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => setIsLogin(true)}>Masuk ZEVORIX</span></>
                 )}
               </p>
 
               {/* Demo Account */}
               <div className="rounded-2xl p-3 bg-gs-soft border border-gs-line flex items-center justify-between gap-2">
                 <div>
-                  <b className="block text-[10px] font-black text-gs-green3">Akun Demo</b>
+                  <b className="block text-[10px] font-black text-[#1d4ed8]">Akun Demo</b>
                   <span className="block mt-0.5 text-[8px] font-bold text-gs-muted">+62 81234567890 / demo123</span>
                 </div>
                 <button type="button" onClick={() => { setPhone('081234567890'); setPassword('demo123'); setIsLogin(true); }}
-                  className="text-[8px] font-black text-white bg-gs-green px-3 py-1.5 rounded-lg hover:bg-gs-green3 transition-colors">
+                  className="text-[8px] font-black text-white bg-[#3b82f6] px-3 py-1.5 rounded-lg hover:bg-[#1d4ed8] transition-colors">
                   Gunakan
                 </button>
               </div>
@@ -581,13 +582,13 @@ function LoginPage() {
         {/* Footer */}
         <div className="mt-3 pb-2">
           <div className="text-center mb-2">
-            <b className="block text-[9px] md:text-[10px] font-black text-gs-green3">Legalitas Perusahaan</b>
-            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-gs-muted">Halaman resmi TrendEdge</span>
+            <b className="block text-[9px] md:text-[10px] font-black text-[#1d4ed8]">Legalitas Perusahaan</b>
+            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-gs-muted">Halaman resmi ZEVORIX</span>
           </div>
           <div className="flex items-center justify-center gap-3 mb-2">
-            <Shield className="w-4 h-4 text-gs-green" />
+            <Shield className="w-4 h-4 text-[#3b82f6]" />
             <CheckCircle className="w-4 h-4 text-gs-gold" />
-            <Lock className="w-4 h-4 text-gs-green" />
+            <Lock className="w-4 h-4 text-[#3b82f6]" />
           </div>
           <div className="flex items-center justify-center gap-2 text-[8px] md:text-[9px] font-bold text-gs-muted">
             <span>Investasi Aman</span>
@@ -682,6 +683,18 @@ function Dashboard() {
   const [investMovement, setInvestMovement] = useState<Map<string, {change: number; changePercent: number}>>(new Map())
   const [contractClaimLoadingId, setContractClaimLoadingId] = useState<string | null>(null)
   const initialized = useRef(false)
+
+  // ============ THEME STATE ============
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(newTheme)
+    document.documentElement.className = newTheme
+  }
+
+  useEffect(() => {
+    document.documentElement.className = theme
+  }, [theme])
 
   // ============ DAILY CHECK & TASKS STATE ============
   const [dailyCheckStatus, setDailyCheckStatus] = useState<DailyCheckStatus>({ streak: 0, lastCheckDate: null, canCheckToday: true, todayReward: 0 })
@@ -1744,28 +1757,31 @@ function Dashboard() {
 
   // ============ RENDER ============
   return (
-    <div className="min-h-screen flex flex-col md:pl-[72px] lg:pl-[80px]" style={{ background: '#0a0e17' }}>
+    <div className="min-h-screen flex flex-col md:pl-[72px] lg:pl-[80px]" style={{ background: 'var(--zv-bg)' }}>
       {/* Top Header */}
-      <header className="sticky top-0 z-40 border-b border-[#2a2e39]" style={{ background: 'rgba(19,23,34,0.95)', backdropFilter: 'blur(12px)' }}>
+      <header className="sticky top-0 z-40 glass-header border-b border-[var(--zv-border)]">
         <div className="max-w-7xl mx-auto px-3 md:px-6 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] grid place-items-center hover:bg-[#2a2e39] transition-colors">
-              <Menu className="w-4 h-4 text-[#787b86]" />
+            <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
+              <Menu className="w-4 h-4 text-[var(--zv-muted)]" />
             </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1e222d] to-[#131722] p-0.5 border border-[#2a2e39]">
-              <img src="/trendedge-logo.png" alt="GS" className="w-full h-full object-contain" />
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] p-0.5 border border-[var(--zv-border)]">
+              <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
             </div>
             <div>
-              <b className="block text-[11px] md:text-sm font-black gradient-text leading-tight">TRENDEDGE</b>
-              <span className="block text-[8px] md:text-[10px] font-bold text-gs-muted">Dashboard</span>
+              <b className="block text-[11px] md:text-sm font-black gradient-text leading-tight">ZEVORIX</b>
+              <span className="block text-[8px] md:text-[10px] font-bold text-[var(--zv-muted)]">Dashboard</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={refreshAll} className="w-9 h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] grid place-items-center hover:bg-[#2a2e39] transition-colors">
-              <RefreshCw className={`w-4 h-4 text-[#787b86] ${refreshing ? 'animate-spin' : ''}`} />
+            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-hover)] transition-colors">
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-[var(--zv-gold)]" /> : <Moon className="w-4 h-4 text-[var(--zv-muted)]" />}
             </button>
-            <button onClick={() => { setShowNotifPanel(true); markNotifRead() }} className="w-9 h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] grid place-items-center hover:bg-[#2a2e39] transition-colors relative">
-              <Bell className="w-4 h-4 text-[#787b86]" />
+            <button onClick={refreshAll} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
+              <RefreshCw className={`w-4 h-4 text-[var(--zv-muted)] ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button onClick={() => { setShowNotifPanel(true); markNotifRead() }} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors relative">
+              <Bell className="w-4 h-4 text-[var(--zv-muted)]" />
               {unreadNotif > 0 && <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-red-500 to-red-600 text-[7px] text-white font-black grid place-items-center shadow-lg shadow-red-500/30">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
             </button>
           </div>
@@ -1774,13 +1790,13 @@ function Dashboard() {
 
       {/* Market Indices Bar */}
       {indices.length > 0 && (
-        <div className="border-b border-[#2a2e39] overflow-x-auto" style={{ background: '#131722' }}>
+        <div className="border-b border-[var(--zv-border)] overflow-x-auto" style={{ background: 'var(--zv-panel)' }}>
           <div className="max-w-7xl mx-auto flex gap-3 px-3 md:px-6 py-2">
             {indices.map(idx => (
-              <div key={idx.id} className="flex-shrink-0 flex items-center gap-1.5 bg-[#1e222d] rounded-lg px-2.5 py-1 border border-[#2a2e39]">
-                <span className="text-[8px] md:text-[10px] font-black text-[#787b86]">{idx.code}</span>
-                <span className="text-[10px] md:text-[11px] font-black text-[#e0e3eb] tabular-nums">{formatNumber(idx.value)}</span>
-                <span className={`text-[8px] md:text-[10px] font-black ${idx.changePercent >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatPercent(idx.changePercent)}</span>
+              <div key={idx.id} className="flex-shrink-0 flex items-center gap-1.5 bg-[var(--zv-surface)] rounded-lg px-2.5 py-1 border border-[var(--zv-border)]">
+                <span className="text-[8px] md:text-[10px] font-black text-[var(--zv-muted)]">{idx.code}</span>
+                <span className="text-[10px] md:text-[11px] font-black text-[var(--zv-text)] tabular-nums">{formatNumber(idx.value)}</span>
+                <span className={`text-[8px] md:text-[10px] font-black ${idx.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(idx.changePercent)}</span>
               </div>
             ))}
           </div>
@@ -1794,7 +1810,7 @@ function Dashboard() {
           {activeTab === 'home' && (
             <motion.div key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Dual Wallet Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-emerald-600/20" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)', boxShadow: '0 4px 24px rgba(5,150,105,0.18)' }}>
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.18)' }}>
                 <div className="p-4 text-white relative">
                   {/* Decorative pattern */}
                   <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
@@ -1872,28 +1888,28 @@ function Dashboard() {
               {/* Menu Cepat */}
               <div className="mb-4">
                 <div className="mb-2.5 flex items-center gap-2">
-                  <div className="w-1 h-5 rounded-full bg-[#26a69a]" />
+                  <div className="w-1 h-5 rounded-full bg-[#3b82f6]" />
                   <div>
-                    <h3 className="text-[12px] md:text-sm font-black text-[#26a69a]">Menu Cepat</h3>
-                    <span className="text-[9px] font-semibold text-[#787b86]">Akses fitur penting hanya dalam satu ketukan</span>
+                    <h3 className="text-[12px] md:text-sm font-black text-[#3b82f6]">Menu Cepat</h3>
+                    <span className="text-[9px] font-semibold text-[var(--zv-muted)]">Akses fitur penting hanya dalam satu ketukan</span>
                   </div>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-1 custom-scrollbar">
                   {[
-                    { icon: <ClipboardList className="w-5 h-5" />, label: 'Cek Harian', action: () => setShowDailyCheckModal(true), color: 'bg-[#131722] text-[#26a69a]', border: 'border-[#2a2e39]' },
-                    { icon: <CalendarDays className="w-5 h-5" />, label: 'Tugas', action: () => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }, color: 'bg-[#131722] text-[#f59e0b]', border: 'border-[#2a2e39]' },
-                    { icon: <Download className="w-5 h-5" />, label: 'Unduh App', action: () => {}, color: 'bg-[#131722] text-[#2196f3]', border: 'border-[#2a2e39]' },
+                    { icon: <ClipboardList className="w-5 h-5" />, label: 'Cek Harian', action: () => setShowDailyCheckModal(true), color: 'bg-[var(--zv-panel)] text-[#3b82f6]', border: 'border-[var(--zv-border)]' },
+                    { icon: <CalendarDays className="w-5 h-5" />, label: 'Tugas', action: () => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }, color: 'bg-[var(--zv-panel)] text-[#f59e0b]', border: 'border-[var(--zv-border)]' },
+                    { icon: <Download className="w-5 h-5" />, label: 'Unduh App', action: () => {}, color: 'bg-[var(--zv-panel)] text-[#2196f3]', border: 'border-[var(--zv-border)]' },
                   ].map((a, i) => (
-                    <button key={i} onClick={a.action} className="stock-card flex-shrink-0 flex flex-col items-center gap-2 py-3.5 px-5 rounded-2xl bg-[#1e222d] border border-[#2a2e39] relative min-w-[88px]">
+                    <button key={i} onClick={a.action} className="stock-card flex-shrink-0 flex flex-col items-center gap-2 py-3.5 px-5 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] relative min-w-[88px]">
                       <div className={`w-10 h-10 rounded-xl ${a.color} border ${a.border} grid place-items-center`}>{a.icon}</div>
-                      <span className="text-[9px] md:text-[10px] font-bold text-[#26a69a]">{a.label}</span>
+                      <span className="text-[9px] md:text-[10px] font-bold text-[#3b82f6]">{a.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Cek Harian Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-emerald-600/20" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)', boxShadow: '0 4px 20px rgba(5,150,105,0.15)' }}>
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 20px rgba(37,99,235,0.15)' }}>
                 <div className="p-4 text-white relative">
                   <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
                   <div className="flex items-center justify-between mb-2.5">
@@ -1947,15 +1963,15 @@ function Dashboard() {
               </div>
 
               {/* Tugas (Tasks) Summary Card */}
-              <div className="rounded-2xl p-3.5 bg-[#131722] border border-[#2a2e39] mb-4">
+              <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#1e222d] grid place-items-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] grid place-items-center">
                       <ListChecks className="w-4.5 h-4.5 text-amber-600" />
                     </div>
                     <div>
-                      <b className="text-[11px] md:text-xs font-black text-[#26a69a]">Tugas</b>
-                      <span className="block text-[8px] font-semibold text-[#787b86]">
+                      <b className="text-[11px] md:text-xs font-black text-[#3b82f6]">Tugas</b>
+                      <span className="block text-[8px] font-semibold text-[var(--zv-muted)]">
                         {tasks.filter(t => t.completed).length}/{tasks.length} selesai
                       </span>
                     </div>
@@ -1968,7 +1984,7 @@ function Dashboard() {
                   </button>
                 </div>
                 {/* Task progress bar */}
-                <div className="w-full h-1.5 rounded-full bg-[#1e222d] overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-amber-500 transition-all duration-500"
                     style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0}%` }}
@@ -1976,27 +1992,27 @@ function Dashboard() {
                 </div>
                 {/* Show first 2 unclaimed tasks */}
                 {tasks.filter(t => !t.claimed).slice(0, 2).map(task => (
-                  <div key={task.id} className="flex items-center justify-between mt-2 py-1 border-b border-[#2a2e39] last:border-0">
+                  <div key={task.id} className="flex items-center justify-between mt-2 py-1 border-b border-[var(--zv-border)] last:border-0">
                     <div className="flex items-center gap-1.5">
-                      <div className={`w-5 h-5 rounded-md grid place-items-center ${task.completed ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                        {task.completed ? <CheckCircle className="w-3 h-3 text-[#26a69a]" /> : <Target className="w-3 h-3 text-amber-600" />}
+                      <div className={`w-5 h-5 rounded-md grid place-items-center ${task.completed ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                        {task.completed ? <CheckCircle className="w-3 h-3 text-[#3b82f6]" /> : <Target className="w-3 h-3 text-amber-600" />}
                       </div>
                       <div>
-                        <span className="block text-[8px] font-bold text-[#e0e3eb]">{task.title}</span>
-                        <span className="block text-[7px] text-[#787b86]">{task.progress}/{task.target}</span>
+                        <span className="block text-[8px] font-bold text-[var(--zv-text)]">{task.title}</span>
+                        <span className="block text-[7px] text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
                       </div>
                     </div>
-                    <span className="text-[8px] font-black text-[#26a69a]">+{formatRupiah(task.reward)}</span>
+                    <span className="text-[8px] font-black text-[#3b82f6]">+{formatRupiah(task.reward)}</span>
                   </div>
                 ))}
               </div>
 
               {/* Portfolio Chart */}
               {portfolio.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[#131722] border border-[#2a2e39] mb-4">
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#26a69a]">Alokasi Portofolio</h3>
-                    <span className="text-[8px] md:text-[9px] font-bold text-[#787b86]">{portfolio.length} saham</span>
+                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Alokasi Portofolio</h3>
+                    <span className="text-[8px] md:text-[9px] font-bold text-[var(--zv-muted)]">{portfolio.length} saham</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-24 h-24 flex-shrink-0">
@@ -2010,9 +2026,9 @@ function Dashboard() {
                       {portfolio.map(p => (
                         <div key={p.id} className="flex items-center gap-1.5">
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
-                          <span className="text-[8px] font-black text-[#26a69a] flex-shrink-0">{p.stock.code}</span>
-                          <span className="text-[7px] md:text-[8px] font-bold text-[#787b86] flex-1">{formatRupiah(p.currentValue)}</span>
-                          <span className={`text-[7px] md:text-[8px] font-black ${p.profitLoss >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatPercent(p.profitLossPercent)}</span>
+                          <span className="text-[8px] font-black text-[#3b82f6] flex-shrink-0">{p.stock.code}</span>
+                          <span className="text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)] flex-1">{formatRupiah(p.currentValue)}</span>
+                          <span className={`text-[7px] md:text-[8px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(p.profitLossPercent)}</span>
                         </div>
                       ))}
                     </div>
@@ -2022,31 +2038,31 @@ function Dashboard() {
 
               {/* Top Movers */}
               {stocks.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[#131722] border border-[#2a2e39] mb-4">
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#26a69a]">Top Movers</h3>
+                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Top Movers</h3>
                     <button onClick={() => setActiveTab('market')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[8px] md:text-[9px] font-bold text-[#26a69a] mb-1 block">🔺 Gainers</span>
+                      <span className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] mb-1 block">🔺 Gainers</span>
                       {topGainers.slice(0, 3).map(s => (
-                        <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-[#2a2e39] last:border-0">
+                        <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-[#1e222d] flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#26a69a]">{s.code.slice(0, 2)}</span>}</div>
-                            <span className="text-[9px] font-bold text-[#e0e3eb]">{s.code}</span>
+                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#22c55e]">{s.code.slice(0, 2)}</span>}</div>
+                            <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
                           </div>
-                          <span className="text-[8px] font-black text-[#26a69a]">+{s.changePercent.toFixed(2)}%</span>
+                          <span className="text-[8px] font-black text-[#22c55e]">+{s.changePercent.toFixed(2)}%</span>
                         </button>
                       ))}
                     </div>
                     <div>
                       <span className="text-[8px] font-bold text-[#ef5350] mb-1 block">🔻 Losers</span>
                       {topLosers.slice(0, 3).map(s => (
-                        <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-[#2a2e39] last:border-0">
+                        <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-[#1e222d] flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}</div>
-                            <span className="text-[9px] font-bold text-[#e0e3eb]">{s.code}</span>
+                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}</div>
+                            <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
                           </div>
                           <span className="text-[8px] font-black text-[#ef5350]">{s.changePercent.toFixed(2)}%</span>
                         </button>
@@ -2058,24 +2074,24 @@ function Dashboard() {
 
               {/* Watchlist */}
               {watchlist.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[#131722] border border-[#2a2e39] mb-4">
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#26a69a]">Watchlist</h3>
+                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Watchlist</h3>
                     <Star className="w-3.5 h-3.5 text-[#f59e0b]" />
                   </div>
                   <div className="space-y-1.5">
                     {watchlist.slice(0, 5).map(w => (
                       <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-1.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#1e222d] flex items-center justify-center">{w.stock.logo ? <img src={w.stock.logo} alt={w.stock.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#26a69a]">{w.stock.code.slice(0, 2)}</span>}</div>
+                          <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{w.stock.logo ? <img src={w.stock.logo} alt={w.stock.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#3b82f6]">{w.stock.code.slice(0, 2)}</span>}</div>
                           <div className="text-left">
-                            <span className="block text-[9px] font-bold text-[#e0e3eb]">{w.stock.code}</span>
-                            <span className="block text-[7px] text-[#787b86]">{w.stock.name.slice(0, 15)}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{w.stock.code}</span>
+                            <span className="block text-[7px] text-[var(--zv-muted)]">{w.stock.name.slice(0, 15)}</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[9px] font-black text-[#e0e3eb] tabular-nums">{formatRupiah(w.stock.price)}</span>
-                          <span className={`block text-[8px] font-black ${w.stock.changePercent >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatPercent(w.stock.changePercent)}</span>
+                          <span className="block text-[9px] font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(w.stock.price)}</span>
+                          <span className={`block text-[8px] font-black ${w.stock.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(w.stock.changePercent)}</span>
                         </div>
                       </button>
                     ))}
@@ -2085,25 +2101,25 @@ function Dashboard() {
 
               {/* Recent Transactions */}
               {transactions.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[#131722] border border-[#2a2e39] mb-4">
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#26a69a]">Transaksi Terakhir</h3>
+                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Transaksi Terakhir</h3>
                     <button onClick={() => setActiveTab('history')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
                   </div>
                   {transactions.slice(0, 4).map(tx => (
-                    <div key={tx.id} className="flex items-center justify-between py-1.5 border-b border-[#2a2e39] last:border-0">
+                    <div key={tx.id} className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
                       <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-lg grid place-items-center ${tx.type === 'BUY' ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                          {tx.type === 'BUY' ? <ArrowDownRight className="w-3.5 h-3.5 text-[#26a69a]" /> : <ArrowUpRight className="w-3.5 h-3.5 text-[#ef5350]" />}
+                        <div className={`w-7 h-7 rounded-lg grid place-items-center ${tx.type === 'BUY' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                          {tx.type === 'BUY' ? <ArrowDownRight className="w-3.5 h-3.5 text-[#3b82f6]" /> : <ArrowUpRight className="w-3.5 h-3.5 text-[#ef5350]" />}
                         </div>
                         <div>
-                          <span className="block text-[9px] font-bold text-[#e0e3eb]">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
-                          <span className="block text-[7px] text-[#787b86]">{formatRupiah(tx.total)}</span>
+                          <span className="block text-[9px] font-bold text-[var(--zv-text)]">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(tx.total)}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="block text-[9px] font-black text-[#e0e3eb]">{formatRupiah(tx.total)}</span>
-                        <span className="block text-[7px] text-[#787b86]">{formatDateTime(tx.createdAt)}</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-text)]">{formatRupiah(tx.total)}</span>
+                        <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
                       </div>
                     </div>
                   ))}
@@ -2112,15 +2128,15 @@ function Dashboard() {
 
               {/* News */}
               {news.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[#131722] border border-[#2a2e39]">
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#26a69a]">Berita Terkini</h3>
+                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Berita Terkini</h3>
                     <button onClick={() => setActiveTab('news')} className="text-[8px] md:text-[9px] font-bold text-gs-green hover:underline">Lihat Semua</button>
                   </div>
                   {news.slice(0, 3).map(n => (
-                    <div key={n.id} className="py-2 border-b border-[#2a2e39] last:border-0">
-                      <span className="block text-[9px] font-bold text-[#e0e3eb] leading-snug">{n.title}</span>
-                      <span className="block text-[7px] text-[#787b86] mt-0.5">{formatDate(n.createdAt)} • {n.category}</span>
+                    <div key={n.id} className="py-2 border-b border-[var(--zv-border)] last:border-0">
+                      <span className="block text-[9px] font-bold text-[var(--zv-text)] leading-snug">{n.title}</span>
+                      <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5">{formatDate(n.createdAt)} • {n.category}</span>
                     </div>
                   ))}
                 </div>
@@ -2133,8 +2149,8 @@ function Dashboard() {
             <motion.div key="market" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Market Overview Section */}
               {indices.length > 0 && (
-                <div className="rounded-2xl overflow-hidden mb-4 bg-[#131722] border border-[#2a2e39]">
-                  <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+                <div className="rounded-2xl overflow-hidden mb-4 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                  <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-yellow-300" />
@@ -2210,20 +2226,20 @@ function Dashboard() {
                       const mostActive = stocks.length > 0 ? [...stocks].sort((a, b) => b.volume - a.volume)[0] : null
                       return (
                         <>
-                          <div className="p-2.5 text-center rounded-xl bg-[#1e222d] border border-[#2a2e39]">
-                            <span className="block text-[8px] md:text-[9px] font-bold text-[#26a69a] mb-0.5">🔺 Top Gainer</span>
-                            <span className="block text-[11px] md:text-sm font-black text-[#e0e3eb]">{gainer?.code || '-'}</span>
-                            <span className="block text-[9px] md:text-[10px] font-bold text-[#26a69a]">{gainer ? `+${gainer.changePercent.toFixed(2)}%` : '-'}</span>
+                          <div className="p-2.5 text-center rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                            <span className="block text-[8px] md:text-[9px] font-bold text-[#3b82f6] mb-0.5">🔺 Top Gainer</span>
+                            <span className="block text-[11px] md:text-sm font-black text-[var(--zv-text)]">{gainer?.code || '-'}</span>
+                            <span className="block text-[9px] md:text-[10px] font-bold text-[#22c55e]">{gainer ? `+${gainer.changePercent.toFixed(2)}%` : '-'}</span>
                           </div>
-                          <div className="p-2.5 text-center rounded-xl bg-[#1e222d] border border-[#2a2e39]">
+                          <div className="p-2.5 text-center rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                             <span className="block text-[8px] md:text-[9px] font-bold text-[#ef5350] mb-0.5">🔻 Top Loser</span>
-                            <span className="block text-[11px] md:text-sm font-black text-[#e0e3eb]">{loser?.code || '-'}</span>
+                            <span className="block text-[11px] md:text-sm font-black text-[var(--zv-text)]">{loser?.code || '-'}</span>
                             <span className="block text-[9px] md:text-[10px] font-bold text-[#ef5350]">{loser ? `${loser.changePercent.toFixed(2)}%` : '-'}</span>
                           </div>
-                          <div className="p-2.5 text-center rounded-xl bg-[#1e222d] border border-[#2a2e39]">
+                          <div className="p-2.5 text-center rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                             <span className="block text-[8px] md:text-[9px] font-bold text-[#f59e0b] mb-0.5">⚡ Most Active</span>
-                            <span className="block text-[11px] md:text-sm font-black text-[#e0e3eb]">{mostActive?.code || '-'}</span>
-                            <span className="block text-[9px] md:text-[10px] font-bold text-[#787b86]">{mostActive ? formatNumber(mostActive.volume) : '-'}</span>
+                            <span className="block text-[11px] md:text-sm font-black text-[var(--zv-text)]">{mostActive?.code || '-'}</span>
+                            <span className="block text-[9px] md:text-[10px] font-bold text-[var(--zv-muted)]">{mostActive ? formatNumber(mostActive.volume) : '-'}</span>
                           </div>
                         </>
                       )
@@ -2234,16 +2250,16 @@ function Dashboard() {
 
               {/* Search */}
               <div className="relative mb-3">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#787b86]" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--zv-muted)]" />
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari saham..."
-                  className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] pl-10 pr-4 text-[12px] md:text-sm font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] focus:ring-1 focus:ring-[#26a69a]/30 transition-all placeholder:text-[#787b86]" />
+                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-10 pr-4 text-[12px] md:text-sm font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-[var(--zv-muted)]" />
               </div>
 
               {/* Category Filter */}
               <div className="flex gap-2 overflow-x-auto pb-2 mb-3 custom-scrollbar">
                 {categories.map(c => (
                   <button key={c.key} onClick={() => setStockFilter(c.key)}
-                    className={`flex-shrink-0 h-8 md:h-9 px-4 md:px-5 rounded-xl text-[10px] md:text-[11px] font-bold transition-all ${stockFilter === c.key ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-[#1e222d] border border-[#2a2e39] text-[#787b86] hover:bg-[#2a2e39] hover:border-[#363a45] hover:text-[#26a69a]'}`}>
+                    className={`flex-shrink-0 h-8 md:h-9 px-4 md:px-5 rounded-xl text-[10px] md:text-[11px] font-bold transition-all ${stockFilter === c.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:bg-[var(--zv-border)] hover:border-[var(--zv-border)] hover:text-[#3b82f6]'}`}>
                     {c.label}
                   </button>
                 ))}
@@ -2255,23 +2271,23 @@ function Dashboard() {
                   // Use memoized sparkline data to prevent jitter on re-renders
                   const sparkData = getSparklineData(s)
                   const isUp = s.changePercent >= 0
-                  const sparkColor = isUp ? '#059669' : '#ef4444'
+                  const sparkColor = isUp ? '#2563eb' : '#ef4444'
                   const maxVol = Math.max(...stocks.map(st => st.volume), 1)
                   const volPercent = Math.round((s.volume / maxVol) * 100)
 
                   return (
-                    <div key={s.id} className={`stock-card rounded-2xl bg-[#131722] border border-[#2a2e39] overflow-hidden`}>
+                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden`}>
                       <div className="p-3 md:p-4">
                         <div className="flex items-center justify-between mb-2.5">
                           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => openStockDetail(s)}>
-                            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl overflow-hidden flex items-center justify-center border ${isUp ? 'bg-[#1e222d] border-[#2a2e39]' : 'bg-[#1e222d] border-[#2a2e39]'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] md:text-[11px] font-black ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>}</div>
+                            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl overflow-hidden flex items-center justify-center border ${isUp ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] md:text-[11px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>}</div>
                             <div>
-                              <span className="block text-[11px] md:text-xs font-black text-[#e0e3eb]">{s.code}</span>
-                              <span className="block text-[8px] md:text-[9px] text-[#787b86] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
+                              <span className="block text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
+                              <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
                             </div>
                           </div>
                           <button onClick={() => toggleWatchlist(s.id)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-gs-soft transition-colors">
-                            <Star className={`w-4 h-4 ${isWatched(s.id) ? 'text-[#f59e0b] fill-[#f59e0b]' : 'text-[#363a45]'}`} />
+                            <Star className={`w-4 h-4 ${isWatched(s.id) ? 'text-[#f59e0b] fill-[#f59e0b]' : 'text-[var(--zv-border)]'}`} />
                           </button>
                         </div>
 
@@ -2309,14 +2325,14 @@ function Dashboard() {
 
                         <div className="flex items-end justify-between">
                           <div>
-                            <span className="block text-[14px] md:text-base font-black text-[#e0e3eb] tabular-nums">{formatRupiah(s.price)}</span>
-                            <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                              {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#26a69a]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
-                              <span className={`text-[10px] md:text-[11px] font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
+                            <span className="block text-[14px] md:text-base font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(s.price)}</span>
+                            <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                              {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
+                              <span className={`text-[10px] md:text-[11px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <button onClick={() => openContract(s)} className="h-9 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-[10px] md:text-[11px] font-bold hover:from-emerald-500 hover:to-emerald-400 transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20">
+                            <button onClick={() => openContract(s)} className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] md:text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20">
                               <Package className="w-3.5 h-3.5" />Kontrak
                             </button>
                             <span className="text-[8px] font-bold text-[#f59e0b]">Mulai 5%/hari</span>
@@ -2325,21 +2341,21 @@ function Dashboard() {
                       </div>
 
                       {/* Contract Info - Footer */}
-                      <div className="px-3 md:px-4 py-2.5 bg-[#1e222d] border-t border-[#2a2e39] grid grid-cols-3 gap-2">
+                      <div className="px-3 md:px-4 py-2.5 bg-[var(--zv-surface)] border-t border-[var(--zv-border)] grid grid-cols-3 gap-2">
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[#787b86]">Rate</span>
-                          <span className="block text-[9px] md:text-[10px] font-black text-[#26a69a]">{getStockBaseRate(s.code)}%/hari</span>
+                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Rate</span>
+                          <span className="block text-[9px] md:text-[10px] font-black text-[#22c55e]">{getStockBaseRate(s.code)}%/hari</span>
                         </div>
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[#787b86]">Durasi</span>
+                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Durasi</span>
                           <span className="block text-[9px] md:text-[10px] font-black text-[#f59e0b]">30-365 Hari</span>
                         </div>
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[#787b86]">Volume</span>
+                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Volume</span>
                           <div className="flex items-center gap-1">
-                            <span className="text-[8px] md:text-[9px] font-bold text-[#e0e3eb]">{formatNumber(s.volume)}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-[#2a2e39] overflow-hidden">
-                              <div className={`h-full rounded-full ${isUp ? 'bg-[#26a69a]' : 'bg-[#ef5350]'}`} style={{ width: `${volPercent}%` }} />
+                            <span className="text-[8px] md:text-[9px] font-bold text-[var(--zv-text)]">{formatNumber(s.volume)}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-[var(--zv-border)] overflow-hidden">
+                              <div className={`h-full rounded-full ${isUp ? 'bg-[#22c55e]' : 'bg-[#ef5350]'}`} style={{ width: `${volPercent}%` }} />
                             </div>
                           </div>
                         </div>
@@ -2349,8 +2365,8 @@ function Dashboard() {
                 })}
                 {filteredStocks.length === 0 && (
                   <div className="col-span-full text-center py-8">
-                    <BarChart3 className="w-10 h-10 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[11px] md:text-sm font-bold text-[#787b86]">Tidak ada saham ditemukan</p>
+                    <BarChart3 className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Tidak ada saham ditemukan</p>
                   </div>
                 )}
               </div>
@@ -2361,7 +2377,7 @@ function Dashboard() {
           {activeTab === 'portfolio' && (
             <motion.div key="portfolio" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Portfolio Value Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-emerald-600/20" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)', boxShadow: '0 4px 24px rgba(5,150,105,0.15)' }}>
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
                 <div className="p-4 text-white relative">
                   <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
                   <span className="text-[9px] font-medium text-emerald-200">Nilai Portofolio</span>
@@ -2385,21 +2401,21 @@ function Dashboard() {
               </div>
 
               {/* Holdings */}
-              <h3 className="text-[11px] md:text-sm font-black text-[#26a69a] mb-2">Saham Dimiliki</h3>
+              <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Saham Dimiliki</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
                 {portfolio.map(p => (
-                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[#131722] border border-[#2a2e39] transition-colors hover:border-[#363a45]">
+                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] transition-colors hover:border-[var(--zv-border)]">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer ${p.profitLoss >= 0 ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>{p.stock.logo ? <img src={p.stock.logo} alt={p.stock.code} className="w-full h-full object-cover" /> : <span className={`text-[8px] md:text-[10px] font-black ${p.profitLoss >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{p.stock.code.slice(0, 2)}</span>}</div>
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer ${p.profitLoss >= 0 ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>{p.stock.logo ? <img src={p.stock.logo} alt={p.stock.code} className="w-full h-full object-cover" /> : <span className={`text-[8px] md:text-[10px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{p.stock.code.slice(0, 2)}</span>}</div>
                         <div>
-                          <span className="block text-[10px] md:text-xs font-black text-[#e0e3eb]">{p.stock.code}</span>
-                          <span className="block text-[7px] md:text-[8px] text-[#787b86]">{formatRupiah(p.currentValue)}</span>
+                          <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{p.stock.code}</span>
+                          <span className="block text-[7px] md:text-[8px] text-[var(--zv-muted)]">{formatRupiah(p.currentValue)}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="block text-[10px] md:text-xs font-black text-[#e0e3eb] tabular-nums">{formatRupiah(p.currentValue)}</span>
-                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                        <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(p.currentValue)}</span>
+                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                           {formatRupiah(p.profitLoss)} ({formatPercent(p.profitLossPercent)})
                         </span>
                       </div>
@@ -2411,8 +2427,8 @@ function Dashboard() {
                 ))}
                 {portfolio.length === 0 && (
                   <div className="col-span-full text-center py-8">
-                    <Briefcase className="w-10 h-10 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[11px] md:text-sm font-bold text-[#787b86]">Belum ada saham di portofolio</p>
+                    <Briefcase className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Belum ada saham di portofolio</p>
                     <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gs-green3 text-white text-[9px] md:text-[10px] font-bold">Mulai Investasi</button>
                   </div>
                 )}
@@ -2421,42 +2437,42 @@ function Dashboard() {
               {/* Active Stock Contracts */}
               {userContracts.filter(c => c.status === 'active').length > 0 && (
                 <>
-                  <h3 className="text-[11px] md:text-sm font-black text-[#26a69a] mt-4 mb-2">Kontrak Saham Aktif</h3>
+                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Kontrak Saham Aktif</h3>
                   <div className="space-y-2">
                     {userContracts.filter(c => c.status === 'active').map(c => {
                       const progress = Math.round((c.daysElapsed / c.duration) * 100)
                       const canClaim = !c.lastClaimAt || new Date(c.lastClaimAt).toDateString() !== new Date().toDateString()
                       return (
-                        <div key={c.id} className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39]">
+                        <div key={c.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[#1e222d]">
-                                <Package className="w-4 h-4 text-[#26a69a]" />
+                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+                                <Package className="w-4 h-4 text-[#3b82f6]" />
                               </div>
                               <div>
-                                <span className="block text-[10px] md:text-xs font-black text-[#e0e3eb]">{c.stockCode}</span>
-                                <span className="block text-[7px] text-[#787b86]">{c.duration} hari • {c.dailyProfitRate}%/hari</span>
+                                <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{c.stockCode}</span>
+                                <span className="block text-[7px] text-[var(--zv-muted)]">{c.duration} hari • {c.dailyProfitRate}%/hari</span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="block text-[10px] font-black text-[#e0e3eb]">{formatRupiah(c.amount)}</span>
-                              <span className="block text-[8px] font-bold text-[#26a69a]">+{formatRupiah(c.dailyProfitAmount)}/hari</span>
+                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(c.amount)}</span>
+                              <span className="block text-[8px] font-bold text-[#22c55e]">+{formatRupiah(c.dailyProfitAmount)}/hari</span>
                             </div>
                           </div>
                           {/* Progress */}
                           <div className="mb-2">
                             <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[7px] font-bold text-[#787b86]">Hari {c.daysElapsed}/{c.duration}</span>
-                              <span className="text-[7px] font-bold text-[#26a69a]">{progress}%</span>
+                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Hari {c.daysElapsed}/{c.duration}</span>
+                              <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-[#1e222d] overflow-hidden">
+                            <div className="h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
                               <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
                             </div>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[7px] text-[#787b86]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
+                            <span className="text-[7px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
                             <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-[#1e222d] text-[#787b86] cursor-not-allowed'}`}>
+                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
                               {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : 'Sudah Diklaim'}
                             </button>
                           </div>
@@ -2470,33 +2486,33 @@ function Dashboard() {
               {/* Active Investments in Portfolio */}
               {userInvestments.filter(i => i.status === 'active').length > 0 && (
                 <>
-                  <h3 className="text-[11px] md:text-sm font-black text-[#26a69a] mt-4 mb-2">Investasi Aktif</h3>
+                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Investasi Aktif</h3>
                   <div className="space-y-2">
                     {userInvestments.filter(i => i.status === 'active').map(inv => {
                       const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
                       return (
-                        <div key={inv.id} className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39]">
+                        <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[#1e222d]">
-                                <DollarSign className="w-4 h-4 text-[#26a69a]" />
+                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+                                <DollarSign className="w-4 h-4 text-[#3b82f6]" />
                               </div>
                               <div>
-                                <span className="block text-[10px] font-black text-[#e0e3eb]">{inv.product.name}</span>
-                                <span className="block text-[7px] text-[#787b86]">{formatRupiah(inv.amount)} • {inv.product.category === 'potential' ? 'Potential' : 'Dividen'}</span>
+                                <span className="block text-[10px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
+                                <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.product.category === 'potential' ? 'Potential' : 'Dividen'}</span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="block text-[9px] font-black text-[#26a69a]">+{formatRupiah(inv.dailyProfit)}/hari</span>
-                              <span className="block text-[7px] text-[#787b86]">{inv.daysElapsed}/{inv.duration} hari</span>
+                              <span className="block text-[9px] font-black text-[#3b82f6]">+{formatRupiah(inv.dailyProfit)}/hari</span>
+                              <span className="block text-[7px] text-[var(--zv-muted)]">{inv.daysElapsed}/{inv.duration} hari</span>
                             </div>
                           </div>
-                          <div className="w-full h-1.5 rounded-full bg-[#1e222d] overflow-hidden mb-1">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #064e3b, #059669)' }} />
+                          <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-1">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[7px] font-bold text-[#787b86]">{formatRupiah(inv.totalClaimed)} diklaim</span>
-                            <span className="text-[7px] font-bold text-[#26a69a]">{progress}%</span>
+                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">{formatRupiah(inv.totalClaimed)} diklaim</span>
+                            <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
                           </div>
                         </div>
                       )
@@ -2511,7 +2527,7 @@ function Dashboard() {
           {activeTab === 'investasi' && (
             <motion.div key="investasi" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Header Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-emerald-600/20" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)', boxShadow: '0 4px 24px rgba(5,150,105,0.15)' }}>
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
                 <div className="p-4 text-white relative">
                   <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
                   <div className="flex items-center gap-2 mb-2">
@@ -2558,10 +2574,10 @@ function Dashboard() {
 
               {/* Category Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => setInvestCategory('potential')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${investCategory === 'potential' ? 'bg-gs-green3 text-white' : 'bg-[#1e222d] border border-[#2a2e39] text-[#787b86]'}`}>
+                <button onClick={() => setInvestCategory('potential')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${investCategory === 'potential' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                   <TrendingUp className="w-3.5 h-3.5 inline mr-1" />Saham Potential
                 </button>
-                <button onClick={() => setInvestCategory('dividen')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${investCategory === 'dividen' ? 'bg-gs-green3 text-white' : 'bg-[#1e222d] border border-[#2a2e39] text-[#787b86]'}`}>
+                <button onClick={() => setInvestCategory('dividen')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${investCategory === 'dividen' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                   <Award className="w-3.5 h-3.5 inline mr-1" />Saham Dividen
                 </button>
               </div>
@@ -2574,30 +2590,30 @@ function Dashboard() {
                   const currentVal = product.modal + (movement?.change || 0)
                   const rawData = getInvestChartData(product)
                   const chartData = getDataForTimeframe(rawData, investTimeframe)
-                  const chartColor = isUp ? '#059669' : '#ef4444'
+                  const chartColor = isUp ? '#2563eb' : '#ef4444'
                   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].close : product.modal
 
                   return (
-                    <div key={product.id} className="rounded-2xl bg-[#131722] border border-[#2a2e39] hover:shadow-lg transition-shadow overflow-hidden card-depth">
+                    <div key={product.id} className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:shadow-lg transition-shadow overflow-hidden card-depth">
                       {/* Top badges */}
                       <div className="px-3 pt-3 flex items-center gap-1.5 flex-wrap">
-                        <span className="h-4 px-1.5 rounded-full bg-[#1e222d] border border-[#2a2e39] text-[7px] font-black text-[#26a69a] flex items-center gap-0.5">
+                        <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-black text-[#3b82f6] flex items-center gap-0.5">
                           <CheckCircle className="w-2.5 h-2.5" />Tersedia
                         </span>
-                        <span className="h-4 px-1.5 rounded-full bg-[#1e222d] border border-[#2a2e39] text-[7px] font-black text-[#f59e0b]">DAILY PROFIT</span>
-                        <span className="h-4 px-1.5 rounded-full bg-[#1e222d] border border-[#2a2e39] text-[7px] font-bold text-[#26a69a]">{product.duration} Hari</span>
+                        <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-black text-[#f59e0b]">DAILY PROFIT</span>
+                        <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-bold text-[#3b82f6]">{product.duration} Hari</span>
                       </div>
 
                       {/* Product Name + Price */}
                       <div className="px-3 pt-2 pb-1">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="text-[13px] font-black text-[#e0e3eb]">{product.name}</h3>
-                            <span className="text-[8px] font-bold text-[#787b86]">Aset Saham</span>
+                            <h3 className="text-[13px] font-black text-[var(--zv-text)]">{product.name}</h3>
+                            <span className="text-[8px] font-bold text-[var(--zv-muted)]">Aset Saham</span>
                           </div>
                           <div className="text-right">
-                            <span className="block text-[12px] font-black tabular-nums" style={{ color: isUp ? '#26a69a' : '#ef5350' }}>{formatRupiah(lastValue)}</span>
-                            <span className={`text-[8px] font-black ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                            <span className="block text-[12px] font-black tabular-nums" style={{ color: isUp ? '#22c55e' : '#ef5350' }}>{formatRupiah(lastValue)}</span>
+                            <span className={`text-[8px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                               {isUp ? '▲' : '▼'} {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                             </span>
                           </div>
@@ -2608,7 +2624,7 @@ function Dashboard() {
                       <div className="px-3 py-0.5">
                         <div className="flex items-center justify-between">
                           {/* Chart Type Selector */}
-                          <div className="flex items-center gap-0.5 bg-[#1e222d] rounded-lg p-0.5">
+                          <div className="flex items-center gap-0.5 bg-[var(--zv-surface)] rounded-lg p-0.5">
                             {([
                               { type: 'area' as const, icon: ' area', label: 'Area' },
                               { type: 'line' as const, icon: ' line', label: 'Line' },
@@ -2616,7 +2632,7 @@ function Dashboard() {
                               { type: 'bar' as const, icon: ' bar', label: 'Bar' },
                             ]).map(ct => (
                               <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investChartType === ct.type ? 'bg-[#131722] text-[#26a69a]' : 'text-[#787b86] hover:text-[#e0e3eb]'}`}>
+                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investChartType === ct.type ? 'bg-[var(--zv-panel)] text-[#3b82f6]' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
                                 {ct.label}
                               </button>
                             ))}
@@ -2625,7 +2641,7 @@ function Dashboard() {
                           <div className="flex items-center gap-0.5">
                             {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
                               <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-[#787b86] hover:text-[#e0e3eb] hover:bg-[#1e222d]'}`}>
+                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gs-green3 text-white' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
                                 {tf}
                               </button>
                             ))}
@@ -2633,19 +2649,19 @@ function Dashboard() {
                         </div>
                         <div className="flex items-center justify-between mt-0.5">
                           <div className="flex items-center gap-1">
-                            <BarChart3 className="w-2.5 h-2.5 text-[#787b86]" />
-                            <span className="text-[7px] font-bold text-[#787b86] uppercase tracking-wider">PERGERAKAN MARKET</span>
+                            <BarChart3 className="w-2.5 h-2.5 text-[var(--zv-muted)]" />
+                            <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PERGERAKAN MARKET</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[6px] font-black text-[#26a69a]">LIVE</span>
+                            <span className="text-[6px] font-black text-[#3b82f6]">LIVE</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Live Chart */}
                       <div className="px-3 py-1">
-                        <div className="h-24 w-full relative rounded-lg border border-[#2a2e39]/50 overflow-hidden" style={{ background: '#131722' }}>
+                        <div className="h-24 w-full relative rounded-lg border border-[var(--zv-border)]/50 overflow-hidden" style={{ background: 'var(--zv-panel)' }}>
                           {chartData.length > 2 ? (() => {
                               // Candlestick chart (small)
                               if (investChartType === 'candle') {
@@ -2680,8 +2696,8 @@ function Dashboard() {
                                       const gy = padTop + (gi / 4) * priceH
                                       return (
                                         <g key={`grid-${gi}`}>
-                                          <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="#2a2e39" strokeWidth="0.5" strokeDasharray="3,3" />
-                                          <text x={chartW + 4} y={gy + 3} fontSize="5.5" fill="#787b86">{compactPriceSmall(Math.round(maxP - (rangeP / 4) * gi))}</text>
+                                          <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                          <text x={chartW + 4} y={gy + 3} fontSize="5.5" fill="var(--zv-muted)">{compactPriceSmall(Math.round(maxP - (rangeP / 4) * gi))}</text>
                                         </g>
                                       )
                                     })}
@@ -2692,7 +2708,7 @@ function Dashboard() {
                                       const volBarH = (c.volume / maxVol) * volH
                                       const volY = padTop + priceH + volH - volBarH
                                       const volOpacity = 0.2 + (i / totalCandles) * 0.2
-                                      return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={volBarH} fill={isGreen ? '#26a69a' : '#ef5350'} opacity={volOpacity} rx="0.5" />
+                                      return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={volBarH} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="0.5" />
                                     })}
                                     {/* Candles - hollow bearish style */}
                                     {candles.map((c, i) => {
@@ -2707,8 +2723,8 @@ function Dashboard() {
                                       const isLast = i === totalCandles - 1
                                       return (
                                         <g key={i} opacity={isLast ? 1 : 0.85}>
-                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.7" />
-                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#26a69a' : '#131722'} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.5" rx="0.5" />
+                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" />
+                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : 'var(--zv-panel)'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="0.5" />
                                         </g>
                                       )
                                     })}
@@ -2719,8 +2735,8 @@ function Dashboard() {
                                       const yLast = padTop + ((maxP - lastC.close) / rangeP) * priceH
                                       return (
                                         <>
-                                          <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
-                                          <rect x={chartW + 2} y={yLast - 5} width={priceScaleW - 4} height="10" rx="2" fill={isGreen ? '#26a69a' : '#ef5350'} />
+                                          <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
+                                          <rect x={chartW + 2} y={yLast - 5} width={priceScaleW - 4} height="10" rx="2" fill={isGreen ? '#22c55e' : '#ef5350'} />
                                           <text x={chartW + priceScaleW / 2} y={yLast + 2.5} fontSize="5.5" fill="white" textAnchor="middle" fontWeight="bold">{compactPriceSmall(lastC.close)}</text>
                                         </>
                                       )
@@ -2740,7 +2756,7 @@ function Dashboard() {
                                 const barData = chartData.map((d, i) => ({
                                   idx: d.idx,
                                   close: d.close,
-                                  fill: i > 0 && d.close >= chartData[i - 1].close ? '#059669' : '#ef4444'
+                                  fill: i > 0 && d.close >= chartData[i - 1].close ? '#2563eb' : '#ef4444'
                                 }))
                                 return (
                                   <ResponsiveContainer width="100%" height="100%">
@@ -2809,7 +2825,7 @@ function Dashboard() {
                                 </ResponsiveContainer>
                               )
                             })() : (
-                              <div className="flex items-center justify-center h-full text-[8px] text-[#787b86]">Memuat data...</div>
+                              <div className="flex items-center justify-center h-full text-[8px] text-[var(--zv-muted)]">Memuat data...</div>
                             )
                           }
                         </div>
@@ -2818,39 +2834,39 @@ function Dashboard() {
                       {/* Product Details */}
                       <div className="px-3 pt-2 pb-1 space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[#787b86] uppercase tracking-wider">MODAL</span>
-                          <span className="text-[10px] font-black text-[#e0e3eb]">{formatRupiah(product.modal)}</span>
+                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">MODAL</span>
+                          <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(product.modal)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[#787b86] uppercase tracking-wider">PROFIT HARIAN</span>
-                          <span className="text-[10px] font-black text-[#26a69a]">+{formatRupiah(product.dailyProfit)}</span>
+                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PROFIT HARIAN</span>
+                          <span className="text-[10px] font-black text-[#22c55e]">+{formatRupiah(product.dailyProfit)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[#787b86] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
+                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
                           <div className="text-right">
-                            <span className="text-[10px] font-black text-[#26a69a]">{formatRupiah(product.totalReturn)}</span>
-                            <span className="ml-1 text-[7px] font-bold text-[#f59e0b] bg-[#1e222d] px-1 rounded">ROI {product.roi}%</span>
+                            <span className="text-[10px] font-black text-[#22c55e]">{formatRupiah(product.totalReturn)}</span>
+                            <span className="ml-1 text-[7px] font-bold text-[#f59e0b] bg-[var(--zv-surface)] px-1 rounded">ROI {product.roi}%</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Profit Distribution Footer */}
-                      <div className="px-3 py-1.5 bg-[#1e222d] border-t border-[#2a2e39]">
+                      <div className="px-3 py-1.5 bg-[var(--zv-surface)] border-t border-[var(--zv-border)]">
                         <div className="flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5 text-[#26a69a]" />
-                          <span className="text-[7px] font-bold text-[#26a69a]">PEMBAGIAN PROFIT: Setiap 24 jam AUTO</span>
+                          <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
+                          <span className="text-[7px] font-bold text-[#3b82f6]">PEMBAGIAN PROFIT: Setiap 24 jam AUTO</span>
                         </div>
                       </div>
 
                       {/* Buttons */}
                       <div className="px-3 pb-3 pt-2 flex gap-2">
                         <button onClick={() => { setSelectedDetailProduct(product); setShowInvestDetailModal(true) }}
-                          className="flex-1 h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] text-[#26a69a] text-[9px] font-bold hover:bg-[#1e222d] transition-colors">
+                          className="flex-1 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#3b82f6] text-[9px] font-bold hover:bg-[var(--zv-surface)] transition-colors">
                           Lihat Selengkapnya
                         </button>
                         <button onClick={() => { setSelectedProduct(product); setShowInvestModal(true) }}
                           className="flex-1 h-9 rounded-xl text-white text-[9px] font-black tracking-wide hover:scale-[1.02] transition-transform"
-                          style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}>
+                          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
                           Investasi Sekarang
                         </button>
                       </div>
@@ -2862,31 +2878,31 @@ function Dashboard() {
               {/* Active Investments Summary */}
               {userInvestments.filter(i => i.status === 'active').length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-[11px] md:text-sm font-black text-[#26a69a] mb-2">Investasi Aktif Anda</h3>
+                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Investasi Aktif Anda</h3>
                   <div className="space-y-2">
                     {userInvestments.filter(i => i.status === 'active').map(inv => {
                       const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
                       const canClaim = !inv.lastClaimAt || (Date.now() - new Date(inv.lastClaimAt).getTime()) > 10000
                       return (
-                        <div key={inv.id} className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39]">
+                        <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                           <div className="flex items-center justify-between mb-2">
                             <div>
-                              <span className="block text-[11px] font-black text-[#e0e3eb]">{inv.product.name}</span>
-                              <span className="block text-[8px] text-[#787b86]">{formatRupiah(inv.amount)} • {inv.daysElapsed}/{inv.duration} hari</span>
+                              <span className="block text-[11px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
+                              <span className="block text-[8px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.daysElapsed}/{inv.duration} hari</span>
                             </div>
                             <div className="text-right">
-                              <span className="block text-[10px] font-black text-[#26a69a]">+{formatRupiah(inv.dailyProfit)}/hari</span>
-                              <span className="block text-[8px] text-[#787b86]">Diklaim: {formatRupiah(inv.totalClaimed)}</span>
+                              <span className="block text-[10px] font-black text-[#22c55e]">+{formatRupiah(inv.dailyProfit)}/hari</span>
+                              <span className="block text-[8px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(inv.totalClaimed)}</span>
                             </div>
                           </div>
                           {/* Progress Bar */}
-                          <div className="w-full h-2 rounded-full bg-[#1e222d] overflow-hidden mb-2">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #064e3b, #059669)' }} />
+                          <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-2">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[8px] font-bold text-[#787b86]">{progress}% selesai</span>
+                            <span className="text-[8px] font-bold text-[var(--zv-muted)]">{progress}% selesai</span>
                             <button onClick={() => handleClaimProfit(inv.id)} disabled={claimLoadingId === inv.id || !canClaim}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-gs-green3 text-white hover:bg-gs-green' : 'bg-[#1e222d] text-[#787b86] cursor-not-allowed'}`}>
+                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-colors ${canClaim ? 'bg-gs-green3 text-white hover:bg-gs-green' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
                               {claimLoadingId === inv.id ? 'Memproses...' : canClaim ? 'Klaim Profit' : 'Menunggu...'}
                             </button>
                           </div>
@@ -2900,17 +2916,17 @@ function Dashboard() {
               {/* Completed Investments */}
               {userInvestments.filter(i => i.status === 'completed').length > 0 && (
                 <div className="mt-4">
-                  <h3 className="text-[11px] md:text-sm font-black text-[#26a69a] mb-2">Investasi Selesai</h3>
+                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Investasi Selesai</h3>
                   <div className="space-y-1.5">
                     {userInvestments.filter(i => i.status === 'completed').map(inv => (
-                      <div key={inv.id} className="rounded-2xl p-3 bg-[#1e222d] border border-[#2a2e39] flex items-center justify-between">
+                      <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-between">
                         <div>
-                          <span className="block text-[10px] font-bold text-[#e0e3eb]">{inv.product.name}</span>
-                          <span className="block text-[8px] text-[#787b86]">Modal: {formatRupiah(inv.amount)}</span>
+                          <span className="block text-[10px] font-bold text-[var(--zv-text)]">{inv.product.name}</span>
+                          <span className="block text-[8px] text-[var(--zv-muted)]">Modal: {formatRupiah(inv.amount)}</span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[10px] font-black text-[#26a69a]">+{formatRupiah(inv.totalClaimed)}</span>
-                          <span className="block text-[7px] text-[#787b86] flex items-center gap-0.5 justify-end"><CheckCircle className="w-2.5 h-2.5" />Selesai</span>
+                          <span className="block text-[10px] font-black text-[#22c55e]">+{formatRupiah(inv.totalClaimed)}</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)] flex items-center gap-0.5 justify-end"><CheckCircle className="w-2.5 h-2.5" />Selesai</span>
                         </div>
                       </div>
                     ))}
@@ -2924,7 +2940,7 @@ function Dashboard() {
           {activeTab === 'sinyal' && (
             <motion.div key="sinyal" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Header Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-emerald-600/20" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)', boxShadow: '0 4px 24px rgba(5,150,105,0.15)' }}>
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
                 <div className="p-4 text-white relative">
                   <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
                   <div className="flex items-center justify-between mb-2">
@@ -2964,29 +2980,29 @@ function Dashboard() {
               {sinyalActive && sinyalPositions.find(p => p.status === 'active') && (() => {
                 const ap = sinyalPositions.find(p => p.status === 'active')!
                 return (
-                  <div className="rounded-2xl p-4 mb-4 border border-emerald-500/30 bg-[#131722]">
+                  <div className="rounded-2xl p-4 mb-4 border border-emerald-500/30 bg-[var(--zv-panel)]">
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[#1e222d] grid place-items-center">
-                          <Zap className="w-4 h-4 text-[#26a69a] animate-pulse" />
+                        <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center">
+                          <Zap className="w-4 h-4 text-[#3b82f6] animate-pulse" />
                         </div>
-                        <span className="text-[11px] font-black text-[#26a69a]">POSISI AKTIF</span>
+                        <span className="text-[11px] font-black text-[#3b82f6]">POSISI AKTIF</span>
                       </div>
-                      <span className="text-[9px] font-bold text-[#26a69a] bg-[#1e222d] px-2 py-0.5 rounded-lg">{ap.stockCode}</span>
+                      <span className="text-[9px] font-bold text-[#3b82f6] bg-[var(--zv-surface)] px-2 py-0.5 rounded-lg">{ap.stockCode}</span>
                     </div>
                     <div className="flex items-center justify-between mb-2.5">
                       <div>
-                        <span className={`text-[18px] font-black ${ap.direction === 'NAIK' ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{ap.direction}</span>
-                        <span className="block text-[9px] text-[#787b86] mt-0.5">{formatRupiah(ap.amount)} • Profit +{ap.profitPercent.toFixed(1)}%</span>
+                        <span className={`text-[18px] font-black ${ap.direction === 'NAIK' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{ap.direction}</span>
+                        <span className="block text-[9px] text-[var(--zv-muted)] mt-0.5">{formatRupiah(ap.amount)} • Profit +{ap.profitPercent.toFixed(1)}%</span>
                       </div>
                       <div className="text-right">
-                        <span className="block text-[28px] font-black text-[#26a69a] tabular-nums leading-none">{sinyalTimer}s</span>
-                        <span className="block text-[8px] text-[#787b86] mt-1">sisa waktu</span>
+                        <span className="block text-[28px] font-black text-[#3b82f6] tabular-nums leading-none">{sinyalTimer}s</span>
+                        <span className="block text-[8px] text-[var(--zv-muted)] mt-1">sisa waktu</span>
                       </div>
                     </div>
                     {/* Progress Bar */}
-                    <div className="w-full h-2.5 rounded-full bg-[#1e222d] overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #064e3b, #059669)' }} />
+                    <div className="w-full h-2.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
                     </div>
                   </div>
                 )
@@ -2994,13 +3010,13 @@ function Dashboard() {
 
               {/* Last Result */}
               {sinyalResult && !sinyalActive && (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-4 border ${sinyalResult.won ? 'border-[#26a69a]/30 bg-[#131722]' : 'border-[#ef5350]/30 bg-[#131722]'}`}>
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-2xl p-4 mb-4 border ${sinyalResult.won ? 'border-[#22c55e]/30 bg-[var(--zv-panel)]' : 'border-[#ef5350]/30 bg-[var(--zv-panel)]'}`}>
                   <div className="text-center">
                     <span className="text-[24px]">{sinyalResult.won ? '🎯' : '❌'}</span>
-                    <h3 className={`text-[14px] font-black ${sinyalResult.won ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                    <h3 className={`text-[14px] font-black ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                       {sinyalResult.won ? 'Prediksi Benar!' : 'Prediksi Salah'}
                     </h3>
-                    <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                    <span className={`text-[12px] font-bold ${sinyalResult.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                       {sinyalResult.won ? `+${formatRupiah(Math.abs(sinyalResult.profit))}` : `-${formatRupiah(Math.abs(sinyalResult.profit))}`}
                     </span>
                   </div>
@@ -3013,24 +3029,24 @@ function Dashboard() {
                   const isUp = s.changePercent >= 0
 
                   return (
-                    <div key={s.id} className={`stock-card rounded-2xl bg-[#131722] border overflow-hidden cursor-pointer ${isUp ? 'border-[#26a69a]/30' : 'border-[#ef5350]/30'}`}
+                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border overflow-hidden cursor-pointer ${isUp ? 'border-[#22c55e]/30' : 'border-[#ef5350]/30'}`}
                       onClick={() => { setSelectedSinyalStock(s); setShowSinyalModal(true); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalDuration(30); setSinyalResult(null); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}>
                       <div className="p-3 md:p-4">
                         <div className="flex items-center justify-between mb-2.5">
                           <div className="flex items-center gap-2.5">
-                            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl overflow-hidden flex items-center justify-center border ${isUp ? 'bg-[#1e222d] border-[#2a2e39]' : 'bg-[#1e222d] border-[#2a2e39]'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] md:text-[11px] font-black ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>}</div>
+                            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl overflow-hidden flex items-center justify-center border ${isUp ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] md:text-[11px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>}</div>
                             <div>
-                              <span className="block text-[11px] md:text-xs font-black text-[#e0e3eb]">{s.code}</span>
-                              <span className="block text-[8px] md:text-[9px] text-[#787b86] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
+                              <span className="block text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
+                              <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
                             </div>
                           </div>
-                          <div className="w-8 h-8 rounded-lg bg-[#1e222d] border border-[#2a2e39] grid place-items-center">
-                            <Target className="w-4 h-4 text-[#26a69a]" />
+                          <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+                            <Target className="w-4 h-4 text-[#3b82f6]" />
                           </div>
                         </div>
 
                         {/* Mini Candlestick Chart */}
-                        <div className="h-[52px] -mx-1 mb-2.5 px-1 py-0.5" style={{ background: '#131722', borderRadius: '8px', border: '1px solid #1e222d' }}>
+                        <div className="h-[52px] -mx-1 mb-2.5 px-1 py-0.5" style={{ background: 'var(--zv-panel)', borderRadius: '8px', border: '1px solid var(--zv-surface)' }}>
                           {(() => {
                             const miniCandles: CandleData[] = []
                             let mcPrev = Math.round(s.price * (0.97 + Math.random() * 0.06))
@@ -3067,8 +3083,8 @@ function Dashboard() {
                                   const mcOpacity = 0.6 + (ci / miniCandles.length) * 0.4
                                   return (
                                     <g key={`mc-${ci}`} opacity={mcOpacity}>
-                                      <line x1={mx + mcCandleW / 2} y1={myH} x2={mx + mcCandleW / 2} y2={myL} stroke={mIsGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.6" />
-                                      <rect x={mx} y={mBodyTop} width={mcCandleW} height={mBodyH} fill={mIsGreen ? '#26a69a' : '#ef5350'} rx="0.5" />
+                                      <line x1={mx + mcCandleW / 2} y1={myH} x2={mx + mcCandleW / 2} y2={myL} stroke={mIsGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.6" />
+                                      <rect x={mx} y={mBodyTop} width={mcCandleW} height={mBodyH} fill={mIsGreen ? '#22c55e' : '#ef5350'} rx="0.5" />
                                     </g>
                                   )
                                 })}
@@ -3079,15 +3095,15 @@ function Dashboard() {
 
                         <div className="flex items-end justify-between">
                           <div>
-                            <span className="block text-[14px] md:text-base font-black text-[#e0e3eb] tabular-nums">{formatRupiah(s.price)}</span>
-                            <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                              {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#26a69a]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
-                              <span className={`text-[10px] md:text-[11px] font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
+                            <span className="block text-[14px] md:text-base font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(s.price)}</span>
+                            <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                              {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
+                              <span className={`text-[10px] md:text-[11px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 bg-[#1e222d] border border-[#2a2e39] rounded-lg px-2.5 py-1.5">
-                            <Zap className="w-3.5 h-3.5 text-[#26a69a]" />
-                            <span className="text-[10px] font-black text-[#26a69a]">+40%</span>
+                          <div className="flex items-center gap-1 bg-[var(--zv-surface)] border border-[var(--zv-border)] rounded-lg px-2.5 py-1.5">
+                            <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
+                            <span className="text-[10px] font-black text-[#22c55e]">+40%</span>
                           </div>
                         </div>
                       </div>
@@ -3102,22 +3118,22 @@ function Dashboard() {
                   <h3 className="text-[12px] md:text-sm font-black gradient-text mb-3">Riwayat Posisi</h3>
                   <div className="space-y-2.5">
                     {sinyalPositions.filter(p => p.status !== 'active').slice(-5).reverse().map(pos => (
-                      <div key={pos.id} className={`rounded-2xl p-3.5 border ${pos.status === 'won' ? 'bg-[#131722] border-[#26a69a]/30' : 'bg-[#131722] border-[#ef5350]/30'}`}>
+                      <div key={pos.id} className={`rounded-2xl p-3.5 border ${pos.status === 'won' ? 'bg-[var(--zv-panel)] border-[#22c55e]/30' : 'bg-[var(--zv-panel)] border-[#ef5350]/30'}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className={`w-9 h-9 rounded-xl grid place-items-center ${pos.status === 'won' ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                              {pos.status === 'won' ? <TrendingUp className="w-4.5 h-4.5 text-[#26a69a]" /> : <TrendingDown className="w-4.5 h-4.5 text-[#ef5350]" />}
+                            <div className={`w-9 h-9 rounded-xl grid place-items-center ${pos.status === 'won' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                              {pos.status === 'won' ? <TrendingUp className="w-4.5 h-4.5 text-[#22c55e]" /> : <TrendingDown className="w-4.5 h-4.5 text-[#ef5350]" />}
                             </div>
                             <div>
-                              <span className="block text-[11px] font-black text-[#e0e3eb]">{pos.stockCode} • {pos.direction}</span>
-                              <span className="block text-[9px] text-[#787b86]">{formatRupiah(pos.amount)} • {pos.duration}s</span>
+                              <span className="block text-[11px] font-black text-[var(--zv-text)]">{pos.stockCode} • {pos.direction}</span>
+                              <span className="block text-[9px] text-[var(--zv-muted)]">{formatRupiah(pos.amount)} • {pos.duration}s</span>
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className={`block text-[11px] font-black ${pos.status === 'won' ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                            <span className={`block text-[11px] font-black ${pos.status === 'won' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                               {pos.status === 'won' ? `+${formatRupiah(Math.round(pos.amount * pos.profitPercent / 100))}` : `-${formatRupiah(pos.amount)}`}
                             </span>
-                            <span className={`block text-[9px] font-bold ${pos.status === 'won' ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{pos.status === 'won' ? 'BENAR' : 'SALAH'}</span>
+                            <span className={`block text-[9px] font-bold ${pos.status === 'won' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{pos.status === 'won' ? 'BENAR' : 'SALAH'}</span>
                           </div>
                         </div>
                       </div>
@@ -3134,10 +3150,10 @@ function Dashboard() {
             <div className="max-w-lg mx-auto">
               {/* Finance Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'deposit' ? 'bg-gs-green3 text-white' : 'bg-[#131722] border border-[#2a2e39] text-[#787b86]'}`}>
+                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'deposit' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                   <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
                 </button>
-                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'withdraw' ? 'bg-gs-green3 text-white' : 'bg-[#131722] border border-[#2a2e39] text-[#787b86]'}`}>
+                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-colors ${financeTab === 'withdraw' ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                   <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
                 </button>
               </div>
@@ -3145,14 +3161,14 @@ function Dashboard() {
               {financeTab === 'deposit' ? (
                 <>
                   {/* Balance */}
-                  <div className="rounded-2xl p-4 bg-gradient-to-br from-[#1e222d] to-[#131722] border border-[#2a2e39] mb-3">
+                  <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">Saldo Saat Ini</span>
+                        <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Saldo Saat Ini</span>
                         <b className="block text-xl font-black gradient-text">{formatRupiah(user?.balance || 0)}</b>
                       </div>
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1e222d] to-[#1e222d] border border-[#2a2e39] grid place-items-center">
-                        <Wallet className="w-6 h-6 text-[#26a69a]" />
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+                        <Wallet className="w-6 h-6 text-[#3b82f6]" />
                       </div>
                     </div>
                   </div>
@@ -3165,19 +3181,19 @@ function Dashboard() {
                       { key: 'qris' as const, label: 'QRIS', icon: <CreditCard className="w-3.5 h-3.5" /> },
                     ].map(cat => (
                       <button key={cat.key} onClick={() => setDepositCategory(cat.key)}
-                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${depositCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-[#131722] border border-[#2a2e39] text-[#787b86]'}`}>
+                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${depositCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                         {cat.icon}{cat.label}
                       </button>
                     ))}
                   </div>
 
                   {/* Deposit Form Card */}
-                  <div className="rounded-2xl p-4 bg-[#131722] border border-[#2a2e39] mb-4">
+                  <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
 
                     {/* Bank Method Grid */}
                     {depositCategory === 'bank' && (
                       <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[#787b86] uppercase tracking-widest mb-2">Pilih Bank</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Bank</span>
                         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                           {[
                             { code: 'BCA', name: 'Bank BCA', color: '#003399' },
@@ -3190,11 +3206,11 @@ function Dashboard() {
                             { code: 'Danamon', name: 'Bank Danamon', color: '#FDDA24' },
                           ].map(bank => (
                             <button key={bank.code} onClick={() => setDepositBankMethod(bank.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositBankMethod === bank.code ? 'border-[#26a69a] bg-[#1e222d]' : 'border-[#2a2e39] bg-[#1e222d]'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositBankMethod === bank.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
                                 {bank.code.slice(0, 2)}
                               </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${depositBankMethod === bank.code ? 'text-[#26a69a]' : 'text-[#787b86]'}`}>{bank.code}</span>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${depositBankMethod === bank.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{bank.code}</span>
                             </button>
                           ))}
                         </div>
@@ -3204,7 +3220,7 @@ function Dashboard() {
                     {/* E-Wallet Method Grid */}
                     {depositCategory === 'ewallet' && (
                       <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[#787b86] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
                         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                           {[
                             { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
@@ -3215,11 +3231,11 @@ function Dashboard() {
                             { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
                           ].map(ew => (
                             <button key={ew.code} onClick={() => setDepositEwalletMethod(ew.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositEwalletMethod === ew.code ? 'border-[#26a69a] bg-[#1e222d]' : 'border-[#2a2e39] bg-[#1e222d]'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositEwalletMethod === ew.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
                                 {ew.name.slice(0, 2)}
                               </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${depositEwalletMethod === ew.code ? 'text-[#26a69a]' : 'text-[#787b86]'}`}>{ew.name}</span>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${depositEwalletMethod === ew.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{ew.name}</span>
                             </button>
                           ))}
                         </div>
@@ -3229,102 +3245,102 @@ function Dashboard() {
                     {/* QRIS Section */}
                     {depositCategory === 'qris' && (
                       <div className="mb-3 flex flex-col items-center py-4">
-                        <div className="w-40 h-40 rounded-2xl bg-[#131722] border-2 border-[#2a2e39] p-3 mb-3">
+                        <div className="w-40 h-40 rounded-2xl bg-[var(--zv-panel)] border-2 border-[var(--zv-border)] p-3 mb-3">
                           <svg viewBox="0 0 200 200" className="w-full h-full">
                             <rect width="200" height="200" fill="white" rx="8" />
                             {/* QR pattern simulation */}
-                            <rect x="20" y="20" width="50" height="50" fill="#022c22" rx="4" />
+                            <rect x="20" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
                             <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
-                            <rect x="36" y="36" width="18" height="18" fill="#022c22" rx="1" />
-                            <rect x="130" y="20" width="50" height="50" fill="#022c22" rx="4" />
+                            <rect x="36" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
+                            <rect x="130" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
                             <rect x="138" y="28" width="34" height="34" fill="white" rx="2" />
-                            <rect x="146" y="36" width="18" height="18" fill="#022c22" rx="1" />
-                            <rect x="20" y="130" width="50" height="50" fill="#022c22" rx="4" />
+                            <rect x="146" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
+                            <rect x="20" y="130" width="50" height="50" fill="#0c1a2e" rx="4" />
                             <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
-                            <rect x="36" y="146" width="18" height="18" fill="#022c22" rx="1" />
+                            <rect x="36" y="146" width="18" height="18" fill="#0c1a2e" rx="1" />
                             {/* Middle pattern */}
-                            <rect x="80" y="20" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="20" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="20" width="8" height="8" fill="#022c22" />
-                            <rect x="80" y="36" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="44" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="36" width="8" height="8" fill="#022c22" />
-                            <rect x="80" y="60" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="60" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="60" width="8" height="8" fill="#022c22" />
+                            <rect x="80" y="20" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="20" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="20" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="80" y="36" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="44" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="36" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="80" y="60" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="60" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="60" width="8" height="8" fill="#0c1a2e" />
                             {/* Bottom middle */}
-                            <rect x="20" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="36" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="52" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="20" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="36" y="104" width="8" height="8" fill="#022c22" />
-                            <rect x="52" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="20" y="112" width="8" height="8" fill="#022c22" />
-                            <rect x="36" y="112" width="8" height="8" fill="#022c22" />
-                            <rect x="52" y="112" width="8" height="8" fill="#022c22" />
+                            <rect x="20" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="36" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="52" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="20" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="36" y="104" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="52" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="20" y="112" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="36" y="112" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="52" y="112" width="8" height="8" fill="#0c1a2e" />
                             {/* Right middle */}
-                            <rect x="80" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="130" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="146" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="162" y="80" width="8" height="8" fill="#022c22" />
-                            <rect x="80" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="130" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="162" y="96" width="8" height="8" fill="#022c22" />
-                            <rect x="80" y="112" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="112" width="8" height="8" fill="#022c22" />
-                            <rect x="130" y="112" width="8" height="8" fill="#022c22" />
-                            <rect x="146" y="112" width="8" height="8" fill="#022c22" />
-                            <rect x="162" y="112" width="8" height="8" fill="#022c22" />
+                            <rect x="80" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="130" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="146" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="162" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="80" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="130" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="162" y="96" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="80" y="112" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="112" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="130" y="112" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="146" y="112" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="162" y="112" width="8" height="8" fill="#0c1a2e" />
                             {/* Bottom section */}
-                            <rect x="80" y="130" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="130" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="130" width="8" height="8" fill="#022c22" />
-                            <rect x="80" y="146" width="8" height="8" fill="#022c22" />
-                            <rect x="112" y="146" width="8" height="8" fill="#022c22" />
-                            <rect x="130" y="130" width="8" height="8" fill="#022c22" />
-                            <rect x="146" y="146" width="8" height="8" fill="#022c22" />
-                            <rect x="162" y="130" width="8" height="8" fill="#022c22" />
-                            <rect x="130" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="146" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="162" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="80" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="96" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="20" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="36" y="162" width="8" height="8" fill="#022c22" />
-                            <rect x="52" y="162" width="8" height="8" fill="#022c22" />
+                            <rect x="80" y="130" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="130" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="130" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="80" y="146" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="112" y="146" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="130" y="130" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="146" y="146" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="162" y="130" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="130" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="146" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="162" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="80" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="96" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="20" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="36" y="162" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="52" y="162" width="8" height="8" fill="#0c1a2e" />
                             {/* QRIS label */}
-                            <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#022c22">QRIS</text>
+                            <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0c1a2e">QRIS</text>
                           </svg>
                         </div>
-                        <span className="text-[10px] font-bold text-[#26a69a]">Scan QRIS untuk deposit</span>
-                        <span className="text-[8px] text-[#787b86] mt-0.5">Gunakan aplikasi e-wallet atau mobile banking</span>
+                        <span className="text-[10px] font-bold text-[#3b82f6]">Scan QRIS untuk deposit</span>
+                        <span className="text-[8px] text-[var(--zv-muted)] mt-0.5">Gunakan aplikasi e-wallet atau mobile banking</span>
                       </div>
                     )}
 
                     {/* Amount Input */}
-                    <label className="block mb-1.5 text-[9px] font-black text-[#787b86] uppercase tracking-widest">Jumlah Deposit</label>
+                    <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Deposit</label>
                     <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Minimal Rp 10.000"
-                      className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] px-4 text-[13px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] transition-colors mb-2" />
+                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors mb-2" />
                     <div className="grid grid-cols-4 gap-1.5 mb-4">
                       {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
-                        <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[#1e222d] border border-[#2a2e39] text-[8px] md:text-[9px] font-bold text-[#26a69a] hover:bg-gs-green hover:text-white transition-colors">
+                        <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gs-green hover:text-white transition-colors">
                           {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
                         </button>
                       ))}
                     </div>
 
                     {/* Selected Method Info */}
-                    <div className="rounded-xl p-3 bg-[#1e222d] border border-[#2a2e39] mb-4">
+                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-gs-green" />
                         <div>
-                          <span className="block text-[9px] font-bold text-[#e0e3eb]">
+                          <span className="block text-[9px] font-bold text-[var(--zv-text)]">
                             {depositCategory === 'bank' ? `Transfer ${depositBankMethod}` : depositCategory === 'ewallet' ? depositEwalletMethod : 'QRIS'}
                           </span>
-                          <span className="block text-[7px] text-[#787b86]">Metode pembayaran dipilih</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)]">Metode pembayaran dipilih</span>
                         </div>
                       </div>
                     </div>
@@ -3332,7 +3348,7 @@ function Dashboard() {
                     {/* Deposit Button */}
                     <button onClick={handleDeposit} disabled={depositLoading}
                       className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                      style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}>
+                      style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
                       {depositLoading ? (
                         <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
                       ) : (
@@ -3342,20 +3358,20 @@ function Dashboard() {
                   </div>
 
                   {/* Deposit History */}
-                  <h3 className="text-[11px] font-black text-[#26a69a] mb-2">Riwayat Deposit</h3>
+                  <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Deposit</h3>
                   <div className="space-y-1.5">
                     {deposits.map(d => (
-                      <div key={d.id} className="rounded-2xl p-2.5 bg-[#131722] border border-[#2a2e39] flex items-center justify-between">
+                      <div key={d.id} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#1e222d] grid place-items-center"><Plus className="w-4 h-4 text-[#26a69a]" /></div>
+                          <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Plus className="w-4 h-4 text-[#3b82f6]" /></div>
                           <div>
-                            <span className="block text-[9px] font-bold text-[#e0e3eb]">{d.bankName || (d.method === 'bank_transfer' ? 'Transfer Bank' : 'E-Wallet')}</span>
-                            <span className="block text-[7px] text-[#787b86]">{formatDateTime(d.createdAt)}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{d.bankName || (d.method === 'bank_transfer' ? 'Transfer Bank' : 'E-Wallet')}</span>
+                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(d.createdAt)}</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[10px] font-black text-[#26a69a]">+{formatRupiah(d.amount)}</span>
-                          <span className={`block text-[7px] font-bold ${d.status === 'completed' ? 'text-[#26a69a]' : d.status === 'pending' ? 'text-[#f59e0b]' : 'text-[#ef5350]'}`}>{d.status}</span>
+                          <span className="block text-[10px] font-black text-[#3b82f6]">+{formatRupiah(d.amount)}</span>
+                          <span className={`block text-[7px] font-bold ${d.status === 'completed' ? 'text-[#3b82f6]' : d.status === 'pending' ? 'text-[#f59e0b]' : 'text-[#ef5350]'}`}>{d.status}</span>
                         </div>
                       </div>
                     ))}
@@ -3366,19 +3382,19 @@ function Dashboard() {
                   {/* Balance - Dompet Utama & Penarikan */}
                   <div className="mb-3">
                     <div className="grid grid-cols-2 gap-2 mb-2">
-                      <div className="rounded-2xl p-3 bg-[#1e222d] border border-[#2a2e39]">
-                        <span className="text-[7px] font-bold text-[#787b86]">Dompet Utama</span>
-                        <b className="block text-[13px] font-black text-[#26a69a]">{formatRupiah(user?.balance || 0)}</b>
-                        <span className="block text-[6px] font-semibold text-[#787b86] mt-0.5">Saldo deposit hanya untuk investasi</span>
+                      <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                        <span className="text-[7px] font-bold text-[var(--zv-muted)]">Dompet Utama</span>
+                        <b className="block text-[13px] font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
+                        <span className="block text-[6px] font-semibold text-[var(--zv-muted)] mt-0.5">Saldo deposit hanya untuk investasi</span>
                       </div>
-                      <div className="rounded-2xl p-3 bg-[#1e222d] border border-[#2a2e39]">
-                        <span className="text-[7px] font-bold text-[#787b86]">Dompet Penarikan</span>
+                      <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                        <span className="text-[7px] font-bold text-[var(--zv-muted)]">Dompet Penarikan</span>
                         <b className="block text-[13px] font-black text-[#f59e0b]">{formatRupiah(user?.withdrawalBalance || 0)}</b>
-                        <span className="block text-[6px] font-semibold text-[#787b86] mt-0.5">Saldo yang dapat ditarik</span>
+                        <span className="block text-[6px] font-semibold text-[var(--zv-muted)] mt-0.5">Saldo yang dapat ditarik</span>
                       </div>
                     </div>
                     {/* Deposit not withdrawable notice */}
-                    <div className="rounded-xl p-2 bg-[#1e222d] border border-[#2a2e39] mb-2">
+                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-2">
                       <div className="flex items-start gap-1.5">
                         <AlertCircle className="w-3 h-3 text-[#f59e0b] flex-shrink-0 mt-0.5" />
                         <span className="text-[6px] font-bold text-[#f59e0b] leading-relaxed">⚠️ Saldo deposit tidak dapat ditarik. Saldo deposit hanya untuk investasi produk.</span>
@@ -3387,7 +3403,7 @@ function Dashboard() {
                     {/* Transfer to withdrawal button */}
                     <button
                       onClick={() => toast({ title: 'Fitur Segera Hadir', description: 'Transfer ke penarikan akan tersedia segera' })}
-                      className="w-full h-9 rounded-xl bg-gs-green3/10 border border-gs-green3/20 text-[#26a69a] text-[9px] font-bold flex items-center justify-center gap-1.5 hover:bg-gs-green3/20 transition-colors"
+                      className="w-full h-9 rounded-xl bg-gs-green3/10 border border-gs-green3/20 text-[#3b82f6] text-[9px] font-bold flex items-center justify-center gap-1.5 hover:bg-gs-green3/20 transition-colors"
                     >
                       <ArrowRight className="w-3.5 h-3.5" /> Transfer ke Penarikan
                     </button>
@@ -3401,19 +3417,19 @@ function Dashboard() {
                       { key: 'crypto' as const, label: 'Crypto', icon: <Gem className="w-3.5 h-3.5" /> },
                     ].map(cat => (
                       <button key={cat.key} onClick={() => setWithdrawCategory(cat.key)}
-                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${withdrawCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-[#131722] border border-[#2a2e39] text-[#787b86]'}`}>
+                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${withdrawCategory === cat.key ? 'bg-gs-green3 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                         {cat.icon}{cat.label}
                       </button>
                     ))}
                   </div>
 
                   {/* Withdraw Form Card */}
-                  <div className="rounded-2xl p-4 bg-[#131722] border border-[#2a2e39] mb-4">
+                  <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
 
                     {/* Bank Method Grid */}
                     {withdrawCategory === 'bank' && (
                       <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[#787b86] uppercase tracking-widest mb-2">Pilih Bank Tujuan</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Bank Tujuan</span>
                         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                           {[
                             { code: 'BCA', name: 'Bank BCA', color: '#003399' },
@@ -3428,11 +3444,11 @@ function Dashboard() {
                             { code: 'Maybank', name: 'Maybank', color: '#002F6C' },
                           ].map(bank => (
                             <button key={bank.code} onClick={() => setWithdrawBankMethod(bank.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-[#26a69a] bg-[#1e222d]' : 'border-[#2a2e39] bg-[#1e222d]'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
                                 {bank.code.slice(0, 2)}
                               </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawBankMethod === bank.code ? 'text-[#26a69a]' : 'text-[#787b86]'}`}>{bank.code}</span>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawBankMethod === bank.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{bank.code}</span>
                             </button>
                           ))}
                         </div>
@@ -3442,7 +3458,7 @@ function Dashboard() {
                     {/* E-Wallet Method Grid */}
                     {withdrawCategory === 'ewallet' && (
                       <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[#787b86] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
                         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                           {[
                             { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
@@ -3455,11 +3471,11 @@ function Dashboard() {
                             { code: 'BLU', name: 'Blu by BCA', color: '#005BAA' },
                           ].map(ew => (
                             <button key={ew.code} onClick={() => setWithdrawEwalletMethod(ew.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-[#26a69a] bg-[#1e222d]' : 'border-[#2a2e39] bg-[#1e222d]'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
                               <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
                                 {ew.name.slice(0, 2)}
                               </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawEwalletMethod === ew.code ? 'text-[#26a69a]' : 'text-[#787b86]'}`}>{ew.name}</span>
+                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawEwalletMethod === ew.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{ew.name}</span>
                             </button>
                           ))}
                         </div>
@@ -3469,7 +3485,7 @@ function Dashboard() {
                     {/* Crypto Method Grid */}
                     {withdrawCategory === 'crypto' && (
                       <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[#787b86] uppercase tracking-widest mb-2">Pilih Crypto</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Crypto</span>
                         <div className="grid grid-cols-3 gap-2">
                           {[
                             { code: 'USDT_TRC20', name: 'USDT', network: 'TRC20', color: '#26A17B' },
@@ -3479,12 +3495,12 @@ function Dashboard() {
                             { code: 'BNB', name: 'BNB', network: 'BEP20', color: '#F3BA2F' },
                           ].map(cr => (
                             <button key={cr.code} onClick={() => setWithdrawCryptoMethod(cr.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[56px] flex flex-col items-center justify-center gap-1 ${withdrawCryptoMethod === cr.code ? 'border-[#26a69a] bg-[#1e222d]' : 'border-[#2a2e39] bg-[#1e222d]'}`}>
+                              className={`rounded-xl p-2 border-2 transition-all min-h-[56px] flex flex-col items-center justify-center gap-1 ${withdrawCryptoMethod === cr.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
                               <div className="w-7 h-7 rounded-full grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: cr.color }}>
                                 {cr.name.slice(0, 2)}
                               </div>
-                              <span className={`text-[8px] font-black text-center leading-tight ${withdrawCryptoMethod === cr.code ? 'text-[#26a69a]' : 'text-[#e0e3eb]'}`}>{cr.name}</span>
-                              <span className="text-[6px] font-bold text-[#787b86]">{cr.network}</span>
+                              <span className={`text-[8px] font-black text-center leading-tight ${withdrawCryptoMethod === cr.code ? 'text-[#3b82f6]' : 'text-[var(--zv-text)]'}`}>{cr.name}</span>
+                              <span className="text-[6px] font-bold text-[var(--zv-muted)]">{cr.network}</span>
                             </button>
                           ))}
                         </div>
@@ -3492,12 +3508,12 @@ function Dashboard() {
                     )}
 
                     {/* Amount Input */}
-                    <label className="block mb-1.5 text-[9px] font-black text-[#787b86] uppercase tracking-widest">Jumlah Withdraw</label>
+                    <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Withdraw</label>
                     <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder="Minimal Rp 10.000"
-                      className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] px-4 text-[13px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] transition-colors mb-2" />
+                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors mb-2" />
                     <div className="grid grid-cols-4 gap-1.5 mb-3">
                       {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
-                        <button key={a} onClick={() => setWithdrawAmount(a)} className="h-8 rounded-lg bg-[#1e222d] border border-[#2a2e39] text-[8px] md:text-[9px] font-bold text-[#26a69a] hover:bg-gs-green hover:text-white transition-colors">
+                        <button key={a} onClick={() => setWithdrawAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gs-green hover:text-white transition-colors">
                           {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
                         </button>
                       ))}
@@ -3506,28 +3522,28 @@ function Dashboard() {
                     {/* Account Detail Form - Dynamic based on category */}
                     {withdrawCategory === 'bank' && (
                       <div className="mb-3">
-                        <label className="block mb-1.5 text-[9px] font-black text-[#787b86] uppercase tracking-widest">Nomor Rekening</label>
+                        <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nomor Rekening</label>
                         <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor rekening"
-                          className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] px-4 text-[13px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] transition-colors mb-2" />
-                        <label className="block mb-1.5 text-[9px] font-black text-[#787b86] uppercase tracking-widest">Nama Pemilik Rekening</label>
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors mb-2" />
+                        <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nama Pemilik Rekening</label>
                         <input type="text" value={withdrawAccountHolder} onChange={(e) => setWithdrawAccountHolder(e.target.value)} placeholder="Nama sesuai rekening"
-                          className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] px-4 text-[13px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] transition-colors" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
                       </div>
                     )}
 
                     {withdrawCategory === 'ewallet' && (
                       <div className="mb-3">
-                        <label className="block mb-1.5 text-[9px] font-black text-[#787b86] uppercase tracking-widest">Nomor HP / Email</label>
+                        <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nomor HP / Email</label>
                         <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor HP atau email e-wallet"
-                          className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] px-4 text-[13px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] transition-colors" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
                       </div>
                     )}
 
                     {withdrawCategory === 'crypto' && (
                       <div className="mb-3">
-                        <label className="block mb-1.5 text-[9px] font-black text-[#787b86] uppercase tracking-widest">Wallet Address</label>
+                        <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Wallet Address</label>
                         <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan alamat wallet crypto"
-                          className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] px-4 text-[13px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] transition-colors" />
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
                       </div>
                     )}
 
@@ -3544,20 +3560,20 @@ function Dashboard() {
                   </div>
 
                   {/* Withdraw History */}
-                  <h3 className="text-[11px] font-black text-[#26a69a] mb-2">Riwayat Withdraw</h3>
+                  <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Withdraw</h3>
                   <div className="space-y-1.5">
                     {withdrawals.map(w => (
-                      <div key={w.id} className="rounded-2xl p-2.5 bg-[#131722] border border-[#2a2e39] flex items-center justify-between">
+                      <div key={w.id} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#1e222d] grid place-items-center"><Minus className="w-4 h-4 text-[#ef5350]" /></div>
+                          <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Minus className="w-4 h-4 text-[#ef5350]" /></div>
                           <div>
-                            <span className="block text-[9px] font-bold text-[#e0e3eb]">{w.bankName || 'Transfer Bank'}</span>
-                            <span className="block text-[7px] text-[#787b86]">{formatDateTime(w.createdAt)}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{w.bankName || 'Transfer Bank'}</span>
+                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(w.createdAt)}</span>
                           </div>
                         </div>
                         <div className="text-right">
                           <span className="block text-[10px] font-black text-[#ef5350]">-{formatRupiah(w.amount)}</span>
-                          <span className={`block text-[7px] font-bold ${w.status === 'completed' ? 'text-[#26a69a]' : w.status === 'processing' ? 'text-[#f59e0b]' : 'text-[#ef5350]'}`}>{w.status}</span>
+                          <span className={`block text-[7px] font-bold ${w.status === 'completed' ? 'text-[#3b82f6]' : w.status === 'processing' ? 'text-[#f59e0b]' : 'text-[#ef5350]'}`}>{w.status}</span>
                         </div>
                       </div>
                     ))}
@@ -3571,13 +3587,13 @@ function Dashboard() {
           {/* ====== HISTORY TAB ====== */}
           {activeTab === 'history' && (
             <motion.div key="history" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-[14px] md:text-lg font-black text-[#26a69a] mb-3">Riwayat Transaksi</h2>
+              <h2 className="text-[14px] md:text-lg font-black text-[#3b82f6] mb-3">Riwayat Transaksi</h2>
 
               {/* Filter */}
               <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3">
                 {[{ key: 'all', label: 'Semua' }, { key: 'BUY', label: 'Beli' }, { key: 'SELL', label: 'Jual' }, { key: 'DEPOSIT', label: 'Deposit' }, { key: 'WITHDRAW', label: 'Withdraw' }].map(f => (
                   <button key={f.key} onClick={() => setTxFilter(f.key)}
-                    className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-colors ${txFilter === f.key ? 'bg-gs-green3 text-white' : 'bg-[#131722] border border-[#2a2e39] text-[#787b86]'}`}>
+                    className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-colors ${txFilter === f.key ? 'bg-gs-green3 text-white' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                     {f.label}
                   </button>
                 ))}
@@ -3586,36 +3602,36 @@ function Dashboard() {
               {/* Transaction List */}
               <div className="space-y-1.5">
                 {filteredTransactions.map(tx => (
-                  <div key={tx.id} className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39]">
+                  <div key={tx.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                          {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#26a69a]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
+                        <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                          {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#3b82f6]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
                         </div>
                         <div>
-                          <span className="block text-[10px] font-black text-[#e0e3eb]">
+                          <span className="block text-[10px] font-black text-[var(--zv-text)]">
                             {tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock?.code || 'N/A'}
                           </span>
-                          <span className="block text-[7px] text-[#787b86]">{formatRupiah(tx.total)} {tx.orderType ? `(${tx.orderType})` : ''}</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(tx.total)} {tx.orderType ? `(${tx.orderType})` : ''}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className={`block text-[10px] font-black ${tx.type === 'BUY' ? 'text-[#ef5350]' : 'text-[#26a69a]'}`}>
+                        <span className={`block text-[10px] font-black ${tx.type === 'BUY' ? 'text-[#ef5350]' : 'text-[#3b82f6]'}`}>
                           {tx.type === 'BUY' ? '-' : '+'}{formatRupiah(tx.total)}
                         </span>
                         <div className="flex items-center gap-1 justify-end">
-                          <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'completed' ? 'bg-[#26a69a]' : tx.status === 'pending' ? 'bg-[#f59e0b]' : 'bg-[#ef5350]'}`} />
-                          <span className="text-[7px] font-bold text-[#787b86]">{tx.status}</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'completed' ? 'bg-[#3b82f6]' : tx.status === 'pending' ? 'bg-[#f59e0b]' : 'bg-[#ef5350]'}`} />
+                          <span className="text-[7px] font-bold text-[var(--zv-muted)]">{tx.status}</span>
                         </div>
-                        <span className="block text-[7px] text-[#787b86]">{formatDateTime(tx.createdAt)}</span>
+                        <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
                       </div>
                     </div>
                   </div>
                 ))}
                 {filteredTransactions.length === 0 && (
                   <div className="text-center py-8">
-                    <History className="w-10 h-10 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-[#787b86]">Belum ada transaksi</p>
+                    <History className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum ada transaksi</p>
                   </div>
                 )}
               </div>
@@ -3629,13 +3645,13 @@ function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-[16px] md:text-xl font-black text-[#26a69a]">Program Referral</h2>
+                    <h2 className="text-[16px] md:text-xl font-black text-[#3b82f6]">Program Referral</h2>
                   </div>
                   <span className="text-[9px] font-black text-[#f59e0b] tracking-widest uppercase">Komisi Hingga 14%</span>
-                  <p className="text-[8px] font-semibold text-[#787b86] mt-0.5">Ajak Teman, Tumbuh Bersama</p>
+                  <p className="text-[8px] font-semibold text-[var(--zv-muted)] mt-0.5">Ajak Teman, Tumbuh Bersama</p>
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-gs-green3/10 grid place-items-center">
-                  <UserPlus className="w-5 h-5 text-[#26a69a]" />
+                  <UserPlus className="w-5 h-5 text-[#3b82f6]" />
                 </div>
               </div>
 
@@ -3713,25 +3729,25 @@ function Dashboard() {
               </div>
 
               {/* ====== JARINGAN REFERRAL (TREE/SUN VISUAL) ====== */}
-              <div className="rounded-2xl bg-[#131722] border border-[#2a2e39] mb-4 overflow-hidden">
+              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4 overflow-hidden">
                 <div className="p-3 md:p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 grid place-items-center">
                       <Zap className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-[12px] md:text-[14px] font-black text-[#26a69a]">Jaringan Referral</h3>
+                      <h3 className="text-[12px] md:text-[14px] font-black text-[#3b82f6]">Jaringan Referral</h3>
                       <span className="text-[7px] font-bold text-[#f59e0b] tracking-widest uppercase">Makin Banyak, Makin Luas!</span>
                     </div>
                   </div>
 
                   {/* Sun/Tree Network SVG Visualization */}
-                  <div className="rounded-xl bg-[#1e222d] border border-[#2a2e39] p-3 mb-3 overflow-x-auto">
+                  <div className="rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] p-3 mb-3 overflow-x-auto">
                     <svg viewBox="0 0 340 220" className="w-full min-w-[300px]" style={{ maxHeight: 220 }}>
                       <defs>
                         <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#059669" />
-                          <stop offset="100%" stopColor="#064e3b" />
+                          <stop offset="0%" stopColor="#2563eb" />
+                          <stop offset="100%" stopColor="#1e3a5f" />
                         </radialGradient>
                         <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
                           <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
@@ -3793,7 +3809,7 @@ function Dashboard() {
                         { fx: 170, fy: 110, tx: 170, ty: 195 },
                         { fx: 170, fy: 110, tx: 250, ty: 180 },
                       ].map((l, i) => (
-                        <line key={`l1-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke="#059669" strokeWidth="2" strokeOpacity="0.6" />
+                        <line key={`l1-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke="#2563eb" strokeWidth="2" strokeOpacity="0.6" />
                       ))}
 
                       {/* Level 2 nodes (orange) */}
@@ -3815,7 +3831,7 @@ function Dashboard() {
                         { x: 90, y: 180, label: '6' }, { x: 170, y: 195, label: '7' }, { x: 250, y: 180, label: '8' },
                       ].map((n, i) => (
                         <g key={`n1-${i}`}>
-                          <circle cx={n.x} cy={n.y} r="13" fill="#059669" fillOpacity="0.85" filter="url(#glow)" />
+                          <circle cx={n.x} cy={n.y} r="13" fill="#2563eb" fillOpacity="0.85" filter="url(#glow)" />
                           <text x={n.x} y={n.y + 3.5} textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">{n.label}</text>
                         </g>
                       ))}
@@ -3827,7 +3843,7 @@ function Dashboard() {
                       <text x="170" y="117" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#f59e0b">CENTER</text>
 
                       {/* Animated pulse on center */}
-                      <circle cx="170" cy="110" r="28" fill="none" stroke="#059669" strokeWidth="2">
+                      <circle cx="170" cy="110" r="28" fill="none" stroke="#2563eb" strokeWidth="2">
                         <animate attributeName="r" from="28" to="42" dur="2s" repeatCount="indefinite" />
                         <animate attributeName="stroke-opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
                       </circle>
@@ -3836,63 +3852,63 @@ function Dashboard() {
 
                   {/* Network Stats */}
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-xl p-2 bg-[#1e222d] border border-[#2a2e39] text-center">
+                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gs-green2" />
-                        <span className="text-[7px] font-black text-[#787b86]">LEVEL 1</span>
+                        <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 1</span>
                       </div>
-                      <b className="block text-[14px] font-black text-[#26a69a]">{referralInfo.tiers[0]?.activeMembers + referralInfo.tiers[0]?.inactiveMembers || 0}</b>
-                      <span className="block text-[6px] font-bold text-[#787b86]">Langsung</span>
+                      <b className="block text-[14px] font-black text-[#3b82f6]">{referralInfo.tiers[0]?.activeMembers + referralInfo.tiers[0]?.inactiveMembers || 0}</b>
+                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Langsung</span>
                     </div>
-                    <div className="rounded-xl p-2 bg-[#1e222d] border border-[#2a2e39] text-center">
+                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                        <span className="text-[7px] font-black text-[#787b86]">LEVEL 2</span>
+                        <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 2</span>
                       </div>
                       <b className="block text-[14px] font-black text-[#ff9800]">{referralInfo.tiers[1]?.activeMembers + referralInfo.tiers[1]?.inactiveMembers || 0}</b>
-                      <span className="block text-[6px] font-bold text-[#787b86]">Cabang</span>
+                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Cabang</span>
                     </div>
-                    <div className="rounded-xl p-2 bg-[#1e222d] border border-[#2a2e39] text-center">
+                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gs-gold" />
-                        <span className="text-[7px] font-black text-[#787b86]">LEVEL 3</span>
+                        <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 3</span>
                       </div>
                       <b className="block text-[14px] font-black text-[#f59e0b]">{referralInfo.tiers[2]?.activeMembers + referralInfo.tiers[2]?.inactiveMembers || 0}</b>
-                      <span className="block text-[6px] font-bold text-[#787b86]">Akar</span>
+                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Akar</span>
                     </div>
                   </div>
 
                   {/* Expand hint */}
                   <div className="mt-2 text-center">
-                    <span className="text-[7px] font-bold text-[#787b86]">💡 Semakin banyak yang Anda undang, jaringan makin luas seperti akar pohon!</span>
+                    <span className="text-[7px] font-bold text-[var(--zv-muted)]">💡 Semakin banyak yang Anda undang, jaringan makin luas seperti akar pohon!</span>
                   </div>
                 </div>
               </div>
 
               {/* ====== MISI PROMOSI VIDEO ====== */}
-              <div className="rounded-2xl bg-[#131722] border border-[#2a2e39] mb-4 overflow-hidden">
+              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4 overflow-hidden">
                 <div className="p-3 md:p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-red-500 grid place-items-center">
                       <Video className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-[12px] md:text-[14px] font-black text-[#26a69a]">Misi Promosi Video</h3>
+                      <h3 className="text-[12px] md:text-[14px] font-black text-[#3b82f6]">Misi Promosi Video</h3>
                       <span className="text-[7px] font-bold text-[#ff4081] tracking-widest uppercase">Review & Dapatkan Bonus!</span>
                     </div>
                   </div>
 
                   {/* How it works */}
-                  <div className="rounded-xl p-3 bg-[#1e222d] border border-[#2a2e39] mb-3">
+                  <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 text-[#ff4081] flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="block text-[9px] font-black text-[#e0e3eb] mb-1">Cara Kerja:</span>
+                        <span className="block text-[9px] font-black text-[var(--zv-text)] mb-1">Cara Kerja:</span>
                         <div className="space-y-0.5">
-                          <span className="block text-[7px] font-semibold text-[#787b86]">1️⃣ Upload video review tentang TrendEdge ke media sosial</span>
-                          <span className="block text-[7px] font-semibold text-[#787b86]">2️⃣ Kirim link video yang sudah di-upload</span>
-                          <span className="block text-[7px] font-semibold text-[#787b86]">3️⃣ Bonus dihitung dari views & likes video Anda!</span>
-                          <span className="block text-[7px] font-semibold text-[#787b86]">4️⃣ Wajib tag @GlobalSaham di video</span>
+                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">1️⃣ Upload video review tentang ZEVORIX ke media sosial</span>
+                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">2️⃣ Kirim link video yang sudah di-upload</span>
+                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">3️⃣ Bonus dihitung dari views & likes video Anda!</span>
+                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">4️⃣ Wajib tag @GlobalSaham di video</span>
                         </div>
                       </div>
                     </div>
@@ -3905,10 +3921,10 @@ function Dashboard() {
                       { views: '10.000', bonus: 'Rp 50.000', icon: '💰' },
                       { views: '100.000', bonus: 'Rp 500.000', icon: '💰' },
                     ].map((t, i) => (
-                      <div key={i} className="rounded-xl p-2 bg-[#1e222d] border border-[#2a2e39] flex items-center justify-between">
+                      <div key={i} className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-[14px]">{t.icon}</span>
-                          <span className="text-[9px] font-black text-[#26a69a]">{t.views} Views</span>
+                          <span className="text-[9px] font-black text-[#3b82f6]">{t.views} Views</span>
                         </div>
                         <span className="text-[10px] font-black text-[#f59e0b]">= {t.bonus}</span>
                       </div>
@@ -3916,7 +3932,7 @@ function Dashboard() {
                   </div>
 
                   {/* Anti-injection notice */}
-                  <div className="rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39] mb-3">
+                  <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
                     <div className="flex items-start gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
                       <span className="text-[7px] font-bold text-[#f59e0b] leading-relaxed">⚠️ Perhatian: Views & Likes harus REAL/ORGANIK. Dilarang suntikan views/bot. Jika terdeteksi, bonus akan dibatalkan.</span>
@@ -3925,7 +3941,7 @@ function Dashboard() {
 
                   {/* Platform selector */}
                   <div className="mb-3">
-                    <span className="block text-[8px] font-black text-[#787b86] uppercase tracking-widest mb-1.5">Pilih Platform</span>
+                    <span className="block text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-1.5">Pilih Platform</span>
                     <div className="flex gap-1.5 overflow-x-auto pb-1">
                       {[
                         { key: 'tiktok' as const, label: 'TikTok', color: 'bg-black', icon: '🎵' },
@@ -3935,7 +3951,7 @@ function Dashboard() {
                         { key: 'twitter' as const, label: 'X/Twitter', color: 'bg-gray-800', icon: '🐦' },
                       ].map(p => (
                         <button key={p.key} onClick={() => setPromoPlatform(p.key)}
-                          className={`flex-shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-[9px] font-bold transition-all ${promoPlatform === p.key ? 'bg-gs-green3 text-white shadow-sm scale-105' : 'bg-[#1e222d] border border-[#2a2e39] text-[#787b86]'}`}>
+                          className={`flex-shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-[9px] font-bold transition-all ${promoPlatform === p.key ? 'bg-gs-green3 text-white shadow-sm scale-105' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)]'}`}>
                           <span className="text-[12px]">{p.icon}</span>
                           <span>{p.label}</span>
                         </button>
@@ -3945,16 +3961,16 @@ function Dashboard() {
 
                   {/* Video link input */}
                   <div className="mb-3">
-                    <span className="block text-[8px] font-black text-[#787b86] uppercase tracking-widest mb-1.5">Link Video</span>
+                    <span className="block text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-1.5">Link Video</span>
                     <div className="flex gap-2">
                       <div className="flex-1 relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#787b86]" />
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--zv-muted)]" />
                         <input
                           type="url"
                           value={promoVideoLink}
                           onChange={(e) => setPromoVideoLink(e.target.value)}
                           placeholder={`Masukkan link ${promoPlatform === 'tiktok' ? 'TikTok' : promoPlatform === 'instagram' ? 'Instagram' : promoPlatform === 'youtube' ? 'YouTube' : promoPlatform === 'facebook' ? 'Facebook' : 'X/Twitter'}`}
-                          className="w-full h-10 rounded-xl bg-[#1e222d] border border-[#2a2e39] pl-9 pr-3 text-[11px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] focus:ring-1 focus:ring-[#26a69a]/30 transition-all placeholder:text-[#787b86]"
+                          className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-9 pr-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-[var(--zv-muted)]"
                         />
                       </div>
                       <button
@@ -4003,7 +4019,7 @@ function Dashboard() {
                   {/* Submitted videos list */}
                   {promoVideos.length > 0 && (
                     <div>
-                      <span className="block text-[8px] font-black text-[#787b86] uppercase tracking-widest mb-1.5">Video Anda ({promoVideos.length})</span>
+                      <span className="block text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-1.5">Video Anda ({promoVideos.length})</span>
                       <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
                         {promoVideos.map((v) => {
                           const platformInfo: Record<string, { label: string; icon: string; color: string }> = {
@@ -4015,29 +4031,29 @@ function Dashboard() {
                           }
                           const pi = platformInfo[v.platform] || platformInfo.tiktok
                           return (
-                            <div key={v.id} className="rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39]">
+                            <div key={v.id} className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                               <div className="flex items-center justify-between mb-1.5">
                                 <div className="flex items-center gap-2">
                                   <div className={`w-7 h-7 rounded-lg ${pi.color} grid place-items-center text-[12px]`}>
                                     {pi.icon}
                                   </div>
                                   <div>
-                                    <span className="block text-[9px] font-bold text-[#e0e3eb]">{pi.label}</span>
-                                    <span className="block text-[6px] text-[#787b86] truncate max-w-[140px]">{v.link}</span>
+                                    <span className="block text-[9px] font-bold text-[var(--zv-text)]">{pi.label}</span>
+                                    <span className="block text-[6px] text-[var(--zv-muted)] truncate max-w-[140px]">{v.link}</span>
                                   </div>
                                 </div>
-                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-[#2a2e39] text-[#26a69a]' : v.status === 'pending' ? 'bg-[#2a2e39] text-[#f59e0b]' : 'bg-[#2a2e39] text-red-700'}`}>
+                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-[var(--zv-border)] text-[#3b82f6]' : v.status === 'pending' ? 'bg-[var(--zv-border)] text-[#f59e0b]' : 'bg-[var(--zv-border)] text-red-700'}`}>
                                   {v.status === 'verified' ? <><CheckCircle className="w-2.5 h-2.5" />Terverifikasi</> : v.status === 'pending' ? <><Clock className="w-2.5 h-2.5" />Diperiksa</> : <><AlertCircle className="w-2.5 h-2.5" />Ditolak</>}
                                 </span>
                               </div>
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1">
-                                  <EyeIcon className="w-3 h-3 text-[#26a69a]" />
-                                  <span className="text-[8px] font-black text-[#e0e3eb]">{v.views.toLocaleString()}</span>
+                                  <EyeIcon className="w-3 h-3 text-[#3b82f6]" />
+                                  <span className="text-[8px] font-black text-[var(--zv-text)]">{v.views.toLocaleString()}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <ThumbsUp className="w-3 h-3 text-[#ff4081]" />
-                                  <span className="text-[8px] font-black text-[#e0e3eb]">{v.likes.toLocaleString()}</span>
+                                  <span className="text-[8px] font-black text-[var(--zv-text)]">{v.likes.toLocaleString()}</span>
                                 </div>
                                 <div className="ml-auto flex items-center gap-1">
                                   <DollarSign className="w-3 h-3 text-[#f59e0b]" />
@@ -4050,8 +4066,8 @@ function Dashboard() {
                       </div>
 
                       {/* Total video bonus */}
-                      <div className="mt-2 rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39] flex items-center justify-between">
-                        <span className="text-[8px] font-bold text-[#787b86]">Total Bonus Video</span>
+                      <div className="mt-2 rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-between">
+                        <span className="text-[8px] font-bold text-[var(--zv-muted)]">Total Bonus Video</span>
                         <span className="text-[12px] font-black text-[#f59e0b]">{formatRupiah(promoVideos.reduce((s, v) => s + v.bonus, 0))}</span>
                       </div>
                     </div>
@@ -4060,7 +4076,7 @@ function Dashboard() {
               </div>
 
               {/* Hero Card */}
-              <div className="rounded-3xl overflow-hidden mb-4 relative" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4 relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                 <div className="relative p-4 md:p-6 text-white text-center">
                   {/* Badge */}
@@ -4109,7 +4125,7 @@ function Dashboard() {
                             }
                           }}
                           disabled={claimLoading}
-                          className="h-6 px-3 rounded-lg bg-yellow-500 text-[#e0e3eb] text-[8px] font-black inline-flex items-center gap-1 hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                          className="h-6 px-3 rounded-lg bg-yellow-500 text-[var(--zv-text)] text-[8px] font-black inline-flex items-center gap-1 hover:bg-yellow-400 transition-colors disabled:opacity-50"
                         >
                           {claimLoading ? <div className="w-3 h-3 rounded-full border-2 border-gs-dark/30 border-t-gs-dark animate-spin" /> : <><DollarSign className="w-3 h-3" />Klaim</>}
                         </button>
@@ -4120,11 +4136,11 @@ function Dashboard() {
               </div>
 
               {/* Referral Code & Link */}
-              <div className="rounded-2xl p-4 bg-[#131722] border border-[#2a2e39] mb-4">
-                <span className="block text-[9px] font-black text-[#26a69a] mb-2">Kode Referral Anda</span>
+              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+                <span className="block text-[9px] font-black text-[#3b82f6] mb-2">Kode Referral Anda</span>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 h-11 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-4 flex items-center">
-                    <b className="text-[18px] font-black tracking-[0.2em] text-[#26a69a]">{referralInfo.code || user?.referralCode || 'GSXXXX'}</b>
+                  <div className="flex-1 h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 flex items-center">
+                    <b className="text-[18px] font-black tracking-[0.2em] text-[#3b82f6]">{referralInfo.code || user?.referralCode || 'GSXXXX'}</b>
                   </div>
                   <button
                     onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: 'Kode disalin!' }) }}
@@ -4137,73 +4153,73 @@ function Dashboard() {
                 <div className="flex gap-2 mb-3">
                   <button
                     onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); toast({ title: 'Kode disalin!' }) }}
-                    className="flex-1 h-10 rounded-xl bg-[#1e222d] border border-[#2a2e39] text-[#26a69a] text-[10px] font-bold hover:bg-[#1e222d] transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#3b82f6] text-[10px] font-bold hover:bg-[var(--zv-surface)] transition-colors flex items-center justify-center gap-1.5"
                   >
                     <Copy className="w-3.5 h-3.5" />Salin
                   </button>
                   <button
                     onClick={() => {
-                      const shareText = `Gabung TrendEdge dan mulai investasi! Daftar melalui tautan saya: https://globalsaham.com/register/${referralInfo.code || user?.referralCode || ''}`
+                      const shareText = `Gabung ZEVORIX dan mulai investasi! Daftar melalui tautan saya: https://globalsaham.com/register/${referralInfo.code || user?.referralCode || ''}`
                       if (navigator.share) {
-                        navigator.share({ title: 'TrendEdge - Undang Teman', text: shareText }).catch(() => {})
+                        navigator.share({ title: 'ZEVORIX - Undang Teman', text: shareText }).catch(() => {})
                       } else {
                         navigator.clipboard.writeText(shareText)
                         toast({ title: 'Link disalin!' })
                       }
                     }}
-                    className="flex-1 h-10 rounded-xl bg-yellow-500 text-[#e0e3eb] text-[10px] font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 h-10 rounded-xl bg-yellow-500 text-[var(--zv-text)] text-[10px] font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-1.5"
                   >
                     <Share2 className="w-3.5 h-3.5" />Bagikan
                   </button>
                 </div>
 
-                <span className="block text-[9px] font-black text-[#787b86] mb-1">Tautan Referral</span>
+                <span className="block text-[9px] font-black text-[var(--zv-muted)] mb-1">Tautan Referral</span>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-9 rounded-lg bg-[#1e222d] border border-[#2a2e39] px-3 flex items-center overflow-hidden">
-                    <span className="text-[9px] font-semibold text-[#e0e3eb] truncate">https://globalsaham.com/register/{referralInfo.code || user?.referralCode || 'GSXXXX'}</span>
+                  <div className="flex-1 h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 flex items-center overflow-hidden">
+                    <span className="text-[9px] font-semibold text-[var(--zv-text)] truncate">https://globalsaham.com/register/{referralInfo.code || user?.referralCode || 'GSXXXX'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Stats Cards */}
               <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39] text-center">
+                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
                   <Users className="w-5 h-5 text-gs-green mx-auto mb-1" />
-                  <b className="block text-[14px] font-black text-[#26a69a]">{referralInfo.totalMembers}</b>
-                  <span className="block text-[8px] font-bold text-[#787b86]">Anggota</span>
+                  <b className="block text-[14px] font-black text-[#3b82f6]">{referralInfo.totalMembers}</b>
+                  <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Anggota</span>
                 </div>
-                <div className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39] text-center">
+                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
                   <Wallet className="w-5 h-5 text-[#f59e0b] mx-auto mb-1" />
                   <b className="block text-[12px] font-black text-[#f59e0b]">{formatRupiah(referralInfo.totalDeposit)}</b>
-                  <span className="block text-[8px] font-bold text-[#787b86]">Deposit</span>
+                  <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Deposit</span>
                 </div>
-                <div className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39] text-center">
-                  <DollarSign className="w-5 h-5 text-[#26a69a] mx-auto mb-1" />
-                  <b className="block text-[12px] font-black text-[#26a69a]">{formatRupiah(referralInfo.totalCommission)}</b>
-                  <span className="block text-[8px] font-bold text-[#787b86]">Komisi</span>
+                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+                  <DollarSign className="w-5 h-5 text-[#3b82f6] mx-auto mb-1" />
+                  <b className="block text-[12px] font-black text-[#3b82f6]">{formatRupiah(referralInfo.totalCommission)}</b>
+                  <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Komisi</span>
                 </div>
               </div>
 
               {/* Tier Commission System with Gem Badges */}
-              <h3 className="text-[12px] font-black text-[#26a69a] mb-3">Sistem Komisi Tier</h3>
+              <h3 className="text-[12px] font-black text-[#3b82f6] mb-3">Sistem Komisi Tier</h3>
               <div className="space-y-2 mb-4">
                 {referralInfo.tiers.map((tier) => {
                   const tierColors = [
-                    { bg: 'bg-emerald-500', text: 'text-[#26a69a]', light: 'bg-[#1e222d]', gem: '💎', border: 'border-[#2a2e39]' },
-                    { bg: 'bg-orange-500', text: 'text-[#ff9800]', light: 'bg-[#1e222d]', gem: '🔥', border: 'border-[#2a2e39]' },
-                    { bg: 'bg-emerald-500', text: 'text-[#26a69a]', light: 'bg-[#1e222d]', gem: '💚', border: 'border-[#2a2e39]' },
+                    { bg: 'bg-emerald-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💎', border: 'border-[var(--zv-border)]' },
+                    { bg: 'bg-orange-500', text: 'text-[#ff9800]', light: 'bg-[var(--zv-surface)]', gem: '🔥', border: 'border-[var(--zv-border)]' },
+                    { bg: 'bg-emerald-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💚', border: 'border-[var(--zv-border)]' },
                   ]
                   const tc = tierColors[tier.level - 1] || tierColors[0]
                   return (
-                    <div key={tier.level} className={`rounded-2xl p-3 bg-[#131722] border ${tc.border} shadow-sm`}>
+                    <div key={tier.level} className={`rounded-2xl p-3 bg-[var(--zv-panel)] border ${tc.border} shadow-sm`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-9 h-9 rounded-lg ${tc.bg} grid place-items-center text-white shadow-sm`}>
                             <Gem className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="block text-[10px] font-black text-[#e0e3eb]">Level {tier.level}</span>
-                            <span className="block text-[7px] text-[#787b86]">
+                            <span className="block text-[10px] font-black text-[var(--zv-text)]">Level {tier.level}</span>
+                            <span className="block text-[7px] text-[var(--zv-muted)]">
                               {tier.level === 1 ? 'Referral langsung' : tier.level === 2 ? 'Referral dari referral Anda' : 'Referral level ketiga'}
                             </span>
                           </div>
@@ -4212,27 +4228,27 @@ function Dashboard() {
                           <span className={`text-[18px] font-black ${tc.text}`}>
                             {tier.commissionPercent}%
                           </span>
-                          <span className="block text-[7px] font-bold text-[#787b86]">Komisi</span>
+                          <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Komisi</span>
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
-                          <b className="block text-[11px] font-black text-[#e0e3eb]">{tier.activeMembers + tier.inactiveMembers}</b>
-                          <span className="block text-[6px] font-bold text-[#787b86]">Anggota</span>
+                          <b className="block text-[11px] font-black text-[var(--zv-text)]">{tier.activeMembers + tier.inactiveMembers}</b>
+                          <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Anggota</span>
                         </div>
                         <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
-                          <b className="block text-[9px] font-black text-[#e0e3eb]">{tier.activeMembers}/{tier.inactiveMembers}</b>
-                          <span className="block text-[6px] font-bold text-[#787b86]">Aktif/Nonaktif</span>
+                          <b className="block text-[9px] font-black text-[var(--zv-text)]">{tier.activeMembers}/{tier.inactiveMembers}</b>
+                          <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Aktif/Nonaktif</span>
                         </div>
                         <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
                           <b className="block text-[9px] font-black text-[#f59e0b]">{formatRupiah(tier.deposit)}</b>
-                          <span className="block text-[6px] font-bold text-[#787b86]">Deposit</span>
+                          <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Deposit</span>
                         </div>
                       </div>
                       {tier.commission > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[#2a2e39] flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[#787b86]">Komisi Level {tier.level}</span>
-                          <span className="text-[10px] font-black text-[#26a69a]">+{formatRupiah(tier.commission)}</span>
+                        <div className="mt-2 pt-2 border-t border-[var(--zv-border)] flex items-center justify-between">
+                          <span className="text-[8px] font-bold text-[var(--zv-muted)]">Komisi Level {tier.level}</span>
+                          <span className="text-[10px] font-black text-[#3b82f6]">+{formatRupiah(tier.commission)}</span>
                         </div>
                       )}
                     </div>
@@ -4241,42 +4257,42 @@ function Dashboard() {
               </div>
 
               {/* Referral History */}
-              <h3 className="text-[12px] font-black text-[#26a69a] mb-3">Riwayat Komisi</h3>
-              <div className="rounded-2xl bg-[#131722] border border-[#2a2e39] overflow-hidden">
+              <h3 className="text-[12px] font-black text-[#3b82f6] mb-3">Riwayat Komisi</h3>
+              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden">
                 {referralInfo.history.length > 0 ? (
                   <div className="max-h-96 overflow-y-auto custom-scrollbar">
                     {referralInfo.history.map((h) => (
-                      <div key={h.id} className="p-3 border-b border-[#2a2e39] last:border-0 flex items-center justify-between">
+                      <div key={h.id} className="p-3 border-b border-[var(--zv-border)] last:border-0 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full grid place-items-center ${
-                            h.level === 1 ? 'bg-[#1e222d]' : h.level === 2 ? 'bg-[#1e222d]' : 'bg-[#1e222d]'
+                            h.level === 1 ? 'bg-[var(--zv-surface)]' : h.level === 2 ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'
                           }`}>
                             <Gem className={`w-3.5 h-3.5 ${
-                              h.level === 1 ? 'text-[#26a69a]' : h.level === 2 ? 'text-orange-500' : 'text-[#26a69a]'
+                              h.level === 1 ? 'text-[#3b82f6]' : h.level === 2 ? 'text-orange-500' : 'text-[#3b82f6]'
                             }`} />
                           </div>
                           <div>
-                            <span className="block text-[9px] font-bold text-[#e0e3eb]">{h.name}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{h.name}</span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[7px] text-[#787b86]">{formatDate(h.date)}</span>
+                              <span className="text-[7px] text-[var(--zv-muted)]">{formatDate(h.date)}</span>
                               {h.status === 'claimed' && (
-                                <span className="text-[6px] font-bold text-[#26a69a] bg-[#1e222d] px-1 rounded">Diklaim</span>
+                                <span className="text-[6px] font-bold text-[#3b82f6] bg-[var(--zv-surface)] px-1 rounded">Diklaim</span>
                               )}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[9px] font-black text-[#26a69a]">+{formatRupiah(h.commission)}</span>
-                          <span className="block text-[7px] text-[#787b86]">Deposit: {formatRupiah(h.deposit)}</span>
+                          <span className="block text-[9px] font-black text-[#3b82f6]">+{formatRupiah(h.commission)}</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)]">Deposit: {formatRupiah(h.deposit)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="p-6 text-center">
-                    <UserPlus className="w-10 h-10 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-[#787b86]">Belum ada komisi referral</p>
-                    <p className="text-[8px] text-[#787b86] mt-1">Ajak teman untuk mulai mendapatkan komisi</p>
+                    <UserPlus className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Belum ada komisi referral</p>
+                    <p className="text-[8px] text-[var(--zv-muted)] mt-1">Ajak teman untuk mulai mendapatkan komisi</p>
                   </div>
                 )}
               </div>
@@ -4284,18 +4300,18 @@ function Dashboard() {
               {/* Backwards compat: referred users list */}
               {referralInfo.referredUsers.length > 0 && (
                 <>
-                  <h3 className="text-[12px] font-black text-[#26a69a] mb-3 mt-4">Daftar Referral Langsung</h3>
+                  <h3 className="text-[12px] font-black text-[#3b82f6] mb-3 mt-4">Daftar Referral Langsung</h3>
                   <div className="space-y-1.5">
                     {referralInfo.referredUsers.map((u, i) => (
-                      <div key={i} className="rounded-2xl p-2.5 bg-[#131722] border border-[#2a2e39] flex items-center justify-between">
+                      <div key={i} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#1e222d] grid place-items-center"><User className="w-4 h-4 text-gs-green" /></div>
+                          <div className="w-8 h-8 rounded-full bg-[var(--zv-surface)] grid place-items-center"><User className="w-4 h-4 text-gs-green" /></div>
                           <div>
-                            <span className="block text-[9px] font-bold text-[#e0e3eb]">{u.name}</span>
-                            <span className="block text-[7px] text-[#787b86]">{formatDate(u.date)}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{u.name}</span>
+                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatDate(u.date)}</span>
                           </div>
                         </div>
-                        <span className="text-[9px] font-black text-[#26a69a]">+{formatRupiah(u.bonus)}</span>
+                        <span className="text-[9px] font-black text-[#3b82f6]">+{formatRupiah(u.bonus)}</span>
                       </div>
                     ))}
                   </div>
@@ -4307,22 +4323,22 @@ function Dashboard() {
           {/* ====== NEWS TAB ====== */}
           {activeTab === 'news' && (
             <motion.div key="news" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-[14px] md:text-lg font-black text-[#26a69a] mb-3">Berita & Edukasi</h2>
+              <h2 className="text-[14px] md:text-lg font-black text-[#3b82f6] mb-3">Berita & Edukasi</h2>
               <div className="space-y-2">
                 {news.map(n => (
-                  <div key={n.id} className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39]">
+                  <div key={n.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="h-5 px-2 rounded-full bg-[#1e222d] text-[7px] font-bold text-[#26a69a] flex items-center">{n.category}</span>
-                      <span className="text-[7px] text-[#787b86]">{formatDate(n.createdAt)}</span>
+                      <span className="h-5 px-2 rounded-full bg-[var(--zv-surface)] text-[7px] font-bold text-[#3b82f6] flex items-center">{n.category}</span>
+                      <span className="text-[7px] text-[var(--zv-muted)]">{formatDate(n.createdAt)}</span>
                     </div>
-                    <h4 className="text-[11px] font-bold text-[#e0e3eb] leading-snug mb-1">{n.title}</h4>
-                    <p className="text-[8px] text-[#787b86] leading-relaxed line-clamp-2">{n.content}</p>
+                    <h4 className="text-[11px] font-bold text-[var(--zv-text)] leading-snug mb-1">{n.title}</h4>
+                    <p className="text-[8px] text-[var(--zv-muted)] leading-relaxed line-clamp-2">{n.content}</p>
                   </div>
                 ))}
                 {news.length === 0 && (
                   <div className="text-center py-8">
-                    <Newspaper className="w-10 h-10 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-[#787b86]">Belum ada berita</p>
+                    <Newspaper className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum ada berita</p>
                   </div>
                 )}
               </div>
@@ -4333,7 +4349,7 @@ function Dashboard() {
           {activeTab === 'bonus' && (
             <motion.div key="bonus" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Daily Check-in */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Flame className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
                   <h2 className="text-[16px] md:text-xl font-black">Bonus Harian</h2>
@@ -4342,7 +4358,7 @@ function Dashboard() {
                     <p className="text-[8px] text-yellow-300 font-bold mt-1">🔥 Streak: {dailyCheckStatus.streak} hari</p>
                   )}
                   {dailyCheckStatus.canCheckToday ? (
-                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading} className="mt-3 h-10 px-8 rounded-2xl bg-yellow-500 text-[#e0e3eb] text-[11px] font-bold hover:bg-yellow-400 transition-colors disabled:opacity-60">
+                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading} className="mt-3 h-10 px-8 rounded-2xl bg-yellow-500 text-[var(--zv-text)] text-[11px] font-bold hover:bg-yellow-400 transition-colors disabled:opacity-60">
                       {dailyCheckLoading ? 'Memproses...' : 'Check-in Sekarang'}
                     </button>
                   ) : (
@@ -4356,15 +4372,15 @@ function Dashboard() {
               {/* Promos */}
               {promos.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-[11px] font-black text-[#26a69a] mb-2">Promo Aktif</h3>
+                  <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Promo Aktif</h3>
                   <div className="space-y-2">
                     {promos.map(p => (
-                      <div key={p.id} className="rounded-2xl p-3 bg-[#131722] border border-[#2a2e39]">
+                      <div key={p.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                         <div className="flex items-center gap-1.5 mb-1">
                           <Gift className="w-4 h-4 text-[#f59e0b]" />
-                          <span className="text-[10px] font-black text-[#e0e3eb]">{p.title}</span>
+                          <span className="text-[10px] font-black text-[var(--zv-text)]">{p.title}</span>
                         </div>
-                        <p className="text-[8px] text-[#787b86]">{p.description}</p>
+                        <p className="text-[8px] text-[var(--zv-muted)]">{p.description}</p>
                       </div>
                     ))}
                   </div>
@@ -4372,23 +4388,23 @@ function Dashboard() {
               )}
 
               {/* Bonus History */}
-              <h3 className="text-[11px] font-black text-[#26a69a] mb-2">Riwayat Bonus</h3>
+              <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Bonus</h3>
               <div className="space-y-1.5">
                 {bonuses.map(b => (
-                  <div key={b.id} className="rounded-2xl p-2.5 bg-[#131722] border border-[#2a2e39] flex items-center justify-between">
+                  <div key={b.id} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#1e222d] grid place-items-center"><Gift className="w-4 h-4 text-[#9c27b0]" /></div>
+                      <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Gift className="w-4 h-4 text-[#9c27b0]" /></div>
                       <div>
-                        <span className="block text-[9px] font-bold text-[#e0e3eb]">{b.type === 'daily_checkin' ? 'Daily Check-in' : b.type === 'trading_bonus' ? 'Trading Bonus' : b.type === 'deposit_bonus' ? 'Deposit Bonus' : b.type === 'referral_bonus' ? 'Referral Bonus' : 'Welcome Bonus'}</span>
-                        <span className="block text-[7px] text-[#787b86]">{formatDateTime(b.createdAt)}</span>
+                        <span className="block text-[9px] font-bold text-[var(--zv-text)]">{b.type === 'daily_checkin' ? 'Daily Check-in' : b.type === 'trading_bonus' ? 'Trading Bonus' : b.type === 'deposit_bonus' ? 'Deposit Bonus' : b.type === 'referral_bonus' ? 'Referral Bonus' : 'Welcome Bonus'}</span>
+                        <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(b.createdAt)}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-black text-[#26a69a]">+{formatRupiah(b.amount)}</span>
+                    <span className="text-[10px] font-black text-[#3b82f6]">+{formatRupiah(b.amount)}</span>
                   </div>
                 ))}
                 {bonuses.length === 0 && (
                   <div className="text-center py-4">
-                    <p className="text-[10px] font-bold text-[#787b86]">Belum ada bonus</p>
+                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Belum ada bonus</p>
                   </div>
                 )}
               </div>
@@ -4398,7 +4414,7 @@ function Dashboard() {
           {/* ====== LEADERBOARD TAB ====== */}
           {activeTab === 'leaderboard' && (
             <motion.div key="leaderboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <Trophy className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
                   <h2 className="text-[16px] md:text-xl font-black">Leaderboard</h2>
@@ -4408,21 +4424,21 @@ function Dashboard() {
 
               <div className="space-y-1.5">
                 {leaderboard.map((entry, i) => (
-                  <div key={i} className={`rounded-2xl p-3 border shadow-sm flex items-center gap-3 ${i === 0 ? 'bg-[#1e222d] border-[#2a2e39]' : i === 1 ? 'bg-[#1e222d] border-[#2a2e39]' : i === 2 ? 'bg-[#1e222d] border-[#2a2e39]' : 'bg-[#131722] border-[#2a2e39]'}`}>
-                    <div className={`w-8 h-8 rounded-full grid place-items-center text-[11px] font-black ${i === 0 ? 'bg-yellow-500 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-[#1e222d] text-[#787b86]'}`}>
+                  <div key={i} className={`rounded-2xl p-3 border shadow-sm flex items-center gap-3 ${i === 0 ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : i === 1 ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : i === 2 ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-panel)] border-[var(--zv-border)]'}`}>
+                    <div className={`w-8 h-8 rounded-full grid place-items-center text-[11px] font-black ${i === 0 ? 'bg-yellow-500 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)]'}`}>
                       {entry.rank || i + 1}
                     </div>
                     <div className="flex-1">
-                      <span className="block text-[10px] font-bold text-[#e0e3eb]">{entry.name}</span>
-                      <span className="block text-[8px] text-[#787b86]">Profit: {formatRupiah(entry.profit)}</span>
+                      <span className="block text-[10px] font-bold text-[var(--zv-text)]">{entry.name}</span>
+                      <span className="block text-[8px] text-[var(--zv-muted)]">Profit: {formatRupiah(entry.profit)}</span>
                     </div>
-                    <span className={`text-[11px] font-black ${entry.profitPercent >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatPercent(entry.profitPercent)}</span>
+                    <span className={`text-[11px] font-black ${entry.profitPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(entry.profitPercent)}</span>
                   </div>
                 ))}
                 {leaderboard.length === 0 && (
                   <div className="text-center py-8">
-                    <Trophy className="w-10 h-10 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-[#787b86]">Belum ada data leaderboard</p>
+                    <Trophy className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum ada data leaderboard</p>
                   </div>
                 )}
               </div>
@@ -4433,7 +4449,7 @@ function Dashboard() {
           {activeTab === 'profile' && (
             <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Profile Header */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                 <div className="p-4 text-white text-center">
                   <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/30 grid place-items-center mx-auto mb-2">
                     <User className="w-8 h-8 text-yellow-300" />
@@ -4459,9 +4475,9 @@ function Dashboard() {
               </div>
 
               {/* Profile Info */}
-              <div className="rounded-2xl p-4 bg-[#131722] border border-[#2a2e39] mb-4">
+              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[11px] font-black text-[#26a69a]">Informasi Profil</h3>
+                  <h3 className="text-[11px] font-black text-[#3b82f6]">Informasi Profil</h3>
                   <button onClick={() => { setProfileForm({ name: user?.name || '', email: user?.email || '', bankName: user?.bankName || '', bankAccount: user?.bankAccount || '', bankHolder: user?.bankHolder || '' }); setProfileEdit(!profileEdit) }}
                     className="text-[9px] font-bold text-gs-green hover:underline flex items-center gap-1">
                     <Settings className="w-3 h-3" />{profileEdit ? 'Batal' : 'Edit'}
@@ -4470,29 +4486,29 @@ function Dashboard() {
                 {profileEdit ? (
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-[8px] font-bold text-[#787b86] mb-0.5">Nama</label>
+                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nama</label>
                       <input type="text" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[11px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-bold text-[#787b86] mb-0.5">Email</label>
+                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Email</label>
                       <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[11px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-bold text-[#787b86] mb-0.5">Bank</label>
+                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Bank</label>
                       <input type="text" value={profileForm.bankName} onChange={(e) => setProfileForm({ ...profileForm, bankName: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[11px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-bold text-[#787b86] mb-0.5">Nomor Rekening</label>
+                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nomor Rekening</label>
                       <input type="text" value={profileForm.bankAccount} onChange={(e) => setProfileForm({ ...profileForm, bankAccount: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[11px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-bold text-[#787b86] mb-0.5">Nama Pemilik Rekening</label>
+                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nama Pemilik Rekening</label>
                       <input type="text" value={profileForm.bankHolder} onChange={(e) => setProfileForm({ ...profileForm, bankHolder: e.target.value })}
-                        className="w-full h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[11px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a]" />
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
                     </div>
                     <button onClick={handleProfileSave} className="w-full h-10 rounded-xl bg-gs-green3 text-white text-[10px] font-bold hover:bg-gs-green transition-colors">
                       Simpan Perubahan
@@ -4507,9 +4523,9 @@ function Dashboard() {
                       { label: 'Rekening', value: user?.bankAccount || '-' },
                       { label: 'Pemilik', value: user?.bankHolder || '-' },
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-[#2a2e39] last:border-0">
-                        <span className="text-[9px] font-bold text-[#787b86]">{item.label}</span>
-                        <span className="text-[9px] font-semibold text-[#e0e3eb]">{item.value}</span>
+                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
+                        <span className="text-[9px] font-bold text-[var(--zv-muted)]">{item.label}</span>
+                        <span className="text-[9px] font-semibold text-[var(--zv-text)]">{item.value}</span>
                       </div>
                     ))}
                   </div>
@@ -4517,39 +4533,39 @@ function Dashboard() {
               </div>
 
               {/* Menu Items */}
-              <div className="rounded-2xl bg-[#131722] border border-[#2a2e39] overflow-hidden mb-4">
+              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden mb-4">
                 {[
-                  { icon: <Shield className="w-4 h-4 text-[#26a69a]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => {} },
+                  { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => {} },
                   { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => {} },
                   { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Bonus & Promo', desc: 'Klaim bonus harian', action: () => setActiveTab('bonus') },
                   { icon: <UserPlus className="w-4 h-4 text-gs-green" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
-                  { icon: <Headphones className="w-4 h-4 text-[#26a69a]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => {} },
-                  { icon: <Building2 className="w-4 h-4 text-[#26a69a]" />, label: 'Profil Perusahaan', desc: 'Tentang TrendEdge', action: () => {} },
+                  { icon: <Headphones className="w-4 h-4 text-[#3b82f6]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => {} },
+                  { icon: <Building2 className="w-4 h-4 text-[#3b82f6]" />, label: 'Profil Perusahaan', desc: 'Tentang ZEVORIX', action: () => {} },
                   { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => {} },
                 ].map((item, i) => (
-                  <button key={i} onClick={item.action} className="w-full flex items-center gap-3 p-3 border-b border-[#2a2e39] last:border-0 hover:bg-[#1e222d] transition-colors">
+                  <button key={i} onClick={item.action} className="w-full flex items-center gap-3 p-3 border-b border-[var(--zv-border)] last:border-0 hover:bg-[var(--zv-surface)] transition-colors">
                     {item.icon}
                     <div className="flex-1 text-left">
-                      <span className="block text-[10px] font-bold text-[#e0e3eb]">{item.label}</span>
-                      <span className="block text-[7px] text-[#787b86]">{item.desc}</span>
+                      <span className="block text-[10px] font-bold text-[var(--zv-text)]">{item.label}</span>
+                      <span className="block text-[7px] text-[var(--zv-muted)]">{item.desc}</span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-[#787b86]" />
+                    <ChevronRight className="w-4 h-4 text-[var(--zv-muted)]" />
                   </button>
                 ))}
               </div>
 
               {/* Regulatory Footer */}
-              <div className="rounded-2xl p-4 bg-gradient-to-br from-[#1e222d] to-[#131722] border border-[#2a2e39] mb-4 shadow-sm">
+              <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-4 shadow-sm">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#2a2e39] grid place-items-center"><Shield className="w-4 h-4 text-[#26a69a]" /></div>
-                  <div className="w-8 h-8 rounded-lg bg-[#2a2e39] grid place-items-center"><CheckCircle className="w-4 h-4 text-[#f59e0b]" /></div>
+                  <div className="w-8 h-8 rounded-lg bg-[var(--zv-border)] grid place-items-center"><Shield className="w-4 h-4 text-[#3b82f6]" /></div>
+                  <div className="w-8 h-8 rounded-lg bg-[var(--zv-border)] grid place-items-center"><CheckCircle className="w-4 h-4 text-[#f59e0b]" /></div>
                 </div>
-                <p className="text-center text-[8px] font-black text-[#787b86] tracking-wider">ASET SAHAM • TERDAFTAR & DIAWASI OJK • V1.0</p>
+                <p className="text-center text-[8px] font-black text-[var(--zv-muted)] tracking-wider">ASET SAHAM • TERDAFTAR & DIAWASI OJK • V1.0</p>
               </div>
 
               {/* Logout */}
               <button onClick={() => { logout(); toast({ title: 'Berhasil logout' }) }}
-                className="w-full h-11 rounded-2xl bg-[#1e222d] border border-[#2a2e39] text-[#ef5350] text-[11px] font-bold flex items-center justify-center gap-2 hover:bg-[#2a2e39] transition-colors">
+                className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#ef5350] text-[11px] font-bold flex items-center justify-center gap-2 hover:bg-[var(--zv-border)] transition-colors">
                 <LogOut className="w-4 h-4" />Keluar
               </button>
             </motion.div>
@@ -4558,7 +4574,7 @@ function Dashboard() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#2a2e39] md:hidden bottom-nav-safe" style={{ background: 'rgba(19,23,34,0.98)', backdropFilter: 'blur(12px)' }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--zv-border)] md:hidden bottom-nav-safe glass-header">
         <div className="max-w-7xl mx-auto flex">
           {[
             { key: 'home', label: 'Beranda', icon: HomeIcon },
@@ -4572,10 +4588,10 @@ function Dashboard() {
               <button key={tab.key} onClick={() => {
                 if (tab.key === 'more') setShowSideMenu(true)
                 else setActiveTab(tab.key)
-              }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#26a69a]' : 'text-[#787b86] hover:text-[#e0e3eb]'}`}>
-                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-b-full" style={{ background: 'linear-gradient(135deg, #26a69a, #10b981)' }} />}
+              }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
+                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-b-full" style={{ background: 'linear-gradient(135deg, #3b82f6, #60a5fa)' }} />}
                 <tab.icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
-                <span className={`text-[9px] font-bold ${isActive ? 'text-[#26a69a]' : ''}`}>{tab.label}</span>
+                <span className={`text-[9px] font-bold ${isActive ? 'text-[#3b82f6]' : ''}`}>{tab.label}</span>
               </button>
             )
           })}
@@ -4583,7 +4599,7 @@ function Dashboard() {
       </nav>
 
       {/* Desktop Sidebar Navigation - hidden on mobile */}
-      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[#2a2e39] flex-col items-center pt-16 pb-4 gap-0.5" style={{ background: '#131722' }}>
+      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-16 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
         {[
           { key: 'home', label: 'Beranda', icon: HomeIcon },
           { key: 'market', label: 'Pasar', icon: BarChart3 },
@@ -4597,8 +4613,8 @@ function Dashboard() {
           { key: 'profile', label: 'Profil', icon: User },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#26a69a] bg-[#1e222d]' : 'text-[#787b86] hover:text-[#26a69a] hover:bg-[#1e222d]'}`}>
-            {activeTab === tab.key && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#26a69a]" />}
+            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
+            {activeTab === tab.key && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#3b82f6]" />}
             <tab.icon className="w-5 h-5" />
             <span className="text-[7px] lg:text-[8px] font-bold">{tab.label}</span>
           </button>
@@ -4617,8 +4633,8 @@ function Dashboard() {
         {showSideMenu && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowSideMenu(false)} />
-            <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[280px] md:w-[320px] bg-[#131722] border-r border-[#2a2e39] overflow-y-auto custom-scrollbar">
-              <div className="p-5" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+            <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[280px] md:w-[320px] bg-[var(--zv-panel)] border-r border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-5" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-white/20 border border-white/10 grid place-items-center"><User className="w-6 h-6 text-yellow-300" /></div>
@@ -4660,13 +4676,13 @@ function Dashboard() {
                   { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profile' },
                 ].map(item => (
                   <button key={item.key} onClick={() => { setActiveTab(item.key); setShowSideMenu(false) }}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold transition-all ${activeTab === item.key ? 'bg-[#1e222d] text-[#26a69a] border border-[#2a2e39]' : 'text-[#e0e3eb] hover:bg-[#1e222d]'}`}>
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold transition-all ${activeTab === item.key ? 'bg-[var(--zv-surface)] text-[#3b82f6] border border-[var(--zv-border)]' : 'text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
                     {item.icon}{item.label}
                   </button>
                 ))}
-                <div className="mt-3 pt-3 border-t border-[#2a2e39]">
+                <div className="mt-3 pt-3 border-t border-[var(--zv-border)]">
                   <button onClick={() => { logout(); setShowSideMenu(false); toast({ title: 'Berhasil logout' }) }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold text-[#ef5350] hover:bg-[#1e222d] transition-colors">
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold text-[#ef5350] hover:bg-[var(--zv-surface)] transition-colors">
                     <LogOut className="w-4 h-4" />Keluar
                   </button>
                 </div>
@@ -4681,32 +4697,32 @@ function Dashboard() {
         {showNotifPanel && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowNotifPanel(false)} />
-            <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[320px] md:w-[400px] bg-[#131722] border-l border-[#2a2e39] overflow-y-auto custom-scrollbar">
-              <div className="p-4 border-b border-[#2a2e39] flex items-center justify-between bg-[#1e222d]">
+            <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[320px] md:w-[400px] bg-[var(--zv-panel)] border-l border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-4 border-b border-[var(--zv-border)] flex items-center justify-between bg-[var(--zv-surface)]">
                 <h3 className="text-[14px] font-black gradient-text">Notifikasi</h3>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => markNotifRead()} className="text-[9px] font-bold text-[#26a69a] hover:underline">Tandai dibaca</button>
-                  <button onClick={() => setShowNotifPanel(false)} className="w-8 h-8 rounded-xl grid place-items-center hover:bg-[#1e222d] bg-[#131722] border border-[#2a2e39] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                  <button onClick={() => markNotifRead()} className="text-[9px] font-bold text-[#3b82f6] hover:underline">Tandai dibaca</button>
+                  <button onClick={() => setShowNotifPanel(false)} className="w-8 h-8 rounded-xl grid place-items-center hover:bg-[var(--zv-surface)] bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
                 </div>
               </div>
               <div className="p-3">
                 {notifications.map(n => (
-                  <div key={n.id} className={`p-3 rounded-xl mb-2 border transition-colors ${n.isRead ? 'bg-[#131722] border-[#2a2e39]' : 'bg-[#1e222d] border-[#2a2e39]'}`}>
+                  <div key={n.id} className={`p-3 rounded-xl mb-2 border transition-colors ${n.isRead ? 'bg-[var(--zv-panel)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-6 h-6 rounded-lg grid place-items-center ${n.type === 'trade' ? 'bg-[#1e222d]' : n.type === 'deposit' ? 'bg-[#1e222d]' : n.type === 'bonus' ? 'bg-[#1e222d]' : 'bg-[#1e222d]'}`}>
-                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#26a69a]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#26a69a]" /> : n.type === 'bonus' ? <Gift className="w-3 h-3 text-purple-400" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
+                      <div className={`w-6 h-6 rounded-lg grid place-items-center ${n.type === 'trade' ? 'bg-[var(--zv-surface)]' : n.type === 'deposit' ? 'bg-[var(--zv-surface)]' : n.type === 'bonus' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'bonus' ? <Gift className="w-3 h-3 text-purple-400" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
                       </div>
-                      <span className="flex-1 text-[9px] font-bold text-[#e0e3eb]">{n.title}</span>
+                      <span className="flex-1 text-[9px] font-bold text-[var(--zv-text)]">{n.title}</span>
                       {!n.isRead && <span className="w-2 h-2 rounded-full bg-gs-green" />}
                     </div>
-                    <p className="text-[8px] text-[#787b86] leading-relaxed">{n.message}</p>
-                    <span className="block text-[7px] text-[#787b86] mt-1">{formatDateTime(n.createdAt)}</span>
+                    <p className="text-[8px] text-[var(--zv-muted)] leading-relaxed">{n.message}</p>
+                    <span className="block text-[7px] text-[var(--zv-muted)] mt-1">{formatDateTime(n.createdAt)}</span>
                   </div>
                 ))}
                 {notifications.length === 0 && (
                   <div className="text-center py-8">
-                    <Bell className="w-8 h-8 text-[#787b86] mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-[#787b86]">Tidak ada notifikasi</p>
+                    <Bell className="w-8 h-8 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Tidak ada notifikasi</p>
                   </div>
                 )}
               </div>
@@ -4720,16 +4736,16 @@ function Dashboard() {
         {showInvestModal && selectedProduct && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowInvestModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[#131722] rounded-t-3xl md:rounded-3xl border border-[#2a2e39] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
               <div className="p-4 md:p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[14px] md:text-lg font-black text-[#26a69a]">RINGKASAN INVESTASI</h3>
-                  <button onClick={() => setShowInvestModal(false)} className="w-8 h-8 rounded-full grid place-items-center hover:bg-[#1e222d] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                  <h3 className="text-[14px] md:text-lg font-black text-[#3b82f6]">RINGKASAN INVESTASI</h3>
+                  <button onClick={() => setShowInvestModal(false)} className="w-8 h-8 rounded-full grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
                 </div>
 
                 {/* Product Info */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="text-white">
                     <div className="flex items-center gap-2 mb-1">
                       <DollarSign className="w-5 h-5 text-yellow-300" />
@@ -4741,53 +4757,53 @@ function Dashboard() {
 
                 {/* Summary Details */}
                 <div className="space-y-2.5 mb-4">
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">JUMLAH INVESTASI</span>
-                    <span className="text-[12px] font-black text-[#e0e3eb]">{formatRupiah(selectedProduct.modal)}</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">JUMLAH INVESTASI</span>
+                    <span className="text-[12px] font-black text-[var(--zv-text)]">{formatRupiah(selectedProduct.modal)}</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">SALDO TERSEDIA</span>
-                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedProduct.modal ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatRupiah(user?.balance || 0)}</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">SALDO TERSEDIA</span>
+                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedProduct.modal ? 'text-[#3b82f6]' : 'text-[#ef5350]'}`}>{formatRupiah(user?.balance || 0)}</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">PENDAPATAN HARIAN</span>
-                    <span className="text-[12px] font-black text-[#26a69a]">+{formatRupiah(selectedProduct.dailyProfit)}</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PENDAPATAN HARIAN</span>
+                    <span className="text-[12px] font-black text-[#22c55e]">+{formatRupiah(selectedProduct.dailyProfit)}</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">DURASI</span>
-                    <span className="text-[12px] font-black text-[#e0e3eb]">{selectedProduct.duration} Hari</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">DURASI</span>
+                    <span className="text-[12px] font-black text-[var(--zv-text)]">{selectedProduct.duration} Hari</span>
                   </div>
                   <div className="flex items-center justify-between py-1.5">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
                     <div className="text-right">
-                      <span className="text-[12px] font-black text-[#26a69a]">{formatRupiah(selectedProduct.totalReturn)}</span>
-                      <span className="ml-1 text-[8px] font-bold text-[#f59e0b] bg-[#1e222d] px-1 rounded">ROI {selectedProduct.roi}%</span>
+                      <span className="text-[12px] font-black text-[#22c55e]">{formatRupiah(selectedProduct.totalReturn)}</span>
+                      <span className="ml-1 text-[8px] font-bold text-[#f59e0b] bg-[var(--zv-surface)] px-1 rounded">ROI {selectedProduct.roi}%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Balance Warning */}
                 {(user?.balance || 0) < selectedProduct.modal && (
-                  <div className="rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39] mb-3 flex items-center gap-2">
+                  <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-[#ef5350] flex-shrink-0" />
                     <span className="text-[9px] font-bold text-[#ef5350]">Saldo tidak mencukupi. Silakan deposit terlebih dahulu.</span>
                   </div>
                 )}
 
                 {/* Note */}
-                <div className="rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39] mb-4 flex items-start gap-2">
-                  <Info className="w-3.5 h-3.5 text-[#26a69a] flex-shrink-0 mt-0.5" />
-                  <span className="text-[8px] text-[#26a69a] leading-relaxed">Pembelian akan diproses langsung dari saldo Anda setelah konfirmasi.</span>
+                <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4 flex items-start gap-2">
+                  <Info className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
+                  <span className="text-[8px] text-[#3b82f6] leading-relaxed">Pembelian akan diproses langsung dari saldo Anda setelah konfirmasi.</span>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowInvestModal(false)} className="flex-1 h-11 rounded-xl bg-[#1e222d] border border-[#2a2e39] text-[#787b86] text-[11px] font-bold hover:bg-[#2a2e39] transition-colors">
+                  <button onClick={() => setShowInvestModal(false)} className="flex-1 h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] text-[11px] font-bold hover:bg-[var(--zv-border)] transition-colors">
                     Nanti
                   </button>
                   <button onClick={handlePurchaseInvestment} disabled={investLoading || (user?.balance || 0) < selectedProduct.modal}
                     className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}>
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
                     {investLoading ? 'Memproses...' : 'Konfirmasi Pembelian'}
                   </button>
                 </div>
@@ -4802,63 +4818,63 @@ function Dashboard() {
         {showStockDetail && selectedStock && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowStockDetail(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[#131722] rounded-t-3xl md:rounded-3xl border border-[#2a2e39] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-2xl md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[#131722] p-4 border-b border-[#2a2e39] flex items-center justify-between rounded-t-3xl">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-2xl md:mx-auto md:my-auto">
+              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#1e222d] flex items-center justify-center">{selectedStock.logo ? <img src={selectedStock.logo} alt={selectedStock.code} className="w-full h-full object-cover" /> : <span className="text-[10px] font-black text-[#26a69a]">{selectedStock.code.slice(0, 2)}</span>}</div>
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{selectedStock.logo ? <img src={selectedStock.logo} alt={selectedStock.code} className="w-full h-full object-cover" /> : <span className="text-[10px] font-black text-[#3b82f6]">{selectedStock.code.slice(0, 2)}</span>}</div>
                   <div>
-                    <span className="block text-[12px] font-black text-[#e0e3eb]">{selectedStock.code}</span>
-                    <span className="block text-[8px] text-[#787b86]">{selectedStock.name}</span>
+                    <span className="block text-[12px] font-black text-[var(--zv-text)]">{selectedStock.code}</span>
+                    <span className="block text-[8px] text-[var(--zv-muted)]">{selectedStock.name}</span>
                   </div>
                 </div>
-                <button onClick={() => setShowStockDetail(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[#1e222d] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowStockDetail(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
               </div>
 
               <div className="p-4">
                 {/* Price */}
                 <div className="mb-3">
-                  <span className="block text-2xl font-black text-[#e0e3eb] tabular-nums">{formatRupiah(selectedStock.price)}</span>
+                  <span className="block text-2xl font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(selectedStock.price)}</span>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                    <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                       {selectedStock.changePercent >= 0 ? <TrendingUp className="w-3.5 h-3.5 inline" /> : <TrendingDown className="w-3.5 h-3.5 inline" />}
                       {' '}{formatRupiah(selectedStock.change)} ({formatPercent(selectedStock.changePercent)})
                     </span>
                   </div>
                 </div>
                   {/* Contract Profit Preview */}
-                  <div className="mb-3 rounded-xl p-3 border border-[#2a2e39] bg-[#1e222d]">
+                  <div className="mb-3 rounded-xl p-3 border border-[var(--zv-border)] bg-[var(--zv-surface)]">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <Package className="w-4 h-4 text-[#26a69a]" />
-                      <span className="text-[10px] font-black text-[#26a69a] uppercase tracking-wider">Info Kontrak</span>
+                      <Package className="w-4 h-4 text-[#3b82f6]" />
+                      <span className="text-[10px] font-black text-[#3b82f6] uppercase tracking-wider">Info Kontrak</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-lg p-2 bg-[#131722] border border-[#2a2e39] text-center">
-                        <span className="block text-[7px] font-bold text-[#787b86]">Rate Dasar</span>
-                        <span className="block text-[12px] font-black text-[#26a69a]">{getStockBaseRate(selectedStock.code)}%</span>
-                        <span className="block text-[6px] text-[#787b86]">per hari</span>
+                      <div className="rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+                        <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Rate Dasar</span>
+                        <span className="block text-[12px] font-black text-[#22c55e]">{getStockBaseRate(selectedStock.code)}%</span>
+                        <span className="block text-[6px] text-[var(--zv-muted)]">per hari</span>
                       </div>
-                      <div className="rounded-lg p-2 bg-[#131722] border border-[#2a2e39] text-center">
-                        <span className="block text-[7px] font-bold text-[#787b86]">Min. Durasi</span>
-                        <span className="block text-[12px] font-black text-[#26a69a]">30</span>
-                        <span className="block text-[6px] text-[#787b86]">hari</span>
+                      <div className="rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+                        <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Min. Durasi</span>
+                        <span className="block text-[12px] font-black text-[#3b82f6]">30</span>
+                        <span className="block text-[6px] text-[var(--zv-muted)]">hari</span>
                       </div>
-                      <div className="rounded-lg p-2 bg-[#131722] border border-[#2a2e39] text-center">
-                        <span className="block text-[7px] font-bold text-[#787b86]">Max. Durasi</span>
-                        <span className="block text-[12px] font-black text-[#26a69a]">365</span>
-                        <span className="block text-[6px] text-[#787b86]">hari</span>
+                      <div className="rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+                        <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Max. Durasi</span>
+                        <span className="block text-[12px] font-black text-[#3b82f6]">365</span>
+                        <span className="block text-[6px] text-[var(--zv-muted)]">hari</span>
                       </div>
                     </div>
-                    <div className="mt-2 rounded-lg p-2 bg-[#131722] border border-[#2a2e39]">
+                    <div className="mt-2 rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                       <div className="flex items-center gap-1 mb-1">
                         <Zap className="w-3 h-3 text-[#f59e0b]" />
-                        <span className="text-[7px] font-bold text-[#787b86]">Contoh: Rp 1.000.000 × 30 hari</span>
+                        <span className="text-[7px] font-bold text-[var(--zv-muted)]">Contoh: Rp 1.000.000 × 30 hari</span>
                       </div>
                       {(() => {
                         const exampleProfit = calcContractProfit(selectedStock, 30, 1000000)
                         return (
                           <div className="flex items-center justify-between">
-                            <span className="text-[8px] text-[#787b86]">Profit/hari: <b className="text-[#26a69a]">{formatRupiah(exampleProfit.dailyProfitAmount)}</b></span>
-                            <span className="text-[8px] text-[#787b86]">Total: <b className="text-[#26a69a]">{formatRupiah(exampleProfit.totalReturn)}</b></span>
+                            <span className="text-[8px] text-[var(--zv-muted)]">Profit/hari: <b className="text-[#22c55e]">{formatRupiah(exampleProfit.dailyProfitAmount)}</b></span>
+                            <span className="text-[8px] text-[var(--zv-muted)]">Total: <b className="text-[#22c55e]">{formatRupiah(exampleProfit.totalReturn)}</b></span>
                           </div>
                         )
                       })()}
@@ -4873,16 +4889,16 @@ function Dashboard() {
                     { label: 'Low', value: formatRupiah(selectedStock.low) },
                     { label: 'Volume', value: formatNumber(selectedStock.volume) },
                   ].map((s, i) => (
-                    <div key={i} className="rounded-xl p-2 bg-[#1e222d] text-center">
-                      <span className="block text-[7px] font-bold text-[#787b86]">{s.label}</span>
-                      <span className="block text-[8px] font-black text-[#e0e3eb] tabular-nums">{s.value}</span>
+                    <div key={i} className="rounded-xl p-2 bg-[var(--zv-surface)] text-center">
+                      <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{s.label}</span>
+                      <span className="block text-[8px] font-black text-[var(--zv-text)] tabular-nums">{s.value}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Fundamentals */}
-                <div className="rounded-xl p-3 bg-[#1e222d] mb-3">
-                  <h4 className="text-[9px] font-black text-[#26a69a] mb-1.5">Data Fundamental</h4>
+                <div className="rounded-xl p-3 bg-[var(--zv-surface)] mb-3">
+                  <h4 className="text-[9px] font-black text-[#3b82f6] mb-1.5">Data Fundamental</h4>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
                       { label: 'Market Cap', value: formatMarketCap(selectedStock.marketCap) },
@@ -4891,15 +4907,15 @@ function Dashboard() {
                       { label: 'Div. Yield', value: selectedStock.dividendYield ? `${selectedStock.dividendYield.toFixed(2)}%` : '-' },
                     ].map((f, i) => (
                       <div key={i} className="flex items-center justify-between py-0.5">
-                        <span className="text-[8px] text-[#787b86]">{f.label}</span>
-                        <span className="text-[8px] font-bold text-[#e0e3eb]">{f.value}</span>
+                        <span className="text-[8px] text-[var(--zv-muted)]">{f.label}</span>
+                        <span className="text-[8px] font-bold text-[var(--zv-text)]">{f.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Contract Button */}
-                <button onClick={() => { setContractModal(true); setShowStockDetail(false) }} className="w-full h-12 rounded-xl bg-[#26a69a] text-white text-[12px] font-bold hover:bg-[#2e9e93] transition-colors flex items-center justify-center gap-2">
+                <button onClick={() => { setContractModal(true); setShowStockDetail(false) }} className="w-full h-12 rounded-xl bg-[#3b82f6] text-white text-[12px] font-bold hover:bg-[#2e9e93] transition-colors flex items-center justify-center gap-2">
                   <Package className="w-5 h-5" />Beli Kontrak {selectedStock.code}
                 </button>
               </div>
@@ -4913,46 +4929,46 @@ function Dashboard() {
         {contractModal && selectedStock && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setContractModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center bg-[#131722] rounded-t-3xl md:rounded-3xl border border-[#2a2e39] md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
               <div className="p-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#1e222d] flex items-center justify-center">
-                      {selectedStock.logo ? <img src={selectedStock.logo} alt={selectedStock.code} className="w-full h-full object-cover" /> : <span className="text-[9px] font-black text-[#26a69a]">{selectedStock.code.slice(0, 2)}</span>}
+                    <div className="w-9 h-9 rounded-xl overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">
+                      {selectedStock.logo ? <img src={selectedStock.logo} alt={selectedStock.code} className="w-full h-full object-cover" /> : <span className="text-[9px] font-black text-[#3b82f6]">{selectedStock.code.slice(0, 2)}</span>}
                     </div>
                     <div>
-                      <h3 className="text-[14px] font-black text-[#26a69a]">Beli Kontrak {selectedStock.code}</h3>
-                      <span className="text-[8px] text-[#787b86]">{selectedStock.name} • {formatRupiah(selectedStock.price)}</span>
+                      <h3 className="text-[14px] font-black text-[#3b82f6]">Beli Kontrak {selectedStock.code}</h3>
+                      <span className="text-[8px] text-[var(--zv-muted)]">{selectedStock.name} • {formatRupiah(selectedStock.price)}</span>
                     </div>
                   </div>
-                  <button onClick={() => setContractModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[#1e222d] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                  <button onClick={() => setContractModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
                 </div>
 
                 {/* Stock Info */}
-                <div className="rounded-xl p-3 bg-[#1e222d] mb-3">
+                <div className="rounded-xl p-3 bg-[var(--zv-surface)] mb-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-bold text-[#787b86]">Harga Saham</span>
-                    <span className="text-[14px] font-black text-[#e0e3eb] tabular-nums">{formatRupiah(selectedStock.price)}</span>
+                    <span className="text-[8px] font-bold text-[var(--zv-muted)]">Harga Saham</span>
+                    <span className="text-[14px] font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(selectedStock.price)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-[8px] text-[#787b86]">Rate Dasar</span>
-                    <span className="text-[11px] font-black text-[#26a69a]">{getStockBaseRate(selectedStock.code)}% / hari</span>
+                    <span className="text-[8px] text-[var(--zv-muted)]">Rate Dasar</span>
+                    <span className="text-[11px] font-black text-[#22c55e]">{getStockBaseRate(selectedStock.code)}% / hari</span>
                   </div>
                 </div>
 
                 {/* Duration Selection */}
                 <div className="mb-3">
-                  <label className="block text-[9px] font-black text-[#26a69a] mb-1.5">Durasi Kontrak</label>
+                  <label className="block text-[9px] font-black text-[#3b82f6] mb-1.5">Durasi Kontrak</label>
                   <div className="grid grid-cols-3 gap-1.5">
                     {[30, 60, 90, 120, 180, 365].map(d => {
                       const durMult = d <= 30 ? 1 : d <= 60 ? 1.15 : d <= 90 ? 1.3 : d <= 120 ? 1.5 : d <= 180 ? 1.8 : 2.5
                       const effectiveRate = getStockBaseRate(selectedStock.code) * durMult
                       return (
                         <button key={d} onClick={() => setContractDuration(d)}
-                          className={`rounded-xl p-2 text-center border-2 transition-all ${contractDuration === d ? 'border-[#26a69a] bg-[#1e222d]' : 'border-[#2a2e39] bg-[#131722] hover:border-[#26a69a]'}`}>
-                          <span className="block text-[11px] font-black text-[#e0e3eb]">{d}</span>
-                          <span className="block text-[7px] font-bold text-[#787b86]">hari</span>
-                          <span className="block text-[8px] font-black text-[#26a69a] mt-0.5">{(effectiveRate).toFixed(1)}%</span>
+                          className={`rounded-xl p-2 text-center border-2 transition-all ${contractDuration === d ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-panel)] hover:border-[#3b82f6]'}`}>
+                          <span className="block text-[11px] font-black text-[var(--zv-text)]">{d}</span>
+                          <span className="block text-[7px] font-bold text-[var(--zv-muted)]">hari</span>
+                          <span className="block text-[8px] font-black text-[#22c55e] mt-0.5">{(effectiveRate).toFixed(1)}%</span>
                         </button>
                       )
                     })}
@@ -4961,15 +4977,15 @@ function Dashboard() {
 
                 {/* Amount Input */}
                 <div className="mb-3">
-                  <label className="block text-[9px] font-black text-[#26a69a] mb-1.5">Jumlah Investasi (Rp)</label>
+                  <label className="block text-[9px] font-black text-[#3b82f6] mb-1.5">Jumlah Investasi (Rp)</label>
                   <input type="number" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} placeholder="Min. 100.000"
-                    className="w-full h-10 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[12px] font-semibold text-[#e0e3eb] outline-none focus:border-[#26a69a] focus:ring-1 focus:ring-[#26a69a]/30 placeholder:text-[#787b86]" />
+                    className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[12px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 placeholder:text-[var(--zv-muted)]" />
                 </div>
 
                 {/* Quick Amount Buttons */}
                 <div className="flex gap-1.5 mb-3">
                   {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                    <button key={amt} onClick={() => setContractAmount(amt)} className="flex-1 h-7 rounded-lg bg-[#1e222d] border border-[#2a2e39] text-[7px] font-bold text-[#26a69a] hover:bg-[#26a69a] hover:text-white transition-colors">
+                    <button key={amt} onClick={() => setContractAmount(amt)} className="flex-1 h-7 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-bold text-[#3b82f6] hover:bg-[#3b82f6] hover:text-white transition-colors">
                       {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                     </button>
                   ))}
@@ -4980,32 +4996,32 @@ function Dashboard() {
                   const amount = parseInt(contractAmount)
                   const profit = calcContractProfit(selectedStock, contractDuration, amount)
                   return (
-                    <div className="rounded-xl p-3 border border-[#2a2e39] bg-[#1e222d] mb-3">
-                      <h4 className="text-[9px] font-black text-[#26a69a] mb-1.5">Ringkasan Kontrak</h4>
+                    <div className="rounded-xl p-3 border border-[var(--zv-border)] bg-[var(--zv-surface)] mb-3">
+                      <h4 className="text-[9px] font-black text-[#3b82f6] mb-1.5">Ringkasan Kontrak</h4>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[#787b86]">Jumlah Investasi</span>
-                          <span className="text-[8px] font-bold text-[#e0e3eb]">{formatRupiah(amount)}</span>
+                          <span className="text-[8px] text-[var(--zv-muted)]">Jumlah Investasi</span>
+                          <span className="text-[8px] font-bold text-[var(--zv-text)]">{formatRupiah(amount)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[#787b86]">Durasi</span>
-                          <span className="text-[8px] font-bold text-[#e0e3eb]">{contractDuration} hari</span>
+                          <span className="text-[8px] text-[var(--zv-muted)]">Durasi</span>
+                          <span className="text-[8px] font-bold text-[var(--zv-text)]">{contractDuration} hari</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[#787b86]">Rate Harian</span>
-                          <span className="text-[8px] font-black text-[#26a69a]">{profit.dailyRate}%/hari</span>
+                          <span className="text-[8px] text-[var(--zv-muted)]">Rate Harian</span>
+                          <span className="text-[8px] font-black text-[#22c55e]">{profit.dailyRate}%/hari</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[#787b86]">Profit Harian</span>
-                          <span className="text-[8px] font-black text-[#26a69a]">{formatRupiah(profit.dailyProfitAmount)}</span>
+                          <span className="text-[8px] text-[var(--zv-muted)]">Profit Harian</span>
+                          <span className="text-[8px] font-black text-[#22c55e]">{formatRupiah(profit.dailyProfitAmount)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[#787b86]">Total Profit ({contractDuration} hari)</span>
-                          <span className="text-[9px] font-black text-[#26a69a]">{formatRupiah(profit.totalProfit)}</span>
+                          <span className="text-[8px] text-[var(--zv-muted)]">Total Profit ({contractDuration} hari)</span>
+                          <span className="text-[9px] font-black text-[#22c55e]">{formatRupiah(profit.totalProfit)}</span>
                         </div>
-                        <div className="flex items-center justify-between pt-1 mt-1 border-t border-[#2a2e39]">
-                          <span className="text-[9px] font-black text-[#26a69a]">Total Kembali</span>
-                          <span className="text-[11px] font-black text-[#26a69a]">{formatRupiah(profit.totalReturn)}</span>
+                        <div className="flex items-center justify-between pt-1 mt-1 border-t border-[var(--zv-border)]">
+                          <span className="text-[9px] font-black text-[#22c55e]">Total Kembali</span>
+                          <span className="text-[11px] font-black text-[#22c55e]">{formatRupiah(profit.totalReturn)}</span>
                         </div>
                       </div>
                       <div className="mt-2 rounded-lg p-1.5 bg-[#f59e0b]/10 border border-[#f59e0b]/20">
@@ -5017,16 +5033,16 @@ function Dashboard() {
 
                 {/* Balance Check */}
                 {contractAmount && parseInt(contractAmount) > (user?.balance || 0) && (
-                  <div className="rounded-xl p-2 bg-[#1e222d] border border-[#2a2e39] mb-3">
+                  <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
                     <span className="text-[8px] font-bold text-[#ef5350]">Saldo tidak cukup! Saldo: {formatRupiah(user?.balance || 0)}</span>
                   </div>
                 )}
 
-                <span className="block text-[8px] text-[#26a69a] leading-relaxed mb-3">Profit harian dapat diklaim setiap hari pukul 00:00 WIB. Kontrak berakhir setelah {contractDuration} hari.</span>
+                <span className="block text-[8px] text-[#3b82f6] leading-relaxed mb-3">Profit harian dapat diklaim setiap hari pukul 00:00 WIB. Kontrak berakhir setelah {contractDuration} hari.</span>
 
                 {/* Submit */}
                 <button onClick={handleContract} disabled={contractLoading || !contractAmount || parseInt(contractAmount) < 100000}
-                  className="w-full h-12 rounded-xl bg-[#26a69a] hover:bg-[#2e9e93] text-white text-[12px] font-bold disabled:opacity-70 transition-colors flex items-center justify-center gap-2">
+                  className="w-full h-12 rounded-xl bg-[#3b82f6] hover:bg-[#2e9e93] text-white text-[12px] font-bold disabled:opacity-70 transition-colors flex items-center justify-center gap-2">
                   {contractLoading ? (
                     <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
                   ) : (
@@ -5047,7 +5063,7 @@ function Dashboard() {
             <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 inset-0 md:inset-0 bg-[#0d1117] overflow-y-auto custom-scrollbar md:flex md:items-center md:justify-center">
               <div className="min-h-screen md:min-h-0 md:max-h-[92vh] md:rounded-2xl md:max-w-xl md:mx-auto md:my-auto md:shadow-2xl flex flex-col" style={{ background: '#0d1117' }}>
                 {/* Header - Dark Trading Style */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e222d] flex-shrink-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--zv-surface)] flex-shrink-0">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-emerald-600/20 border border-emerald-500/30 grid place-items-center">
                       <Target className="w-4 h-4 text-emerald-400" />
@@ -5057,11 +5073,11 @@ function Dashboard() {
                       <span className="text-[9px] text-gray-500">{selectedSinyalStock.name} • {formatRupiah(selectedSinyalStock.price)}</span>
                     </div>
                   </div>
-                  <button onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[#1e222d] text-gray-500 hover:text-white transition-colors"><X className="w-4 h-4" /></button>
+                  <button onClick={() => { setShowSinyalModal(false); setSinyalActive(false); setSinyalAutoMode(false); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-gray-500 hover:text-white transition-colors"><X className="w-4 h-4" /></button>
                 </div>
 
                 {/* Live Candlestick Chart - Full width dark */}
-                <div className="overflow-hidden flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid #1e222d' }}>
+                <div className="overflow-hidden flex-shrink-0" style={{ background: 'var(--zv-panel)', borderBottom: '1px solid var(--zv-surface)' }}>
                   <div className="flex items-center justify-between px-3 pt-2 pb-1">
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -5077,7 +5093,7 @@ function Dashboard() {
                   {/* Timeframe Selector */}
                   <div className="flex items-center gap-1 px-3 pt-0.5 pb-1.5">
                     {['1M', '5M', '15M', '1H', '1D'].map(tf => (
-                      <button key={tf} className={`h-6 px-2.5 rounded-md text-[7px] font-bold transition-colors ${tf === '1M' ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-[#1e222d]'}`}>
+                      <button key={tf} className={`h-6 px-2.5 rounded-md text-[7px] font-bold transition-colors ${tf === '1M' ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-[var(--zv-surface)]'}`}>
                         {tf}
                       </button>
                     ))}
@@ -5171,8 +5187,8 @@ function Dashboard() {
                             const priceLabel = Math.round(paddedMax - (paddedRange / 7) * gi)
                             return (
                               <g key={`hg-${gi}`}>
-                                <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="#2a2e39" strokeWidth="0.5" strokeDasharray="3,3" />
-                                <text x={chartW + 4} y={gy + 3} fontSize="6.5" fill="#787b86">{compactPrice(priceLabel)}</text>
+                                <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                <text x={chartW + 4} y={gy + 3} fontSize="6.5" fill="var(--zv-muted)">{compactPrice(priceLabel)}</text>
                               </g>
                             )
                           })}
@@ -5183,13 +5199,13 @@ function Dashboard() {
                             const gx = leftPad + gapW + i * (candleW + gapW) + candleW / 2
                             return (
                               <g key={`vg-${i}`}>
-                                <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="#2a2e39" strokeWidth="0.5" strokeDasharray="3,3" />
-                                <text x={gx} y={svgH - 4} fontSize="5.5" fill="#787b86" textAnchor="middle">{c.time}</text>
+                                <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                <text x={gx} y={svgH - 4} fontSize="5.5" fill="var(--zv-muted)" textAnchor="middle">{c.time}</text>
                               </g>
                             )
                           })}
                           {/* Volume separator line */}
-                          <line x1={leftPad} y1={padTop + priceH} x2={chartW} y2={padTop + priceH} stroke="#2a2e39" strokeWidth="0.5" />
+                          <line x1={leftPad} y1={padTop + priceH} x2={chartW} y2={padTop + priceH} stroke="var(--zv-border)" strokeWidth="0.5" />
                           {/* Volume bars with opacity variation & rounded top */}
                           {allCandles.map((c, i) => {
                             const x = leftPad + gapW + i * (candleW + gapW)
@@ -5198,7 +5214,7 @@ function Dashboard() {
                             const volY = padTop + priceH + volH - volBarH
                             const isLast = i === totalCandles - 1 && sim !== null
                             const volOpacity = isLast ? 0.5 : (0.2 + (i / totalCandles) * 0.2)
-                            return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={Math.max(volBarH, 1)} fill={isGreen ? '#26a69a' : '#ef5350'} opacity={volOpacity} rx="1" />
+                            return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={Math.max(volBarH, 1)} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="1" />
                           })}
                           {/* MA7 line - smoothed */}
                           <polyline fill="none" stroke="#f5c542" strokeWidth="0.8" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
@@ -5229,16 +5245,16 @@ function Dashboard() {
                             const isLast = i === totalCandles - 1 && sim !== null
                             return (
                               <g key={`candle-${i}`} opacity={isLast ? 1 : 0.9}>
-                                <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
+                                <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
                                 <rect x={x} y={bodyTop} width={candleW} height={bodyH}
-                                  fill={isGreen ? '#26a69a' : '#131722'}
-                                  stroke={isGreen ? '#26a69a' : '#ef5350'}
+                                  fill={isGreen ? '#22c55e' : 'var(--zv-panel)'}
+                                  stroke={isGreen ? '#22c55e' : '#ef5350'}
                                   strokeWidth="0.7" rx="0.5"
                                 />
                                 {isLast && (
                                   <g filter="url(#sinyal-glow)">
                                     <rect x={x - 1} y={bodyTop - 1} width={candleW + 2} height={bodyH + 2}
-                                      fill="none" stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.5" rx="1"
+                                      fill="none" stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="1"
                                       opacity="0.5">
                                       <animate attributeName="opacity" values="0.5;0.1;0.5" dur="1s" repeatCount="indefinite" />
                                     </rect>
@@ -5254,8 +5270,8 @@ function Dashboard() {
                             const yLast = padTop + ((paddedMax - lastC.close) / paddedRange) * priceH
                             return (
                               <>
-                                <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
-                                <rect x={chartW + 1} y={yLast - 7} width={priceScaleW - 3} height="14" rx="2" fill={isGreen ? '#26a69a' : '#ef5350'} />
+                                <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
+                                <rect x={chartW + 1} y={yLast - 7} width={priceScaleW - 3} height="14" rx="2" fill={isGreen ? '#22c55e' : '#ef5350'} />
                                 <text x={chartW + priceScaleW / 2} y={yLast + 3.5} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastC.close)}</text>
                               </>
                             )
@@ -5266,7 +5282,7 @@ function Dashboard() {
                   </div>
                   {/* Price display below chart */}
                   <div className="flex items-center justify-between px-3 pb-2">
-                    <span className="text-[12px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#26a69a' : '#ef5350' }}>
+                    <span className="text-[12px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
                       {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
                     </span>
                     <span className={`text-[9px] font-bold ${selectedSinyalStock.changePercent >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
@@ -5282,11 +5298,11 @@ function Dashboard() {
                     <label className="block text-[9px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Arah Prediksi</label>
                     <div className="flex gap-2">
                       <button onClick={() => setSinyalDirection('NAIK')}
-                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'NAIK' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-[#1e222d] text-emerald-400 border border-emerald-800/50'}`}>
+                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'NAIK' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-[var(--zv-surface)] text-emerald-400 border border-emerald-800/50'}`}>
                         <TrendingUp className="w-4 h-4" />NAIK
                       </button>
                       <button onClick={() => setSinyalDirection('TURUN')}
-                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'TURUN' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-[#1e222d] text-red-400 border border-red-800/50'}`}>
+                        className={`flex-1 h-12 rounded-xl text-[13px] font-black flex items-center justify-center gap-1.5 transition-all ${sinyalDirection === 'TURUN' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-[var(--zv-surface)] text-red-400 border border-red-800/50'}`}>
                         <TrendingDown className="w-4 h-4" />TURUN
                       </button>
                     </div>
@@ -5296,13 +5312,13 @@ function Dashboard() {
                   <div className="mb-3">
                     <label className="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Jumlah (Rp)</label>
                     <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="Min. 100.000"
-                      className="w-full h-11 rounded-xl bg-[#1e222d] border border-[#2a2e39] px-3 text-[13px] font-semibold text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-gray-600" />
+                      className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[13px] font-semibold text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-gray-600" />
                   </div>
 
                   {/* Quick Amount Buttons */}
                   <div className="flex gap-1.5 mb-3">
                     {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                      <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-8 rounded-lg bg-[#1e222d] border border-[#2a2e39] text-[8px] font-bold text-gray-400 hover:bg-emerald-600/20 hover:border-emerald-500/30 hover:text-emerald-400 transition-all">
+                      <button key={amt} onClick={() => setSinyalAmount(amt)} className="flex-1 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-gray-400 hover:bg-emerald-600/20 hover:border-emerald-500/30 hover:text-emerald-400 transition-all">
                         {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                       </button>
                     ))}
@@ -5314,7 +5330,7 @@ function Dashboard() {
                     <div className="flex gap-1.5">
                       {[10, 30, 60, 120, 300].map(dur => (
                         <button key={dur} onClick={() => setSinyalDuration(dur)}
-                          className={`flex-1 h-9 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-[#1e222d] border border-[#2a2e39] text-gray-400 hover:text-gray-200'}`}>
+                          className={`flex-1 h-9 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-gray-400 hover:text-gray-200'}`}>
                           {dur >= 60 ? `${dur/60}m` : `${dur}s`}
                         </button>
                       ))}
@@ -5323,7 +5339,7 @@ function Dashboard() {
 
                   {/* Profit Calculator */}
                   {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
-                    <div className="rounded-xl p-3 bg-[#1e222d] border border-[#2a2e39] mb-3">
+                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
                       <div className="flex items-center justify-between py-0.5">
                         <span className="text-[8px] text-gray-500">Jumlah</span>
                         <span className="text-[8px] font-bold text-gray-300">{formatRupiah(parseInt(sinyalAmount))}</span>
@@ -5336,7 +5352,7 @@ function Dashboard() {
                         <span className="text-[8px] text-gray-500">Profit Rate</span>
                         <span className="text-[8px] font-bold text-emerald-400">+{calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration).toFixed(1)}%</span>
                       </div>
-                      <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-[#2a2e39]">
+                      <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-[var(--zv-border)]">
                         <span className="text-[10px] font-bold text-emerald-400">Potensi Profit</span>
                         <span className="text-[11px] font-black text-emerald-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration) / 100))}</span>
                       </div>
@@ -5344,7 +5360,7 @@ function Dashboard() {
                   )}
 
                   {/* AUTO Mode Toggle */}
-                  <div className="flex items-center justify-between mb-3 p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39]">
+                  <div className="flex items-center justify-between mb-3 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                     <div className="flex items-center gap-2">
                       <Zap className={`w-4 h-4 ${sinyalAutoMode ? 'text-yellow-400' : 'text-gray-500'}`} />
                       <div>
@@ -5353,7 +5369,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <button onClick={() => setSinyalAutoMode(!sinyalAutoMode)}
-                      className={`w-11 h-6 rounded-full transition-colors flex items-center ${sinyalAutoMode ? 'bg-emerald-500 justify-end' : 'bg-[#2a2e39] justify-start'}`}>
+                      className={`w-11 h-6 rounded-full transition-colors flex items-center ${sinyalAutoMode ? 'bg-emerald-500 justify-end' : 'bg-[var(--zv-border)] justify-start'}`}>
                       <div className="w-5 h-5 rounded-full bg-white shadow-sm mx-0.5" />
                     </button>
                   </div>
@@ -5375,8 +5391,8 @@ function Dashboard() {
                           <span className={`text-[13px] font-black ${ap.direction === 'NAIK' ? 'text-emerald-400' : 'text-red-400'}`}>{ap.direction} {ap.stockCode}</span>
                           <span className="text-[20px] font-black text-white tabular-nums">{sinyalTimer}s</span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-[#1e222d] overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #059669, #10b981)' }} />
+                        <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, (1 - sinyalTimer / ap.duration) * 100)}%`, background: 'linear-gradient(135deg, #2563eb, #60a5fa)' }} />
                         </div>
                       </div>
                     )
@@ -5395,7 +5411,7 @@ function Dashboard() {
                   <button onClick={openSinyalPosition}
                     disabled={sinyalActive || !sinyalAmount || parseInt(sinyalAmount) < 100000 || parseInt(sinyalAmount) > (user?.balance || 0)}
                     className="w-full h-13 rounded-xl text-white text-[13px] font-black disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                    style={{ background: sinyalActive ? '#1e222d' : 'linear-gradient(135deg, #064e3b 0%, #059669 100%)' }}>
+                    style={{ background: sinyalActive ? 'var(--zv-surface)' : 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}>
                     {sinyalActive ? (
                       <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /><span>Menunggu Hasil...</span></>
                     ) : 'Buka Posisi'}
@@ -5418,18 +5434,18 @@ function Dashboard() {
         {showDailyCheckModal && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowDailyCheckModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[#131722] rounded-t-3xl md:rounded-3xl border border-[#2a2e39] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[#131722] p-4 border-b border-[#2a2e39] flex items-center justify-between rounded-t-3xl">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
+              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl">
                 <div className="flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5 text-[#26a69a]" />
-                  <span className="text-[12px] font-black text-[#e0e3eb]">Cek Harian</span>
+                  <CalendarDays className="w-5 h-5 text-[#3b82f6]" />
+                  <span className="text-[12px] font-black text-[var(--zv-text)]">Cek Harian</span>
                 </div>
-                <button onClick={() => setShowDailyCheckModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[#1e222d] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowDailyCheckModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
               </div>
 
               <div className="p-4">
                 {/* Streak Display */}
-                <div className="rounded-2xl p-4 text-center mb-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+                <div className="rounded-2xl p-4 text-center mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <Flame className="w-12 h-12 text-yellow-300 mx-auto mb-2" />
                   <h3 className="text-lg font-black text-white mb-1">
                     {dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} Hari Berturut-turut` : 'Mulai Streak Anda!'}
@@ -5441,7 +5457,7 @@ function Dashboard() {
                     {[1, 2, 3, 4, 5, 6, 7].map(day => (
                       <div key={day} className={`w-7 h-7 rounded-full flex items-center justify-center text-[8px] font-black border-2 ${
                         day <= dailyCheckStatus.streak
-                          ? 'bg-yellow-500 border-yellow-400 text-[#e0e3eb]'
+                          ? 'bg-yellow-500 border-yellow-400 text-[var(--zv-text)]'
                           : 'bg-white/10 border-white/20 text-white/40'
                       }`}>
                         {day <= dailyCheckStatus.streak ? '✓' : day}
@@ -5476,7 +5492,7 @@ function Dashboard() {
                     onClick={handleDailyCheck}
                     disabled={dailyCheckLoading}
                     className="w-full h-12 rounded-xl text-white text-[12px] font-black hover:scale-[1.02] transition-transform disabled:opacity-70"
-                    style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
                   >
                     {dailyCheckLoading ? (
                       <div className="flex items-center justify-center gap-2">
@@ -5490,16 +5506,16 @@ function Dashboard() {
                     )}
                   </button>
                 ) : (
-                  <div className="w-full h-12 rounded-xl bg-[#1e222d] border border-[#2a2e39] flex items-center justify-center gap-2 text-[#787b86] text-[11px] font-bold">
-                    <CheckCircle className="w-4 h-4 text-[#26a69a]" />
+                  <div className="w-full h-12 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center gap-2 text-[var(--zv-muted)] text-[11px] font-bold">
+                    <CheckCircle className="w-4 h-4 text-[#3b82f6]" />
                     Sudah Dicek Hari Ini ✓
                   </div>
                 )}
 
                 {/* Info */}
-                <div className="mt-3 rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39] flex items-start gap-2">
-                  <Info className="w-3.5 h-3.5 text-[#26a69a] flex-shrink-0 mt-0.5" />
-                  <span className="text-[8px] text-[#26a69a] leading-relaxed">Streak bertambah setiap kali Anda cek harian secara berturut-turut. Jangan sampai putus!</span>
+                <div className="mt-3 rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-start gap-2">
+                  <Info className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
+                  <span className="text-[8px] text-[#3b82f6] leading-relaxed">Streak bertambah setiap kali Anda cek harian secara berturut-turut. Jangan sampai putus!</span>
                 </div>
               </div>
             </motion.div>
@@ -5512,13 +5528,13 @@ function Dashboard() {
         {showTasksModal && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowTasksModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[#131722] rounded-t-3xl md:rounded-3xl border border-[#2a2e39] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[#131722] p-4 border-b border-[#2a2e39] flex items-center justify-between rounded-t-3xl">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
+              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl">
                 <div className="flex items-center gap-2">
                   <ListChecks className="w-5 h-5 text-[#f59e0b]" />
-                  <span className="text-[12px] font-black text-[#e0e3eb]">Tugas</span>
+                  <span className="text-[12px] font-black text-[var(--zv-text)]">Tugas</span>
                 </div>
-                <button onClick={() => setShowTasksModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[#1e222d] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowTasksModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
               </div>
 
               <div className="p-4">
@@ -5551,31 +5567,31 @@ function Dashboard() {
                       check_7: <Flame className="w-4 h-4" />,
                     }
                     return (
-                      <div key={task.id} className={`rounded-xl p-3 border ${task.claimed ? 'bg-[#1e222d] border-[#2a2e39]' : task.completed ? 'bg-[#1e222d] border-[#2a2e39]' : 'bg-[#131722] border-[#2a2e39]'}`}>
+                      <div key={task.id} className={`rounded-xl p-3 border ${task.claimed ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : task.completed ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-panel)] border-[var(--zv-border)]'}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-9 h-9 rounded-xl grid place-items-center ${
-                              task.claimed ? 'bg-[#1e222d] text-[#26a69a]' :
-                              task.completed ? 'bg-[#1e222d] text-[#f59e0b]' :
-                              'bg-[#1e222d] text-[#787b86]'
+                              task.claimed ? 'bg-[var(--zv-surface)] text-[#3b82f6]' :
+                              task.completed ? 'bg-[var(--zv-surface)] text-[#f59e0b]' :
+                              'bg-[var(--zv-surface)] text-[var(--zv-muted)]'
                             }`}>
                               {task.claimed ? <CheckCircle className="w-4 h-4" /> : taskIcons[task.taskType] || <Target className="w-4 h-4" />}
                             </div>
                             <div>
-                              <span className="block text-[10px] font-black text-[#e0e3eb]">{task.title}</span>
-                              <span className="block text-[8px] text-[#787b86]">{task.description}</span>
+                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{task.title}</span>
+                              <span className="block text-[8px] text-[var(--zv-muted)]">{task.description}</span>
                               <div className="flex items-center gap-1 mt-0.5">
-                                <div className="w-16 h-1.5 rounded-full bg-[#1e222d] overflow-hidden">
+                                <div className="w-16 h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
                                   <div className={`h-full rounded-full transition-all duration-500 ${task.claimed ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${task.target > 0 ? (task.progress / task.target) * 100 : 0}%` }} />
                                 </div>
-                                <span className="text-[7px] font-bold text-[#787b86]">{task.progress}/{task.target}</span>
+                                <span className="text-[7px] font-bold text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <b className="block text-[10px] font-black text-[#26a69a]">+{formatRupiah(task.reward)}</b>
+                            <b className="block text-[10px] font-black text-[#3b82f6]">+{formatRupiah(task.reward)}</b>
                             {task.claimed ? (
-                              <span className="text-[7px] font-bold text-[#26a69a]">Diklaim ✓</span>
+                              <span className="text-[7px] font-bold text-[#3b82f6]">Diklaim ✓</span>
                             ) : task.completed ? (
                               <button
                                 onClick={() => handleClaimTask(task.id)}
@@ -5587,7 +5603,7 @@ function Dashboard() {
                                 ) : 'Klaim'}
                               </button>
                             ) : (
-                              <span className="text-[7px] font-bold text-[#787b86]">Mulai</span>
+                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Mulai</span>
                             )}
                           </div>
                         </div>
@@ -5606,16 +5622,16 @@ function Dashboard() {
         {showWelcomeModal && user && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={handleWelcomeClose} />
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[#131722] rounded-3xl border border-[#2a2e39] overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
               <div className="relative">
                 {/* Green Header */}
-                <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+                <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="relative z-10">
                     <div className="w-16 h-16 rounded-full bg-white p-1.5 mx-auto mb-3 shadow-[0_8px_24px_rgba(0,0,0,.3)]">
-                      <img src="/trendedge-logo.png" alt="TrendEdge" className="w-full h-full object-contain" />
+                      <img src="/zevorix-logo.png" alt="ZEVORIX" className="w-full h-full object-contain" />
                     </div>
-                    <h2 className="text-lg font-black mb-1">Selamat Datang di TrendEdge</h2>
+                    <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIX</h2>
                     <p className="text-[9px] text-emerald-200 leading-relaxed max-w-[280px] mx-auto">
                       Platform investasi terpercaya dengan profit harian, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.
                     </p>
@@ -5627,22 +5643,22 @@ function Dashboard() {
                   {/* Regulatory Badges */}
                   <div className="flex items-center justify-center gap-4 mb-4">
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-[#1e222d] border border-[#2a2e39] grid place-items-center">
-                        <Shield className="w-5 h-5 text-[#26a69a]" />
+                      <div className="w-10 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+                        <Shield className="w-5 h-5 text-[#3b82f6]" />
                       </div>
-                      <span className="text-[7px] font-bold text-[#787b86]">OJK</span>
+                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">OJK</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-[#1e222d] border border-[#2a2e39] grid place-items-center">
+                      <div className="w-10 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
                         <CheckCircle className="w-5 h-5 text-[#f59e0b]" />
                       </div>
-                      <span className="text-[7px] font-bold text-[#787b86]">Bappebti</span>
+                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">Bappebti</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-[#1e222d] border border-[#2a2e39] grid place-items-center">
-                        <Lock className="w-5 h-5 text-[#26a69a]" />
+                      <div className="w-10 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+                        <Lock className="w-5 h-5 text-[#3b82f6]" />
                       </div>
-                      <span className="text-[7px] font-bold text-[#787b86]">Aman</span>
+                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">Aman</span>
                     </div>
                   </div>
 
@@ -5650,20 +5666,20 @@ function Dashboard() {
                   <button
                     onClick={() => { handleWelcomeClose(); setActiveTab('investasi') }}
                     className="w-full h-11 rounded-xl text-white text-[11px] font-black tracking-wide hover:scale-[1.02] transition-transform mb-2"
-                    style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
                   >
                     Mulai Berinvestasi
                   </button>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <button
                       onClick={handleWelcomeClose}
-                      className="h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] text-[#26a69a] text-[9px] font-bold hover:bg-[#2a2e39] transition-colors flex items-center justify-center gap-1"
+                      className="h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#3b82f6] text-[9px] font-bold hover:bg-[var(--zv-border)] transition-colors flex items-center justify-center gap-1"
                     >
                       <Headphones className="w-3.5 h-3.5" />Hubungi CS
                     </button>
                     <button
                       onClick={handleWelcomeClose}
-                      className="h-9 rounded-xl bg-[#1e222d] border border-[#2a2e39] text-[#f59e0b] text-[9px] font-bold hover:bg-[#2a2e39] transition-colors flex items-center justify-center gap-1"
+                      className="h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#f59e0b] text-[9px] font-bold hover:bg-[var(--zv-border)] transition-colors flex items-center justify-center gap-1"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />Gabung Channel
                     </button>
@@ -5673,7 +5689,7 @@ function Dashboard() {
                   <label className="flex items-center gap-2 cursor-pointer justify-center">
                     <input type="checkbox" checked={welcomeDontShow} onChange={(e) => setWelcomeDontShow(e.target.checked)}
                       className="w-3.5 h-3.5 rounded accent-gs-green" />
-                    <span className="text-[8px] font-semibold text-[#787b86]">Jangan tampilkan selama 30 menit</span>
+                    <span className="text-[8px] font-semibold text-[var(--zv-muted)]">Jangan tampilkan selama 30 menit</span>
                   </label>
                 </div>
               </div>
@@ -5687,18 +5703,18 @@ function Dashboard() {
         {showInvestDetailModal && selectedDetailProduct && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowInvestDetailModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[90vh] bg-[#131722] rounded-t-3xl md:rounded-3xl border border-[#2a2e39] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[#131722] p-4 border-b border-[#2a2e39] flex items-center justify-between rounded-t-3xl z-10">
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
+              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl z-10">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-[#26a69a]" />
-                  <span className="text-[12px] font-black text-[#e0e3eb]">Detail Investasi</span>
+                  <DollarSign className="w-5 h-5 text-[#3b82f6]" />
+                  <span className="text-[12px] font-black text-[var(--zv-text)]">Detail Investasi</span>
                 </div>
-                <button onClick={() => setShowInvestDetailModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[#1e222d] text-[#787b86] hover:text-[#e0e3eb]"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowInvestDetailModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
               </div>
 
               <div className="p-4">
                 {/* Product Header */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #022c22 0%, #064e3b 54%, #059669 100%)' }}>
+                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="text-white">
                     <div className="flex items-center gap-2 mb-1">
                       <DollarSign className="w-5 h-5 text-yellow-300" />
@@ -5714,31 +5730,31 @@ function Dashboard() {
                   const chartData = getDataForTimeframe(rawData, investTimeframe)
                   const movement = investMovement.get(selectedDetailProduct.id)
                   const isUp = movement ? movement.changePercent >= 0 : true
-                  const chartColor = isUp ? '#059669' : '#ef4444'
+                  const chartColor = isUp ? '#2563eb' : '#ef4444'
                   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].close : selectedDetailProduct.modal
                   return (
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1">
-                          <BarChart3 className="w-3 h-3 text-[#787b86]" />
-                          <span className="text-[8px] font-bold text-[#787b86] uppercase tracking-wider">PERGERAKAN MARKET</span>
+                          <BarChart3 className="w-3 h-3 text-[var(--zv-muted)]" />
+                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PERGERAKAN MARKET</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[7px] font-black text-[#26a69a]">LIVE</span>
+                          <span className="text-[7px] font-black text-[#3b82f6]">LIVE</span>
                         </div>
                       </div>
                       {/* Current Price Display */}
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xl font-black text-[#e0e3eb] tabular-nums">{formatRupiah(lastValue)}</span>
-                        <span className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-[#1e222d] text-[#26a69a]' : 'bg-[#1e222d] text-[#ef5350]'}`}>
+                        <span className="text-xl font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(lastValue)}</span>
+                        <span className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-[var(--zv-surface)] text-[#22c55e]' : 'bg-[var(--zv-surface)] text-[#ef5350]'}`}>
                           {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                           {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
                         </span>
                       </div>
                       {/* Chart Type & Timeframe Selectors */}
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1 bg-[#1e222d] rounded-xl p-1">
+                        <div className="flex items-center gap-1 bg-[var(--zv-surface)] rounded-xl p-1">
                           {([
                             { type: 'area' as const, label: '📈 Area' },
                             { type: 'line' as const, label: '📉 Line' },
@@ -5746,22 +5762,22 @@ function Dashboard() {
                             { type: 'bar' as const, label: '📊 Bar' },
                           ]).map(ct => (
                             <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
-                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investChartType === ct.type ? 'bg-[#131722] shadow-sm text-[#26a69a]' : 'text-[#787b86] hover:text-[#e0e3eb]'}`}>
+                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investChartType === ct.type ? 'bg-[var(--zv-panel)] shadow-sm text-[#3b82f6]' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
                               {ct.label}
                             </button>
                           ))}
                         </div>
-                        <div className="flex items-center gap-0.5 bg-[#1e222d] rounded-xl p-1">
+                        <div className="flex items-center gap-0.5 bg-[var(--zv-surface)] rounded-xl p-1">
                           {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
                             <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investTimeframe === tf ? 'bg-[#26a69a] text-white' : 'text-[#787b86] hover:text-[#e0e3eb]'}`}>
+                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investTimeframe === tf ? 'bg-[#3b82f6] text-white' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
                               {tf}
                             </button>
                           ))}
                         </div>
                       </div>
                       {/* Chart Area */}
-                      <div className="h-56 w-full rounded-2xl border border-[#2a2e39] p-0 overflow-hidden" style={{ background: '#131722' }}>
+                      <div className="h-56 w-full rounded-2xl border border-[var(--zv-border)] p-0 overflow-hidden" style={{ background: 'var(--zv-panel)' }}>
                         {chartData.length > 2 ? (() => {
                           const candles = chartData
                           const allPrices = candles.flatMap(c => [c.high, c.low])
@@ -5807,8 +5823,8 @@ function Dashboard() {
                                   const priceLabel = Math.round(maxP - (rangeP / 7) * gi)
                                   return (
                                     <g key={`hgrid-${gi}`}>
-                                      <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="#2a2e39" strokeWidth="0.5" strokeDasharray="3,3" />
-                                      <text x={chartW + 6} y={gy + 3} fontSize="7" fill="#787b86">{compactPrice(priceLabel)}</text>
+                                      <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                      <text x={chartW + 6} y={gy + 3} fontSize="7" fill="var(--zv-muted)">{compactPrice(priceLabel)}</text>
                                     </g>
                                   )
                                 })}
@@ -5818,8 +5834,8 @@ function Dashboard() {
                                   const gx = leftPad + gapW + i * (candleW + gapW) + candleW / 2
                                   return (
                                     <g key={`vgrid-${i}`}>
-                                      <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="#2a2e39" strokeWidth="0.5" strokeDasharray="3,3" />
-                                      <text x={gx} y={svgH - 4} fontSize="6" fill="#787b86" textAnchor="middle">{c.time}</text>
+                                      <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+                                      <text x={gx} y={svgH - 4} fontSize="6" fill="var(--zv-muted)" textAnchor="middle">{c.time}</text>
                                     </g>
                                   )
                                 })}
@@ -5830,7 +5846,7 @@ function Dashboard() {
                                   const volBarH = (c.volume / maxVol) * volH
                                   const volY = padTop + priceH + volH - volBarH
                                   const volOpacity = 0.2 + (i / totalCandles) * 0.25
-                                  return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={volBarH} fill={isGreen ? '#26a69a' : '#ef5350'} opacity={volOpacity} rx="1" />
+                                  return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={volBarH} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="1" />
                                 })}
                                 {/* MA7 line (yellow) - smoothed */}
                                 <polyline
@@ -5890,8 +5906,8 @@ function Dashboard() {
                                   const isLast = i === totalCandles - 1
                                   return (
                                     <g key={i} opacity={isLast ? 1 : 0.9}>
-                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#26a69a' : '#131722'} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.7" rx="0.8" />
+                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
+                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : 'var(--zv-panel)'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" rx="0.8" />
                                     </g>
                                   )
                                 })}
@@ -5902,8 +5918,8 @@ function Dashboard() {
                                   const yLast = padTop + ((maxP - lastC.close) / rangeP) * priceH
                                   return (
                                     <>
-                                      <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#26a69a' : '#ef5350'} strokeWidth="0.7" strokeDasharray="4,3" opacity="0.8" />
-                                      <rect x={chartW + 2} y={yLast - 8} width={priceScaleW - 4} height="16" rx="3" fill={isGreen ? '#26a69a' : '#ef5350'} />
+                                      <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" strokeDasharray="4,3" opacity="0.8" />
+                                      <rect x={chartW + 2} y={yLast - 8} width={priceScaleW - 4} height="16" rx="3" fill={isGreen ? '#22c55e' : '#ef5350'} />
                                       <text x={chartW + priceScaleW / 2} y={yLast + 3.5} fontSize="7" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastC.close)}</text>
                                     </>
                                   )
@@ -5927,7 +5943,7 @@ function Dashboard() {
                             const barData = chartData.map((d, i) => ({
                               idx: d.idx,
                               close: d.close,
-                              fill: i > 0 && d.close >= chartData[i - 1].close ? '#059669' : '#ef4444'
+                              fill: i > 0 && d.close >= chartData[i - 1].close ? '#2563eb' : '#ef4444'
                             }))
                             return (
                               <ResponsiveContainer width="100%" height="100%">
@@ -6005,12 +6021,12 @@ function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1">
-                          {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#26a69a]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
-                          <span className={`text-[10px] font-bold ${isUp ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>
+                          {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
+                          <span className={`text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                             Modal: {formatRupiah(selectedDetailProduct.modal)}
                           </span>
                         </div>
-                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-[#1e222d] text-[#26a69a]' : 'bg-[#1e222d] text-[#ef5350]'}`}>
+                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-[var(--zv-surface)] text-[#22c55e]' : 'bg-[var(--zv-surface)] text-[#ef5350]'}`}>
                           {formatRupiah(lastValue)}
                         </span>
                       </div>
@@ -6020,46 +6036,46 @@ function Dashboard() {
 
                 {/* Full Financial Details */}
                 <div className="space-y-2.5 mb-4">
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">JUMLAH MODAL</span>
-                    <span className="text-[12px] font-black text-[#e0e3eb]">{formatRupiah(selectedDetailProduct.modal)}</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">JUMLAH MODAL</span>
+                    <span className="text-[12px] font-black text-[var(--zv-text)]">{formatRupiah(selectedDetailProduct.modal)}</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">PROFIT HARIAN</span>
-                    <span className="text-[12px] font-black text-[#26a69a]">+{formatRupiah(selectedDetailProduct.dailyProfit)}</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PROFIT HARIAN</span>
+                    <span className="text-[12px] font-black text-[#22c55e]">+{formatRupiah(selectedDetailProduct.dailyProfit)}</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">DURASI</span>
-                    <span className="text-[12px] font-black text-[#e0e3eb]">{selectedDetailProduct.duration} Hari</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">DURASI</span>
+                    <span className="text-[12px] font-black text-[var(--zv-text)]">{selectedDetailProduct.duration} Hari</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[#2a2e39]">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
+                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
                     <div className="text-right">
-                      <span className="text-[12px] font-black text-[#26a69a]">{formatRupiah(selectedDetailProduct.totalReturn)}</span>
-                      <span className="ml-1 text-[8px] font-bold text-[#f59e0b] bg-[#1e222d] px-1 rounded">ROI {selectedDetailProduct.roi}%</span>
+                      <span className="text-[12px] font-black text-[#22c55e]">{formatRupiah(selectedDetailProduct.totalReturn)}</span>
+                      <span className="ml-1 text-[8px] font-bold text-[#f59e0b] bg-[var(--zv-surface)] px-1 rounded">ROI {selectedDetailProduct.roi}%</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between py-1.5">
-                    <span className="text-[9px] font-bold text-[#787b86] uppercase tracking-wider">SALDO TERSEDIA</span>
-                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedDetailProduct.modal ? 'text-[#26a69a]' : 'text-[#ef5350]'}`}>{formatRupiah(user?.balance || 0)}</span>
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">SALDO TERSEDIA</span>
+                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedDetailProduct.modal ? 'text-[#3b82f6]' : 'text-[#ef5350]'}`}>{formatRupiah(user?.balance || 0)}</span>
                   </div>
                 </div>
 
                 {/* Profit Distribution with AUTO toggle */}
-                <div className="rounded-xl p-3 bg-[#1e222d] border border-[#2a2e39] mb-4">
+                <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#26a69a]" />
-                      <span className="text-[9px] font-bold text-[#26a69a]">Pembagian Profit Setiap 24 jam</span>
+                      <Clock className="w-3.5 h-3.5 text-[#3b82f6]" />
+                      <span className="text-[9px] font-bold text-[#3b82f6]">Pembagian Profit Setiap 24 jam</span>
                     </div>
                     <button
                       onClick={() => setInvestDetailAutoProfit(!investDetailAutoProfit)}
-                      className={`h-6 px-3 rounded-full text-[7px] font-black transition-colors ${investDetailAutoProfit ? 'bg-[#26a69a] text-white' : 'bg-[#2a2e39] text-[#787b86]'}`}
+                      className={`h-6 px-3 rounded-full text-[7px] font-black transition-colors ${investDetailAutoProfit ? 'bg-[#3b82f6] text-white' : 'bg-[var(--zv-border)] text-[var(--zv-muted)]'}`}
                     >
                       {investDetailAutoProfit ? 'AUTO' : 'MANUAL'}
                     </button>
                   </div>
-                  <p className="text-[7px] text-[#787b86] mt-1">
+                  <p className="text-[7px] text-[var(--zv-muted)] mt-1">
                     {investDetailAutoProfit
                       ? 'Profit akan otomatis dikreditkan ke saldo Anda setiap 24 jam.'
                       : 'Anda perlu mengklaim profit secara manual setiap hari.'}
@@ -6068,7 +6084,7 @@ function Dashboard() {
 
                 {/* Balance Warning */}
                 {(user?.balance || 0) < selectedDetailProduct.modal && (
-                  <div className="rounded-xl p-2.5 bg-[#1e222d] border border-[#2a2e39] mb-3 flex items-center gap-2">
+                  <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-[#ef5350] flex-shrink-0" />
                     <span className="text-[9px] font-bold text-[#ef5350]">Saldo tidak mencukupi. Silakan deposit terlebih dahulu.</span>
                   </div>
@@ -6076,7 +6092,7 @@ function Dashboard() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowInvestDetailModal(false)} className="flex-1 h-11 rounded-xl bg-[#1e222d] border border-[#2a2e39] text-[#787b86] text-[11px] font-bold hover:bg-[#2a2e39] transition-colors">
+                  <button onClick={() => setShowInvestDetailModal(false)} className="flex-1 h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] text-[11px] font-bold hover:bg-[var(--zv-border)] transition-colors">
                     Kembali
                   </button>
                   <button
@@ -6087,7 +6103,7 @@ function Dashboard() {
                     }}
                     disabled={(user?.balance || 0) < selectedDetailProduct.modal}
                     className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #064e3b 0%, #064e3b 50%, #059669 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
                   >
                     Investasi Sekarang
                   </button>
