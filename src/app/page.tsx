@@ -1246,45 +1246,49 @@ function Dashboard() {
     return STOCK_PAYOUT_TIERS[code] || { upRange: [78, 84] as [number, number], downRange: [56, 64] as [number, number], volMultiplier: 1.0 }
   }, [])
 
-  const getPayoutRates = useCallback((code?: string): { up: number; down: number; upRange: [number, number]; downRange: [number, number] } => {
-    const tier = getStockPayoutTier(code || '')
-    // Fluctuate within the stock's range (like Stockity)
-    const upRate = tier.upRange[0] + Math.random() * (tier.upRange[1] - tier.upRange[0])
-    const downRate = tier.downRange[0] + Math.random() * (tier.downRange[1] - tier.downRange[0])
-    return { up: Math.round(upRate * 10) / 10, down: Math.round(downRate * 10) / 10, upRange: tier.upRange, downRange: tier.downRange }
-  }, [getStockPayoutTier])
+  // Payout rates are now computed from the chart state in real-time (see chartPayoutRates below)
+  // No more periodic refresh — chart tick updates the payout every 500ms
 
-  const [sinyalPayoutRates, setSinyalPayoutRates] = useState<{ up: number; down: number; upRange: [number, number]; downRange: [number, number] }>({ up: 82, down: 58, upRange: [78, 84], downRange: [56, 64] })
+  // Chart-based payout rates — calculated from the chart's real-time state
+  // (volatility, momentum, trend direction, price distance from base)
+  const [chartPayoutRates, setChartPayoutRates] = useState<{ up: number; down: number; upRange: [number, number]; downRange: [number, number] }>({ up: 82, down: 58, upRange: [78, 84], downRange: [56, 64] })
 
-  // Refresh payout rates periodically (like real trading platforms)
-  useEffect(() => {
-    if (activeTab !== 'sinyal') return
-    const interval = setInterval(() => {
-      setSinyalPayoutRates(getPayoutRates(selectedSinyalStock?.code))
-    }, 15000) // Every 15 seconds
-    return () => clearInterval(interval)
-  }, [activeTab, getPayoutRates, selectedSinyalStock?.code])
+  // Compute payout from chart simulation state
+  const computeChartPayout = useCallback((sim: NonNullable<typeof sinyalChartSimRef.current>, tier: { upRange: [number, number]; downRange: [number, number]; volMultiplier: number }) => {
+    const baseVal = sim.basePrice
+    // Factor 1: Current momentum strength (higher momentum = lower payout for that direction — harder to predict)
+    const momentumStrength = Math.abs(sim.momentum) / (baseVal * 0.005) // normalized 0-1+
+    // Factor 2: How far price is from base (extreme distance = lower payout)
+    const priceDistance = Math.abs(sim.price - baseVal) / baseVal // 0-0.08
+    // Factor 3: Trend consistency (strong trend = lower payout for trend direction)
+    const trendBias = sim.trend * sim.momentum > 0 ? 0.8 : 0 // momentum aligns with trend
 
-  // Also update payout rates when switching stocks
-  useEffect(() => {
-    if (activeTab === 'sinyal' && selectedSinyalStock) {
-      setSinyalPayoutRates(getPayoutRates(selectedSinyalStock.code))
+    // Calculate adjustments (these shift the base payout range)
+    // When chart is moving strongly UP → NAIK payout decreases (too obvious), TURUN payout increases
+    // When chart is moving strongly DOWN → TURUN payout decreases, NAIK payout increases
+    const upAdjust = -momentumStrength * 3 - priceDistance * 10 * (sim.momentum > 0 ? 1 : -1) - trendBias * 2
+    const downAdjust = momentumStrength * 3 + priceDistance * 10 * (sim.momentum > 0 ? 1 : -1) + trendBias * 2
+
+    // Add some noise (like real platforms — slight random fluctuation)
+    const noise = (Math.random() - 0.5) * 2
+
+    const upRate = Math.max(tier.upRange[0], Math.min(tier.upRange[1], 
+      (tier.upRange[0] + tier.upRange[1]) / 2 + upAdjust + noise))
+    const downRate = Math.max(tier.downRange[0], Math.min(tier.downRange[1], 
+      (tier.downRange[0] + tier.downRange[1]) / 2 + downAdjust - noise))
+
+    return {
+      up: Math.round(upRate * 10) / 10,
+      down: Math.round(downRate * 10) / 10,
+      upRange: tier.upRange,
+      downRange: tier.downRange,
     }
-  }, [activeTab, selectedSinyalStock, getPayoutRates])
+  }, [])
 
-  const calcSinyalProfit = useCallback((amount: number, duration: number, direction: 'NAIK' | 'TURUN'): number => {
-    const rate = direction === 'NAIK' ? sinyalPayoutRates.up : sinyalPayoutRates.down
-    // Duration bonus: longer = slightly higher payout
-    const durationBonus = duration <= 10 ? 0 : duration <= 20 ? 2 : duration <= 30 ? 4 : 6
-    return rate + durationBonus
-  }, [sinyalPayoutRates])
-
-  // Get payout range display (e.g., "80%-88%")
-  const getPayoutRangeDisplay = useCallback((direction: 'NAIK' | 'TURUN'): string => {
-    const range = direction === 'NAIK' ? sinyalPayoutRates.upRange : sinyalPayoutRates.downRange
-    const durationBonus = sinyalDuration <= 10 ? 0 : sinyalDuration <= 20 ? 2 : sinyalDuration <= 30 ? 4 : 6
-    return `${Math.round(range[0] + durationBonus)}%-${Math.round(range[1] + durationBonus)}%`
-  }, [sinyalPayoutRates, sinyalDuration])
+  const calcSinyalProfit = useCallback((amount: number, _duration: number, direction: 'NAIK' | 'TURUN'): number => {
+    // Payout is from chart state, NOT from duration
+    return direction === 'NAIK' ? chartPayoutRates.up : chartPayoutRates.down
+  }, [chartPayoutRates])
 
   // Stock base daily profit rates (varies per stock, 5-12%)
   const getStockBaseRate = useCallback((code: string): number => {
@@ -1392,6 +1396,10 @@ function Dashboard() {
       setSinyalCandles(histCandles)
       setSinyalCurrentPrice(prevClose)
       sinyalChartSimRef.current = sim
+
+      // Initialize chart-based payout rates for this stock
+      const initialPayout = computeChartPayout(sim, stockTier)
+      setChartPayoutRates(initialPayout)
     }
 
     const interval = setInterval(() => {
@@ -1457,6 +1465,10 @@ function Dashboard() {
       setSinyalCurrentPrice(sim.price)
       setSinyalChartTick(t => t + 1)
 
+      // Compute payout rates from chart state (every tick — real-time)
+      const chartPayout = computeChartPayout(sim, stockTier)
+      setChartPayoutRates(chartPayout)
+
       // If candle is complete
       if (cc.tickCount >= cc.maxTicks) {
         const completedCandle: CandleData = {
@@ -1484,7 +1496,7 @@ function Dashboard() {
     }, 500)
 
     return () => clearInterval(interval)
-  }, [activeTab, selectedSinyalStock, generateCandle, getStockPayoutTier])
+  }, [activeTab, selectedSinyalStock, generateCandle, getStockPayoutTier, computeChartPayout])
 
   // Sinyal Pro multi-position timer — resolve ALL active positions independently
   useEffect(() => {
@@ -3096,16 +3108,19 @@ function Dashboard() {
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                   {stocks.slice(0, 10).map(s => {
                     const tier = getStockPayoutTier(s.code)
+                    const isSelected = selectedSinyalStock?.id === s.id
+                    // Show chart-based payout for selected stock, tier max for others
+                    const displayPayout = isSelected ? chartPayoutRates.up.toFixed(0) : tier.upRange[1]
                     return (
                     <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
                       className={`flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border ${
-                        selectedSinyalStock?.id === s.id
+                        isSelected
                           ? 'bg-blue-600 text-white border-blue-500'
                           : 'bg-[var(--zv-panel)] text-[var(--zv-text)] border-[var(--zv-border)] hover:border-blue-500/30'
                       }`}>
                       {s.changePercent >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                       <span>{s.code}</span>
-                      <span className={`text-[7px] ${selectedSinyalStock?.id === s.id ? 'text-white/70' : 'text-[#22c55e]'}`}>{tier.upRange[1]}%</span>
+                      <span className={`text-[7px] ${isSelected ? 'text-white/70' : 'text-[#22c55e]'}`}>+{displayPayout}%</span>
                     </button>
                     )
                   })}
@@ -3126,10 +3141,10 @@ function Dashboard() {
                       <span className="text-[8px] font-black text-blue-400 tracking-widest">LIVE</span>
                       <span className="text-[8px] text-[var(--zv-muted)]">|</span>
                       <span className="text-[10px] font-black text-[var(--zv-text)]">{selectedSinyalStock.code}/IDR</span>
-                      {/* Payout badge */}
+                      {/* Payout badge — from chart */}
                       <div className="flex items-center gap-1 ml-1">
-                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-green-500/15 text-[#22c55e] border border-green-500/20">↑{getPayoutRangeDisplay('NAIK')}</span>
-                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-red-500/15 text-[#ef5350] border border-red-500/20">↓{getPayoutRangeDisplay('TURUN')}</span>
+                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-green-500/15 text-[#22c55e] border border-green-500/20">↑+{chartPayoutRates.up.toFixed(0)}%</span>
+                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-red-500/15 text-[#ef5350] border border-red-500/20">↓+{chartPayoutRates.down.toFixed(0)}%</span>
                       </div>
                     </div>
                     {/* Live price */}
@@ -3421,16 +3436,16 @@ function Dashboard() {
                   </div>
                 </div>
 
-                {/* Profit preview for both directions */}
+                {/* Profit preview for both directions — payout from chart */}
                 {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
                   <div className="flex gap-2">
                     <div className="flex-1 rounded-lg p-1.5 bg-green-500/10 border border-green-500/20 text-center">
-                      <span className="text-[7px] text-green-400/70 font-bold block">NAIK PROFIT ({getPayoutRangeDisplay('NAIK')})</span>
-                      <span className="text-[11px] font-black text-[#22c55e]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration, 'NAIK') / 100))}</span>
+                      <span className="text-[7px] text-green-400/70 font-bold block">NAIK PROFIT (+{chartPayoutRates.up.toFixed(0)}%)</span>
+                      <span className="text-[11px] font-black text-[#22c55e]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.up / 100))}</span>
                     </div>
                     <div className="flex-1 rounded-lg p-1.5 bg-red-500/10 border border-red-500/20 text-center">
-                      <span className="text-[7px] text-red-400/70 font-bold block">TURUN PROFIT ({getPayoutRangeDisplay('TURUN')})</span>
-                      <span className="text-[11px] font-black text-[#ef5350]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * calcSinyalProfit(parseInt(sinyalAmount), sinyalDuration, 'TURUN') / 100))}</span>
+                      <span className="text-[7px] text-red-400/70 font-bold block">TURUN PROFIT (+{chartPayoutRates.down.toFixed(0)}%)</span>
+                      <span className="text-[11px] font-black text-[#ef5350]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.down / 100))}</span>
                     </div>
                   </div>
                 )}
@@ -3453,7 +3468,7 @@ function Dashboard() {
                       <TrendingUp className="w-5 h-5" />
                       <span className="text-[16px] font-black">NAIK</span>
                     </div>
-                    <span className="text-[11px] font-bold opacity-90">+{getPayoutRangeDisplay('NAIK')}</span>
+                    <span className="text-[11px] font-bold opacity-90">+{chartPayoutRates.up.toFixed(0)}%</span>
                     {/* Shine effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
                   </button>
@@ -3473,7 +3488,7 @@ function Dashboard() {
                       <TrendingDown className="w-5 h-5" />
                       <span className="text-[16px] font-black">TURUN</span>
                     </div>
-                    <span className="text-[11px] font-bold opacity-90">+{getPayoutRangeDisplay('TURUN')}</span>
+                    <span className="text-[11px] font-bold opacity-90">+{chartPayoutRates.down.toFixed(0)}%</span>
                     {/* Shine effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
                   </button>
