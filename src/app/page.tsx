@@ -775,7 +775,7 @@ function Dashboard() {
   const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalAmount, setSinyalAmount] = useState('')
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
-  const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number}[]>([])
+  const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number; shownAt?: number}[]>([])
   // Track remaining time per position
   const [sinyalTimers, setSinyalTimers] = useState<Record<string, number>>({})
 
@@ -1618,7 +1618,7 @@ function Dashboard() {
             p.id === posId ? {...p, status: finalWon ? 'won' : 'lost'} : p
           ))
 
-          // Add result to results list
+          // Add result to results list — brief flash notification (auto-removes after 1s)
           setSinyalResults(prev => [...prev, {
             id: posId,
             won: finalWon,
@@ -1626,14 +1626,14 @@ function Dashboard() {
             stockCode: pos.stockCode,
             direction: pos.direction,
             amount: pos.amount,
+            shownAt: Date.now(),
           }])
+          // Auto-cleanup old results after 1.2s
+          setTimeout(() => setSinyalResults(prev => prev.filter(r => r.id !== posId)), 1200)
 
           // Return balance (already deducted when opening)
           if (returnAmount > 0) {
             updateBalance((user?.balance || 0) + returnAmount)
-            toast({ title: 'Benar! 🎯', description: `${pos.direction} ${pos.stockCode} +${formatRupiah(profit)}` })
-          } else {
-            toast({ title: 'Salah ❌', description: `${pos.direction} ${pos.stockCode} -${formatRupiah(pos.amount)}`, variant: 'destructive' })
           }
         }
       }
@@ -3925,17 +3925,17 @@ function Dashboard() {
                     </button>
                   </div>
 
-                  {/* Result toast — Slim brief flash at top */}
+                  {/* Result flash — tiny pill, auto-removes in 1s */}
                   {sinyalResults.length > 0 && (() => {
                     const latest = sinyalResults[sinyalResults.length - 1]
-                    if (Date.now() - latest.shownAt > 1500) return null
+                    if (!latest || !latest.shownAt || Date.now() - latest.shownAt > 1000) return null
+                    const won = latest.won
                     return (
-                      <motion.div key={latest.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      <motion.div key={latest.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${latest.won ? 'border-green-500/30 bg-green-500/15' : 'border-red-500/30 bg-red-500/15'}`} style={{ backdropFilter: 'blur(12px)' }}>
-                          <span className="text-[11px]">{latest.won ? '✅' : '❌'}</span>
-                          <span className={`text-[9px] font-black ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? 'BENAR' : 'SALAH'}</span>
-                          <span className={`text-[8px] font-bold ${latest.won ? 'text-green-300' : 'text-red-300'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
+                        <div className={'flex items-center gap-1.5 px-3 py-1 rounded-full border ' + (won ? 'border-green-500/25 bg-green-500/10' : 'border-red-500/25 bg-red-500/10')} style={{ backdropFilter: 'blur(10px)' }}>
+                          <span className={'text-[9px] font-black ' + (won ? 'text-green-400' : 'text-red-400')}>{won ? 'BENAR' : 'SALAH'}</span>
+                          <span className={'text-[8px] font-bold ' + (won ? 'text-green-300' : 'text-red-300')}>{won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
                         </div>
                       </motion.div>
                     )
