@@ -670,9 +670,6 @@ function Dashboard() {
   const [withdrawAccountNumber, setWithdrawAccountNumber] = useState('')
   const [withdrawAccountHolder, setWithdrawAccountHolder] = useState('')
 
-  // ============ REFERRAL MISSION CLAIM STATE ============
-  const [claimedMissions, setClaimedMissions] = useState<Set<number>>(new Set())
-
   const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
 
   // ============ PROMOSI & BONUS DASHBOARD STATE ============
@@ -1465,7 +1462,6 @@ function Dashboard() {
       cc.volume += Math.round(Math.random() * 500 + 200)
 
       setSinyalCurrentPrice(sim.price)
-      setSinyalChartTick(t => t + 1)
 
       // Compute payout rates from chart state (every tick — real-time)
       const chartPayout = computeChartPayout(sim, stockTier)
@@ -3206,8 +3202,8 @@ function Dashboard() {
                     </div>
                   )}
 
-                  {/* Chart SVG */}
-                  <div className="w-full h-full pt-12" key={`sinyal-chart-${sinyalChartTick}`}>
+                  {/* Chart SVG — NO key prop so DOM persists across ticks */}
+                  <div className="w-full h-full pt-12">
                     {(() => {
                       const allCandles = [...sinyalCandles]
                       const sim = sinyalChartSimRef.current
@@ -3371,22 +3367,22 @@ function Dashboard() {
                     })()}
                   </div>
 
-                  {/* Result popup overlay — show latest results briefly */}
+                  {/* Result toast — corner popup, NON-BLOCKING, auto-dismiss */}
                   {sinyalResults.length > 0 && (() => {
                     const latest = sinyalResults[sinyalResults.length - 1]
-                    // Only show if recent (within 3 seconds)
+                    if (Date.now() - latest.shownAt > 2000) return null
                     return (
-                      <motion.div key={latest.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)' }}>
-                        <div className={`text-center p-4 rounded-2xl border pointer-events-auto ${latest.won ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10'}`}>
-                          <span className="text-[32px] block mb-0.5">{latest.won ? '🎯' : '❌'}</span>
-                          <h3 className={`text-[16px] font-black ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                            {latest.won ? 'BENAR!' : 'SALAH'}
-                          </h3>
-                          <span className={`text-[14px] font-bold ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                            {latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}
-                          </span>
-                          <span className="block text-[9px] text-[var(--zv-muted)] mt-1">{latest.stockCode} {latest.direction}</span>
+                      <motion.div key={latest.id} initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
+                        className="absolute bottom-3 right-3 z-20 pointer-events-none">
+                        <div className={`px-4 py-3 rounded-xl border shadow-lg ${latest.won ? 'border-green-500/40 bg-green-500/10' : 'border-red-500/40 bg-red-500/10'}`} style={{ backdropFilter: 'blur(12px)' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[20px]">{latest.won ? '🎯' : '❌'}</span>
+                            <div>
+                              <h4 className={`text-[12px] font-black ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{latest.won ? 'BENAR!' : 'SALAH'}</h4>
+                              <span className={`text-[11px] font-bold ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
+                              <span className="block text-[8px] text-[var(--zv-muted)]">{latest.stockCode} {latest.direction}</span>
+                            </div>
+                          </div>
                         </div>
                       </motion.div>
                     )
@@ -4039,79 +4035,6 @@ function Dashboard() {
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 grid place-items-center">
                   <UserPlus className="w-5 h-5 text-[#3b82f6]" />
-                </div>
-              </div>
-
-              {/* ====== MISI BONUS UNDANGAN ====== */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #1a0a00 0%, #7c3a00 54%, #f59e0b 100%)' }}>
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                <div className="relative p-4 md:p-5 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-500/30 border border-yellow-400/40 grid place-items-center">
-                      <Trophy className="w-5 h-5 text-yellow-300" />
-                    </div>
-                    <div>
-                      <h3 className="text-[14px] md:text-[16px] font-black">Misi Bonus Undangan</h3>
-                      <span className="text-[8px] font-bold text-yellow-200">Ajak lebih banyak teman, dapatkan bonus lebih besar!</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {(() => {
-                      const missions = [
-                        { target: 5, bonus: 25000, medal: '🥉', tier: 'Perunggu', color: 'from-amber-700 to-amber-500', barColor: 'bg-amber-400', borderColor: 'border-amber-400/40' },
-                        { target: 20, bonus: 75000, medal: '🥈', tier: 'Perak', color: 'from-gray-400 to-gray-300', barColor: 'bg-gray-300', borderColor: 'border-gray-300/40' },
-                        { target: 50, bonus: 150000, medal: '🥇', tier: 'Emas', color: 'from-yellow-500 to-yellow-300', barColor: 'bg-yellow-400', borderColor: 'border-yellow-400/40' },
-                        { target: 100, bonus: 400000, medal: '💎', tier: 'Berlian', color: 'from-cyan-500 to-blue-400', barColor: 'bg-cyan-400', borderColor: 'border-cyan-400/40' },
-                      ]
-                      const totalMembers = referralInfo.totalMembers || 0
-                      return missions.map((m) => {
-                        const progress = Math.min(totalMembers, m.target)
-                        const pct = Math.min(100, (progress / m.target) * 100)
-                        const reached = totalMembers >= m.target
-                        const claimed = claimedMissions.has(m.target)
-                        return (
-                          <div key={m.target} className={`rounded-2xl p-3 bg-white/10 border ${m.borderColor} backdrop-blur-sm`}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[18px]">{m.medal}</span>
-                                <div>
-                                  <span className="block text-[10px] font-black text-white">Undang {m.target} Teman</span>
-                                  <span className="block text-[7px] font-bold text-yellow-200">{m.tier} — Bonus {formatRupiah(m.bonus)}</span>
-                                  <span className="block text-[6px] font-semibold text-yellow-200/70">Wajib aktif deposit min Rp 100.000</span>
-                                </div>
-                              </div>
-                              {claimed ? (
-                                <span className="h-7 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[8px] font-black flex items-center gap-1 shadow-sm shadow-blue-500/20">
-                                  <CheckCircle className="w-3 h-3" />Diklaim
-                                </span>
-                              ) : reached ? (
-                                <button
-                                  onClick={() => {
-                                    setClaimedMissions(prev => new Set(prev).add(m.target))
-                                    toast({ title: 'Bonus Diklaim!', description: `+${formatRupiah(m.bonus)} bonus undangan ${m.tier}` })
-                                  }}
-                                  className="h-7 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-[8px] font-black flex items-center gap-1 transition-all shadow-sm shadow-blue-500/20"
-                                >
-                                  <DollarSign className="w-3 h-3" />Klaim
-                                </button>
-                              ) : (
-                                <span className="h-7 px-3 rounded-lg bg-white/15 text-white/50 text-[8px] font-black flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />Belum
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
-                                <div className={`h-full rounded-full ${m.barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
-                              </div>
-                              <span className="text-[8px] font-bold text-white/70">{progress}/{m.target}</span>
-                            </div>
-                          </div>
-                        )
-                      })
-                    })()}
-                  </div>
                 </div>
               </div>
 
