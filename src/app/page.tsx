@@ -756,7 +756,7 @@ function Dashboard() {
   }[]>([])
   const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalAmount, setSinyalAmount] = useState('')
-  const [sinyalDuration, setSinyalDuration] = useState(20)
+  const [sinyalDuration, setSinyalDuration] = useState(60)
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number}[]>([])
   // Track remaining time per position
@@ -767,6 +767,15 @@ function Dashboard() {
   const [sinyalCurrentPrice, setSinyalCurrentPrice] = useState(0)
   const [sinyalChartTick, setSinyalChartTick] = useState(0)
   const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number } | null>(null)
+  // Timeframe: how long each candle bar lasts (1m = 60s, 5m = 300s, etc.)
+  const [sinyalTimeframe, setSinyalTimeframe] = useState<'1m' | '5m' | '15m' | '30m' | '1h'>('1m')
+  const sinyalTimeframeSeconds: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '30m': 1800, '1h': 3600 }
+  // Chart panning: how many candles to offset from the latest
+  const [sinyalChartOffset, setSinyalChartOffset] = useState(0)
+  const sinyalChartOffsetRef = useRef(0)
+  useEffect(() => { sinyalChartOffsetRef.current = sinyalChartOffset }, [sinyalChartOffset])
+  // Drag state for panning
+  const sinyalDragRef = useRef<{ startX: number; startOffset: number; dragging: boolean }>({ startX: 0, startOffset: 0, dragging: false })
   const sinyalChartSimRef = useRef<{
     price: number; basePrice: number; momentum: number; trend: number;
     phase: number; phaseLen: number; vol: number;
@@ -1355,12 +1364,24 @@ function Dashboard() {
     setSinyalTimers(prev => ({ ...prev, [posId]: sinyalDuration }))
     // Deduct balance immediately when opening position
     updateBalance((user?.balance || 0) - amount)
-    toast({ title: 'Posisi Dibuka! 🎯', description: `${dir} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${sinyalDuration}s` })
+    const durMins = Math.floor(sinyalDuration / 60)
+    const durSecs = sinyalDuration % 60
+    const durLabel = durMins > 0 ? (durSecs > 0 ? `${durMins}m ${durSecs}s` : `${durMins}m`) : `${durSecs}s`
+    toast({ title: 'Posisi Dibuka! 🎯', description: `${dir} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${durLabel}` })
   }, [selectedSinyalStock, sinyalAmount, sinyalDirection, sinyalDuration, user, calcSinyalProfit, sinyalCurrentPrice, updateBalance])
 
   // Sinyal Pro live candlestick chart — initialize historical candles + real-time intrabar updates
   useEffect(() => {
     if (activeTab !== 'sinyal' || !selectedSinyalStock) return
+
+    // Reset chart offset when switching stocks/timeframes
+    setSinyalChartOffset(0)
+
+    // Candle duration in seconds based on selected timeframe
+    const tfSeconds = sinyalTimeframeSeconds[sinyalTimeframe] || 60
+    // Tick interval = 1 second, maxTicks = timeframe seconds
+    const tickIntervalMs = 1000
+    const maxTicks = tfSeconds
 
     // Initialize chart simulation when first opens
     if (sinyalChartSimRef.current === null) {
@@ -1387,20 +1408,26 @@ function Dashboard() {
           close: basePrice,
           volume: 0,
           tickCount: 0,
-          maxTicks: 10,
+          maxTicks,
         },
         riggedDirection: null as 'up' | 'down' | null,
         riggedApplied: false,
       }
 
-      // Generate historical candles with stock-specific volatility
+      // Generate more historical candles based on timeframe
+      // For 1m: 60 candles (1 hour of data), for 5m: 60 candles (5 hours), etc.
+      const histCount = 60
       const histCandles: CandleData[] = []
-      const histStartOffset = (stockSeed % 7 - 3) / 100 // Stock-specific start offset
+      const histStartOffset = (stockSeed % 7 - 3) / 100
       let prevClose = Math.round(basePrice * (0.97 + histStartOffset + Math.random() * 0.04))
       const histSim = { momentum: 0, trend: initialTrend, phase: 1, phaseLen: 5, vol }
-      for (let i = 0; i < 25; i++) {
+      const now = new Date()
+      for (let i = 0; i < histCount; i++) {
         const candle = generateCandle(prevClose, basePrice, histSim, i)
-        histCandles.push(candle)
+        // Time label based on timeframe
+        const candleTime = new Date(now.getTime() - (histCount - i) * tfSeconds * 1000)
+        const timeLabel = candleTime.getHours().toString().padStart(2, '0') + ':' + candleTime.getMinutes().toString().padStart(2, '0')
+        histCandles.push({ ...candle, time: timeLabel })
         prevClose = candle.close
       }
       setSinyalCandles(histCandles)
@@ -1410,6 +1437,9 @@ function Dashboard() {
       // Initialize chart-based payout rates for this stock
       const initialPayout = computeChartPayout(sim, stockTier)
       setChartPayoutRates(initialPayout)
+    } else {
+      // Update maxTicks when timeframe changes
+      sinyalChartSimRef.current.currentCandle.maxTicks = maxTicks
     }
 
     const interval = setInterval(() => {
@@ -1437,29 +1467,31 @@ function Dashboard() {
       // Stock-specific volatility from payout tier
       const stockTier = getStockPayoutTier(selectedSinyalStock.code)
       const volMult = stockTier.volMultiplier
-      const volatility = baseVal * 0.0015 * volMult
+      // Scale volatility by timeframe — longer candles have more total movement
+      const tfScale = Math.sqrt(tfSeconds / 60) // sqrt for realistic volatility scaling
+      const volatility = baseVal * 0.0012 * volMult * tfScale
       let drift = 0
 
       const progress = cc.tickCount / cc.maxTicks
 
       // Early phase: random movement with slight trend
       if (progress < 0.3) {
-        drift = sim.trend * baseVal * 0.0003 + (Math.random() - 0.5) * volatility
+        drift = sim.trend * baseVal * 0.0002 * tfScale + (Math.random() - 0.5) * volatility
       }
       // Middle phase: fake-out potential (stronger moves in opposite direction)
       else if (progress < 0.6) {
         const fakeOut = Math.random() < 0.3
         drift = fakeOut
-          ? -sim.trend * baseVal * 0.001 + (Math.random() - 0.5) * volatility * 0.5
-          : sim.trend * baseVal * 0.0005 + (Math.random() - 0.5) * volatility
+          ? -sim.trend * baseVal * 0.0008 * tfScale + (Math.random() - 0.5) * volatility * 0.5
+          : sim.trend * baseVal * 0.0004 * tfScale + (Math.random() - 0.5) * volatility
       }
       // Late phase: apply rigged direction if available
       else {
         if (sim.riggedDirection) {
           const rigDrift = sim.riggedDirection === 'up' ? 1 : -1
-          drift = rigDrift * baseVal * 0.001 * (0.5 + Math.random()) + (Math.random() - 0.5) * volatility * 0.3
+          drift = rigDrift * baseVal * 0.0008 * tfScale * (0.5 + Math.random()) + (Math.random() - 0.5) * volatility * 0.3
         } else {
-          drift = sim.trend * baseVal * 0.0005 + (Math.random() - 0.5) * volatility
+          drift = sim.trend * baseVal * 0.0004 * tfScale + (Math.random() - 0.5) * volatility
         }
       }
 
@@ -1480,6 +1512,7 @@ function Dashboard() {
 
       // If candle is complete
       if (cc.tickCount >= cc.maxTicks) {
+        const now = new Date()
         const completedCandle: CandleData = {
           idx: 0,
           open: cc.open,
@@ -1487,7 +1520,7 @@ function Dashboard() {
           low: cc.low,
           close: cc.close,
           volume: cc.volume,
-          time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+          time: now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0'),
         }
         setSinyalCandles(prev => [...prev, completedCandle])
 
@@ -1497,15 +1530,15 @@ function Dashboard() {
         cc.low = cc.close
         cc.volume = 0
         cc.tickCount = 0
-        cc.maxTicks = 10
+        cc.maxTicks = maxTicks
         sim.riggedApplied = false
         sim.riggedDirection = null
         sim.trend = Math.random() > 0.5 ? 1 : -1
       }
-    }, 500)
+    }, tickIntervalMs)
 
     return () => clearInterval(interval)
-  }, [activeTab, selectedSinyalStock, generateCandle, getStockPayoutTier, computeChartPayout])
+  }, [activeTab, selectedSinyalStock, sinyalTimeframe, generateCandle, getStockPayoutTier, computeChartPayout])
 
   // Sinyal Pro multi-position timer — resolve ALL active positions independently
   useEffect(() => {
@@ -3122,7 +3155,7 @@ function Dashboard() {
                     const isSelected = selectedSinyalStock?.id === s.id
                     const displayPayout = isSelected ? chartPayoutRates.up.toFixed(0) : tier.upRange[1]
                     return (
-                      <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
+                      <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
                         className={`flex-shrink-0 h-6 px-2 rounded-md text-[9px] font-bold flex items-center gap-0.5 transition-all border ${
                           isSelected ? 'bg-[#1e3a5f] text-white border-[#2563eb]' : 'bg-[#0d1117] text-gray-400 border-[#1e293b] hover:border-[#2563eb]/40'
                         }`}>
@@ -3148,8 +3181,6 @@ function Dashboard() {
                       <span className="text-[7px] font-black text-green-400 tracking-widest">LIVE</span>
                       <span className="text-[7px] text-gray-600">|</span>
                       <span className="text-[9px] font-black text-white">{selectedSinyalStock.code}</span>
-                      <span className="text-[7px] text-gray-500">•</span>
-                      <span className="text-[7px] font-bold text-gray-400">{selectedSinyalStock.name}</span>
                       <div className="flex items-center gap-0.5 ml-0.5">
                         <span className="h-3.5 px-1 rounded text-[6px] font-black bg-green-500/15 text-green-400">↑{chartPayoutRates.up.toFixed(0)}%</span>
                         <span className="h-3.5 px-1 rounded text-[6px] font-black bg-red-500/15 text-red-400">↓{chartPayoutRates.down.toFixed(0)}%</span>
@@ -3177,9 +3208,37 @@ function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Timeframe selector — below header */}
+                  <div className="absolute top-6 left-0 right-0 z-10 flex items-center justify-between px-2 py-0.5">
+                    <div className="flex items-center gap-0.5">
+                      {(['1m', '5m', '15m', '30m', '1h'] as const).map(tf => (
+                        <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
+                          className={`h-4 px-1.5 rounded text-[7px] font-bold transition-all ${
+                            sinyalTimeframe === tf ? 'bg-blue-600/30 text-blue-400 border border-blue-500/40' : 'text-gray-500 hover:text-gray-300 border border-transparent'
+                          }`}>
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Candle countdown */}
+                    {(() => {
+                      const sim = sinyalChartSimRef.current
+                      if (!sim) return null
+                      const cc = sim.currentCandle
+                      const remaining = cc.maxTicks - cc.tickCount
+                      const mins = Math.floor(remaining / 60)
+                      const secs = remaining % 60
+                      return (
+                        <span className="text-[7px] font-bold text-gray-500 tabular-nums">
+                          ⏱ {mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`}
+                        </span>
+                      )
+                    })()}
+                  </div>
+
                   {/* Active Trades Overlay */}
                   {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                    <div className="absolute top-7 left-2 z-10 flex flex-col gap-0.5">
+                    <div className="absolute top-12 left-2 z-10 flex flex-col gap-0.5">
                       {sinyalPositions.filter(p => p.status === 'active').map(ap => {
                         const remaining = sinyalTimers[ap.id] ?? ap.duration
                         const progress = Math.max(0, (1 - remaining / ap.duration) * 100)
@@ -3208,13 +3267,34 @@ function Dashboard() {
                     </div>
                   )}
 
-                  {/* ── CANDLESTICK CHART SVG — Stockity style ── */}
-                  <div className="w-full h-full pt-8"
+                  {/* ── CANDLESTICK CHART SVG — Stockity style with panning ── */}
+                  <div className="w-full h-full pt-12"
                     onMouseMove={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect()
                       setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                      // Handle drag panning
+                      if (sinyalDragRef.current.dragging) {
+                        const dx = e.clientX - sinyalDragRef.current.startX
+                        const candlesPerPx = 3 / rect.width // ~3 candles per 100px drag
+                        const offsetDelta = Math.round(dx * candlesPerPx)
+                        const newOffset = Math.max(0, sinyalDragRef.current.startOffset + offsetDelta)
+                        setSinyalChartOffset(newOffset)
+                      }
                     }}
-                    onMouseLeave={() => setSinyalCrosshair(null)}>
+                    onMouseDown={(e) => {
+                      sinyalDragRef.current = { startX: e.clientX, startOffset: sinyalChartOffsetRef.current, dragging: true }
+                      e.preventDefault()
+                    }}
+                    onMouseUp={() => { sinyalDragRef.current.dragging = false }}
+                    onMouseLeave={() => { setSinyalCrosshair(null); sinyalDragRef.current.dragging = false }}
+                    onWheel={(e) => {
+                      e.preventDefault()
+                      // Scroll: pan left/right
+                      const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY
+                      const direction = delta > 0 ? -1 : 1
+                      setSinyalChartOffset(prev => Math.max(0, prev + direction * 2))
+                    }}
+                    style={{ cursor: sinyalDragRef.current?.dragging ? 'grabbing' : 'grab' }}>
                     {(() => {
                       const allCandles = [...sinyalCandles]
                       const sim = sinyalChartSimRef.current
@@ -3257,10 +3337,14 @@ function Dashboard() {
 
                       const yScale = (price: number) => ((paddedMax - price) / paddedRange) * priceAreaH
 
-                      // Candle width calculation
-                      const maxVisible = 40
-                      const visibleCandles = allCandles.slice(-maxVisible)
+                      // Candle width calculation with panning support
+                      const maxVisible = 50
+                      const totalCandles = allCandles.length
+                      const endIdx = totalCandles - sinyalChartOffset
+                      const startIdx = Math.max(0, endIdx - maxVisible)
+                      const visibleCandles = allCandles.slice(startIdx, endIdx)
                       const candleCount = visibleCandles.length
+                      if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Geser kembali...</div>
                       const candleSpacing = chartW / candleCount
                       const candleBodyW = Math.max(2, Math.min(candleSpacing * 0.65, 12))
 
@@ -3407,6 +3491,17 @@ function Dashboard() {
                     })()}
                   </div>
 
+                  {/* Scroll to latest button — when panned away */}
+                  {sinyalChartOffset > 0 && (
+                    <button
+                      onClick={() => setSinyalChartOffset(0)}
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-6 px-3 rounded-full bg-blue-600/80 text-white text-[8px] font-bold flex items-center gap-1 hover:bg-blue-500 transition-colors backdrop-blur-sm"
+                      style={{ boxShadow: '0 2px 12px rgba(37,99,235,0.4)' }}>
+                      <ChevronRight className="w-3 h-3 rotate-180" />
+                      Terbaru
+                    </button>
+                  )}
+
                   {/* Result toast — NON-BLOCKING */}
                   {sinyalResults.length > 0 && (() => {
                     const latest = sinyalResults[sinyalResults.length - 1]
@@ -3431,14 +3526,14 @@ function Dashboard() {
 
               {/* ── BOTTOM PANEL — Stockity compact style ── */}
               <div className="mt-1.5 space-y-1.5">
-                {/* Row 1: Duration + Amount */}
+                {/* Row 1: Trade Duration + Amount */}
                 <div className="flex gap-1.5">
-                  {/* Duration */}
+                  {/* Trade Duration (in minutes) */}
                   <div className="flex gap-0.5">
-                    {[10, 20, 30, 60].map(dur => (
-                      <button key={dur} onClick={() => setSinyalDuration(dur)}
-                        className={`h-8 w-10 rounded-md text-[9px] font-bold transition-all ${sinyalDuration === dur ? 'bg-[#1e3a5f] text-blue-400 border border-blue-500/50' : 'bg-[#0d1117] border border-[#1e293b] text-gray-500 hover:text-gray-300'}`}>
-                        {dur}s
+                    {[1, 2, 5, 10, 30].map(dur => (
+                      <button key={dur} onClick={() => setSinyalDuration(dur * 60)}
+                        className={`h-8 w-10 rounded-md text-[9px] font-bold transition-all ${sinyalDuration === dur * 60 ? 'bg-[#1e3a5f] text-blue-400 border border-blue-500/50' : 'bg-[#0d1117] border border-[#1e293b] text-gray-500 hover:text-gray-300'}`}>
+                        {dur}m
                       </button>
                     ))}
                   </div>

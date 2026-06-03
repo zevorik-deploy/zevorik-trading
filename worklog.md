@@ -219,3 +219,40 @@ Stage Summary:
 - All 10 verification points pass (candlestick bars, volume bars, grid, axes, crosshair, etc.)
 - Chart is interactive with crosshair on hover
 - Full Stockity trading experience: candlestick + volume + dark theme
+
+---
+Task ID: 12
+Agent: main
+Task: Add timeframe selector (1m-1h), minimum 1-minute candle bars, chart panning/scrolling
+
+Work Log:
+- Added `sinyalTimeframe` state with options: 1m, 5m, 15m, 30m, 1h
+- Added `sinyalTimeframeSeconds` mapping for candle duration calculations
+- Added `sinyalChartOffset` state + `sinyalChartOffsetRef` for panning control
+- Added `sinyalDragRef` for drag-to-pan mouse tracking
+- Refactored chart simulation useEffect:
+  - Tick interval changed from 500ms to 1000ms (1 tick per second)
+  - maxTicks = timeframe in seconds (60 for 1m, 300 for 5m, etc.)
+  - Volatility scaled by sqrt(tfSeconds/60) for realistic price movement per timeframe
+  - Historical candles increased from 25 to 60 with proper time labels based on timeframe
+  - Added timeframe to useEffect dependency array for proper re-initialization
+- Added timeframe selector buttons in chart header (1m, 5m, 15m, 30m, 1h)
+- Added candle countdown timer (⏱) showing remaining time in current candle
+- Added chart panning: drag left/right to scroll through historical candles
+- Added mouse wheel scrolling for panning
+- Added "Terbaru" (latest) button that appears when panned away from current candle
+- Changed trade duration from seconds (10s/20s/30s/60s) to minutes (1m/2m/5m/10m/30m)
+- Default trade duration changed from 20 seconds to 60 seconds (1 minute)
+- Updated toast message to show minutes format
+- Visible candles now support offset-based slicing for panning (50 max visible)
+- Active trades overlay moved down to accommodate timeframe row
+- Chart padding updated from pt-8 to pt-12 for timeframe selector space
+
+Stage Summary:
+- Candle bars now last minimum 1 minute (user-selectable: 1m/5m/15m/30m/1h)
+- Each timeframe generates unique candle data with appropriate volatility scaling
+- Chart can be panned by dragging or mouse wheel to view historical data
+- "Terbaru" button appears to quickly return to latest candle
+- Trade durations also in minutes (1m/2m/5m/10m/30m) to match candle timeframes
+- Candle countdown timer shows how long until current candle closes
+- All 7 verification points pass (timeframe selector, duration buttons, candlestick, countdown, crosshair, panning, timeframe switching)
