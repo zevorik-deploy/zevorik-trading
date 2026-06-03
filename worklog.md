@@ -388,3 +388,41 @@ Stage Summary:
 - ZEVORIX brand name now has animated gradient text (blue→cyan→blue shifting)
 - All logo instances updated across login, dashboard, sidebar, modals
 - Brand name uses letter-spacing and "Investment Platform" / "Pro Platform" subtitles
+
+---
+Task ID: 18
+Agent: main
+Task: Redesign Beranda (Home) page with premium UI, banner/pamflet, beautiful blue design
+
+Work Log:
+- Generated 3 AI promotional banner images using z-ai CLI:
+  - banner-main.png (hero banner - investment platform)
+  - banner-sinyal.png (Sinyal Pro promo - futuristic trading)
+  - banner-promo.png (Investasi promo - premium gold theme)
+- Completely redesigned the Beranda page from scratch with premium sections:
+  1. HERO BANNER PAMFLET - Full-width banner with AI background, gradient overlay, ZEVORIX logo, "Investasi Cerdas, Profit Maksimal" heading with gradient-text, CTA buttons, LIVE badge
+  2. PREMIUM WALLET CARD - Blue gradient card with total saldo display, dual wallets (Dompet Utama + Penarikan), 3 action buttons (Deposit, Tarik, Investasi), welcome message
+  3. QUICK ACCESS MENU - 4-column grid (Sinyal Pro, Pasar, Investasi, Undang) with colored icon backgrounds
+  4. PROMO BANNER CAROUSEL - Horizontal scrollable with 3 promotional cards:
+     - Cek Harian (blue gradient, claim button)
+     - Sinyal Pro (AI background image, trading promo)
+     - Investasi Pro (AI background image, profit 7% promo)
+  5. PORTFOLIO OVERVIEW - Stats row (Investasi, Profit/Loss, Return) + pie chart with holdings
+  6. TOP MOVERS - Gainers/Losers side-by-side with colored badge tags
+  7. TASKS & REWARDS - 2-column grid (Tugas + Cek Harian mini cards)
+  8. WATCHLIST - Compact list with price and change
+  9. RECENT TRANSACTIONS - Clean list with icons and amounts
+  10. NEWS - Card-style with newspaper icons and category tags
+  11. TRUST BADGES - 4 badges (Aman, Berlisensi, Terenkripsi, 125K++) + footer text
+- All sections use gradient-text for headings, gradient accent bars, and consistent blue theme
+- Both dark and light mode verified working
+- Lint passes clean, dev server running without errors
+- Agent Browser verification: all 11 sections confirmed visible and functional
+
+Stage Summary:
+- Beranda completely redesigned with premium, beautiful UI
+- 3 AI-generated promotional banner images added
+- Horizontal scrollable promo carousel with Cek Harian, Sinyal Pro, Investasi Pro
+- Consistent blue gradient theme throughout
+- Both dark and light modes working correctly
+- All interactive elements (buttons, links) functional

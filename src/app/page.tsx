@@ -2016,279 +2016,365 @@ function Dashboard() {
           {/* ====== HOME TAB ====== */}
           {activeTab === 'home' && (
             <motion.div key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Dual Wallet Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.18)' }}>
-                <div className="p-4 text-white relative">
-                  {/* Decorative pattern */}
-                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+
+              {/* ══════════ HERO BANNER PAMFLET ══════════ */}
+              <div className="relative rounded-2xl overflow-hidden mb-4" style={{ boxShadow: '0 8px 32px rgba(37,99,235,0.25)' }}>
+                <img src="/banner-main.png" alt="ZEVORIX Banner" className="w-full h-44 md:h-56 object-cover" />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.88) 0%, rgba(30,58,95,0.7) 40%, rgba(37,99,235,0.3) 100%)' }} />
+                <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ZevorixLogo size={32} />
+                    <span className="text-[8px] font-black tracking-[0.2em] uppercase text-blue-300">ZEVORIX</span>
+                  </div>
+                  <h2 className="text-[18px] md:text-2xl font-black text-white leading-tight mb-1">Investasi Cerdas,<br /><span className="gradient-text">Profit Maksimal</span></h2>
+                  <p className="text-[9px] md:text-[11px] text-blue-200/80 font-medium mb-3 max-w-[240px] leading-relaxed">Platform saham digital terpercaya dengan profit harian hingga 7% & sinyal trading real-time.</p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setActiveTab('market')} className="h-8 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white text-[9px] font-bold hover:from-[#60a5fa] hover:to-[#3b82f6] transition-all flex items-center gap-1.5 shadow-lg shadow-blue-500/30">
+                      <BarChart3 className="w-3.5 h-3.5" />Mulai Investasi
+                    </button>
+                    <button onClick={() => setActiveTab('sinyal')} className="h-8 px-4 rounded-xl bg-white/10 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center gap-1.5 backdrop-blur-sm">
+                      <Target className="w-3.5 h-3.5" />Sinyal Pro
+                    </button>
+                  </div>
+                </div>
+                {/* Live badge */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 h-5 px-2 rounded-full bg-green-500/20 border border-green-400/30 backdrop-blur-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-[7px] font-black text-green-300">LIVE</span>
+                </div>
+              </div>
+
+              {/* ══════════ PREMIUM WALLET CARD ══════════ */}
+              <div className="relative rounded-2xl overflow-hidden mb-4 border border-blue-500/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 40%, #2563eb 100%)', boxShadow: '0 6px 28px rgba(37,99,235,0.2)' }}>
+                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-blue-400/10 blur-3xl" />
+                <div className="relative p-4 text-white">
                   {/* Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] md:text-[11px] font-black tracking-wider">RINGKASAN SALDO</span>
-                      <span className="h-4 px-1.5 rounded-full bg-blue-400/30 border border-blue-400/40 text-[7px] font-black text-blue-300 flex items-center gap-0.5">
-                        <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />AKTIF
-                      </span>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 grid place-items-center">
+                        <Wallet className="w-4.5 h-4.5 text-yellow-300" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black tracking-wider block">RINGKASAN SALDO</span>
+                        <span className="text-[7px] font-bold text-blue-300/70">Selamat datang, {user?.name?.split(' ')[0]}</span>
+                      </div>
                     </div>
-                    <button onClick={() => setShowBalance(!showBalance)} className="text-white/60 hover:text-white">
-                      {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    <button onClick={() => setShowBalance(!showBalance)} className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center text-white/60 hover:text-white hover:bg-white/20 transition-all">
+                      {showBalance ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     </button>
                   </div>
 
-                  {/* Dual Wallets */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    {/* Dompet Utama */}
-                    <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Wallet className="w-3 h-3 text-yellow-300" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200 uppercase tracking-wider">DOMPET UTAMA</span>
-                      </div>
-                      <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••••'}</b>
-                      <span className="block text-[5px] font-semibold text-blue-200/60 mt-0.5">Deposit untuk investasi</span>
-                    </div>
-                    {/* Dompet Penarikan */}
-                    <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
-                      <div className="flex items-center gap-1 mb-1">
-                        <CreditCard className="w-3 h-3 text-blue-300" />
-                        <span className="text-[7px] md:text-[8px] font-bold text-blue-200 uppercase tracking-wider">DOMPET PENARIKAN</span>
-                      </div>
-                      <b className="block text-[13px] md:text-sm font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••••'}</b>
-                      <span className="block text-[5px] font-semibold text-blue-200/60 mt-0.5">Dapat ditarik</span>
-                    </div>
+                  {/* Main Balance */}
+                  <div className="mb-4">
+                    <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">Total Saldo</span>
+                    <b className="block text-[22px] md:text-2xl font-black tracking-tight">{showBalance ? formatRupiah((user?.balance || 0) + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
                   </div>
 
-                  {/* Total Investasi */}
-                  <div className="rounded-2xl p-2.5 bg-white/8 border border-white/12 mb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Briefcase className="w-3.5 h-3.5 text-yellow-300" />
-                        <span className="text-[8px] font-bold text-blue-200">TOTAL INVESTASI</span>
+                  {/* Dual Wallets */}
+                  <div className="grid grid-cols-2 gap-2.5 mb-4">
+                    <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
+                      <div className="flex items-center gap-1 mb-1.5">
+                        <div className="w-4 h-4 rounded-md bg-yellow-400/20 grid place-items-center"><Wallet className="w-2.5 h-2.5 text-yellow-300" /></div>
+                        <span className="text-[6px] font-black text-blue-200/80 uppercase tracking-wider">Dompet Utama</span>
                       </div>
-                      <b className="text-[12px] font-black">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••••••'}</b>
+                      <b className="block text-[13px] font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••'}</b>
+                      <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Deposit & trading</span>
+                    </div>
+                    <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
+                      <div className="flex items-center gap-1 mb-1.5">
+                        <div className="w-4 h-4 rounded-md bg-blue-400/20 grid place-items-center"><CreditCard className="w-2.5 h-2.5 text-blue-300" /></div>
+                        <span className="text-[6px] font-black text-blue-200/80 uppercase tracking-wider">Penarikan</span>
+                      </div>
+                      <b className="block text-[13px] font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••'}</b>
+                      <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/20">
-                      <Plus className="w-4 h-4" />Isi Saldo
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
+                      <Plus className="w-3.5 h-3.5" />Deposit
                     </button>
-                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/10 border border-white/25 text-white text-[10px] font-bold hover:bg-white/20 hover:border-white/40 transition-all flex items-center justify-center gap-1.5 backdrop-blur-sm">
-                      <Minus className="w-4 h-4" />Tarik Saldo
+                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/10 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                      <Minus className="w-3.5 h-3.5" />Tarik
                     </button>
-                  </div>
-
-                  {/* Regulatory Badges */}
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <Shield className="w-3 h-3 text-blue-300" />
-                      <span className="text-[7px] font-bold text-blue-200">Terdaftar & Diawasi</span>
-                    </div>
-                    <div className="w-px h-3 bg-white/20" />
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[7px] font-bold text-blue-200">Berlisensi Resmi</span>
-                    </div>
+                    <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/10 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                      <Briefcase className="w-3.5 h-3.5" />Investasi
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Menu Cepat */}
+              {/* ══════════ QUICK ACCESS MENU ══════════ */}
               <div className="mb-4">
                 <div className="mb-2.5 flex items-center gap-2">
-                  <div className="w-1 h-5 rounded-full bg-[#3b82f6]" />
-                  <div>
-                    <h3 className="text-[12px] md:text-sm font-black text-[#3b82f6]">Menu Cepat</h3>
-                    <span className="text-[9px] font-semibold text-[var(--zv-muted)]">Akses fitur penting hanya dalam satu ketukan</span>
-                  </div>
+                  <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #06b6d4)' }} />
+                  <h3 className="text-[12px] md:text-sm font-black gradient-text">Akses Cepat</h3>
                 </div>
-                <div className="flex gap-3 overflow-x-auto pb-1 custom-scrollbar">
+                <div className="grid grid-cols-4 gap-2">
                   {[
-                    { icon: <ClipboardList className="w-5 h-5" />, label: 'Cek Harian', action: () => setShowDailyCheckModal(true), color: 'bg-[var(--zv-panel)] text-[#3b82f6]', border: 'border-[var(--zv-border)]' },
-                    { icon: <CalendarDays className="w-5 h-5" />, label: 'Tugas', action: () => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }, color: 'bg-[var(--zv-panel)] text-[#f59e0b]', border: 'border-[var(--zv-border)]' },
-                    { icon: <Download className="w-5 h-5" />, label: 'Unduh App', action: () => toast({ title: 'Unduh Aplikasi', description: 'Buka melalui browser dan pilih "Add to Home Screen" untuk instal aplikasi ZEVORIX!' }), color: 'bg-[var(--zv-panel)] text-[#2196f3]', border: 'border-[var(--zv-border)]' },
+                    { icon: <Target className="w-5 h-5" />, label: 'Sinyal Pro', desc: 'Trading', action: () => setActiveTab('sinyal'), gradient: 'from-blue-600 to-blue-500', iconBg: 'bg-blue-500/20', iconColor: 'text-blue-400' },
+                    { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Saham', action: () => setActiveTab('market'), gradient: 'from-cyan-600 to-cyan-500', iconBg: 'bg-cyan-500/20', iconColor: 'text-cyan-400' },
+                    { icon: <DollarSign className="w-5 h-5" />, label: 'Investasi', desc: 'Profit 7%', action: () => setActiveTab('investasi'), gradient: 'from-amber-600 to-amber-500', iconBg: 'bg-amber-500/20', iconColor: 'text-amber-400' },
+                    { icon: <UserPlus className="w-5 h-5" />, label: 'Undang', desc: 'Bonus', action: () => setActiveTab('undang'), gradient: 'from-violet-600 to-violet-500', iconBg: 'bg-violet-500/20', iconColor: 'text-violet-400' },
                   ].map((a, i) => (
-                    <button key={i} onClick={a.action} className="stock-card flex-shrink-0 flex flex-col items-center gap-2 py-3.5 px-5 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] relative min-w-[88px]">
-                      <div className={`w-10 h-10 rounded-xl ${a.color} border ${a.border} grid place-items-center`}>{a.icon}</div>
-                      <span className="text-[9px] md:text-[10px] font-bold text-[#3b82f6]">{a.label}</span>
+                    <button key={i} onClick={a.action} className="stock-card flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all active:scale-[0.96]">
+                      <div className={`w-10 h-10 rounded-xl ${a.iconBg} grid place-items-center ${a.iconColor}`}>{a.icon}</div>
+                      <span className="text-[8px] md:text-[9px] font-black text-[var(--zv-text)]">{a.label}</span>
+                      <span className="text-[6px] font-bold text-[var(--zv-muted)]">{a.desc}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Cek Harian Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 20px rgba(37,99,235,0.15)' }}>
-                <div className="p-4 text-white relative">
-                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/10 grid place-items-center">
-                        <CalendarDays className="w-5 h-5 text-yellow-300" />
-                      </div>
-                      <div>
-                        <b className="text-[12px] md:text-sm font-black">CEK HARIAN</b>
-                        <span className="block text-[9px] md:text-[10px] font-semibold text-blue-200">
-                          {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
-                        </span>
+              {/* ══════════ PROMO BANNER CAROUSEL ══════════ */}
+              <div className="flex gap-3 overflow-x-auto pb-2 mb-4 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                {/* Banner 1 — Cek Harian */}
+                <div className="flex-shrink-0 w-[280px] md:w-[320px] rounded-2xl overflow-hidden relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 20px rgba(37,99,235,0.18)' }}>
+                  <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
+                  <div className="relative p-4 text-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/10 grid place-items-center">
+                          <CalendarDays className="w-5 h-5 text-yellow-300" />
+                        </div>
+                        <div>
+                          <b className="text-[11px] font-black">CEK HARIAN</b>
+                          <span className="block text-[8px] font-semibold text-blue-200">
+                            {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {dailyCheckStatus.canCheckToday ? (
-                      <button
-                        onClick={handleDailyCheck}
-                        disabled={dailyCheckLoading}
-                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center gap-1.5 shadow-lg shadow-yellow-500/20"
-                      >
-                        {dailyCheckLoading ? (
-                          <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        ) : (
-                          'Klaim Sekarang'
-                        )}
+                      <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
+                        className="w-full h-9 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/25">
+                        {dailyCheckLoading ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : 'Klaim Sekarang'}
                       </button>
                     ) : (
-                      <div className="h-9 px-4 rounded-xl bg-white/15 border border-white/10 text-[10px] font-bold flex items-center gap-1.5">
-                        <CheckCircle className="w-4 h-4 text-blue-300" />
-                        Sudah Dicek
+                      <div className="w-full h-9 rounded-xl bg-white/15 border border-white/10 text-[10px] font-bold flex items-center justify-center gap-1.5">
+                        <CheckCircle className="w-4 h-4 text-blue-300" />Sudah Dicek
+                      </div>
+                    )}
+                    {dailyCheckReward !== null && (
+                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                        className="rounded-xl p-2 bg-yellow-500/20 border border-yellow-400/30 text-center mt-2">
+                        <span className="text-[8px] text-yellow-200 font-bold">Bonus Hari Ini</span>
+                        <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
+                      </motion.div>
+                    )}
+                    {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
+                      <div className="rounded-xl p-2 bg-white/10 border border-white/15 text-center mt-2">
+                        <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
+                        <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
                       </div>
                     )}
                   </div>
-                  {dailyCheckReward !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      className="rounded-xl p-2 bg-yellow-500/20 border border-yellow-400/30 text-center"
-                    >
-                      <span className="text-[8px] text-yellow-200 font-bold">Bonus Hari Ini</span>
-                      <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
-                    </motion.div>
-                  )}
-                  {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
-                    <div className="rounded-xl p-2 bg-white/10 border border-white/15 text-center">
-                      <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
-                      <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
+                </div>
+
+                {/* Banner 2 — Sinyal Pro Promo */}
+                <div className="flex-shrink-0 w-[280px] md:w-[320px] rounded-2xl overflow-hidden relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.18)' }}>
+                  <img src="/banner-sinyal.png" alt="Sinyal Pro" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(37,99,235,0.6) 100%)' }} />
+                  <div className="relative p-4 text-white">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Target className="w-5 h-5 text-cyan-300" />
+                      <b className="text-[11px] font-black">SINYAL PRO</b>
+                    </div>
+                    <p className="text-[8px] text-blue-200/80 leading-relaxed mb-3">Prediksi arah harga saham real-time dengan payout hingga 93%. Trading cerdas dengan candlestick chart profesional.</p>
+                    <button onClick={() => setActiveTab('sinyal')} className="h-8 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[9px] font-bold hover:from-cyan-400 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/25">
+                      Mulai Trading <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Banner 3 — Investasi Promo */}
+                <div className="flex-shrink-0 w-[280px] md:w-[320px] rounded-2xl overflow-hidden relative" style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.15)' }}>
+                  <img src="/banner-promo.png" alt="Investasi" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(180,83,9,0.5) 100%)' }} />
+                  <div className="relative p-4 text-white">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Gem className="w-5 h-5 text-amber-300" />
+                      <b className="text-[11px] font-black">INVESTASI PRO</b>
+                    </div>
+                    <p className="text-[8px] text-amber-100/80 leading-relaxed mb-3">Profit harian hingga 7% dengan kontrak saham premium. Profit masuk setiap 00:00 WIB secara otomatis.</p>
+                    <button onClick={() => setActiveTab('investasi')} className="h-8 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[9px] font-bold hover:from-amber-400 hover:to-yellow-400 transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/25">
+                      Mulai Investasi <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ══════════ PORTFOLIO OVERVIEW ══════════ */}
+              <div className="rounded-2xl overflow-hidden mb-4 border border-[var(--zv-border)]" style={{ background: 'var(--zv-panel)' }}>
+                <div className="p-3.5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #06b6d4)' }} />
+                      <h3 className="text-[12px] font-black gradient-text">Portofolio & Investasi</h3>
+                    </div>
+                    <button onClick={() => setActiveTab('portfolio')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Selengkapnya →</button>
+                  </div>
+
+                  {/* Portfolio Stats Row */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Investasi</span>
+                      <b className="block text-[11px] font-black text-[#3b82f6]">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••'}</b>
+                    </div>
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Profit/Loss</span>
+                      <b className={`block text-[11px] font-black ${portfolioSummary.totalProfitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                        {showBalance ? formatRupiah(Math.abs(portfolioSummary.totalProfitLoss)) : '••••'}
+                      </b>
+                    </div>
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Return</span>
+                      <b className={`block text-[11px] font-black ${portfolioSummary.totalProfitLossPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                        {portfolioSummary.totalProfitLossPercent >= 0 ? '+' : ''}{portfolioSummary.totalProfitLossPercent.toFixed(1)}%
+                      </b>
+                    </div>
+                  </div>
+
+                  {/* Portfolio Chart */}
+                  {portfolio.length > 0 && (
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <div className="w-20 h-20 flex-shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RePieChart><Pie data={portfolioPieData} innerRadius={20} outerRadius={35} paddingAngle={2} dataKey="value">
+                            {portfolioPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                          </Pie></RePieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 space-y-1 max-h-20 overflow-y-auto custom-scrollbar">
+                        {portfolio.slice(0, 4).map(p => (
+                          <div key={p.id} className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
+                            <span className="text-[8px] font-black text-[#3b82f6] flex-shrink-0">{p.stock.code}</span>
+                            <span className="flex-1" />
+                            <span className={`text-[8px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(p.profitLossPercent)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Tugas (Tasks) Summary Card */}
-              <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] grid place-items-center">
-                      <ListChecks className="w-4.5 h-4.5 text-amber-600" />
-                    </div>
-                    <div>
-                      <b className="text-[11px] md:text-xs font-black text-[#3b82f6]">Tugas</b>
-                      <span className="block text-[8px] font-semibold text-[var(--zv-muted)]">
-                        {tasks.filter(t => t.completed).length}/{tasks.length} selesai
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }}
-                    className="h-7 px-3 rounded-lg bg-amber-500 text-white text-[8px] font-bold hover:bg-amber-600 transition-colors"
-                  >
-                    Lihat Semua
-                  </button>
-                </div>
-                {/* Task progress bar */}
-                <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-amber-500 transition-all duration-500"
-                    style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0}%` }}
-                  />
-                </div>
-                {/* Show first 2 unclaimed tasks */}
-                {tasks.filter(t => !t.claimed).slice(0, 2).map(task => (
-                  <div key={task.id} className="flex items-center justify-between mt-2 py-1 border-b border-[var(--zv-border)] last:border-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-5 h-5 rounded-md grid place-items-center ${task.completed ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
-                        {task.completed ? <CheckCircle className="w-3 h-3 text-[#3b82f6]" /> : <Target className="w-3 h-3 text-amber-600" />}
-                      </div>
-                      <div>
-                        <span className="block text-[8px] font-bold text-[var(--zv-text)]">{task.title}</span>
-                        <span className="block text-[7px] text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
-                      </div>
-                    </div>
-                    <span className="text-[8px] font-black text-[#3b82f6]">+{formatRupiah(task.reward)}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Portfolio Chart */}
-              {portfolio.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Alokasi Portofolio</h3>
-                    <span className="text-[8px] md:text-[9px] font-bold text-[var(--zv-muted)]">{portfolio.length} saham</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 h-24 flex-shrink-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RePieChart><Pie data={portfolioPieData} innerRadius={25} outerRadius={40} paddingAngle={2} dataKey="value">
-                          {portfolioPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                        </Pie></RePieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="flex-1 space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
-                      {portfolio.map(p => (
-                        <div key={p.id} className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
-                          <span className="text-[8px] font-black text-[#3b82f6] flex-shrink-0">{p.stock.code}</span>
-                          <span className="text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)] flex-1">{formatRupiah(p.currentValue)}</span>
-                          <span className={`text-[7px] md:text-[8px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(p.profitLossPercent)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Top Movers */}
+              {/* ══════════ TOP MOVERS ══════════ */}
               {stocks.length > 0 && (
                 <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Top Movers</h3>
-                    <button onClick={() => setActiveTab('market')} className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:underline">Lihat Semua</button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] mb-1 block">🔺 Gainers</span>
-                      {topGainers.slice(0, 3).map(s => (
-                        <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#22c55e]">{s.code.slice(0, 2)}</span>}</div>
-                            <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
-                          </div>
-                          <span className="text-[8px] font-black text-[#22c55e]">+{s.changePercent.toFixed(2)}%</span>
-                        </button>
-                      ))}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #22c55e, #ef5350)' }} />
+                      <h3 className="text-[12px] font-black gradient-text">Top Movers</h3>
                     </div>
-                    <div>
-                      <span className="text-[8px] font-bold text-[#ef5350] mb-1 block">🔻 Losers</span>
-                      {topLosers.slice(0, 3).map(s => (
-                        <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}</div>
-                            <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
-                          </div>
-                          <span className="text-[8px] font-black text-[#ef5350]">{s.changePercent.toFixed(2)}%</span>
-                        </button>
-                      ))}
+                    <button onClick={() => setActiveTab('market')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Lihat Semua →</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Gainers */}
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <div className="flex items-center gap-1 mb-2">
+                        <TrendingUp className="w-3 h-3 text-[#22c55e]" />
+                        <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-wider">Gainers</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {topGainers.slice(0, 3).map(s => (
+                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1 transition-colors">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center">
+                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[6px] font-black text-[#22c55e]">{s.code.slice(0, 2)}</span>}
+                              </div>
+                              <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
+                            </div>
+                            <span className="text-[8px] font-black text-[#22c55e] bg-green-500/10 px-1.5 py-0.5 rounded">+{s.changePercent.toFixed(2)}%</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Losers */}
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <div className="flex items-center gap-1 mb-2">
+                        <TrendingDown className="w-3 h-3 text-[#ef5350]" />
+                        <span className="text-[8px] font-black text-[#ef5350] uppercase tracking-wider">Losers</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {topLosers.slice(0, 3).map(s => (
+                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1 transition-colors">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center">
+                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[6px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}
+                              </div>
+                              <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
+                            </div>
+                            <span className="text-[8px] font-black text-[#ef5350] bg-red-500/10 px-1.5 py-0.5 rounded">{s.changePercent.toFixed(2)}%</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Watchlist */}
+              {/* ══════════ TASKS & REWARDS ══════════ */}
+              <div className="grid grid-cols-2 gap-2.5 mb-4">
+                {/* Tugas */}
+                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/15 grid place-items-center">
+                      <ListChecks className="w-3.5 h-3.5 text-amber-500" />
+                    </div>
+                    <div>
+                      <b className="text-[9px] font-black text-[var(--zv-text)]">Tugas</b>
+                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">{tasks.filter(t => t.completed).length}/{tasks.length}</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-2">
+                    <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500" style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0}%` }} />
+                  </div>
+                  <button onClick={() => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }}
+                    className="w-full h-7 rounded-lg bg-amber-500/15 text-amber-500 text-[8px] font-bold hover:bg-amber-500/25 transition-colors">
+                    Lihat Tugas
+                  </button>
+                </div>
+                {/* Cek Harian mini */}
+                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/15 grid place-items-center">
+                      <CalendarDays className="w-3.5 h-3.5 text-[#3b82f6]" />
+                    </div>
+                    <div>
+                      <b className="text-[9px] font-black text-[var(--zv-text)]">Cek Harian</b>
+                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">{dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} hari streak` : 'Klaim sekarang'}</span>
+                    </div>
+                  </div>
+                  {dailyCheckStatus.canCheckToday ? (
+                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
+                      className="w-full h-7 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[8px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all disabled:opacity-60">
+                      {dailyCheckLoading ? '...' : 'Klaim Bonus'}
+                    </button>
+                  ) : (
+                    <div className="w-full h-7 rounded-lg bg-[#22c55e]/15 text-[#22c55e] text-[8px] font-bold flex items-center justify-center gap-1">
+                      <CheckCircle className="w-3 h-3" />Sudah Dicek
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ══════════ WATCHLIST ══════════ */}
               {watchlist.length > 0 && (
                 <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Watchlist</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full bg-[#f59e0b]" />
+                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Watchlist</h3>
+                    </div>
                     <Star className="w-3.5 h-3.5 text-[#f59e0b]" />
                   </div>
-                  <div className="space-y-1.5">
-                    {watchlist.slice(0, 5).map(w => (
-                      <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-1.5">
+                  <div className="space-y-1">
+                    {watchlist.slice(0, 4).map(w => (
+                      <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-1.5 hover:bg-[var(--zv-hover)] rounded-lg px-1 transition-colors">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{w.stock.logo ? <img src={w.stock.logo} alt={w.stock.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#3b82f6]">{w.stock.code.slice(0, 2)}</span>}</div>
                           <div className="text-left">
@@ -2306,48 +2392,94 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Recent Transactions */}
+              {/* ══════════ RECENT TRANSACTIONS ══════════ */}
               {transactions.length > 0 && (
                 <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Transaksi Terakhir</h3>
-                    <button onClick={() => setActiveTab('history')} className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:underline">Lihat Semua</button>
-                  </div>
-                  {transactions.slice(0, 4).map(tx => (
-                    <div key={tx.id} className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-lg grid place-items-center ${tx.type === 'BUY' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
-                          {tx.type === 'BUY' ? <ArrowDownRight className="w-3.5 h-3.5 text-[#3b82f6]" /> : <ArrowUpRight className="w-3.5 h-3.5 text-[#ef5350]" />}
-                        </div>
-                        <div>
-                          <span className="block text-[9px] font-bold text-[var(--zv-text)]">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
-                          <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(tx.total)}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="block text-[9px] font-black text-[var(--zv-text)]">{formatRupiah(tx.total)}</span>
-                        <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
-                      </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full bg-[#3b82f6]" />
+                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Transaksi Terakhir</h3>
                     </div>
-                  ))}
+                    <button onClick={() => setActiveTab('history')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Semua →</button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {transactions.slice(0, 3).map(tx => (
+                      <div key={tx.id} className="flex items-center justify-between py-1.5 px-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-blue-500/10' : 'bg-red-500/10'}`}>
+                            {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#3b82f6]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
+                          </div>
+                          <div>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
+                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
+                          </div>
+                        </div>
+                        <span className={`text-[10px] font-black ${tx.type === 'BUY' ? 'text-[#ef5350]' : 'text-[#22c55e]'}`}>
+                          {tx.type === 'BUY' ? '-' : '+'}{formatRupiah(tx.total)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* News */}
+              {/* ══════════ NEWS ══════════ */}
               {news.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] md:text-xs font-black text-[#3b82f6]">Berita Terkini</h3>
-                    <button onClick={() => setActiveTab('news')} className="text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:underline">Lihat Semua</button>
-                  </div>
-                  {news.slice(0, 3).map(n => (
-                    <div key={n.id} className="py-2 border-b border-[var(--zv-border)] last:border-0">
-                      <span className="block text-[9px] font-bold text-[var(--zv-text)] leading-snug">{n.title}</span>
-                      <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5">{formatDate(n.createdAt)} • {n.category}</span>
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-5 rounded-full bg-[#06b6d4]" />
+                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Berita Terkini</h3>
                     </div>
-                  ))}
+                    <button onClick={() => setActiveTab('news')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Semua →</button>
+                  </div>
+                  <div className="space-y-2">
+                    {news.slice(0, 3).map(n => (
+                      <div key={n.id} className="flex items-start gap-2 p-2 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                        <div className="w-7 h-7 rounded-lg bg-cyan-500/10 grid place-items-center flex-shrink-0 mt-0.5">
+                          <Newspaper className="w-3.5 h-3.5 text-cyan-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="block text-[9px] font-bold text-[var(--zv-text)] leading-snug line-clamp-2">{n.title}</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5">{formatDate(n.createdAt)} • <span className="text-cyan-500">{n.category}</span></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* ══════════ TRUST BADGES ══════════ */}
+              <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)]">
+                <div className="flex items-center justify-center gap-4 mb-3">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center">
+                      <Shield className="w-4.5 h-4.5 text-[#3b82f6]" />
+                    </div>
+                    <span className="text-[7px] font-black text-[#3b82f6]">Aman</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 grid place-items-center">
+                      <CheckCircle className="w-4.5 h-4.5 text-amber-500" />
+                    </div>
+                    <span className="text-[7px] font-black text-amber-500">Berlisensi</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 grid place-items-center">
+                      <Lock className="w-4.5 h-4.5 text-cyan-500" />
+                    </div>
+                    <span className="text-[7px] font-black text-cyan-500">Terenkripsi</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 grid place-items-center">
+                      <Users className="w-4.5 h-4.5 text-green-500" />
+                    </div>
+                    <span className="text-[7px] font-black text-green-500">125K++</span>
+                  </div>
+                </div>
+                <p className="text-center text-[7px] font-black text-[var(--zv-muted)] tracking-wider uppercase">ZEVORIX • Aset Saham Terdaftar & Diawasi • V2.0</p>
+              </div>
+
             </motion.div>
           )}
 
