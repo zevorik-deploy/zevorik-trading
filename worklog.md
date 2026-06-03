@@ -337,3 +337,28 @@ Stage Summary:
 - Profits credited at 00:00 WIB with real-time countdown display
 - Users can see exactly when next profit arrives (countdown timer)
 - All claim APIs use Jakarta timezone midnight check
+
+---
+Task ID: 16
+Agent: main
+Task: Remove "1 Batang" indicator from Sinyal, move trade history to Riwayat tab
+
+Work Log:
+- Removed "1 Batang = {sinyalTimeframe}" indicator with Clock icon from Sinyal Pro bottom panel (was between profit preview and NAIK/TURUN buttons)
+- Removed trade history section (horizontal compact W/L cards) from Sinyal Pro bottom panel
+- Added detailed Sinyal Pro trade history section to the Riwayat (History) tab:
+  - "Sinyal Pro" heading with Target icon
+  - Win/Loss counts and Win Rate percentage
+  - Detailed trade cards showing: stock code, direction (NAIK/TURUN), amount, entry price, profit/loss
+  - Green/red styling for won/lost trades
+  - Scrollable list (max-h-80)
+  - Only visible when completed trades exist
+- Renamed Riwayat tab title from "Riwayat Transaksi" to "Riwayat"
+- Added "Transaksi Saham" sub-heading to the existing transaction history section
+- Added divider between Sinyal Pro history and Transaction history sections
+- Lint passes clean, dev server running without errors
+
+Stage Summary:
+- Sinyal Pro tab is now cleaner — no "1 Batang" indicator, no trade history
+- All Sinyal Pro trade history is now in the Riwayat tab with detailed cards
+- Riwayat tab now has two sections: Sinyal Pro history + Transaksi Saham
