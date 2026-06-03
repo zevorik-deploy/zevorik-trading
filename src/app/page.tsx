@@ -3111,100 +3111,78 @@ function Dashboard() {
             <motion.div key="sinyal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
               className="flex flex-col" style={{ minHeight: 'calc(100vh - 140px)' }}>
 
-              {/* Top Bar: Stock selector + Balance */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {/* ── STOCKITY-STYLE LAYOUT ── */}
+
+              {/* Top Bar: Stock selector pills + Balance */}
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
                   {stocks.slice(0, 10).map(s => {
                     const tier = getStockPayoutTier(s.code)
                     const isSelected = selectedSinyalStock?.id === s.id
-                    // Show chart-based payout for selected stock, tier max for others
                     const displayPayout = isSelected ? chartPayoutRates.up.toFixed(0) : tier.upRange[1]
                     return (
-                    <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
-                      className={`flex-shrink-0 h-7 px-2 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border ${
-                        isSelected
-                          ? 'bg-blue-600 text-white border-blue-500'
-                          : 'bg-[var(--zv-panel)] text-[var(--zv-text)] border-[var(--zv-border)] hover:border-blue-500/30'
-                      }`}>
-                      {s.changePercent >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-                      <span>{s.code}</span>
-                      <span className={`text-[7px] ${isSelected ? 'text-white/70' : 'text-[#22c55e]'}`}>+{displayPayout}%</span>
-                    </button>
+                      <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); sinyalChartSimRef.current = null }}
+                        className={`flex-shrink-0 h-6 px-2 rounded-md text-[9px] font-bold flex items-center gap-0.5 transition-all border ${
+                          isSelected ? 'bg-[#1e3a5f] text-white border-[#2563eb]' : 'bg-[#0d1117] text-gray-400 border-[#1e293b] hover:border-[#2563eb]/40'
+                        }`}>
+                        <span>{s.code}</span>
+                        <span className={`text-[7px] ${isSelected ? 'text-green-400' : 'text-green-500/60'}`}>+{displayPayout}%</span>
+                      </button>
                     )
                   })}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                  <Wallet className="w-3 h-3 text-blue-400" />
-                  <span className="text-[9px] font-black text-blue-400">{formatRupiah(user?.balance || 0)}</span>
+                  <Wallet className="w-3 h-3 text-[#f59e0b]" />
+                  <span className="text-[9px] font-black text-[#f59e0b]">{formatRupiah(user?.balance || 0)}</span>
                 </div>
               </div>
 
-              {/* MAIN CHART AREA - Full width, takes most space */}
+              {/* ── MAIN CHART AREA — Stockity dark style ── */}
               {selectedSinyalStock && (
-                <div className="flex-1 rounded-xl overflow-hidden border border-[var(--zv-border)] relative" style={{ background: 'var(--zv-panel)', minHeight: '300px' }}>
-                  {/* Chart Header Overlay */}
-                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2.5 pt-2 pb-1" style={{ background: 'linear-gradient(to bottom, var(--zv-panel) 60%, transparent)' }}>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                      <span className="text-[8px] font-black text-blue-400 tracking-widest">LIVE</span>
-                      <span className="text-[8px] text-[var(--zv-muted)]">|</span>
-                      <span className="text-[10px] font-black text-[var(--zv-text)]">{selectedSinyalStock.code}/IDR</span>
-                      {/* Payout badge — from chart */}
-                      <div className="flex items-center gap-1 ml-1">
-                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-green-500/15 text-[#22c55e] border border-green-500/20">↑+{chartPayoutRates.up.toFixed(0)}%</span>
-                        <span className="h-4 px-1.5 rounded text-[7px] font-black bg-red-500/15 text-[#ef5350] border border-red-500/20">↓+{chartPayoutRates.down.toFixed(0)}%</span>
+                <div className="relative rounded-lg overflow-hidden" style={{ background: '#0a0e17', minHeight: '260px', flex: 1 }}>
+                  {/* Chart Header */}
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2 pt-1.5 pb-1" style={{ background: 'linear-gradient(to bottom, #0a0e17 60%, transparent)' }}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-[7px] font-black text-green-400 tracking-widest">LIVE</span>
+                      <span className="text-[7px] text-gray-600">|</span>
+                      <span className="text-[9px] font-black text-white">{selectedSinyalStock.code}</span>
+                      <div className="flex items-center gap-0.5 ml-0.5">
+                        <span className="h-3.5 px-1 rounded text-[6px] font-black bg-green-500/15 text-green-400">↑{chartPayoutRates.up.toFixed(0)}%</span>
+                        <span className="h-3.5 px-1 rounded text-[6px] font-black bg-red-500/15 text-red-400">↓{chartPayoutRates.down.toFixed(0)}%</span>
                       </div>
                     </div>
-                    {/* Live price */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[12px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
                         {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
-                      </span>
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${selectedSinyalStock.changePercent >= 0 ? 'bg-green-500/20 text-[#22c55e]' : 'bg-red-500/20 text-[#ef5350]'}`}>
-                        {formatPercent(selectedSinyalStock.changePercent)}
                       </span>
                     </div>
                   </div>
 
-                  {/* OHLC Display */}
-                  <div className="absolute top-7 left-0 z-10 px-2.5">
-                    {(() => {
-                      const allCandlesPeek = [...sinyalCandles]
-                      const simPeek = sinyalChartSimRef.current
-                      if (simPeek && simPeek.currentCandle.tickCount > 0) {
-                        allCandlesPeek.push({ idx: allCandlesPeek.length, open: simPeek.currentCandle.open, high: simPeek.currentCandle.high, low: simPeek.currentCandle.low, close: simPeek.currentCandle.close, volume: simPeek.currentCandle.volume, time: '' })
-                      }
-                      const lastOHLC = allCandlesPeek[allCandlesPeek.length - 1]
-                      if (!lastOHLC) return null
-                      const ohlcIsGreen = lastOHLC.close >= lastOHLC.open
-                      return (
-                        <div className="flex items-center gap-3">
-                          <span className="text-[7px] text-[var(--zv-muted)]">O <span className="text-[var(--zv-text)]">{formatRupiah(lastOHLC.open)}</span></span>
-                          <span className="text-[7px] text-[var(--zv-muted)]">H <span className="text-blue-400">{formatRupiah(lastOHLC.high)}</span></span>
-                          <span className="text-[7px] text-[var(--zv-muted)]">L <span className="text-red-400">{formatRupiah(lastOHLC.low)}</span></span>
-                          <span className="text-[7px] text-[var(--zv-muted)]">C <span className={ohlcIsGreen ? 'text-[#22c55e]' : 'text-[#ef5350]'}>{formatRupiah(lastOHLC.close)}</span></span>
-                        </div>
-                      )
-                    })()}
-                  </div>
-
-                  {/* ACTIVE TRADES OVERLAY — show all active positions stacked */}
+                  {/* Active Trades Overlay */}
                   {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                    <div className="absolute top-11 left-2.5 z-10 flex flex-col gap-1">
+                    <div className="absolute top-7 left-2 z-10 flex flex-col gap-0.5">
                       {sinyalPositions.filter(p => p.status === 'active').map(ap => {
                         const remaining = sinyalTimers[ap.id] ?? ap.duration
                         const progress = Math.max(0, (1 - remaining / ap.duration) * 100)
                         const isUp = ap.direction === 'NAIK'
+                        // Timer ring
+                        const radius = 14
+                        const circumference = 2 * Math.PI * radius
+                        const strokeDash = circumference * (remaining / ap.duration)
                         return (
-                          <div key={ap.id} className="flex items-center gap-2">
-                            <div className={`h-5 px-1.5 rounded flex items-center gap-0.5 ${isUp ? 'bg-green-500/20 border border-green-500/40' : 'bg-red-500/20 border border-red-500/40'}`}>
-                              {isUp ? <TrendingUp className="w-2.5 h-2.5 text-[#22c55e]" /> : <TrendingDown className="w-2.5 h-2.5 text-[#ef5350]" />}
-                              <span className={`text-[8px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{ap.direction}</span>
-                            </div>
-                            <span className="text-[14px] font-black text-[var(--zv-text)] tabular-nums">{remaining}s</span>
-                            <span className="text-[8px] text-[var(--zv-muted)]">{formatRupiah(ap.amount)}</span>
-                            <div className="w-16 h-1 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: isUp ? 'linear-gradient(135deg, #16a34a, #22c55e)' : 'linear-gradient(135deg, #d32f2f, #ef5350)' }} />
+                          <div key={ap.id} className="flex items-center gap-1.5">
+                            <svg width="34" height="34" className="flex-shrink-0">
+                              <circle cx="17" cy="17" r={radius} fill="none" stroke="#1e293b" strokeWidth="3" />
+                              <circle cx="17" cy="17" r={radius} fill="none" stroke={isUp ? '#22c55e' : '#ef5350'} strokeWidth="3"
+                                strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
+                                strokeLinecap="round" transform="rotate(-90 17 17)"
+                                style={{ transition: 'stroke-dasharray 0.5s linear' }} />
+                              <text x="17" y="20" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white">{remaining}</text>
+                            </svg>
+                            <div className={`h-5 px-1.5 rounded flex items-center gap-0.5 ${isUp ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                              <span className={`text-[8px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{ap.direction}</span>
+                              <span className="text-[7px] text-gray-500">{formatRupiah(ap.amount)}</span>
                             </div>
                           </div>
                         )
@@ -3212,8 +3190,8 @@ function Dashboard() {
                     </div>
                   )}
 
-                  {/* Chart SVG — NO key prop so DOM persists across ticks */}
-                  <div className="w-full h-full pt-12">
+                  {/* ── AREA/LINE CHART SVG — Stockity style ── */}
+                  <div className="w-full h-full pt-8">
                     {(() => {
                       const allCandles = [...sinyalCandles]
                       const sim = sinyalChartSimRef.current
@@ -3221,44 +3199,26 @@ function Dashboard() {
                         const cc = sim.currentCandle
                         if (cc.tickCount > 0) {
                           allCandles.push({
-                            idx: allCandles.length,
-                            open: cc.open,
-                            high: cc.high,
-                            low: cc.low,
-                            close: cc.close,
-                            volume: cc.volume,
+                            idx: allCandles.length, open: cc.open, high: cc.high, low: cc.low, close: cc.close, volume: cc.volume,
                             time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
                           })
                         }
                       }
-
                       if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Memuat grafik...</div>
 
-                      const allPrices = allCandles.flatMap(c => [c.high, c.low])
-                      const minP = Math.min(...allPrices)
-                      const maxP = Math.max(...allPrices)
+                      const closes = allCandles.map(c => c.close)
+                      const minP = Math.min(...closes)
+                      const maxP = Math.max(...closes)
                       const rangeP = maxP - minP || 1
-                      const paddedMin = minP - rangeP * 0.05
-                      const paddedMax = maxP + rangeP * 0.05
+                      const paddedMin = minP - rangeP * 0.08
+                      const paddedMax = maxP + rangeP * 0.08
                       const paddedRange = paddedMax - paddedMin
 
-                      const totalCandles = allCandles.length
-                      const maxVol = Math.max(...allCandles.map(c => c.volume), 1)
-                      const padTop = 10
-                      const padBot = 18
-                      const priceH = 160
-                      const volH = 40
-                      const totalH = priceH + volH
-                      const svgH = padTop + totalH + padBot
-                      const priceScaleW = 60
-                      const leftPad = 6
-                      const candleW = Math.max(5, Math.floor(200 / totalCandles))
-                      const gapW = Math.max(2, Math.floor(50 / totalCandles))
-                      const chartW = totalCandles * (candleW + gapW) + gapW * 2
-                      const svgW = Math.max(chartW + priceScaleW, 300)
-
-                      const ma7 = computeMA(allCandles, 7)
-                      const ma25 = computeMA(allCandles, 25)
+                      const W = 600
+                      const H = 200
+                      const padR = 50
+                      const padL = 4
+                      const chartW = W - padR - padL
 
                       const compactPrice = (p: number) => {
                         if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
@@ -3266,131 +3226,91 @@ function Dashboard() {
                         return p.toFixed(0)
                       }
 
+                      // Build line points
+                      const points = closes.map((p, i) => {
+                        const x = padL + (i / (closes.length - 1)) * chartW
+                        const y = ((paddedMax - p) / paddedRange) * H
+                        return `${x},${y}`
+                      })
+
+                      // Area fill path
+                      const areaPath = `M${padL},${H} L${points.join(' L')} L${padL + chartW},${H} Z`
+
+                      // Determine current trend color
+                      const isUp = closes[closes.length - 1] >= closes[0]
+                      const lineColor = isUp ? '#22c55e' : '#ef5350'
+                      const areaGradId = isUp ? 'areaGreen' : 'areaRed'
+
+                      // Current price Y
+                      const lastPrice = closes[closes.length - 1]
+                      const yLast = ((paddedMax - lastPrice) / paddedRange) * H
+
                       return (
-                        <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }} shapeRendering="crispEdges">
+                        <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }}>
                           <defs>
-                            <filter id="sinyal-glow" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="2" result="blur" />
-                              <feMerge>
-                                <feMergeNode in="blur" />
-                                <feMergeNode in="SourceGraphic" />
-                              </feMerge>
+                            <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
+                              <stop offset="100%" stopColor="#22c55e" stopOpacity="0.02" />
+                            </linearGradient>
+                            <linearGradient id="areaRed" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#ef5350" stopOpacity="0.3" />
+                              <stop offset="100%" stopColor="#ef5350" stopOpacity="0.02" />
+                            </linearGradient>
+                            <filter id="lineGlow" x="-10%" y="-10%" width="120%" height="120%">
+                              <feGaussianBlur stdDeviation="3" result="blur" />
+                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                             </filter>
                           </defs>
-                          {/* Horizontal grid lines */}
-                          {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => {
-                            const gy = padTop + (gi / 7) * priceH
-                            const priceLabel = Math.round(paddedMax - (paddedRange / 7) * gi)
+
+                          {/* Grid lines - subtle */}
+                          {[0, 1, 2, 3, 4].map(gi => {
+                            const gy = (gi / 4) * H
+                            const priceLabel = Math.round(paddedMax - (paddedRange / 4) * gi)
                             return (
-                              <g key={`hg-${gi}`}>
-                                <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                <text x={chartW + 4} y={gy + 3} fontSize="7" fill="var(--zv-muted)">{compactPrice(priceLabel)}</text>
+                              <g key={`g-${gi}`}>
+                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="#1e293b" strokeWidth="0.5" />
+                                <text x={padL + chartW + 3} y={gy + 3} fontSize="6" fill="#4b5563">{compactPrice(priceLabel)}</text>
                               </g>
                             )
                           })}
-                          {/* Vertical grid lines */}
-                          {allCandles.filter((_, i) => i % Math.max(1, Math.floor(totalCandles / 5)) === 0).map((c, _idx) => {
-                            const indices = allCandles.map((_, i) => i).filter(i => i % Math.max(1, Math.floor(totalCandles / 5)) === 0)
-                            const i = indices[_idx] || 0
-                            const gx = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                            return (
-                              <g key={`vg-${i}`}>
-                                <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                <text x={gx} y={svgH - 4} fontSize="6" fill="var(--zv-muted)" textAnchor="middle">{c.time}</text>
-                              </g>
-                            )
-                          })}
-                          {/* Volume separator */}
-                          <line x1={leftPad} y1={padTop + priceH} x2={chartW} y2={padTop + priceH} stroke="var(--zv-border)" strokeWidth="0.5" />
-                          {/* Volume bars */}
-                          {allCandles.map((c, i) => {
-                            const x = leftPad + gapW + i * (candleW + gapW)
-                            const isGreen = c.close >= c.open
-                            const volBarH = (c.volume / maxVol) * volH
-                            const volY = padTop + priceH + volH - volBarH
-                            const isLast = i === totalCandles - 1 && sim !== null
-                            const volOpacity = isLast ? 0.5 : (0.15 + (i / totalCandles) * 0.2)
-                            return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={Math.max(volBarH, 1)} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="1" />
-                          })}
-                          {/* MA7 */}
-                          <polyline fill="none" stroke="#f5c542" strokeWidth="1" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
-                            points={ma7.map((v, i) => {
-                              if (v === null) return ''
-                              const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                              const y = padTop + ((paddedMax - v) / paddedRange) * priceH
-                              return `${x},${y}`
-                            }).filter(Boolean).join(' ')} />
-                          {/* MA25 */}
-                          <polyline fill="none" stroke="#2196f3" strokeWidth="1" opacity="0.7" strokeLinejoin="round" strokeLinecap="round"
-                            points={ma25.map((v, i) => {
-                              if (v === null) return ''
-                              const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                              const y = padTop + ((paddedMax - v) / paddedRange) * priceH
-                              return `${x},${y}`
-                            }).filter(Boolean).join(' ')} />
-                          {/* Candlesticks */}
-                          {allCandles.map((c, i) => {
-                            const x = leftPad + gapW + i * (candleW + gapW)
-                            const yH = padTop + ((paddedMax - c.high) / paddedRange) * priceH
-                            const yL = padTop + ((paddedMax - c.low) / paddedRange) * priceH
-                            const yO = padTop + ((paddedMax - c.open) / paddedRange) * priceH
-                            const yC = padTop + ((paddedMax - c.close) / paddedRange) * priceH
-                            const isGreen = c.close >= c.open
-                            const bodyTop = Math.min(yO, yC)
-                            const bodyH = Math.max(Math.abs(yO - yC), 2)
-                            const isLast = i === totalCandles - 1 && sim !== null
-                            return (
-                              <g key={`candle-${i}`} opacity={isLast ? 1 : 0.9}>
-                                <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1.2" : "0.8"} />
-                                <rect x={x} y={bodyTop} width={candleW} height={bodyH}
-                                  fill={isGreen ? '#22c55e' : '#ef5350'}
-                                  stroke={isGreen ? '#22c55e' : '#ef5350'}
-                                  strokeWidth="0.8" rx="0.5"
-                                />
-                                {isLast && (
-                                  <g filter="url(#sinyal-glow)">
-                                    <rect x={x - 1} y={bodyTop - 1} width={candleW + 2} height={bodyH + 2}
-                                      fill="none" stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="1"
-                                      opacity="0.5">
-                                      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="1s" repeatCount="indefinite" />
-                                    </rect>
-                                  </g>
-                                )}
-                              </g>
-                            )
-                          })}
-                          {/* Current price line */}
-                          {allCandles.length > 0 && (() => {
-                            const lastC = allCandles[allCandles.length - 1]
-                            const isGreen = lastC.close >= lastC.open
-                            const yLast = padTop + ((paddedMax - lastC.close) / paddedRange) * priceH
-                            return (
-                              <>
-                                <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
-                                <rect x={chartW + 1} y={yLast - 8} width={priceScaleW - 3} height="16" rx="3" fill={isGreen ? '#22c55e' : '#ef5350'} />
-                                <text x={chartW + priceScaleW / 2} y={yLast + 4} fontSize="7" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastC.close)}</text>
-                              </>
-                            )
-                          })()}
+
+                          {/* Area fill */}
+                          <path d={areaPath} fill={`url(#${areaGradId})`} />
+
+                          {/* Line */}
+                          <polyline fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round"
+                            points={points.join(' ')} filter="url(#lineGlow)" />
+
+                          {/* Current price indicator — pulsing dot */}
+                          <circle cx={padL + chartW} cy={yLast} r="3" fill={lineColor}>
+                            <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+                          </circle>
+
+                          {/* Current price horizontal line */}
+                          <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast} stroke={lineColor} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
+
+                          {/* Price label on right */}
+                          <rect x={padL + chartW + 1} y={yLast - 7} width={padR - 4} height="14" rx="2" fill={lineColor} />
+                          <text x={padL + chartW + padR / 2} y={yLast + 3.5} fontSize="7" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastPrice)}</text>
                         </svg>
                       )
                     })()}
                   </div>
 
-                  {/* Result toast — corner popup, NON-BLOCKING, auto-dismiss */}
+                  {/* Result toast — NON-BLOCKING */}
                   {sinyalResults.length > 0 && (() => {
                     const latest = sinyalResults[sinyalResults.length - 1]
-                    if (Date.now() - latest.shownAt > 2000) return null
+                    if (Date.now() - latest.shownAt > 2500) return null
                     return (
                       <motion.div key={latest.id} initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
-                        className="absolute bottom-3 right-3 z-20 pointer-events-none">
-                        <div className={`px-4 py-3 rounded-xl border shadow-lg ${latest.won ? 'border-green-500/40 bg-green-500/10' : 'border-red-500/40 bg-red-500/10'}`} style={{ backdropFilter: 'blur(12px)' }}>
+                        className="absolute bottom-2 right-2 z-20 pointer-events-none">
+                        <div className={`px-3 py-2 rounded-lg border ${latest.won ? 'border-green-500/40 bg-green-900/60' : 'border-red-500/40 bg-red-900/60'}`} style={{ backdropFilter: 'blur(12px)' }}>
                           <div className="flex items-center gap-2">
-                            <span className="text-[20px]">{latest.won ? '🎯' : '❌'}</span>
+                            <span className="text-[16px]">{latest.won ? '✅' : '❌'}</span>
                             <div>
-                              <h4 className={`text-[12px] font-black ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{latest.won ? 'BENAR!' : 'SALAH'}</h4>
-                              <span className={`text-[11px] font-bold ${latest.won ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
-                              <span className="block text-[8px] text-[var(--zv-muted)]">{latest.stockCode} {latest.direction}</span>
+                              <h4 className={`text-[10px] font-black ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? 'BENAR!' : 'SALAH'}</h4>
+                              <span className={`text-[9px] font-bold ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
                             </div>
                           </div>
                         </div>
@@ -3400,66 +3320,63 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* BOTTOM CONTROL PANEL - Stockity Style — always open for betting */}
-              <div className="mt-2 space-y-2">
-                {/* Duration Selector */}
-                <div>
-                  <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-1 uppercase tracking-wider">Durasi</label>
-                  <div className="flex gap-1">
+              {/* ── BOTTOM PANEL — Stockity compact style ── */}
+              <div className="mt-1.5 space-y-1.5">
+                {/* Row 1: Duration + Amount */}
+                <div className="flex gap-1.5">
+                  {/* Duration */}
+                  <div className="flex gap-0.5">
                     {[10, 20, 30, 60].map(dur => (
                       <button key={dur} onClick={() => setSinyalDuration(dur)}
-                        className={`flex-1 h-8 rounded-lg text-[10px] font-bold transition-all ${sinyalDuration === dur ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
+                        className={`h-8 w-10 rounded-md text-[9px] font-bold transition-all ${sinyalDuration === dur ? 'bg-[#1e3a5f] text-blue-400 border border-blue-500/50' : 'bg-[#0d1117] border border-[#1e293b] text-gray-500 hover:text-gray-300'}`}>
                         {dur}s
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* Amount Input + Quick Amounts */}
-                <div>
-                  <div className="flex gap-1.5 mb-1.5">
+                  {/* Amount input */}
+                  <div className="flex-1 flex gap-1">
                     <div className="flex-1 relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[var(--zv-muted)]">Rp</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[8px] font-bold text-gray-500">Rp</span>
                       <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="100.000"
-                        className="w-full h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-7 pr-2 text-[12px] font-semibold text-[var(--zv-text)] outline-none focus:border-blue-500 transition-all placeholder:text-[var(--zv-muted)]" />
+                        className="w-full h-8 rounded-md bg-[#0d1117] border border-[#1e293b] pl-6 pr-1 text-[10px] font-semibold text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-600" />
                     </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => setSinyalAmount(String(Math.min((parseInt(sinyalAmount) || 100000) * 2, (user?.balance || 0))))}
-                        className="h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all">
-                        <Plus className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => setSinyalAmount(String(Math.max(Math.floor((parseInt(sinyalAmount) || 200000) / 2), 100000)))}
-                        className="h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all">
-                        <Minus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                      <button key={amt} onClick={() => setSinyalAmount(amt)}
-                        className={`flex-1 h-7 rounded-md bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-[var(--zv-muted)] hover:bg-blue-600/20 hover:border-blue-500/30 hover:text-blue-400 transition-all ${sinyalAmount === amt ? 'bg-blue-600/20 border-blue-500/30 text-blue-400' : ''}`}>
-                        {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
-                      </button>
-                    ))}
+                    <button onClick={() => setSinyalAmount(String(Math.min((parseInt(sinyalAmount) || 100000) * 2, (user?.balance || 0))))}
+                      className="h-8 w-7 rounded-md bg-[#0d1117] border border-[#1e293b] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:border-blue-500/30 transition-all">
+                      <Plus className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => setSinyalAmount(String(Math.max(Math.floor((parseInt(sinyalAmount) || 200000) / 2), 100000)))}
+                      className="h-8 w-7 rounded-md bg-[#0d1117] border border-[#1e293b] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:border-blue-500/30 transition-all">
+                      <Minus className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Profit preview for both directions — payout from chart */}
+                {/* Quick Amounts */}
+                <div className="flex gap-0.5">
+                  {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
+                    <button key={amt} onClick={() => setSinyalAmount(amt)}
+                      className={`flex-1 h-6 rounded text-[7px] font-bold transition-all ${sinyalAmount === amt ? 'bg-[#1e3a5f] border border-blue-500/50 text-blue-400' : 'bg-[#0d1117] border border-[#1e293b] text-gray-500 hover:text-gray-300'}`}>
+                      {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Profit preview */}
                 {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
-                  <div className="flex gap-2">
-                    <div className="flex-1 rounded-lg p-1.5 bg-green-500/10 border border-green-500/20 text-center">
-                      <span className="text-[7px] text-green-400/70 font-bold block">NAIK PROFIT (+{chartPayoutRates.up.toFixed(0)}%)</span>
-                      <span className="text-[11px] font-black text-[#22c55e]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.up / 100))}</span>
+                  <div className="flex gap-1">
+                    <div className="flex-1 rounded-md px-2 py-1 bg-green-500/5 border border-green-500/10 flex items-center justify-between">
+                      <span className="text-[7px] text-green-400/60 font-bold">NAIK +{chartPayoutRates.up.toFixed(0)}%</span>
+                      <span className="text-[9px] font-black text-green-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.up / 100))}</span>
                     </div>
-                    <div className="flex-1 rounded-lg p-1.5 bg-red-500/10 border border-red-500/20 text-center">
-                      <span className="text-[7px] text-red-400/70 font-bold block">TURUN PROFIT (+{chartPayoutRates.down.toFixed(0)}%)</span>
-                      <span className="text-[11px] font-black text-[#ef5350]">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.down / 100))}</span>
+                    <div className="flex-1 rounded-md px-2 py-1 bg-red-500/5 border border-red-500/10 flex items-center justify-between">
+                      <span className="text-[7px] text-red-400/60 font-bold">TURUN +{chartPayoutRates.down.toFixed(0)}%</span>
+                      <span className="text-[9px] font-black text-red-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.down / 100))}</span>
                     </div>
                   </div>
                 )}
 
-                {/* NAIK / TURUN Buttons — ALWAYS clickable as long as you have balance */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* ── NAIK / TURUN — Stockity side-by-side large buttons ── */}
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => {
                       setSinyalDirection('NAIK')
@@ -3471,14 +3388,13 @@ function Dashboard() {
                         toast({ title: 'Saldo tidak cukup', variant: 'destructive' })
                       }
                     }}
-                    className="h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-br from-[#22c55e] to-[#15803d] text-white shadow-lg shadow-green-600/30 hover:shadow-green-500/50 active:scale-[0.97]">
-                    <div className="flex items-center gap-1.5">
-                      <TrendingUp className="w-5 h-5" />
-                      <span className="text-[16px] font-black">NAIK</span>
+                    className="h-14 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-b from-[#16a34a] to-[#15803d] text-white shadow-lg shadow-green-900/40 active:scale-[0.97]">
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-4 h-4" />
+                      <span className="text-[14px] font-black tracking-wide">NAIK</span>
                     </div>
-                    <span className="text-[11px] font-bold opacity-90">+{chartPayoutRates.up.toFixed(0)}%</span>
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
+                    <span className="text-[10px] font-bold text-green-200">+{chartPayoutRates.up.toFixed(0)}%</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
                   </button>
                   <button
                     onClick={() => {
@@ -3491,43 +3407,41 @@ function Dashboard() {
                         toast({ title: 'Saldo tidak cukup', variant: 'destructive' })
                       }
                     }}
-                    className="h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-br from-[#ef5350] to-[#b91c1c] text-white shadow-lg shadow-red-600/30 hover:shadow-red-500/50 active:scale-[0.97]">
-                    <div className="flex items-center gap-1.5">
-                      <TrendingDown className="w-5 h-5" />
-                      <span className="text-[16px] font-black">TURUN</span>
+                    className="h-14 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-b from-[#dc2626] to-[#b91c1c] text-white shadow-lg shadow-red-900/40 active:scale-[0.97]">
+                    <div className="flex items-center gap-1">
+                      <TrendingDown className="w-4 h-4" />
+                      <span className="text-[14px] font-black tracking-wide">TURUN</span>
                     </div>
-                    <span className="text-[11px] font-bold opacity-90">+{chartPayoutRates.down.toFixed(0)}%</span>
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
+                    <span className="text-[10px] font-bold text-red-200">+{chartPayoutRates.down.toFixed(0)}%</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
                   </button>
                 </div>
 
-                {/* Active Positions Counter */}
+                {/* Active positions bar */}
                 {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0d1117] border border-[#1e293b]">
                     <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
-                    <span className="text-[9px] font-bold text-blue-400">{sinyalPositions.filter(p => p.status === 'active').length} posisi aktif</span>
-                    <span className="text-[8px] text-[var(--zv-muted)]">• Total: {formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + p.amount, 0))}</span>
+                    <span className="text-[8px] font-bold text-blue-400">{sinyalPositions.filter(p => p.status === 'active').length} aktif</span>
+                    <span className="text-[7px] text-gray-500">• {formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + p.amount, 0))}</span>
                   </div>
                 )}
 
-                {/* Recent Trade History - Compact */}
+                {/* Trade history — horizontal compact */}
                 {sinyalPositions.filter(p => p.status !== 'active').length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-wider">Riwayat</span>
-                      <span className="text-[8px] text-[var(--zv-muted)]">{sinyalPositions.filter(p => p.status === 'won').length}W / {sinyalPositions.filter(p => p.status === 'lost').length}L</span>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[7px] font-black text-gray-500 uppercase tracking-wider">Riwayat</span>
+                      <span className="text-[7px] text-gray-600">{sinyalPositions.filter(p => p.status === 'won').length}W / {sinyalPositions.filter(p => p.status === 'lost').length}L</span>
                     </div>
-                    <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                    <div className="flex gap-0.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
                       {sinyalPositions.filter(p => p.status !== 'active').slice(-10).reverse().map(pos => (
-                        <div key={pos.id} className={`flex-shrink-0 w-14 h-14 rounded-lg flex flex-col items-center justify-center border ${
-                          pos.status === 'won' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
+                        <div key={pos.id} className={`flex-shrink-0 w-12 h-10 rounded flex flex-col items-center justify-center ${
+                          pos.status === 'won' ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
                         }`}>
-                          {pos.status === 'won' ? <CheckCircle className="w-3.5 h-3.5 text-[#22c55e]" /> : <X className="w-3.5 h-3.5 text-[#ef5350]" />}
-                          <span className={`text-[8px] font-black ${pos.status === 'won' ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                          {pos.status === 'won' ? <CheckCircle className="w-3 h-3 text-green-400" /> : <X className="w-3 h-3 text-red-400" />}
+                          <span className={`text-[7px] font-black ${pos.status === 'won' ? 'text-green-400' : 'text-red-400'}`}>
                             {pos.status === 'won' ? `+${formatRupiah(Math.round(pos.amount * pos.profitPercent / 100))}` : `-${formatRupiah(pos.amount)}`}
                           </span>
-                          <span className="text-[6px] text-[var(--zv-muted)]">{pos.stockCode} {pos.direction === 'NAIK' ? '↑' : '↓'}</span>
                         </div>
                       ))}
                     </div>
