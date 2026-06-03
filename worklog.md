@@ -452,3 +452,62 @@ Stage Summary:
 - All sections have consistent premium styling with blue glow shadows and gradient accents
 - Both dark and light modes work correctly via CSS variable system
 - Welcome modal no longer blocks bottom navigation
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: Rewrite Sinyal Pro chart for theme adaptation, candle timer, mid-candle betting, more stocks
+
+Work Log:
+- Made chart container theme-aware: replaced hardcoded dark colors (#0c1424, #080c14, #1e293b) with CSS variable references (--zv-chart-bg, --zv-chart-bg2, --zv-chart-border, --zv-chart-overlay)
+- Updated boxShadow to be theme-aware (dark: heavy shadow, light: subtle shadow)
+- Changed stock code text from text-white to text-[var(--zv-text)]
+- Updated timeframe selector from hardcoded bg-[#0d1117]/60 to var(--zv-chart-panel) with var(--zv-chart-border)
+- Replaced all SVG hardcoded colors with CSS variables:
+  - Grid lines: stroke="#334155" → stroke="var(--zv-chart-grid)"
+  - Text labels: fill="#cbd5e1" → fill="var(--zv-chart-text)"
+  - Volume bars: hardcoded rgba → var(--zv-chart-vol-up)/var(--zv-chart-vol-down)
+  - MA legend: fill/stroke → var(--zv-chart-ma-legend-bg)/var(--zv-chart-border)
+  - Crosshair labels: fill="#334155" → var(--zv-chart-grid), fill="#e2e8f0" → var(--zv-chart-text)
+  - Loading text: text-gray-600 → text-[var(--zv-muted)]
+  - Active position circle: stroke="#1e293b" → stroke="var(--zv-chart-border)"
+- Updated zoom controls from bg-[#0d1117]/90 border-[#1e293b]/60 to var(--zv-chart-control-bg)/var(--zv-chart-control-border)
+- Replaced tiny countdown timer with prominent donut-style circular timer:
+  - SVG progress ring with elapsed/total time display
+  - Real-time clock (HH:MM:SS WIB)
+  - Yellow warning when ≤5 seconds remaining
+- Modified openSinyalPosition to use remaining candle time instead of full timeframe
+  - Calculates candleRemaining = maxTicks - tickCount (minimum 3 seconds)
+  - Trade duration now syncs with candle close time
+- Increased stock selector from 10 to 30 stocks
+- Added "Durasi Taruhan" info bar in bottom panel showing remaining candle time
+
+Stage Summary:
+- Chart now fully theme-aware with CSS variables for dark/light mode support
+- Prominent candle timer with circular progress ring replaces tiny countdown
+- Mid-candle betting: trade duration = remaining time in current candle
+- 30 stocks visible in selector (up from 10)
+- Bottom panel shows remaining trade duration info
+- Lint passes clean, dev server running without errors
+---
+Task ID: 1-3
+Agent: main
+Task: Sinyal Pro chart theme adaptation, candle timer, mid-candle betting, more stocks
+
+Work Log:
+- Read page.tsx to understand current Sinyal Pro implementation (chart hardcoded with dark colors)
+- Added chart-specific CSS variables to globals.css for both dark and light modes (--zv-chart-bg, --zv-chart-grid, --zv-chart-text, etc.)
+- Replaced all hardcoded chart colors with CSS variable references for theme adaptation
+- Replaced tiny countdown text with prominent donut timer showing elapsed/total time + real-time WIB clock
+- Modified openSinyalPosition to use remaining candle time instead of full timeframe duration
+- Added "Durasi Taruhan" info bar showing remaining trade duration
+- Expanded stock selector from 10 to 30 stocks
+- Verified with Agent Browser - all elements render correctly in both dark and light modes
+
+Stage Summary:
+- Chart now adapts properly to dark/light mode with CSS variables
+- Prominent candle timer with SVG donut progress ring (e.g., "0:30 / 1:00")
+- Real-time WIB clock displayed next to timer
+- Mid-candle betting: trade duration = remaining time in current candle (syncs with candle close)
+- 30 stocks shown in selector instead of 10
+- "Durasi Taruhan" bar shows countdown until candle closes
+- All verified working via Agent Browser in both themes

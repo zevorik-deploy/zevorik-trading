@@ -1366,7 +1366,12 @@ function Dashboard() {
     if (amount < 100000) { toast({ title: 'Minimum Rp 100.000', variant: 'destructive' }); return }
     if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
     const dir = overrideDirection || sinyalDirection
-    const profitPercent = calcSinyalProfit(amount, sinyalDuration, dir)
+    // Duration = remaining time in current candle (sync with candle close)
+    const sim = sinyalChartSimRef.current
+    const cc = sim?.currentCandle
+    const candleRemaining = cc ? Math.max(cc.maxTicks - cc.tickCount, 3) : sinyalDuration
+    const tradeDuration = candleRemaining
+    const profitPercent = calcSinyalProfit(amount, tradeDuration, dir)
     const posId = `sinyal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     const newPosition = {
       id: posId,
@@ -1375,18 +1380,18 @@ function Dashboard() {
       stockName: selectedSinyalStock.name,
       direction: dir,
       amount,
-      duration: sinyalDuration,
+      duration: tradeDuration,
       startPrice: sinyalCurrentPrice || selectedSinyalStock.price,
       startTime: Date.now(),
       profitPercent,
       status: 'active' as const,
     }
     setSinyalPositions(prev => [...prev, newPosition])
-    setSinyalTimers(prev => ({ ...prev, [posId]: sinyalDuration }))
+    setSinyalTimers(prev => ({ ...prev, [posId]: tradeDuration }))
     // Deduct balance immediately when opening position
     updateBalance((user?.balance || 0) - amount)
-    const durMins = Math.floor(sinyalDuration / 60)
-    const durSecs = sinyalDuration % 60
+    const durMins = Math.floor(tradeDuration / 60)
+    const durSecs = tradeDuration % 60
     const durLabel = durMins > 0 ? (durSecs > 0 ? `${durMins}m ${durSecs}s` : `${durMins}m`) : `${durSecs}s`
     toast({ title: 'Posisi Dibuka! 🎯', description: `${dir} ${selectedSinyalStock.code} • ${formatRupiah(amount)} • ${durLabel}` })
   }, [selectedSinyalStock, sinyalAmount, sinyalDirection, sinyalDuration, user, calcSinyalProfit, sinyalCurrentPrice, updateBalance])
@@ -3452,7 +3457,7 @@ function Dashboard() {
               {/* Top Bar: Stock selector pills + Balance */}
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                  {stocks.slice(0, 10).map(s => {
+                  {stocks.slice(0, 30).map(s => {
                     const tier = getStockPayoutTier(s.code)
                     const isSelected = selectedSinyalStock?.id === s.id
                     const displayPayout = isSelected ? chartPayoutRates.up.toFixed(0) : tier.upRange[1]
@@ -3477,15 +3482,15 @@ function Dashboard() {
 
               {/* ── MAIN CHART AREA — Premium dark style ── */}
               {selectedSinyalStock && (
-                <div className="relative rounded-xl overflow-hidden border border-[#1e293b]" style={{ background: 'linear-gradient(180deg, #0c1424 0%, #0a0e17 40%, #080c14 100%)', minHeight: '320px', flex: 1, boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(59,130,246,0.08)' }}>
+                <div className="relative rounded-xl overflow-hidden border border-[var(--zv-chart-border)]" style={{ background: 'linear-gradient(180deg, var(--zv-chart-bg) 0%, var(--zv-chart-bg2) 100%)', minHeight: '320px', flex: 1, boxShadow: theme === 'dark' ? '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(59,130,246,0.08)' : '0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(59,130,246,0.06)' }}>
                   {/* Chart Header — Stockity info bar */}
-                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 pt-2 pb-1.5" style={{ background: 'linear-gradient(to bottom, rgba(12,20,36,0.95) 50%, transparent)' }}>
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 pt-2 pb-1.5" style={{ background: 'linear-gradient(to bottom, var(--zv-chart-overlay) 50%, transparent)' }}>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1 h-5 px-2 rounded-full bg-green-500/10 border border-green-500/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                         <span className="text-[7px] font-black text-green-400 tracking-widest">LIVE</span>
                       </div>
-                      <span className="text-[10px] font-black text-white drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{selectedSinyalStock.code}</span>
+                      <span className="text-[10px] font-black text-[var(--zv-text)] drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{selectedSinyalStock.code}</span>
                       <div className="flex items-center gap-1">
                         <span className="h-5 px-1.5 rounded-md text-[7px] font-black bg-green-500/10 border border-green-500/20 text-green-400 flex items-center">↑{chartPayoutRates.up.toFixed(0)}%</span>
                         <span className="h-5 px-1.5 rounded-md text-[7px] font-black bg-red-500/10 border border-red-500/20 text-red-400 flex items-center">↓{chartPayoutRates.down.toFixed(0)}%</span>
@@ -3515,7 +3520,7 @@ function Dashboard() {
 
                   {/* Timeframe selector */}
                   <div className="absolute top-8 left-0 right-0 z-10 flex items-center justify-between px-3 py-0.5">
-                    <div className="flex items-center gap-1 bg-[#0d1117]/60 rounded-lg p-0.5 border border-[#1e293b]/50" style={{ backdropFilter: 'blur(8px)' }}>
+                    <div className="flex items-center gap-1 rounded-lg p-0.5 border border-[var(--zv-chart-border)]" style={{ backdropFilter: 'blur(8px)', background: 'var(--zv-chart-panel)' }}>
                       {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
                         <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
                           className={`h-5 px-2 rounded-md text-[7px] font-bold transition-all ${
@@ -3527,18 +3532,47 @@ function Dashboard() {
                         </button>
                       ))}
                     </div>
-                    {/* Candle countdown */}
+                    {/* Candle countdown — prominent timer */}
                     {(() => {
                       const sim = sinyalChartSimRef.current
                       if (!sim) return null
                       const cc = sim.currentCandle
-                      const remaining = cc.maxTicks - cc.tickCount
-                      const mins = Math.floor(remaining / 60)
-                      const secs = remaining % 60
+                      const totalSecs = cc.maxTicks
+                      const elapsed = cc.tickCount
+                      const remaining = totalSecs - elapsed
+                      const progress = totalSecs > 0 ? elapsed / totalSecs : 0
+                      const elapsedMins = Math.floor(elapsed / 60)
+                      const elapsedSecs = elapsed % 60
+                      const totalMins = Math.floor(totalSecs / 60)
+                      const totalSecsRem = totalSecs % 60
+                      const now = new Date()
+                      const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0') + ':' + now.getSeconds().toString().padStart(2, '0')
+                      const radius = 16
+                      const circumference = 2 * Math.PI * radius
+                      const strokeDash = circumference * progress
+                      const isLow = remaining <= 5 && remaining > 0
                       return (
-                        <span className="text-[7px] font-bold text-gray-500 tabular-nums">
-                          ⏱ {mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <svg width="38" height="38" className="flex-shrink-0">
+                              <circle cx="19" cy="19" r={radius} fill="none" stroke="var(--zv-chart-grid)" strokeWidth="2.5" opacity="0.5" />
+                              <circle cx="19" cy="19" r={radius} fill="none" stroke={isLow ? '#f59e0b' : '#3b82f6'} strokeWidth="2.5"
+                                strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
+                                strokeLinecap="round" transform="rotate(-90 19 19)"
+                                style={{ transition: 'stroke-dasharray 0.8s linear' }} />
+                              <text x="19" y="17" textAnchor="middle" fontSize="7" fontWeight="900" fill={isLow ? '#f59e0b' : 'var(--zv-text)'} fontFamily="monospace">
+                                {remaining > 60 ? `${Math.ceil(remaining/60)}m` : `${remaining}`}
+                              </text>
+                              <text x="19" y="24" textAnchor="middle" fontSize="5" fill="var(--zv-muted)" fontFamily="monospace">left</text>
+                            </svg>
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-black tabular-nums text-[var(--zv-text)]">
+                                {elapsedMins > 0 ? `${elapsedMins}:${elapsedSecs.toString().padStart(2, '0')}` : `0:${elapsedSecs.toString().padStart(2, '0')}`} / {totalMins > 0 ? `${totalMins}:${totalSecsRem.toString().padStart(2, '0')}` : `0:${totalSecsRem.toString().padStart(2, '0')}`}
+                              </span>
+                              <span className="text-[7px] font-bold text-[var(--zv-muted)] tabular-nums">{timeStr} WIB</span>
+                            </div>
+                          </div>
+                        </div>
                       )
                     })()}
                   </div>
@@ -3557,7 +3591,7 @@ function Dashboard() {
                         return (
                           <div key={ap.id} className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${isUp ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`} style={{ backdropFilter: 'blur(8px)' }}>
                             <svg width="34" height="34" className="flex-shrink-0">
-                              <circle cx="17" cy="17" r={radius} fill="none" stroke="#1e293b" strokeWidth="3" />
+                              <circle cx="17" cy="17" r={radius} fill="none" stroke="var(--zv-chart-border)" strokeWidth="3" />
                               <circle cx="17" cy="17" r={radius} fill="none" stroke={isUp ? '#22c55e' : '#ef5350'} strokeWidth="3"
                                 strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
                                 strokeLinecap="round" transform="rotate(-90 17 17)"
@@ -3649,7 +3683,7 @@ function Dashboard() {
                           })
                         }
                       }
-                      if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Memuat grafik...</div>
+                      if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-[var(--zv-muted)]">Memuat grafik...</div>
 
                       // Calculate OHLC range
                       const allHighs = allCandles.map(c => c.high)
@@ -3686,7 +3720,7 @@ function Dashboard() {
                       const startIdx = Math.max(0, endIdx - maxVisible)
                       const visibleCandles = allCandles.slice(startIdx, endIdx)
                       const candleCount = visibleCandles.length
-                      if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Geser kembali...</div>
+                      if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[9px] text-[var(--zv-muted)]">Geser kembali...</div>
                       const candleSpacing = chartW / candleCount
                       const candleBodyW = Math.max(1.5, Math.min(candleSpacing * 0.65, 14))
 
@@ -3721,8 +3755,8 @@ function Dashboard() {
                             const priceLabel = paddedMax - (paddedRange / 5) * gi
                             return (
                               <g key={`hg-${gi}`}>
-                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="#334155" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.8" />
-                                <text x={padL + chartW + 3} y={gy + 3} fontSize="6" fill="#cbd5e1" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(priceLabel))}</text>
+                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="var(--zv-chart-grid)" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.8" />
+                                <text x={padL + chartW + 3} y={gy + 3} fontSize="6" fill="var(--zv-chart-text)" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(priceLabel))}</text>
                               </g>
                             )
                           })}
@@ -3733,14 +3767,14 @@ function Dashboard() {
                             const vx = padL + (idx + 0.5) * candleSpacing
                             return (
                               <g key={`vg-${i}`}>
-                                <line x1={vx} y1={0} x2={vx} y2={priceAreaH} stroke="#334155" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.5" />
-                                <text x={vx} y={priceAreaH + 10} fontSize="5.5" fill="#cbd5e1" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{c.time}</text>
+                                <line x1={vx} y1={0} x2={vx} y2={priceAreaH} stroke="var(--zv-chart-grid)" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.5" />
+                                <text x={vx} y={priceAreaH + 10} fontSize="5.5" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{c.time}</text>
                               </g>
                             )
                           })}
 
                           {/* Volume separator line */}
-                          <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="#334155" strokeWidth="0.4" opacity="0.6" />
+                          <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="var(--zv-chart-grid)" strokeWidth="0.4" opacity="0.6" />
 
                           {/* Volume bars */}
                           {visibleCandles.map((c, i) => {
@@ -3749,7 +3783,7 @@ function Dashboard() {
                             const isBull = c.close >= c.open
                             return (
                               <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 4} width={candleBodyW * 0.7} height={Math.max(1, volBarH)}
-                                fill={isBull ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)'} rx="0.5" />
+                                fill={isBull ? 'var(--zv-chart-vol-up)' : 'var(--zv-chart-vol-down)'} rx="0.5" />
                             )
                           })}
 
@@ -3802,7 +3836,7 @@ function Dashboard() {
                           })()}
                           {/* MA legend */}
                           <g>
-                            <rect x={padL + 1} y={1} width={58} height={12} rx="3" fill="rgba(15,23,42,0.8)" stroke="#1e293b" strokeWidth="0.3" />
+                            <rect x={padL + 1} y={1} width={58} height={12} rx="3" fill="var(--zv-chart-ma-legend-bg)" stroke="var(--zv-chart-border)" strokeWidth="0.3" />
                             <line x1={padL + 5} y1={7} x2={padL + 15} y2={7} stroke="#eab308" strokeWidth="1" opacity="0.8" />
                             <text x={padL + 17} y={9} fontSize="5" fill="#eab308" fontFamily="monospace" fontWeight="bold">MA5</text>
                             <line x1={padL + 33} y1={7} x2={padL + 43} y2={7} stroke="#06b6d4" strokeWidth="1" opacity="0.6" />
@@ -3850,8 +3884,8 @@ function Dashboard() {
                                 {/* Crosshair price label */}
                                 {svgY > 0 && svgY < priceAreaH && (
                                   <>
-                                    <rect x={padL + chartW + 1} y={svgY - 6} width={padR - 3} height="12" rx="2" fill="#334155" />
-                                    <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="5.5" fill="#e2e8f0" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(crossPrice))}</text>
+                                    <rect x={padL + chartW + 1} y={svgY - 6} width={padR - 3} height="12" rx="2" fill="var(--zv-chart-grid)" />
+                                    <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="5.5" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(crossPrice))}</text>
                                   </>
                                 )}
                               </g>
@@ -3877,15 +3911,15 @@ function Dashboard() {
                   <div className="absolute bottom-3 right-2 z-20 flex flex-col gap-1">
                     <button
                       onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                      className="h-7 w-7 rounded-lg bg-[#0d1117]/90 border border-[#1e293b]/60 flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-[#0d1117] transition-all backdrop-blur-sm text-[14px] font-bold shadow-md"
+                      className="h-7 w-7 rounded-lg border flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm text-[14px] font-bold shadow-md" style={{ background: 'var(--zv-chart-control-bg)', borderColor: 'var(--zv-chart-control-border)' }}
                     >+</button>
                     <button
                       onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                      className="h-7 w-7 rounded-lg bg-[#0d1117]/90 border border-[#1e293b]/60 flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-[#0d1117] transition-all backdrop-blur-sm text-[14px] font-bold shadow-md"
+                      className="h-7 w-7 rounded-lg border flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm text-[14px] font-bold shadow-md" style={{ background: 'var(--zv-chart-control-bg)', borderColor: 'var(--zv-chart-control-border)' }}
                     >−</button>
                     <button
                       onClick={() => { setSinyalChartZoom(40); setSinyalChartOffset(0) }}
-                      className="h-7 w-7 rounded-lg bg-[#0d1117]/90 border border-[#1e293b]/60 flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-[#0d1117] transition-all backdrop-blur-sm shadow-md"
+                      className="h-7 w-7 rounded-lg border flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm shadow-md" style={{ background: 'var(--zv-chart-control-bg)', borderColor: 'var(--zv-chart-control-border)' }}
                     >
                       <RotateCcw className="w-3 h-3" />
                     </button>
@@ -3948,6 +3982,26 @@ function Dashboard() {
                       {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                     </button>
                   ))}
+                </div>
+
+                {/* Trade duration info */}
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#3b82f6]" />
+                    <span className="text-[8px] font-bold text-[var(--zv-muted)]">Durasi Taruhan</span>
+                  </div>
+                  {(() => {
+                    const sim = sinyalChartSimRef.current
+                    const cc = sim?.currentCandle
+                    const remaining = cc ? Math.max(cc.maxTicks - cc.tickCount, 0) : sinyalDuration
+                    const mins = Math.floor(remaining / 60)
+                    const secs = remaining % 60
+                    return (
+                      <span className="text-[10px] font-black text-[#3b82f6] tabular-nums">
+                        {mins > 0 ? `${mins}m ${secs}s` : `${secs}s`} <span className="text-[7px] font-bold text-[var(--zv-muted)]">(s/d candle tutup)</span>
+                      </span>
+                    )
+                  })()}
                 </div>
 
                 {/* Profit preview */}
