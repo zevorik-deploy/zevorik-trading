@@ -4481,12 +4481,12 @@ function Dashboard() {
 
               {/* ── HERO HEADER ── */}
               <div className="relative rounded-3xl overflow-hidden mb-5" style={{ background: 'linear-gradient(145deg, #0c0a1a 0%, #1a0a2e 30%, #3b1a6e 60%, #6d28d9 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(168,85,247,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59,130,246,0.3) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(245,158,11,0.15) 0%, transparent 60%)' }} />
-                <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(168,85,247,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59,130,246,0.3) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(245,158,11,0.15) 0%, transparent 60%)' }} />
+                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                 {/* Animated floating orbs */}
-                <div className="absolute top-6 left-8 w-16 h-16 rounded-full bg-purple-500/20 blur-xl animate-pulse" />
-                <div className="absolute bottom-4 right-10 w-20 h-20 rounded-full bg-yellow-400/15 blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
-                <div className="absolute top-10 right-20 w-12 h-12 rounded-full bg-blue-400/20 blur-lg animate-pulse" style={{ animationDelay: '0.5s' }} />
+                <div className="absolute top-6 left-8 w-16 h-16 rounded-full bg-purple-500/20 blur-xl animate-pulse pointer-events-none" />
+                <div className="absolute bottom-4 right-10 w-20 h-20 rounded-full bg-yellow-400/15 blur-2xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
+                <div className="absolute top-10 right-20 w-12 h-12 rounded-full bg-blue-400/20 blur-lg animate-pulse pointer-events-none" style={{ animationDelay: '0.5s' }} />
 
                 <div className="relative p-5 md:p-7 text-white">
                   <div className="flex items-center gap-3 mb-4">
@@ -4539,8 +4539,8 @@ function Dashboard() {
               {promoSubTab === 'daily' && (
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
                   {/* Streak Progress Card */}
-                  <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 100%)' }}>
-                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                  <div className="relative rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 100%)' }}>
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                     <div className="relative p-5 text-white text-center">
                       <div className="w-16 h-16 rounded-full mx-auto mb-3 grid place-items-center" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 0 30px rgba(245,158,11,0.4)' }}>
                         <Flame className="w-8 h-8 text-white" />
@@ -4742,8 +4742,8 @@ function Dashboard() {
               {promoSubTab === 'video' && (
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
                   {/* Video Promo Hero */}
-                  <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0020 0%, #4a044e 40%, #c026d3 100%)' }}>
-                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(236,72,153,0.5) 0%, transparent 50%)' }} />
+                  <div className="relative rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0020 0%, #4a044e 40%, #c026d3 100%)' }}>
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(236,72,153,0.5) 0%, transparent 50%)' }} />
                     <div className="relative p-4 text-white">
                       <div className="flex items-center gap-2.5 mb-3">
                         <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e)', boxShadow: '0 4px 15px rgba(236,72,153,0.4)' }}>

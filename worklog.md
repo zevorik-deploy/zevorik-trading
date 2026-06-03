@@ -130,3 +130,24 @@ Stage Summary:
 - NAIK/TURUN buttons submit position immediately when amount is valid
 - Duration options simplified to 10s/20s/30s/60s with 20s default
 - File reduced from ~6156 to ~5976 lines by removing modal code
+
+---
+Task ID: 9
+Agent: main
+Task: Fix non-clickable buttons in Promosi & Bonus dashboard
+
+Work Log:
+- Analyzed user's screenshot showing Promosi & Bonus Cek Harian section
+- Identified root cause: Two parent divs in the Promosi & Bonus section were missing `position: relative` class, causing their `absolute inset-0` decorative overlay children to escape and cover the entire page, blocking all click events
+- Fixed Cek Harian card (line 4542): Added `relative` to parent div and `pointer-events-none` to the absolute overlay
+- Fixed Promosi Video hero (line 4745): Added `relative` to parent div and `pointer-events-none` to the absolute overlay  
+- Added `pointer-events-none` to all decorative absolute positioned overlays in the Promosi & Bonus hero header (lines 4484-4489) for extra safety
+- Verified Misi Bonus Undangan was already removed from Undang tab (confirmed via grep)
+- Lint passes clean
+- Dev server compiles without errors
+
+Stage Summary:
+- Fixed the CSS overlay bug that prevented all buttons in Promosi & Bonus from being clickable
+- The issue was: `absolute inset-0` overlays without a `relative` parent escaped to cover the entire viewport, intercepting all mouse/click events
+- Fix: Added `relative` to contain the overlays + `pointer-events-none` as a safety measure
+- All Promosi & Bonus features should now be clickable: Cek Harian claim button, task claim buttons, sub-tab switches, promo detail cards, video platform selector, submit button, notify buttons
