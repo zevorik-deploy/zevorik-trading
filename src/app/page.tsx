@@ -16,7 +16,7 @@ import {
   ListChecks, ClipboardList,
   Download, Gem, Building2, Headphones, ChevronLeft,
   Video, ThumbsUp, Eye as EyeIcon, Globe, Send,
-  Sun, Moon
+  Sun, Moon, BellRing, Mail, MessageSquare
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -102,7 +102,7 @@ interface BonusItem {
 }
 
 interface PromoItem {
-  id: string; title: string; description: string; imageUrl?: string; startDate: string; endDate: string; type: string;
+  id: string; title: string; description: string; imageUrl?: string; startDate: string; endDate: string; type: string; value?: number; isActive?: boolean;
 }
 
 interface LeaderboardEntry {
@@ -725,6 +725,16 @@ function Dashboard() {
   const [tasksLoading, setTasksLoading] = useState(false)
   const [showTasksModal, setShowTasksModal] = useState(false)
   const [taskClaimingId, setTaskClaimingId] = useState<string | null>(null)
+
+  // ============ EXTRA MODALS STATE ============
+  const [showKycModal, setShowKycModal] = useState(false)
+  const [showVipModal, setShowVipModal] = useState(false)
+  const [showCsModal, setShowCsModal] = useState(false)
+  const [showAboutModal, setShowAboutModal] = useState(false)
+  const [showHelpModal, setShowHelpModal] = useState(false)
+  const [showPromoDetailModal, setShowPromoDetailModal] = useState(false)
+  const [selectedPromo, setSelectedPromo] = useState<PromoItem | null>(null)
+  const [promoNotified, setPromoNotified] = useState<Set<string>>(new Set())
 
   // ============ WELCOME MODAL STATE ============
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
@@ -2058,7 +2068,7 @@ function Dashboard() {
                   {[
                     { icon: <ClipboardList className="w-5 h-5" />, label: 'Cek Harian', action: () => setShowDailyCheckModal(true), color: 'bg-[var(--zv-panel)] text-[#3b82f6]', border: 'border-[var(--zv-border)]' },
                     { icon: <CalendarDays className="w-5 h-5" />, label: 'Tugas', action: () => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }, color: 'bg-[var(--zv-panel)] text-[#f59e0b]', border: 'border-[var(--zv-border)]' },
-                    { icon: <Download className="w-5 h-5" />, label: 'Unduh App', action: () => {}, color: 'bg-[var(--zv-panel)] text-[#2196f3]', border: 'border-[var(--zv-border)]' },
+                    { icon: <Download className="w-5 h-5" />, label: 'Unduh App', action: () => toast({ title: 'Unduh Aplikasi', description: 'Buka melalui browser dan pilih "Add to Home Screen" untuk instal aplikasi ZEVORIX!' }), color: 'bg-[var(--zv-panel)] text-[#2196f3]', border: 'border-[var(--zv-border)]' },
                   ].map((a, i) => (
                     <button key={i} onClick={a.action} className="stock-card flex-shrink-0 flex flex-col items-center gap-2 py-3.5 px-5 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] relative min-w-[88px]">
                       <div className={`w-10 h-10 rounded-xl ${a.color} border ${a.border} grid place-items-center`}>{a.icon}</div>
@@ -4633,8 +4643,8 @@ function Dashboard() {
                   {promos.length > 0 ? (
                     <div className="space-y-3">
                       {promos.map(p => (
-                        <div key={p.id} className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
-                          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                        <button key={p.id} onClick={() => { setSelectedPromo(p); setShowPromoDetailModal(true) }}
+                          className="w-full text-left rounded-2xl overflow-hidden group hover:scale-[1.01] transition-all" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
                           <div className="relative p-4 text-white">
                             <div className="flex items-center gap-2.5 mb-2">
                               <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-400/30 grid place-items-center">
@@ -4642,21 +4652,25 @@ function Dashboard() {
                               </div>
                               <div className="flex-1">
                                 <span className="block text-[12px] font-black">{p.title}</span>
-                                <span className="block text-[8px] text-blue-200 mt-0.5">{p.type === 'deposit' ? 'Deposit Bonus' : p.type === 'trading' ? 'Trading Bonus' : 'Special Promo'}</span>
+                                <span className="block text-[8px] text-blue-200 mt-0.5">{p.type === 'deposit_bonus' ? 'Deposit Bonus' : p.type === 'trading_bonus' ? 'Trading Bonus' : p.type === 'welcome_bonus' ? 'Welcome Bonus' : p.type === 'referral_program' ? 'Referral Program' : p.type === 'trading_competition' ? 'Kompetisi Trading' : p.type === 'daily_checkin' ? 'Daily Check-in' : 'Special Promo'}</span>
                               </div>
-                              <div className="h-7 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center gap-1">
-                                <span className="text-[8px] font-black text-yellow-300">AKTIF</span>
+                              <div className="flex items-center gap-2">
+                                <div className="h-7 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center gap-1">
+                                  <span className="text-[8px] font-black text-yellow-300">AKTIF</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
                               </div>
                             </div>
-                            <p className="text-[9px] text-blue-100/80 leading-relaxed">{p.description}</p>
-                            <div className="flex items-center gap-3 mt-3">
+                            <p className="text-[9px] text-blue-100/80 leading-relaxed line-clamp-2">{p.description}</p>
+                            <div className="flex items-center justify-between mt-3">
                               <div className="flex items-center gap-1 text-[8px] text-blue-200">
                                 <CalendarDays className="w-3 h-3" />
                                 <span>{p.startDate ? formatDate(p.startDate) : 'Sekarang'} — {p.endDate ? formatDate(p.endDate) : 'Berlangsung'}</span>
                               </div>
+                              <span className="text-[8px] font-bold text-yellow-300 group-hover:underline">Lihat Detail →</span>
                             </div>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   ) : (
@@ -4677,12 +4691,12 @@ function Dashboard() {
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {[
-                        { title: 'Bonus Deposit 150%', desc: 'Deposit minimal Rp 500.000 dan dapatkan bonus 150%', color: 'from-purple-600 to-blue-500', icon: <CreditCard className="w-4 h-4" /> },
-                        { title: 'Trading Marathon', desc: 'Trade 50x dan dapatkan bonus hingga Rp 500.000', color: 'from-orange-500 to-red-500', icon: <BarChart3 className="w-4 h-4" /> },
-                        { title: 'Referral Super', desc: 'Ajak 10 teman dan dapatkan bonus Rp 100.000', color: 'from-green-500 to-emerald-500', icon: <UserPlus className="w-4 h-4" /> },
-                        { title: 'VIP Cashback', desc: 'Cashback 5% untuk semua transaksi VIP', color: 'from-yellow-500 to-amber-500', icon: <DollarSign className="w-4 h-4" /> },
-                      ].map((promo, i) => (
-                        <div key={i} className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all group">
+                        { id: 'upcoming-deposit150', title: 'Bonus Deposit 150%', desc: 'Deposit minimal Rp 500.000 dan dapatkan bonus 150%', color: 'from-purple-600 to-blue-500', icon: <CreditCard className="w-4 h-4" /> },
+                        { id: 'upcoming-marathon', title: 'Trading Marathon', desc: 'Trade 50x dan dapatkan bonus hingga Rp 500.000', color: 'from-orange-500 to-red-500', icon: <BarChart3 className="w-4 h-4" /> },
+                        { id: 'upcoming-referral', title: 'Referral Super', desc: 'Ajak 10 teman dan dapatkan bonus Rp 100.000', color: 'from-green-500 to-emerald-500', icon: <UserPlus className="w-4 h-4" /> },
+                        { id: 'upcoming-cashback', title: 'VIP Cashback', desc: 'Cashback 5% untuk semua transaksi VIP', color: 'from-yellow-500 to-amber-500', icon: <DollarSign className="w-4 h-4" /> },
+                      ].map((promo) => (
+                        <div key={promo.id} className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all group">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${promo.color} grid place-items-center text-white shadow-md group-hover:scale-110 transition-transform`}>
                               {promo.icon}
@@ -4692,9 +4706,30 @@ function Dashboard() {
                               <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5 leading-relaxed">{promo.desc}</span>
                             </div>
                           </div>
-                          <div className="mt-2 flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-[var(--zv-muted)]" />
-                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">Segera Hadir</span>
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3 h-3 text-[var(--zv-muted)]" />
+                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Segera Hadir</span>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setPromoNotified(prev => {
+                                  const newNotified = new Set(prev)
+                                  if (newNotified.has(promo.id)) {
+                                    newNotified.delete(promo.id)
+                                    toast({ title: 'Notifikasi Dibatalkan', description: `Anda tidak akan diberitahu untuk ${promo.title}` })
+                                  } else {
+                                    newNotified.add(promo.id)
+                                    toast({ title: 'Akan Diberitahu! 🔔', description: `Anda akan diberitahu saat ${promo.title} dimulai` })
+                                  }
+                                  return newNotified
+                                })
+                              }}
+                              className={`h-6 px-2.5 rounded-lg text-[7px] font-bold flex items-center gap-1 transition-all ${promoNotified.has(promo.id) ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-purple-500/30 hover:text-purple-500'}`}
+                            >
+                              {promoNotified.has(promo.id) ? <><Bell className="w-2.5 h-2.5" />Berlangganan</> : <><BellRing className="w-2.5 h-2.5" />Beri Tahu</>}
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -5096,13 +5131,13 @@ function Dashboard() {
               {/* Menu Items */}
               <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden mb-4">
                 {[
-                  { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => {} },
-                  { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => {} },
+                  { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => setShowKycModal(true) },
+                  { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => setShowVipModal(true) },
                   { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Promosi & Bonus', desc: 'Klaim bonus & promo', action: () => setActiveTab('bonus') },
                   { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
-                  { icon: <Headphones className="w-4 h-4 text-[#3b82f6]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => {} },
-                  { icon: <Building2 className="w-4 h-4 text-[#3b82f6]" />, label: 'Profil Perusahaan', desc: 'Tentang ZEVORIX', action: () => {} },
-                  { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => {} },
+                  { icon: <Headphones className="w-4 h-4 text-[#3b82f6]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => setShowCsModal(true) },
+                  { icon: <Building2 className="w-4 h-4 text-[#3b82f6]" />, label: 'Profil Perusahaan', desc: 'Tentang ZEVORIX', action: () => setShowAboutModal(true) },
+                  { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => setShowHelpModal(true) },
                 ].map((item, i) => (
                   <button key={i} onClick={item.action} className="w-full flex items-center gap-3 p-3 border-b border-[var(--zv-border)] last:border-0 hover:bg-[var(--zv-surface)] transition-colors">
                     {item.icon}
@@ -6303,6 +6338,325 @@ function Dashboard() {
                     style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
                   >
                     Investasi Sekarang
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Promo Detail Modal */}
+      <AnimatePresence>
+        {showPromoDetailModal && selectedPromo && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowPromoDetailModal(false)} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="relative">
+                {/* Header */}
+                <div className="p-5 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                  <button onClick={() => setShowPromoDetailModal(false)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 grid place-items-center text-white hover:bg-white/20 transition-colors"><X className="w-4 h-4" /></button>
+                  <div className="relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-yellow-500/20 border border-yellow-400/30 grid place-items-center mx-auto mb-3">
+                      <Zap className="w-7 h-7 text-yellow-300" />
+                    </div>
+                    <h2 className="text-[16px] font-black text-center">{selectedPromo.title}</h2>
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      <span className="h-5 px-2.5 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[8px] font-black text-yellow-300 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />AKTIF</span>
+                      <span className="h-5 px-2.5 rounded-full bg-white/10 border border-white/15 text-[8px] font-bold text-blue-200">{selectedPromo.type === 'deposit_bonus' ? 'Deposit' : selectedPromo.type === 'trading_bonus' ? 'Trading' : selectedPromo.type === 'welcome_bonus' ? 'Welcome' : selectedPromo.type === 'referral_program' ? 'Referral' : selectedPromo.type === 'trading_competition' ? 'Kompetisi' : selectedPromo.type === 'daily_checkin' ? 'Check-in' : 'Promo'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <p className="text-[11px] text-[var(--zv-text)] leading-relaxed mb-4">{selectedPromo.description}</p>
+                  <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">Periode</span>
+                      <span className="text-[9px] font-bold text-[var(--zv-text)]">{selectedPromo.startDate ? formatDate(selectedPromo.startDate) : 'Sekarang'} — {selectedPromo.endDate ? formatDate(selectedPromo.endDate) : 'Berlangsung'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">Nilai</span>
+                      <span className="text-[11px] font-black text-[#f59e0b]">{selectedPromo.value ? (selectedPromo.value >= 1000 ? formatRupiah(selectedPromo.value) : `${selectedPromo.value}%`) : '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">Status</span>
+                      <span className="text-[9px] font-black text-green-500">Aktif</span>
+                    </div>
+                  </div>
+                  {/* Claim / Action buttons based on promo type */}
+                  {selectedPromo.type === 'daily_checkin' ? (
+                    <button onClick={() => { setShowPromoDetailModal(false); setPromoSubTab('daily') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[11px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
+                      <Flame className="w-4 h-4" />Klaim Cek Harian
+                    </button>
+                  ) : selectedPromo.type === 'referral_program' ? (
+                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('undang') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+                      <UserPlus className="w-4 h-4" />Ajak Teman Sekarang
+                    </button>
+                  ) : selectedPromo.type === 'deposit_bonus' ? (
+                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('finance') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[11px] font-bold hover:from-green-400 hover:to-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
+                      <Plus className="w-4 h-4" />Deposit Sekarang
+                    </button>
+                  ) : selectedPromo.type === 'trading_bonus' ? (
+                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('sinyal') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 text-white text-[11px] font-bold hover:from-purple-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20">
+                      <Target className="w-4 h-4" />Mulai Trading
+                    </button>
+                  ) : selectedPromo.type === 'trading_competition' ? (
+                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('sinyal') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white text-[11px] font-bold hover:from-orange-400 hover:to-red-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
+                      <Trophy className="w-4 h-4" />Ikut Kompetisi
+                    </button>
+                  ) : selectedPromo.type === 'welcome_bonus' ? (
+                    <button onClick={() => { setShowPromoDetailModal(false); toast({ title: 'Bonus Selamat Datang', description: 'Bonus sudah otomatis dikreditkan ke saldo Anda!' }) }} className="w-full h-11 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[11px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
+                      <Gift className="w-4 h-4" />Klaim Bonus
+                    </button>
+                  ) : (
+                    <button onClick={() => { setShowPromoDetailModal(false); toast({ title: 'Promo Aktif', description: 'Anda sudah berpartisipasi dalam promo ini!' }) }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2">
+                      <Zap className="w-4 h-4" />Partisipasi
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* KYC Verification Modal */}
+      <AnimatePresence>
+        {showKycModal && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowKycModal(false)} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center"><Shield className="w-5 h-5 text-[#3b82f6]" /></div>
+                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Verifikasi KYC</h2>
+                  </div>
+                  <button onClick={() => setShowKycModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
+                </div>
+                {user?.kycStatus === 'verified' ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 grid place-items-center mx-auto mb-3"><CheckCircle className="w-8 h-8 text-green-500" /></div>
+                    <h3 className="text-[14px] font-black text-green-500">Terverifikasi ✓</h3>
+                    <p className="text-[10px] text-[var(--zv-muted)] mt-1">Akun Anda sudah terverifikasi</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-2xl p-4 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
+                      <p className="text-[10px] text-[var(--zv-text)] leading-relaxed mb-3">Verifikasi identitas Anda untuk membuka fitur penarikan dan meningkatkan limit transaksi.</p>
+                      <div className="space-y-2">
+                        {['KTP / Identitas', 'Selfie dengan KTP', 'Nomor Rekening Bank'].map((step, i) => (
+                          <div key={i} className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 grid place-items-center text-[9px] font-black text-[#3b82f6]">{i + 1}</div>
+                            <span className="text-[10px] font-bold text-[var(--zv-text)]">{step}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Nama Lengkap (sesuai KTP)</label>
+                        <input type="text" placeholder="Masukkan nama lengkap" className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Nomor KTP</label>
+                        <input type="text" placeholder="16 digit nomor KTP" className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
+                      </div>
+                      <button onClick={() => { setShowKycModal(false); toast({ title: 'Verifikasi Diajukan!', description: 'Proses verifikasi membutuhkan 1-3 hari kerja' }) }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20">
+                        Ajukan Verifikasi
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* VIP Level Modal */}
+      <AnimatePresence>
+        {showVipModal && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowVipModal(false)} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><Award className="w-5 h-5 text-[#f59e0b]" /></div>
+                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">VIP Level</h2>
+                  </div>
+                  <button onClick={() => setShowVipModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
+                </div>
+                {/* Current Level */}
+                <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 100%)' }}>
+                  <div className="p-4 text-white text-center">
+                    <span className="text-[32px]">🥇</span>
+                    <h3 className="text-[18px] font-black mt-1">Gold</h3>
+                    <p className="text-[9px] text-orange-200">Level saat ini</p>
+                  </div>
+                </div>
+                {/* VIP Tiers */}
+                <div className="space-y-2">
+                  {[
+                    { level: 'Bronze', icon: '🥉', color: 'from-amber-800 to-amber-600', deposit: 'Rp 0', payout: '80%', commission: '5%' },
+                    { level: 'Silver', icon: '🥈', color: 'from-gray-400 to-gray-300', deposit: 'Rp 5.000.000', payout: '85%', commission: '8%' },
+                    { level: 'Gold', icon: '🥇', color: 'from-yellow-500 to-yellow-300', deposit: 'Rp 25.000.000', payout: '90%', commission: '10%', active: true },
+                    { level: 'Platinum', icon: '💎', color: 'from-cyan-500 to-blue-400', deposit: 'Rp 100.000.000', payout: '95%', commission: '14%' },
+                  ].map((tier) => (
+                    <div key={tier.level} className={`rounded-2xl p-3 border transition-all ${tier.active ? 'bg-yellow-500/5 border-yellow-500/20' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[20px]">{tier.icon}</span>
+                          <div>
+                            <span className="block text-[11px] font-black text-[var(--zv-text)]">{tier.level}</span>
+                            <span className="block text-[8px] text-[var(--zv-muted)]">Deposit {tier.deposit}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[10px] font-black text-[#f59e0b]">Payout {tier.payout}</span>
+                          <span className="block text-[8px] text-[var(--zv-muted)]">Komisi {tier.commission}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[8px] text-[var(--zv-muted)] text-center mt-3">Deposit lebih banyak untuk meningkatkan level VIP dan mendapat benefit eksklusif!</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Customer Service Modal */}
+      <AnimatePresence>
+        {showCsModal && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowCsModal(false)} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center"><Headphones className="w-5 h-5 text-[#3b82f6]" /></div>
+                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Layanan Pelanggan</h2>
+                  </div>
+                  <button onClick={() => setShowCsModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
+                </div>
+                <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+                  <div className="p-4 text-white text-center">
+                    <Headphones className="w-10 h-10 mx-auto mb-2 text-blue-200" />
+                    <h3 className="text-[14px] font-black">CS 24/7 Siap Membantu</h3>
+                    <p className="text-[9px] text-blue-200 mt-1">Respon cepat dalam 5 menit</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { icon: <MessageCircle className="w-4 h-4" />, label: 'Live Chat', desc: 'Chat langsung dengan CS', color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' },
+                    { icon: <Mail className="w-4 h-4" />, label: 'Email', desc: 'support@zevorix.com', color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' },
+                    { icon: <Phone className="w-4 h-4" />, label: 'Telepon', desc: '+62 21 1234 5678', color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/20' },
+                    { icon: <MessageSquare className="w-4 h-4" />, label: 'WhatsApp', desc: '+62 812 3456 7890', color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' },
+                  ].map((ch, i) => (
+                    <button key={i} onClick={() => toast({ title: ch.label, description: `Menghubungi via ${ch.label}...` })} className="w-full rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center gap-3 hover:border-[#3b82f6]/30 transition-all">
+                      <div className={`w-9 h-9 rounded-xl border grid place-items-center ${ch.bg} ${ch.color}`}>{ch.icon}</div>
+                      <div className="text-left flex-1">
+                        <span className="block text-[10px] font-black text-[var(--zv-text)]">{ch.label}</span>
+                        <span className="block text-[8px] text-[var(--zv-muted)]">{ch.desc}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[var(--zv-muted)]" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* About Company Modal */}
+      <AnimatePresence>
+        {showAboutModal && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowAboutModal(false)} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center"><Building2 className="w-5 h-5 text-[#3b82f6]" /></div>
+                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Tentang ZEVORIX</h2>
+                  </div>
+                  <button onClick={() => setShowAboutModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
+                </div>
+                <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="p-5 text-white text-center">
+                    <div className="mx-auto mb-3 p-1 bg-white/90 rounded-full shadow-lg w-fit">
+                      <ZevorixLogo size={50} />
+                    </div>
+                    <h3 className="text-[18px] font-black">ZEVORIX</h3>
+                    <p className="text-[9px] text-blue-200 tracking-widest uppercase">Platform Investasi Saham Digital</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-[10px] text-[var(--zv-text)] leading-relaxed">ZEVORIX adalah platform investasi saham digital terpercaya yang menyediakan akses ke pasar saham global dengan teknologi terdepan. Didirikan dengan visi demokratisasi investasi untuk semua orang Indonesia.</p>
+                  <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] space-y-2">
+                    {[
+                      { label: 'Didirikan', value: '2024' },
+                      { label: 'Terdaftar', value: 'OJK & Bappebti' },
+                      { label: 'Pengguna', value: '50.000+' },
+                      { label: 'Total Aset Kelola', value: 'Rp 500M+' },
+                      { label: 'Kantor Pusat', value: 'Jakarta, Indonesia' },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center justify-between py-1 border-b border-[var(--zv-border)] last:border-0">
+                        <span className="text-[9px] font-bold text-[var(--zv-muted)]">{item.label}</span>
+                        <span className="text-[9px] font-bold text-[var(--zv-text)]">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Help / FAQ Modal */}
+      <AnimatePresence>
+        {showHelpModal && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowHelpModal(false)} />
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><HelpCircle className="w-5 h-5 text-[#f59e0b]" /></div>
+                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Bantuan & FAQ</h2>
+                  </div>
+                  <button onClick={() => setShowHelpModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { q: 'Bagaimana cara deposit?', a: 'Klik menu Dompet → Isi Saldo → Pilih metode pembayaran → Masukkan jumlah → Konfirmasi pembayaran.' },
+                    { q: 'Berapa minimal deposit?', a: 'Minimal deposit adalah Rp 50.000 untuk semua metode pembayaran.' },
+                    { q: 'Bagaimana cara menarik dana?', a: 'Klik menu Dompet → Tarik Saldo → Masukkan jumlah dan rekening tujuan → Konfirmasi penarikan. Proses 1-3 hari kerja.' },
+                    { q: 'Apa itu Sinyal Pro?', a: 'Sinyal Pro adalah fitur trading dimana Anda memprediksi arah harga saham (UP/DOWN) dalam waktu tertentu untuk mendapat profit.' },
+                    { q: 'Bagaimana sistem komisi referral?', a: 'Anda mendapat komisi 10% dari Level 1, 3% dari Level 2, dan 1% dari Level 3. Komisi bisa diklaim kapan saja.' },
+                    { q: 'Apakah ZEVORIX aman?', a: 'ZEVORIX terdaftar dan diawasi oleh OJK. Semua dana nasabah dijamin oleh LPS. Kami menggunakan enkripsi SSL 256-bit.' },
+                  ].map((faq, i) => (
+                    <details key={i} className="rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] overflow-hidden group">
+                      <summary className="p-3 flex items-center justify-between cursor-pointer hover:bg-[var(--zv-panel)] transition-colors">
+                        <span className="text-[10px] font-bold text-[var(--zv-text)] pr-2">{faq.q}</span>
+                        <ChevronRight className="w-4 h-4 text-[var(--zv-muted)] flex-shrink-0 group-open:rotate-90 transition-transform" />
+                      </summary>
+                      <div className="px-3 pb-3">
+                        <p className="text-[9px] text-[var(--zv-muted)] leading-relaxed">{faq.a}</p>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-[9px] text-[var(--zv-muted)] mb-2">Masih butuh bantuan?</p>
+                  <button onClick={() => { setShowHelpModal(false); setShowCsModal(true) }} className="h-9 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-1.5 mx-auto">
+                    <Headphones className="w-3.5 h-3.5" />Hubungi CS
                   </button>
                 </div>
               </div>
