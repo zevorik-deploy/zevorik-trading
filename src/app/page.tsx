@@ -172,13 +172,13 @@ const PIE_COLORS = ['#2563eb', '#f59e0b', '#60a5fa', '#ef4444', '#8b5cf6', '#06b
 function ZevorixLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
   return (
     <div
-      className={`rounded-full overflow-hidden flex items-center justify-center ${className}`}
+      className={`flex items-center justify-center ${className}`}
       style={{ width: size, height: size }}
     >
       <img
         src="/zevorix-logo.png"
         alt="ZEVORIX"
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(59,130,246,0.35)]"
       />
     </div>
   )
@@ -255,11 +255,11 @@ function LoginPage() {
       <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 text-center text-white max-w-lg">
-          <div className="mx-auto mb-6 p-1.5 bg-white/90 rounded-full shadow-[0_12px_40px_rgba(0,0,0,.3)]">
-            <ZevorixLogo size={72} />
+          <div className="mx-auto mb-6">
+            <ZevorixLogo size={80} />
           </div>
-          <h1 className="text-3xl lg:text-4xl font-black mb-3">ZEVORIX</h1>
-          <p className="text-blue-200 text-sm lg:text-base mb-8 leading-relaxed">Future of Investing</p>
+          <h1 className="text-3xl lg:text-4xl font-black mb-2 tracking-[0.15em]" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', textShadow: '0 0 30px rgba(59,130,246,0.5)' }}>ZEVORIX</h1>
+          <p className="text-blue-200/80 text-xs lg:text-sm mb-8 leading-relaxed tracking-widest uppercase font-medium">Future of Investing</p>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
               <BarChart3 className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
@@ -299,10 +299,10 @@ function LoginPage() {
           {/* Top Navigation - mobile only */}
           <header className="flex items-center justify-between mb-3 md:hidden">
             <div className="flex items-center gap-2.5">
-              <ZevorixLogo size={36} className="ring-2 ring-white shadow-md" />
+              <ZevorixLogo size={36} />
               <div>
-                <b className="block text-[11px] leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
-                <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
+                <b className="block text-[11px] leading-tight font-black gradient-text tracking-wide">ZEVORIX</b>
+                <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
               </div>
             </div>
             <button
@@ -316,10 +316,10 @@ function LoginPage() {
           {/* Desktop switch button */}
           <div className="hidden md:flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <ZevorixLogo size={36} className="ring-2 ring-white shadow-md" />
+              <ZevorixLogo size={36} />
               <div>
-                <b className="block text-xs leading-tight font-black text-[#1d4ed8] tracking-wide">ZEVORIX</b>
-                <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-widest">ZEVORIX Pro</span>
+                <b className="block text-xs leading-tight font-black gradient-text tracking-wide">ZEVORIX</b>
+                <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
               </div>
             </div>
             <button
@@ -356,7 +356,7 @@ function LoginPage() {
 
             {/* Center Logo + Text */}
             <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-3">
-              <div className="mb-2 mx-auto p-1 bg-white/90 rounded-full shadow-[0_8px_24px_rgba(0,0,0,.3)]">
+              <div className="mb-2 mx-auto">
                 <ZevorixLogo size={56} />
               </div>
 
@@ -766,10 +766,10 @@ function Dashboard() {
   const [sinyalCurrentPrice, setSinyalCurrentPrice] = useState(0)
   const [sinyalChartTick, setSinyalChartTick] = useState(0)
   const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
-  // Timeframe: how long each candle bar lasts = trade duration = 1 batang
+  // Timeframe: each candle duration = trade duration
   const [sinyalTimeframe, setSinyalTimeframe] = useState<'1m' | '2m' | '5m' | '10m' | '15m' | '30m' | '1h'>('1m')
   const sinyalTimeframeSeconds: Record<string, number> = { '1m': 60, '2m': 120, '5m': 300, '10m': 600, '15m': 900, '30m': 1800, '1h': 3600 }
-  // Trade duration is derived from timeframe (1 batang = 1 candle = timeframe)
+  // Trade duration = candle timeframe
   const sinyalDuration = sinyalTimeframeSeconds[sinyalTimeframe] || 60
   // Chart panning: how many candles to offset from the latest
   const [sinyalChartOffset, setSinyalChartOffset] = useState(0)
@@ -1973,10 +1973,10 @@ function Dashboard() {
             <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
               <Menu className="w-4 h-4 text-[var(--zv-muted)]" />
             </button>
-            <ZevorixLogo size={34} className="flex-shrink-0 ring-2 ring-[var(--zv-border)] shadow-sm" />
+            <ZevorixLogo size={36} className="flex-shrink-0" />
             <div>
-              <b className="block text-[11px] md:text-sm font-black gradient-text leading-tight">ZEVORIX</b>
-              <span className="block text-[8px] md:text-[10px] font-bold text-[var(--zv-muted)]">Dashboard</span>
+              <b className="block text-[13px] md:text-base font-black gradient-text leading-tight">ZEVORIX</b>
+              <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-[0.2em]">Investment Platform</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -3248,7 +3248,7 @@ function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Timeframe selector — below header, = 1 batang = trade duration */}
+                  {/* Timeframe selector */}
                   <div className="absolute top-6 left-0 right-0 z-10 flex items-center justify-between px-2 py-0.5">
                     <div className="flex items-center gap-0.5">
                       {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
@@ -5473,7 +5473,7 @@ function Dashboard() {
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-4 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
         {/* Logo */}
         <div className="flex flex-col items-center gap-1 mb-3 pb-3 border-b border-[var(--zv-border)]">
-          <ZevorixLogo size={30} className="shadow-sm" />
+          <ZevorixLogo size={32} />
           <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIX</span>
         </div>
         {[
@@ -6153,7 +6153,7 @@ function Dashboard() {
                 <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="relative z-10">
-                    <div className="mx-auto mb-3 p-1 bg-white/90 rounded-full shadow-[0_8px_24px_rgba(0,0,0,.3)]">
+                    <div className="mx-auto mb-3">
                       <ZevorixLogo size={60} />
                     </div>
                     <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIX</h2>
@@ -6882,11 +6882,11 @@ function Dashboard() {
                 </div>
                 <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="p-5 text-white text-center">
-                    <div className="mx-auto mb-3 p-1 bg-white/90 rounded-full shadow-lg w-fit">
+                    <div className="mx-auto mb-3 w-fit">
                       <ZevorixLogo size={50} />
                     </div>
-                    <h3 className="text-[18px] font-black">ZEVORIX</h3>
-                    <p className="text-[9px] text-blue-200 tracking-widest uppercase">Platform Investasi Saham Digital</p>
+                    <h3 className="text-[18px] font-black gradient-text tracking-[0.15em]">ZEVORIX</h3>
+                    <p className="text-[9px] text-blue-200 tracking-[0.2em] uppercase font-medium">Platform Investasi Saham Digital</p>
                   </div>
                 </div>
                 <div className="space-y-3">

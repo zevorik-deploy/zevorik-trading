@@ -350,10 +350,19 @@
 
 /* Gradient text for headings */
 .gradient-text {
-  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 40%, #06b6d4 70%, #3b82f6 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gradient-shift 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.25));
+  letter-spacing: 0.12em;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* Number formatting */

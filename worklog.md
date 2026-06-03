@@ -362,3 +362,29 @@ Stage Summary:
 - Sinyal Pro tab is now cleaner — no "1 Batang" indicator, no trade history
 - All Sinyal Pro trade history is now in the Riwayat tab with detailed cards
 - Riwayat tab now has two sections: Sinyal Pro history + Transaksi Saham
+
+---
+Task ID: 17
+Agent: main
+Task: Apply user's custom logo (remove black bg), improve ZEVORIX brand name styling
+
+Work Log:
+- Analyzed uploaded logo image with VLM: blue "Z" with cityscape bars and upward arrow on black background
+- Processed logo with Python/Pillow to remove black background (threshold-based alpha)
+- Saved transparent PNG to /public/zevorix-logo.png (1254x1254)
+- Updated ZevorixLogo component: removed rounded-full wrapper, changed to object-contain with blue drop-shadow
+- Updated gradient-text CSS: added animated gradient shift, letter-spacing, drop-shadow filter
+- Updated dashboard header: larger logo (36px), bigger text (text-base), "Investment Platform" subtitle
+- Updated desktop sidebar: removed ring-2 from logo
+- Updated all 3 login page logo instances: removed bg-white/90 rounded-full wrappers
+- Updated about modal and welcome modal: removed rounded-full wrappers, added gradient-text class
+- Updated ZEVORIX text in about modal with gradient-text + tracking
+- Cleaned up code comments: removed "1 batang" references, simplified to "each candle duration"
+- Verified all changes with Agent Browser: logo transparent, gradient text works, login/dashboard render correctly
+- Lint passes clean
+
+Stage Summary:
+- Logo no longer has black background — transparent PNG with blue glow drop-shadow
+- ZEVORIX brand name now has animated gradient text (blue→cyan→blue shifting)
+- All logo instances updated across login, dashboard, sidebar, modals
+- Brand name uses letter-spacing and "Investment Platform" / "Pro Platform" subtitles
