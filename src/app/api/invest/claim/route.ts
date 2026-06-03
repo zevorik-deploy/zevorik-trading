@@ -29,20 +29,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Investasi tidak aktif' }, { status: 400 })
     }
 
-    // Check if can claim (at least 24 hours since last claim or creation)
+    // Check if can claim — profit credited at 00:00 WIB
     const now = new Date()
-    const lastClaimOrCreation = investment.lastClaimAt || investment.createdAt
-    const hoursSinceLastClaim = (now.getTime() - new Date(lastClaimOrCreation).getTime()) / (1000 * 60 * 60)
+    const jakartaOffset = 7 * 60 * 60 * 1000
+    const jakartaNow = new Date(now.getTime() + jakartaOffset)
+    const todayJakartaStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
 
-    // For demo purposes, allow claiming every 10 seconds for testing
-    // In production, this would be 24 hours
-    const CLAIM_INTERVAL_HOURS = 0.003 // ~10 seconds for demo
-
-    if (hoursSinceLastClaim < CLAIM_INTERVAL_HOURS) {
-      const minutesLeft = Math.ceil((CLAIM_INTERVAL_HOURS - hoursSinceLastClaim) * 60)
-      return NextResponse.json({
-        error: `Tunggu ${minutesLeft} menit lagi untuk klaim berikutnya`,
-      }, { status: 400 })
+    if (investment.lastClaimAt) {
+      const lastClaimJakarta = new Date(new Date(investment.lastClaimAt).getTime() + jakartaOffset)
+      const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
+      if (lastClaimStr === todayJakartaStr) {
+        return NextResponse.json({
+          error: 'Sudah klaim profit hari ini. Kembali jam 00:00 WIB',
+        }, { status: 400 })
+      }
     }
 
     // Check if investment is completed

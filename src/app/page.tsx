@@ -1315,30 +1315,27 @@ function Dashboard() {
     return direction === 'NAIK' ? chartPayoutRates.up : chartPayoutRates.down
   }, [chartPayoutRates])
 
-  // Stock base daily profit rates (varies per stock, 5-12%)
+  // Stock base daily profit rates (varies per stock, max 7%)
   const getStockBaseRate = useCallback((code: string): number => {
     const rates: Record<string, number> = {
-      AAPL: 5.2, NVDA: 8.5, MSFT: 5.8, GOOGL: 6.1, META: 7.2,
-      AMZN: 6.8, TSLA: 9.2, AMD: 8.8, JPM: 5.0, V: 5.5,
-      MA: 5.3, GS: 6.0, BAC: 5.1, PGR: 5.8, UNH: 5.5,
-      JNJ: 5.0, PFE: 6.2, LLY: 7.5, ABBV: 6.0, MRK: 5.8,
-      WMT: 5.2, COST: 5.5, NKE: 6.0, MCD: 5.0, KO: 5.1,
-      SBUX: 5.8, PEP: 5.3, XOM: 5.5, CVX: 5.8, COP: 6.0,
-      CAT: 5.8, BA: 7.2, GE: 6.5, HON: 5.5, DE: 5.8,
-      DIS: 6.0, NFLX: 7.8, CMCSA: 5.2, COIN: 10.5, SQ: 8.5,
-      PYPL: 6.5, AVGO: 8.0, INTC: 6.8, TSM: 7.5, CRM: 6.5,
-      ORCL: 5.8, ADBE: 6.2, IBM: 5.0, NOW: 7.0, UBER: 7.5
+      AAPL: 5.0, NVDA: 7.0, MSFT: 5.5, GOOGL: 5.8, META: 7.0,
+      AMZN: 6.5, TSLA: 7.0, AMD: 7.0, JPM: 5.0, V: 5.2,
+      MA: 5.0, GS: 5.8, BAC: 5.0, PGR: 5.5, UNH: 5.2,
+      JNJ: 5.0, PFE: 6.0, LLY: 7.0, ABBV: 5.8, MRK: 5.5,
+      WMT: 5.0, COST: 5.2, NKE: 5.8, MCD: 5.0, KO: 5.0,
+      SBUX: 5.5, PEP: 5.0, XOM: 5.2, CVX: 5.5, COP: 5.8,
+      CAT: 5.5, BA: 7.0, GE: 6.2, HON: 5.2, DE: 5.5,
+      DIS: 5.8, NFLX: 7.0, CMCSA: 5.0, COIN: 7.0, SQ: 7.0,
+      PYPL: 6.2, AVGO: 7.0, INTC: 6.5, TSM: 7.0, CRM: 6.2,
+      ORCL: 5.5, ADBE: 6.0, IBM: 5.0, NOW: 7.0, UBER: 7.0
     }
-    return rates[code] || 5.0
+    return Math.min(rates[code] || 5.0, 7.0)
   }, [])
 
   const calcContractProfit = useCallback((stock: Stock, duration: number, amount: number) => {
     const baseRate = getStockBaseRate(stock.code)
-    // Duration multiplier: longer = higher
-    const durMult = duration <= 30 ? 1 : duration <= 60 ? 1.15 : duration <= 90 ? 1.3 : duration <= 120 ? 1.5 : duration <= 180 ? 1.8 : 2.5
-    // Amount multiplier: more = higher
-    const amtMult = amount < 500000 ? 1 : amount < 1000000 ? 1.1 : amount < 5000000 ? 1.2 : amount < 10000000 ? 1.3 : 1.5
-    const dailyRate = baseRate * durMult * amtMult
+    // Max profit rate is 7% - no multipliers allowed to exceed this
+    const dailyRate = Math.min(baseRate, 7.0)
     const dailyProfitAmount = Math.round(amount * dailyRate / 100)
     const totalProfit = dailyProfitAmount * duration
     const totalReturn = amount + totalProfit
@@ -2545,7 +2542,7 @@ function Dashboard() {
                             <button onClick={() => openContract(s)} className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] md:text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20">
                               <Package className="w-3.5 h-3.5" />Kontrak
                             </button>
-                            <span className="text-[8px] font-bold text-[#f59e0b]">Mulai 5%/hari</span>
+                            <span className="text-[8px] font-bold text-[#f59e0b]">Maks 7%/hari</span>
                           </div>
                         </div>
                       </div>
@@ -2651,7 +2648,16 @@ function Dashboard() {
                   <div className="space-y-2">
                     {userContracts.filter(c => c.status === 'active').map(c => {
                       const progress = Math.round((c.daysElapsed / c.duration) * 100)
-                      const canClaim = !c.lastClaimAt || new Date(c.lastClaimAt).toDateString() !== new Date().toDateString()
+                      const canClaim = (() => {
+                        if (!c.lastClaimAt) return true
+                        const now = new Date()
+                        const jakartaOffset = 7 * 60 * 60 * 1000
+                        const jakartaNow = new Date(now.getTime() + jakartaOffset)
+                        const todayStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
+                        const lastClaimJakarta = new Date(new Date(c.lastClaimAt).getTime() + jakartaOffset)
+                        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
+                        return todayStr !== lastClaimStr
+                      })()
                       return (
                         <div key={c.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                           <div className="flex items-center justify-between mb-2">
@@ -2683,8 +2689,12 @@ function Dashboard() {
                             <span className="text-[7px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
                             <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
                               className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
-                              {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : 'Sudah Diklaim'}
+                              {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : '00:00 WIB'}
                             </button>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
+                            <span className="text-[7px] text-[#3b82f6]">Profit masuk 00:00 WIB</span>
                           </div>
                         </div>
                       )
@@ -3064,7 +3074,18 @@ function Dashboard() {
                       <div className="px-3 py-1.5 bg-[var(--zv-surface)] border-t border-[var(--zv-border)]">
                         <div className="flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
-                          <span className="text-[7px] font-bold text-[#3b82f6]">PEMBAGIAN PROFIT: Setiap 24 jam AUTO</span>
+                          <span className="text-[7px] font-bold text-[#3b82f6]">PROFIT MASUK: 00:00 WIB • {(() => {
+  const now = new Date()
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000
+  const jakarta = new Date(utc + 7 * 3600000)
+  const nextMidnight = new Date(jakarta)
+  nextMidnight.setHours(24, 0, 0, 0)
+  const diff = nextMidnight.getTime() - jakarta.getTime()
+  const h = Math.floor(diff / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
+  const s = Math.floor((diff % 60000) / 1000)
+  return `${h}j ${m}m ${s}d`
+})()}</span>
                         </div>
                       </div>
 
@@ -3092,7 +3113,16 @@ function Dashboard() {
                   <div className="space-y-2">
                     {userInvestments.filter(i => i.status === 'active').map(inv => {
                       const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
-                      const canClaim = !inv.lastClaimAt || (Date.now() - new Date(inv.lastClaimAt).getTime()) > 10000
+                      const canClaim = (() => {
+                        if (!inv.lastClaimAt) return true
+                        const now = new Date()
+                        const jakartaOffset = 7 * 60 * 60 * 1000
+                        const jakartaNow = new Date(now.getTime() + jakartaOffset)
+                        const todayStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
+                        const lastClaimJakarta = new Date(new Date(inv.lastClaimAt).getTime() + jakartaOffset)
+                        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
+                        return todayStr !== lastClaimStr
+                      })()
                       return (
                         <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                           <div className="flex items-center justify-between mb-2">
@@ -3113,8 +3143,12 @@ function Dashboard() {
                             <span className="text-[8px] font-bold text-[var(--zv-muted)]">{progress}% selesai</span>
                             <button onClick={() => handleClaimProfit(inv.id)} disabled={claimLoadingId === inv.id || !canClaim}
                               className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
-                              {claimLoadingId === inv.id ? 'Memproses...' : canClaim ? 'Klaim Profit' : 'Menunggu...'}
+                              {claimLoadingId === inv.id ? 'Memproses...' : canClaim ? 'Klaim Profit' : '00:00 WIB'}
                             </button>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
+                            <span className="text-[7px] text-[#3b82f6]">Profit masuk 00:00 WIB</span>
                           </div>
                         </div>
                       )
@@ -5768,14 +5802,13 @@ function Dashboard() {
                   <label className="block text-[9px] font-black text-[#3b82f6] mb-1.5">Durasi Kontrak</label>
                   <div className="grid grid-cols-3 gap-1.5">
                     {[30, 60, 90, 120, 180, 365].map(d => {
-                      const durMult = d <= 30 ? 1 : d <= 60 ? 1.15 : d <= 90 ? 1.3 : d <= 120 ? 1.5 : d <= 180 ? 1.8 : 2.5
-                      const effectiveRate = getStockBaseRate(selectedStock.code) * durMult
+                      const effectiveRate = Math.min(getStockBaseRate(selectedStock.code), 7.0)
                       return (
                         <button key={d} onClick={() => setContractDuration(d)}
                           className={`rounded-xl p-2 text-center border-2 transition-all ${contractDuration === d ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-panel)] hover:border-[#3b82f6]'}`}>
                           <span className="block text-[11px] font-black text-[var(--zv-text)]">{d}</span>
                           <span className="block text-[7px] font-bold text-[var(--zv-muted)]">hari</span>
-                          <span className="block text-[8px] font-black text-[#22c55e] mt-0.5">{(effectiveRate).toFixed(1)}%</span>
+                          <span className="block text-[8px] font-black text-[#22c55e] mt-0.5">{effectiveRate.toFixed(1)}%/hari</span>
                         </button>
                       )
                     })}
@@ -5845,7 +5878,28 @@ function Dashboard() {
                   </div>
                 )}
 
-                <span className="block text-[8px] text-[#3b82f6] leading-relaxed mb-3">Profit harian dapat diklaim setiap hari pukul 00:00 WIB. Kontrak berakhir setelah {contractDuration} hari.</span>
+                <div className="rounded-xl p-2.5 bg-[#3b82f6]/5 border border-[#3b82f6]/20 mb-3">
+    <div className="flex items-center gap-1.5 mb-1">
+      <Clock className="w-3 h-3 text-[#3b82f6]" />
+      <span className="text-[9px] font-black text-[#3b82f6]">Profit Masuk 00:00 WIB</span>
+    </div>
+    <div className="flex items-center gap-1.5">
+      <span className="text-[8px] text-[var(--zv-muted)]">Klaim berikutnya dalam:</span>
+      <span className="text-[10px] font-black text-[#3b82f6] tabular-nums">{(() => {
+        const now = new Date()
+        const utc = now.getTime() + now.getTimezoneOffset() * 60000
+        const jakarta = new Date(utc + 7 * 3600000)
+        const nextMidnight = new Date(jakarta)
+        nextMidnight.setHours(24, 0, 0, 0)
+        const diff = nextMidnight.getTime() - jakarta.getTime()
+        const h = Math.floor(diff / 3600000)
+        const m = Math.floor((diff % 3600000) / 60000)
+        const s = Math.floor((diff % 60000) / 1000)
+        return `${h}j ${m}m ${s}d`
+      })()}</span>
+    </div>
+    <span className="block text-[7px] text-[var(--zv-muted)] mt-1">Kontrak berakhir setelah {contractDuration} hari</span>
+  </div>
 
                 {/* Submit */}
                 <button onClick={handleContract} disabled={contractLoading || !contractAmount || parseInt(contractAmount) < 100000}

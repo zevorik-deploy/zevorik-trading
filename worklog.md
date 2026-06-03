@@ -310,3 +310,30 @@ Stage Summary:
 - Zoom +/- buttons and reset button on chart
 - Double-click resets to default view
 - Crosshair accurately tracks mouse position at all zoom levels
+
+---
+Task ID: 15
+Agent: main
+Task: Cap max profit at 7% for Pasar Saham and Investasi, add 00:00 WIB profit credit with countdown timer
+
+Work Log:
+- Capped `getStockBaseRate` at max 7% — all stocks with rates >7% (NVDA, TSLA, AMD, COIN, etc.) now show 7.0
+- Added `Math.min(rate, 7.0)` safety cap in the rate function
+- Simplified `calcContractProfit` — removed duration and amount multipliers that pushed rates above 7%
+- Changed stock card text from "Mulai 5%/hari" to "Maks 7%/hari"
+- Updated contract modal duration buttons to show flat 7% capped rate
+- Re-seeded invest products with 7% max daily profit (all 17 products)
+- Added "PROFIT MASUK: 00:00 WIB" with live countdown timer on all Investasi product cards
+- Added "Profit Masuk 00:00 WIB" styled box with countdown in contract modal
+- Added Clock icon + "Profit masuk 00:00 WIB" labels on active contract and investment cards
+- Updated both claim APIs (contracts + invest) to use 00:00 WIB Jakarta timezone check
+- Updated frontend canClaim logic to match 00:00 WIB check
+- Changed button labels from "Sudah Diklaim"/"Menunggu..." to "00:00 WIB"
+- Database re-seeded with corrected 7% product data
+- All 5 Agent Browser verification checks passed
+
+Stage Summary:
+- Max profit rate is now 7% across Pasar Saham and Investasi
+- Profits credited at 00:00 WIB with real-time countdown display
+- Users can see exactly when next profit arrives (countdown timer)
+- All claim APIs use Jakarta timezone midnight check

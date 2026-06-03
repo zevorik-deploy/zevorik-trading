@@ -142,17 +142,17 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: 'Kontrak tidak aktif' }, { status: 400 })
       }
 
-      // Check if already claimed today (00:00 GMT+7 = 17:00 UTC previous day)
+      // Check if already claimed today (based on 00:00 WIB)
       const now = new Date()
       const jakartaOffset = 7 * 60 * 60 * 1000
       const jakartaNow = new Date(now.getTime() + jakartaOffset)
-      const todayJakarta = new Date(jakartaNow.getFullYear(), jakartaNow.getMonth(), jakartaNow.getDate())
+      const todayJakartaStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
 
       if (contract.lastClaimAt) {
         const lastClaimJakarta = new Date(contract.lastClaimAt.getTime() + jakartaOffset)
-        const lastClaimDate = new Date(lastClaimJakarta.getFullYear(), lastClaimJakarta.getMonth(), lastClaimDate?.getDate() || 1)
-        if (lastClaimDate.getTime() === todayJakarta.getTime()) {
-          return NextResponse.json({ error: 'Sudah klaim profit hari ini' }, { status: 400 })
+        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
+        if (lastClaimStr === todayJakartaStr) {
+          return NextResponse.json({ error: 'Sudah klaim profit hari ini. Kembali jam 00:00 WIB' }, { status: 400 })
         }
       }
 
