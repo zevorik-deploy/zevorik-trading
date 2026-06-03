@@ -3925,23 +3925,17 @@ function Dashboard() {
                     </button>
                   </div>
 
-                  {/* Result toast — NON-BLOCKING */}
+                  {/* Result toast — Slim brief flash at top */}
                   {sinyalResults.length > 0 && (() => {
                     const latest = sinyalResults[sinyalResults.length - 1]
-                    if (Date.now() - latest.shownAt > 2500) return null
+                    if (Date.now() - latest.shownAt > 1500) return null
                     return (
-                      <motion.div key={latest.id} initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
-                        className="absolute bottom-3 right-3 z-20 pointer-events-none">
-                        <div className={`px-4 py-3 rounded-xl border ${latest.won ? 'border-green-500/30 bg-green-900/70 shadow-lg shadow-green-500/20' : 'border-red-500/30 bg-red-900/70 shadow-lg shadow-red-500/20'}`} style={{ backdropFilter: 'blur(16px)' }}>
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${latest.won ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                              <span className="text-[18px]">{latest.won ? '✅' : '❌'}</span>
-                            </div>
-                            <div>
-                              <h4 className={`text-[11px] font-black ${latest.won ? 'text-green-300' : 'text-red-300'}`}>{latest.won ? 'BENAR!' : 'SALAH'}</h4>
-                              <span className={`text-[10px] font-bold ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
-                            </div>
-                          </div>
+                      <motion.div key={latest.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${latest.won ? 'border-green-500/30 bg-green-500/15' : 'border-red-500/30 bg-red-500/15'}`} style={{ backdropFilter: 'blur(12px)' }}>
+                          <span className="text-[11px]">{latest.won ? '✅' : '❌'}</span>
+                          <span className={`text-[9px] font-black ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? 'BENAR' : 'SALAH'}</span>
+                          <span className={`text-[8px] font-bold ${latest.won ? 'text-green-300' : 'text-red-300'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
                         </div>
                       </motion.div>
                     )
