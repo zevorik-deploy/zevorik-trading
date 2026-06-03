@@ -15,7 +15,7 @@ import {
   MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
   ListChecks, ClipboardList,
   Download, Gem, Building2, Headphones, ChevronLeft,
-  Video, Play, ThumbsUp, Eye as EyeIcon, Globe, Send,
+  Video, ThumbsUp, Eye as EyeIcon, Globe, Send,
   Sun, Moon
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
@@ -673,12 +673,14 @@ function Dashboard() {
   // ============ REFERRAL MISSION CLAIM STATE ============
   const [claimedMissions, setClaimedMissions] = useState<Set<number>>(new Set())
 
-  // ============ PROMO VIDEO MISSION STATE ============
+  const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
+
+  // ============ PROMOSI & BONUS DASHBOARD STATE ============
+  const [promoSubTab, setPromoSubTab] = useState<'daily' | 'promo' | 'video' | 'history'>('daily')
   const [promoPlatform, setPromoPlatform] = useState<'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'twitter'>('tiktok')
   const [promoVideoLink, setPromoVideoLink] = useState('')
   const [promoVideos, setPromoVideos] = useState<{ id: string; platform: string; link: string; views: number; likes: number; bonus: number; status: 'pending' | 'verified' | 'rejected'; submittedAt: string }[]>([])
   const [promoSubmitLoading, setPromoSubmitLoading] = useState(false)
-  const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
   const [profileEdit, setProfileEdit] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
   const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[], totalMembers: 0, totalDeposit: 0, totalCommission: 0, pendingCommission: 0, claimedCommission: 0, tiers: [{ level: 1, commissionPercent: 10, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 1, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }], history: [] as { id: string; name: string; date: string; level: number; deposit: number; commission: number; status: string }[] })
@@ -4270,196 +4272,6 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ====== MISI PROMOSI VIDEO ====== */}
-              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4 overflow-hidden">
-                <div className="p-3 md:p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-red-500 grid place-items-center">
-                      <Video className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-[12px] md:text-[14px] font-black text-[#3b82f6]">Misi Promosi Video</h3>
-                      <span className="text-[7px] font-bold text-[#ff4081] tracking-widest uppercase">Review & Dapatkan Bonus!</span>
-                    </div>
-                  </div>
-
-                  {/* How it works */}
-                  <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-4 h-4 text-[#ff4081] flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="block text-[9px] font-black text-[var(--zv-text)] mb-1">Cara Kerja:</span>
-                        <div className="space-y-0.5">
-                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">1️⃣ Upload video review tentang ZEVORIX ke media sosial</span>
-                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">2️⃣ Kirim link video yang sudah di-upload</span>
-                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">3️⃣ Bonus dihitung dari views & likes video Anda!</span>
-                          <span className="block text-[7px] font-semibold text-[var(--zv-muted)]">4️⃣ Wajib tag @GlobalSaham di video</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Reward formula cards */}
-                  <div className="space-y-1.5 mb-3">
-                    {[
-                      { views: '1.000', bonus: 'Rp 5.000', icon: '💰' },
-                      { views: '10.000', bonus: 'Rp 50.000', icon: '💰' },
-                      { views: '100.000', bonus: 'Rp 500.000', icon: '💰' },
-                    ].map((t, i) => (
-                      <div key={i} className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[14px]">{t.icon}</span>
-                          <span className="text-[9px] font-black text-[#3b82f6]">{t.views} Views</span>
-                        </div>
-                        <span className="text-[10px] font-black text-[#f59e0b]">= {t.bonus}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Anti-injection notice */}
-                  <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
-                    <div className="flex items-start gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-                      <span className="text-[7px] font-bold text-[#f59e0b] leading-relaxed">⚠️ Perhatian: Views & Likes harus REAL/ORGANIK. Dilarang suntikan views/bot. Jika terdeteksi, bonus akan dibatalkan.</span>
-                    </div>
-                  </div>
-
-                  {/* Platform selector */}
-                  <div className="mb-3">
-                    <span className="block text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-1.5">Pilih Platform</span>
-                    <div className="flex gap-1.5 overflow-x-auto pb-1">
-                      {[
-                        { key: 'tiktok' as const, label: 'TikTok', color: 'bg-black', icon: '🎵' },
-                        { key: 'instagram' as const, label: 'Instagram', color: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: '📸' },
-                        { key: 'youtube' as const, label: 'YouTube', color: 'bg-red-600', icon: '▶️' },
-                        { key: 'facebook' as const, label: 'Facebook', color: 'bg-blue-600', icon: '📘' },
-                        { key: 'twitter' as const, label: 'X/Twitter', color: 'bg-gray-800', icon: '🐦' },
-                      ].map(p => (
-                        <button key={p.key} onClick={() => setPromoPlatform(p.key)}
-                          className={`flex-shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-[9px] font-bold transition-all ${promoPlatform === p.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm scale-105' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30'}`}>
-                          <span className="text-[12px]">{p.icon}</span>
-                          <span>{p.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Video link input */}
-                  <div className="mb-3">
-                    <span className="block text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-1.5">Link Video</span>
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--zv-muted)]" />
-                        <input
-                          type="url"
-                          value={promoVideoLink}
-                          onChange={(e) => setPromoVideoLink(e.target.value)}
-                          placeholder={`Masukkan link ${promoPlatform === 'tiktok' ? 'TikTok' : promoPlatform === 'instagram' ? 'Instagram' : promoPlatform === 'youtube' ? 'YouTube' : promoPlatform === 'facebook' ? 'Facebook' : 'X/Twitter'}`}
-                          className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-9 pr-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-[var(--zv-muted)]"
-                        />
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (!promoVideoLink.trim()) {
-                            toast({ title: 'Error', description: 'Masukkan link video terlebih dahulu', variant: 'destructive' })
-                            return
-                          }
-                          if (!promoVideoLink.startsWith('http')) {
-                            toast({ title: 'Error', description: 'Link video tidak valid, harus dimulai dengan http', variant: 'destructive' })
-                            return
-                          }
-                          setPromoSubmitLoading(true)
-                          setTimeout(() => {
-                            const simulatedViews = Math.floor(Math.random() * 5000) + 50
-                            const simulatedLikes = Math.floor(simulatedViews * (Math.random() * 0.15 + 0.02))
-                            const bonus = Math.floor(simulatedViews / 1000) * 5000
-                            const newVideo = {
-                              id: `promo-${Date.now()}`,
-                              platform: promoPlatform,
-                              link: promoVideoLink,
-                              views: simulatedViews,
-                              likes: simulatedLikes,
-                              bonus,
-                              status: 'verified' as const,
-                              submittedAt: new Date().toISOString(),
-                            }
-                            setPromoVideos(prev => [newVideo, ...prev])
-                            setPromoVideoLink('')
-                            toast({ title: 'Video Terkirim! 🎬', description: `Bonus ${formatRupiah(bonus)} dari ${simulatedViews.toLocaleString()} views` })
-                            setPromoSubmitLoading(false)
-                          }, 1500)
-                        }}
-                        disabled={promoSubmitLoading}
-                        className="h-10 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] font-bold flex items-center gap-1.5 hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-60 flex-shrink-0 shadow-md shadow-blue-500/20"
-                      >
-                        {promoSubmitLoading ? (
-                          <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        ) : (
-                          <><Send className="w-3.5 h-3.5" />Kirim</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Submitted videos list */}
-                  {promoVideos.length > 0 && (
-                    <div>
-                      <span className="block text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-1.5">Video Anda ({promoVideos.length})</span>
-                      <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
-                        {promoVideos.map((v) => {
-                          const platformInfo: Record<string, { label: string; icon: string; color: string }> = {
-                            tiktok: { label: 'TikTok', icon: '🎵', color: 'bg-black' },
-                            instagram: { label: 'Instagram', icon: '📸', color: 'bg-gradient-to-br from-purple-500 to-pink-500' },
-                            youtube: { label: 'YouTube', icon: '▶️', color: 'bg-red-600' },
-                            facebook: { label: 'Facebook', icon: '📘', color: 'bg-blue-600' },
-                            twitter: { label: 'X/Twitter', icon: '🐦', color: 'bg-gray-800' },
-                          }
-                          const pi = platformInfo[v.platform] || platformInfo.tiktok
-                          return (
-                            <div key={v.id} className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-7 h-7 rounded-lg ${pi.color} grid place-items-center text-[12px]`}>
-                                    {pi.icon}
-                                  </div>
-                                  <div>
-                                    <span className="block text-[9px] font-bold text-[var(--zv-text)]">{pi.label}</span>
-                                    <span className="block text-[6px] text-[var(--zv-muted)] truncate max-w-[140px]">{v.link}</span>
-                                  </div>
-                                </div>
-                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-[var(--zv-border)] text-[#3b82f6]' : v.status === 'pending' ? 'bg-[var(--zv-border)] text-[#f59e0b]' : 'bg-[var(--zv-border)] text-red-700'}`}>
-                                  {v.status === 'verified' ? <><CheckCircle className="w-2.5 h-2.5" />Terverifikasi</> : v.status === 'pending' ? <><Clock className="w-2.5 h-2.5" />Diperiksa</> : <><AlertCircle className="w-2.5 h-2.5" />Ditolak</>}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1">
-                                  <EyeIcon className="w-3 h-3 text-[#3b82f6]" />
-                                  <span className="text-[8px] font-black text-[var(--zv-text)]">{v.views.toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <ThumbsUp className="w-3 h-3 text-[#ff4081]" />
-                                  <span className="text-[8px] font-black text-[var(--zv-text)]">{v.likes.toLocaleString()}</span>
-                                </div>
-                                <div className="ml-auto flex items-center gap-1">
-                                  <DollarSign className="w-3 h-3 text-[#f59e0b]" />
-                                  <span className="text-[9px] font-black text-[#f59e0b]">{formatRupiah(v.bonus)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Total video bonus */}
-                      <div className="mt-2 rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-between">
-                        <span className="text-[8px] font-bold text-[var(--zv-muted)]">Total Bonus Video</span>
-                        <span className="text-[12px] font-black text-[#f59e0b]">{formatRupiah(promoVideos.reduce((s, v) => s + v.bonus, 0))}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Hero Card */}
               <div className="rounded-3xl overflow-hidden mb-4 relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
@@ -4730,69 +4542,510 @@ function Dashboard() {
             </motion.div>
           )}
 
-          {/* ====== BONUS TAB ====== */}
+          {/* ====== PROMOSI & BONUS DASHBOARD ====== */}
           {activeTab === 'bonus' && (
             <motion.div key="bonus" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Daily Check-in */}
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                <div className="p-4 text-white text-center">
-                  <Flame className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
-                  <h2 className="text-[16px] md:text-xl font-black">Bonus Harian</h2>
-                  <p className="text-[9px] md:text-[10px] text-blue-200 mt-1">Klaim bonus check-in setiap hari</p>
-                  {dailyCheckStatus.streak > 0 && (
-                    <p className="text-[8px] text-yellow-300 font-bold mt-1">🔥 Streak: {dailyCheckStatus.streak} hari</p>
-                  )}
-                  {dailyCheckStatus.canCheckToday ? (
-                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading} className="mt-3 h-10 px-8 rounded-2xl bg-yellow-500 text-[var(--zv-text)] text-[11px] font-bold hover:bg-yellow-400 transition-colors disabled:opacity-60">
-                      {dailyCheckLoading ? 'Memproses...' : 'Check-in Sekarang'}
-                    </button>
-                  ) : (
-                    <div className="mt-3 h-10 px-8 rounded-2xl bg-white/15 inline-flex items-center gap-1 text-[11px] font-bold">
-                      <CheckCircle className="w-4 h-4 text-blue-300" /> Sudah Dicek ✓
+
+              {/* ── HERO HEADER ── */}
+              <div className="relative rounded-3xl overflow-hidden mb-5" style={{ background: 'linear-gradient(145deg, #0c0a1a 0%, #1a0a2e 30%, #3b1a6e 60%, #6d28d9 100%)' }}>
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(168,85,247,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59,130,246,0.3) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(245,158,11,0.15) 0%, transparent 60%)' }} />
+                <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                {/* Animated floating orbs */}
+                <div className="absolute top-6 left-8 w-16 h-16 rounded-full bg-purple-500/20 blur-xl animate-pulse" />
+                <div className="absolute bottom-4 right-10 w-20 h-20 rounded-full bg-yellow-400/15 blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
+                <div className="absolute top-10 right-20 w-12 h-12 rounded-full bg-blue-400/20 blur-lg animate-pulse" style={{ animationDelay: '0.5s' }} />
+
+                <div className="relative p-5 md:p-7 text-white">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-14 h-14 rounded-2xl grid place-items-center" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', boxShadow: '0 4px 20px rgba(245,158,11,0.4)' }}>
+                      <Gift className="w-7 h-7 text-white" />
                     </div>
-                  )}
+                    <div>
+                      <h2 className="text-[18px] md:text-[22px] font-black tracking-tight">Promosi & Bonus</h2>
+                      <span className="text-[9px] font-bold text-yellow-300 tracking-widest uppercase">Pusat Hadiah & Keuntungan</span>
+                    </div>
+                  </div>
+
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                      <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
+                      <b className="block text-[14px] font-black">{dailyCheckStatus.streak}</b>
+                      <span className="block text-[7px] font-bold text-purple-200/80">Hari Streak</span>
+                    </div>
+                    <div className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                      <Gift className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
+                      <b className="block text-[14px] font-black">{bonuses.length}</b>
+                      <span className="block text-[7px] font-bold text-purple-200/80">Total Bonus</span>
+                    </div>
+                    <div className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                      <DollarSign className="w-5 h-5 text-green-400 mx-auto mb-1" />
+                      <b className="block text-[14px] font-black">{formatRupiah(bonuses.reduce((s, b) => s + b.amount, 0)).replace('Rp', '').trim()}</b>
+                      <span className="block text-[7px] font-bold text-purple-200/80">Total Diperoleh</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Promos */}
-              {promos.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Promo Aktif</h3>
-                  <div className="space-y-2">
-                    {promos.map(p => (
-                      <div key={p.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Gift className="w-4 h-4 text-[#f59e0b]" />
-                          <span className="text-[10px] font-black text-[var(--zv-text)]">{p.title}</span>
-                        </div>
-                        <p className="text-[8px] text-[var(--zv-muted)]">{p.description}</p>
+              {/* ── SUB TABS ── */}
+              <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 custom-scrollbar">
+                {[
+                  { key: 'daily' as const, label: 'Cek Harian', icon: <Flame className="w-3.5 h-3.5" /> },
+                  { key: 'promo' as const, label: 'Promo', icon: <Zap className="w-3.5 h-3.5" /> },
+                  { key: 'video' as const, label: 'Promosi Video', icon: <Video className="w-3.5 h-3.5" /> },
+                  { key: 'history' as const, label: 'Riwayat', icon: <History className="w-3.5 h-3.5" /> },
+                ].map(t => (
+                  <button key={t.key} onClick={() => setPromoSubTab(t.key)}
+                    className={`flex-shrink-0 h-9 px-4 rounded-xl flex items-center gap-1.5 text-[10px] font-bold transition-all ${promoSubTab === t.key ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-lg shadow-purple-500/20 scale-[1.02]' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-purple-500/30 hover:text-[var(--zv-text)]'}`}>
+                    {t.icon}{t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── DAILY CHECK-IN ── */}
+              {promoSubTab === 'daily' && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                  {/* Streak Progress Card */}
+                  <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 100%)' }}>
+                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                    <div className="relative p-5 text-white text-center">
+                      <div className="w-16 h-16 rounded-full mx-auto mb-3 grid place-items-center" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 0 30px rgba(245,158,11,0.4)' }}>
+                        <Flame className="w-8 h-8 text-white" />
                       </div>
-                    ))}
+                      <h3 className="text-[16px] font-black mb-1">Cek Harian</h3>
+                      <p className="text-[9px] text-orange-200 font-semibold mb-3">Klaim bonus setiap hari dan bangun streak Anda!</p>
+
+                      {/* Streak Visualization */}
+                      <div className="flex items-center justify-center gap-1 mb-4">
+                        {Array.from({ length: 7 }).map((_, i) => {
+                          const dayNum = i + 1
+                          const isCompleted = dailyCheckStatus.streak >= dayNum
+                          const isToday = dailyCheckStatus.streak === dayNum - 1 && dailyCheckStatus.canCheckToday
+                          return (
+                            <div key={i} className="flex flex-col items-center gap-0.5">
+                              <div className={`w-9 h-9 rounded-xl grid place-items-center text-[10px] font-black transition-all ${isCompleted ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-md shadow-orange-500/30 scale-110' : isToday ? 'bg-white/20 border-2 border-dashed border-yellow-400/60 text-yellow-300 animate-pulse' : 'bg-white/10 text-white/30'}`}>
+                                {isCompleted ? '✓' : dayNum}
+                              </div>
+                              <span className="text-[6px] font-bold text-white/50">Hari {dayNum}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Reward Preview */}
+                      <div className="rounded-xl p-2.5 bg-white/10 border border-white/15 mb-3 inline-block">
+                        <span className="text-[8px] font-bold text-yellow-200">Bonus Hari Ini: </span>
+                        <span className="text-[12px] font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward || 1000)}</span>
+                      </div>
+
+                      <div>
+                        {dailyCheckStatus.canCheckToday ? (
+                          <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
+                            className="h-11 px-10 rounded-2xl text-[12px] font-bold transition-all disabled:opacity-60 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02]"
+                            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                            {dailyCheckLoading ? (
+                              <span className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Memproses...</span>
+                            ) : '🔥 Klaim Sekarang'}
+                          </button>
+                        ) : (
+                          <div className="h-11 px-10 rounded-2xl bg-white/15 inline-flex items-center gap-1.5 text-[12px] font-bold">
+                            <CheckCircle className="w-5 h-5 text-green-400" /> Sudah Diklaim Hari Ini ✓
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  {/* Tasks */}
+                  {tasks.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-[12px] font-black text-[var(--zv-text)] mb-3 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 grid place-items-center"><ListChecks className="w-3.5 h-3.5 text-purple-400" /></div>
+                        Tugas Bonus
+                      </h3>
+                      <div className="space-y-2">
+                        {tasks.map(task => (
+                          <div key={task.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-8 h-8 rounded-xl grid place-items-center ${task.completed ? 'bg-green-500/10' : 'bg-purple-500/10'}`}>
+                                  {task.completed ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Target className="w-4 h-4 text-purple-400" />}
+                                </div>
+                                <div>
+                                  <span className="block text-[10px] font-bold text-[var(--zv-text)]">{task.title}</span>
+                                  <span className="block text-[7px] text-[var(--zv-muted)]">{task.description}</span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="block text-[11px] font-black text-[#f59e0b]">+{formatRupiah(task.reward)}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden">
+                                <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500" style={{ width: `${Math.min(100, (task.progress / task.target) * 100)}%` }} />
+                              </div>
+                              <span className="text-[8px] font-bold text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
+                              {task.completed && !task.claimed && (
+                                <button onClick={() => handleClaimTask(task.id)} disabled={taskClaimingId === task.id}
+                                  className="h-6 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 text-white text-[8px] font-bold flex items-center gap-1 hover:from-purple-500 hover:to-blue-400 transition-all disabled:opacity-60">
+                                  {taskClaimingId === task.id ? <div className="w-3 h-3 rounded-full border border-white/30 border-t-white animate-spin" /> : <><DollarSign className="w-3 h-3" />Klaim</>}
+                                </button>
+                              )}
+                              {task.claimed && (
+                                <span className="h-6 px-2 rounded-lg bg-green-500/10 text-green-500 text-[8px] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" />Selesai</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
               )}
 
-              {/* Bonus History */}
-              <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Bonus</h3>
-              <div className="space-y-1.5">
-                {bonuses.map(b => (
-                  <div key={b.id} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Gift className="w-4 h-4 text-[#9c27b0]" /></div>
-                      <div>
-                        <span className="block text-[9px] font-bold text-[var(--zv-text)]">{b.type === 'daily_checkin' ? 'Daily Check-in' : b.type === 'trading_bonus' ? 'Trading Bonus' : b.type === 'deposit_bonus' ? 'Deposit Bonus' : b.type === 'referral_bonus' ? 'Referral Bonus' : 'Welcome Bonus'}</span>
-                        <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(b.createdAt)}</span>
+              {/* ── PROMO ── */}
+              {promoSubTab === 'promo' && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                  {/* Active Promos */}
+                  {promos.length > 0 ? (
+                    <div className="space-y-3">
+                      {promos.map(p => (
+                        <div key={p.id} className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+                          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                          <div className="relative p-4 text-white">
+                            <div className="flex items-center gap-2.5 mb-2">
+                              <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-400/30 grid place-items-center">
+                                <Zap className="w-5 h-5 text-yellow-300" />
+                              </div>
+                              <div className="flex-1">
+                                <span className="block text-[12px] font-black">{p.title}</span>
+                                <span className="block text-[8px] text-blue-200 mt-0.5">{p.type === 'deposit' ? 'Deposit Bonus' : p.type === 'trading' ? 'Trading Bonus' : 'Special Promo'}</span>
+                              </div>
+                              <div className="h-7 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center gap-1">
+                                <span className="text-[8px] font-black text-yellow-300">AKTIF</span>
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-blue-100/80 leading-relaxed">{p.description}</p>
+                            <div className="flex items-center gap-3 mt-3">
+                              <div className="flex items-center gap-1 text-[8px] text-blue-200">
+                                <CalendarDays className="w-3 h-3" />
+                                <span>{p.startDate ? formatDate(p.startDate) : 'Sekarang'} — {p.endDate ? formatDate(p.endDate) : 'Berlangsung'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center mx-auto mb-4">
+                        <Zap className="w-8 h-8 text-[var(--zv-muted)]" />
+                      </div>
+                      <p className="text-[12px] font-bold text-[var(--zv-muted)]">Belum Ada Promo Aktif</p>
+                      <p className="text-[9px] text-[var(--zv-muted)] mt-1">Cek kembali nanti untuk promo menarik!</p>
+                    </div>
+                  )}
+
+                  {/* Upcoming Promo Teasers */}
+                  <div className="mt-5">
+                    <h3 className="text-[11px] font-black text-[var(--zv-text)] mb-3 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><Sparkles className="w-3.5 h-3.5 text-yellow-400" /></div>
+                      Segera Hadir
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {[
+                        { title: 'Bonus Deposit 150%', desc: 'Deposit minimal Rp 500.000 dan dapatkan bonus 150%', color: 'from-purple-600 to-blue-500', icon: <CreditCard className="w-4 h-4" /> },
+                        { title: 'Trading Marathon', desc: 'Trade 50x dan dapatkan bonus hingga Rp 500.000', color: 'from-orange-500 to-red-500', icon: <BarChart3 className="w-4 h-4" /> },
+                        { title: 'Referral Super', desc: 'Ajak 10 teman dan dapatkan bonus Rp 100.000', color: 'from-green-500 to-emerald-500', icon: <UserPlus className="w-4 h-4" /> },
+                        { title: 'VIP Cashback', desc: 'Cashback 5% untuk semua transaksi VIP', color: 'from-yellow-500 to-amber-500', icon: <DollarSign className="w-4 h-4" /> },
+                      ].map((promo, i) => (
+                        <div key={i} className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all group">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${promo.color} grid place-items-center text-white shadow-md group-hover:scale-110 transition-transform`}>
+                              {promo.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{promo.title}</span>
+                              <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5 leading-relaxed">{promo.desc}</span>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-[var(--zv-muted)]" />
+                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">Segera Hadir</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ── PROMOSI VIDEO ── */}
+              {promoSubTab === 'video' && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                  {/* Video Promo Hero */}
+                  <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0020 0%, #4a044e 40%, #c026d3 100%)' }}>
+                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(236,72,153,0.5) 0%, transparent 50%)' }} />
+                    <div className="relative p-4 text-white">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e)', boxShadow: '0 4px 15px rgba(236,72,153,0.4)' }}>
+                          <Video className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-[14px] font-black">Promosi Video</h3>
+                          <span className="text-[8px] font-bold text-pink-200 tracking-widest uppercase">Review & Dapatkan Bonus!</span>
+                        </div>
+                      </div>
+
+                      {/* How it works - Step cards */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        {[
+                          { step: '1', label: 'Upload Video', desc: 'Review ZEVORIX di sosial media', icon: '📹' },
+                          { step: '2', label: 'Kirim Link', desc: 'Submit link video Anda', icon: '🔗' },
+                          { step: '3', label: 'Dapat Views', desc: 'Video Anda ditonton', icon: '👀' },
+                          { step: '4', label: 'Terima Bonus', desc: 'Dibayar per 1.000 views', icon: '💰' },
+                        ].map((s, i) => (
+                          <div key={i} className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <span className="text-[16px] block mb-0.5">{s.icon}</span>
+                            <span className="block text-[9px] font-black text-white">{s.label}</span>
+                            <span className="block text-[7px] text-pink-200/70">{s.desc}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Reward tiers */}
+                      <div className="space-y-1.5 mb-3">
+                        {[
+                          { views: '1.000', bonus: 'Rp 5.000', icon: '🥉', color: 'from-amber-700 to-amber-500' },
+                          { views: '10.000', bonus: 'Rp 50.000', icon: '🥈', color: 'from-gray-400 to-gray-300' },
+                          { views: '100.000', bonus: 'Rp 500.000', icon: '🥇', color: 'from-yellow-500 to-yellow-300' },
+                          { views: '1.000.000', bonus: 'Rp 5.000.000', icon: '💎', color: 'from-cyan-500 to-blue-400' },
+                        ].map((t, i) => (
+                          <div key={i} className="rounded-xl p-2 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[14px]">{t.icon}</span>
+                              <span className="text-[9px] font-black text-white">{t.views} Views</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className={`h-1.5 w-8 rounded-full bg-gradient-to-r ${t.color}`} />
+                              <span className="text-[10px] font-black text-yellow-300">{t.bonus}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Warning */}
+                      <div className="rounded-xl p-2.5 flex items-start gap-1.5" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        <AlertCircle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-[7px] font-bold text-yellow-200/80 leading-relaxed">Views & Likes harus REAL/ORGANIK. Dilarang suntikan views/bot. Jika terdeteksi, bonus dibatalkan.</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-black text-[#3b82f6]">+{formatRupiah(b.amount)}</span>
                   </div>
-                ))}
-                {bonuses.length === 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Belum ada bonus</p>
+
+                  {/* Platform Selector + Submit Form */}
+                  <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] p-3.5 mb-4">
+                    <span className="block text-[9px] font-black text-[var(--zv-text)] uppercase tracking-widest mb-2">Pilih Platform</span>
+                    <div className="flex gap-2 overflow-x-auto pb-1 mb-3 custom-scrollbar">
+                      {[
+                        { key: 'tiktok' as const, label: 'TikTok', icon: '🎵', gradient: 'from-black to-gray-800' },
+                        { key: 'instagram' as const, label: 'Instagram', icon: '📸', gradient: 'from-purple-500 to-pink-500' },
+                        { key: 'youtube' as const, label: 'YouTube', icon: '▶️', gradient: 'from-red-600 to-red-700' },
+                        { key: 'facebook' as const, label: 'Facebook', icon: '📘', gradient: 'from-blue-600 to-blue-700' },
+                        { key: 'twitter' as const, label: 'X/Twitter', icon: '🐦', gradient: 'from-gray-700 to-gray-900' },
+                      ].map(p => (
+                        <button key={p.key} onClick={() => setPromoPlatform(p.key)}
+                          className={`flex-shrink-0 h-10 px-4 rounded-xl flex items-center gap-1.5 text-[10px] font-bold transition-all ${promoPlatform === p.key ? `bg-gradient-to-r ${p.gradient} text-white shadow-lg scale-105` : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-pink-500/30'}`}>
+                          <span className="text-[14px]">{p.icon}</span>
+                          <span>{p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <span className="block text-[9px] font-black text-[var(--zv-text)] uppercase tracking-widest mb-2">Link Video</span>
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--zv-muted)]" />
+                        <input
+                          type="url"
+                          value={promoVideoLink}
+                          onChange={(e) => setPromoVideoLink(e.target.value)}
+                          placeholder={`Masukkan link ${promoPlatform === 'tiktok' ? 'TikTok' : promoPlatform === 'instagram' ? 'Instagram' : promoPlatform === 'youtube' ? 'YouTube' : promoPlatform === 'facebook' ? 'Facebook' : 'X/Twitter'}`}
+                          className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-10 pr-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition-all placeholder:text-[var(--zv-muted)]"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!promoVideoLink.trim()) {
+                            toast({ title: 'Error', description: 'Masukkan link video terlebih dahulu', variant: 'destructive' })
+                            return
+                          }
+                          if (!promoVideoLink.startsWith('http')) {
+                            toast({ title: 'Error', description: 'Link video tidak valid, harus dimulai dengan http', variant: 'destructive' })
+                            return
+                          }
+                          setPromoSubmitLoading(true)
+                          setTimeout(() => {
+                            const simulatedViews = Math.floor(Math.random() * 5000) + 50
+                            const simulatedLikes = Math.floor(simulatedViews * (Math.random() * 0.15 + 0.02))
+                            const bonus = Math.floor(simulatedViews / 1000) * 5000
+                            const newVideo = {
+                              id: `promo-${Date.now()}`,
+                              platform: promoPlatform,
+                              link: promoVideoLink,
+                              views: simulatedViews,
+                              likes: simulatedLikes,
+                              bonus,
+                              status: 'verified' as const,
+                              submittedAt: new Date().toISOString(),
+                            }
+                            setPromoVideos(prev => [newVideo, ...prev])
+                            setPromoVideoLink('')
+                            toast({ title: 'Video Terkirim! 🎬', description: `Bonus ${formatRupiah(bonus)} dari ${simulatedViews.toLocaleString()} views` })
+                            setPromoSubmitLoading(false)
+                          }, 1500)
+                        }}
+                        disabled={promoSubmitLoading}
+                        className="h-11 px-5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-bold flex items-center gap-1.5 hover:from-pink-400 hover:to-purple-500 transition-all disabled:opacity-60 flex-shrink-0 shadow-lg shadow-pink-500/20"
+                      >
+                        {promoSubmitLoading ? (
+                          <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        ) : (
+                          <><Send className="w-4 h-4" />Kirim</>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Submitted Videos */}
+                  {promoVideos.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-[var(--zv-text)]">Video Anda ({promoVideos.length})</span>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-3.5 h-3.5 text-[#f59e0b]" />
+                          <span className="text-[12px] font-black text-[#f59e0b]">{formatRupiah(promoVideos.reduce((s, v) => s + v.bonus, 0))}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
+                        {promoVideos.map((v) => {
+                          const platformInfo: Record<string, { label: string; icon: string; color: string }> = {
+                            tiktok: { label: 'TikTok', icon: '🎵', color: 'bg-black' },
+                            instagram: { label: 'Instagram', icon: '📸', color: 'bg-gradient-to-br from-purple-500 to-pink-500' },
+                            youtube: { label: 'YouTube', icon: '▶️', color: 'bg-red-600' },
+                            facebook: { label: 'Facebook', icon: '📘', color: 'bg-blue-600' },
+                            twitter: { label: 'X/Twitter', icon: '🐦', color: 'bg-gray-800' },
+                          }
+                          const pi = platformInfo[v.platform] || platformInfo.tiktok
+                          return (
+                            <div key={v.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-8 h-8 rounded-lg ${pi.color} grid place-items-center text-[14px]`}>
+                                    {pi.icon}
+                                  </div>
+                                  <div>
+                                    <span className="block text-[10px] font-bold text-[var(--zv-text)]">{pi.label}</span>
+                                    <span className="block text-[7px] text-[var(--zv-muted)] truncate max-w-[160px]">{v.link}</span>
+                                  </div>
+                                </div>
+                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-green-500/10 text-green-500' : v.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'}`}>
+                                  {v.status === 'verified' ? <><CheckCircle className="w-2.5 h-2.5" />Verifikasi</> : v.status === 'pending' ? <><Clock className="w-2.5 h-2.5" />Diperiksa</> : <><AlertCircle className="w-2.5 h-2.5" />Ditolak</>}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1">
+                                  <EyeIcon className="w-3.5 h-3.5 text-[#3b82f6]" />
+                                  <span className="text-[9px] font-black text-[var(--zv-text)]">{v.views.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <ThumbsUp className="w-3.5 h-3.5 text-pink-500" />
+                                  <span className="text-[9px] font-black text-[var(--zv-text)]">{v.likes.toLocaleString()}</span>
+                                </div>
+                                <div className="ml-auto flex items-center gap-1">
+                                  <DollarSign className="w-3.5 h-3.5 text-[#f59e0b]" />
+                                  <span className="text-[10px] font-black text-[#f59e0b]">{formatRupiah(v.bonus)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* ── BONUS HISTORY ── */}
+              {promoSubTab === 'history' && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                  {/* Total Stats */}
+                  <div className="grid grid-cols-2 gap-2.5 mb-4">
+                    <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 grid place-items-center"><Gift className="w-4 h-4 text-purple-400" /></div>
+                        <span className="text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-wider">Total Bonus</span>
+                      </div>
+                      <b className="block text-[16px] font-black text-[var(--zv-text)]">{formatRupiah(bonuses.reduce((s, b) => s + b.amount, 0))}</b>
+                    </div>
+                    <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><Flame className="w-4 h-4 text-yellow-400" /></div>
+                        <span className="text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-wider">Streak</span>
+                      </div>
+                      <b className="block text-[16px] font-black text-[var(--zv-text)]">{dailyCheckStatus.streak} Hari</b>
+                    </div>
+                  </div>
+
+                  {/* Bonus List */}
+                  <h3 className="text-[11px] font-black text-[var(--zv-text)] mb-3 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 grid place-items-center"><History className="w-3.5 h-3.5 text-blue-400" /></div>
+                    Riwayat Bonus
+                  </h3>
+                  <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                    {bonuses.map(b => {
+                      const iconMap: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+                        daily_checkin: { icon: <Flame className="w-4 h-4" />, color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/20' },
+                        trading_bonus: { icon: <BarChart3 className="w-4 h-4" />, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' },
+                        deposit_bonus: { icon: <Wallet className="w-4 h-4" />, color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' },
+                        referral_bonus: { icon: <UserPlus className="w-4 h-4" />, color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/20' },
+                        welcome_bonus: { icon: <Sparkles className="w-4 h-4" />, color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/20' },
+                      }
+                      const info = iconMap[b.type] || iconMap.welcome_bonus
+                      return (
+                        <div key={b.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-10 h-10 rounded-xl border grid place-items-center ${info.bg} ${info.color}`}>
+                                {info.icon}
+                              </div>
+                              <div>
+                                <span className="block text-[10px] font-bold text-[var(--zv-text)]">
+                                  {b.type === 'daily_checkin' ? 'Daily Check-in' : b.type === 'trading_bonus' ? 'Trading Bonus' : b.type === 'deposit_bonus' ? 'Deposit Bonus' : b.type === 'referral_bonus' ? 'Referral Bonus' : 'Welcome Bonus'}
+                                </span>
+                                <span className="block text-[8px] text-[var(--zv-muted)]">{formatDateTime(b.createdAt)}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[12px] font-black text-green-500">+{formatRupiah(b.amount)}</span>
+                              <span className="block text-[7px] font-bold text-green-500/60">{b.status === 'credited' ? 'Dikreditkan' : 'Pending'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {bonuses.length === 0 && (
+                      <div className="text-center py-10">
+                        <div className="w-16 h-16 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center mx-auto mb-3">
+                          <Gift className="w-7 h-7 text-[var(--zv-muted)]" />
+                        </div>
+                        <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum Ada Bonus</p>
+                        <p className="text-[8px] text-[var(--zv-muted)] mt-1">Mulai check-in harian untuk mendapat bonus pertama!</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
             </motion.div>
           )}
 
@@ -4922,7 +5175,7 @@ function Dashboard() {
                 {[
                   { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => {} },
                   { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => {} },
-                  { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Bonus & Promo', desc: 'Klaim bonus harian', action: () => setActiveTab('bonus') },
+                  { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Promosi & Bonus', desc: 'Klaim bonus & promo', action: () => setActiveTab('bonus') },
                   { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
                   { icon: <Headphones className="w-4 h-4 text-[#3b82f6]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => {} },
                   { icon: <Building2 className="w-4 h-4 text-[#3b82f6]" />, label: 'Profil Perusahaan', desc: 'Tentang ZEVORIX', action: () => {} },
@@ -5001,7 +5254,7 @@ function Dashboard() {
           { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
           { key: 'finance', label: 'Keuangan', icon: Wallet },
           { key: 'history', label: 'Riwayat', icon: History },
-          { key: 'bonus', label: 'Bonus', icon: Gift },
+          { key: 'bonus', label: 'Promosi', icon: Gift },
           { key: 'profile', label: 'Profil', icon: User },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -5063,7 +5316,7 @@ function Dashboard() {
                   { icon: <History className="w-4 h-4" />, label: 'Riwayat', key: 'history' },
                   { icon: <UserPlus className="w-4 h-4" />, label: 'Undang', key: 'undang' },
                   { icon: <Newspaper className="w-4 h-4" />, label: 'Berita', key: 'news' },
-                  { icon: <Gift className="w-4 h-4" />, label: 'Bonus & Promo', key: 'bonus' },
+                  { icon: <Gift className="w-4 h-4" />, label: 'Promosi & Bonus', key: 'bonus' },
                   { icon: <Trophy className="w-4 h-4" />, label: 'Leaderboard', key: 'leaderboard' },
                   { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profile' },
                 ].map(item => (
