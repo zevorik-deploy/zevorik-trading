@@ -697,6 +697,12 @@ function Dashboard() {
   const [contractClaimLoadingId, setContractClaimLoadingId] = useState<string | null>(null)
   const initialized = useRef(false)
 
+  // ============ BANNER CAROUSEL STATE ============
+  const [bannerIndex, setBannerIndex] = useState(0)
+  const bannerTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const bannerTouchStartX = useRef(0)
+  const bannerTouchEndX = useRef(0)
+
   // ============ THEME STATE ============
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
@@ -715,6 +721,18 @@ function Dashboard() {
   useEffect(() => {
     document.documentElement.className = theme
   }, [theme])
+
+  // ============ BANNER AUTO-SCROLL ============
+  useEffect(() => {
+    const startTimer = () => {
+      if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
+      bannerTimerRef.current = setInterval(() => {
+        setBannerIndex(prev => (prev + 1) % 5)
+      }, 4000)
+    }
+    startTimer()
+    return () => { if (bannerTimerRef.current) clearInterval(bannerTimerRef.current) }
+  }, [])
 
   // ============ DAILY CHECK & TASKS STATE ============
   const [dailyCheckStatus, setDailyCheckStatus] = useState<DailyCheckStatus>({ streak: 0, lastCheckDate: null, canCheckToday: true, todayReward: 0 })
@@ -1734,6 +1752,9 @@ function Dashboard() {
       const dismissed = localStorage.getItem('gs_welcome_dismissed')
       if (!dismissed || Date.now() > parseInt(dismissed)) {
         setShowWelcomeModal(true)
+        // Auto-dismiss after 5 seconds so it doesn't block navigation
+        const timer = setTimeout(() => setShowWelcomeModal(false), 5000)
+        return () => clearTimeout(timer)
       }
     }
   }, [user])
@@ -2017,43 +2038,185 @@ function Dashboard() {
           {activeTab === 'home' && (
             <motion.div key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
 
-              {/* ══════════ HERO BANNER PAMFLET ══════════ */}
-              <div className="relative rounded-2xl overflow-hidden mb-4" style={{ boxShadow: '0 8px 32px rgba(37,99,235,0.25)' }}>
-                <img src="/banner-main.png" alt="ZEVORIX Banner" className="w-full h-44 md:h-56 object-cover" />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.88) 0%, rgba(30,58,95,0.7) 40%, rgba(37,99,235,0.3) 100%)' }} />
-                <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ZevorixLogo size={32} />
-                    <span className="text-[8px] font-black tracking-[0.2em] uppercase text-blue-300">ZEVORIX</span>
-                  </div>
-                  <h2 className="text-[18px] md:text-2xl font-black text-white leading-tight mb-1">Investasi Cerdas,<br /><span className="gradient-text">Profit Maksimal</span></h2>
-                  <p className="text-[9px] md:text-[11px] text-blue-200/80 font-medium mb-3 max-w-[240px] leading-relaxed">Platform saham digital terpercaya dengan profit harian hingga 7% & sinyal trading real-time.</p>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setActiveTab('market')} className="h-8 px-4 rounded-xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white text-[9px] font-bold hover:from-[#60a5fa] hover:to-[#3b82f6] transition-all flex items-center gap-1.5 shadow-lg shadow-blue-500/30">
-                      <BarChart3 className="w-3.5 h-3.5" />Mulai Investasi
-                    </button>
-                    <button onClick={() => setActiveTab('sinyal')} className="h-8 px-4 rounded-xl bg-white/10 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center gap-1.5 backdrop-blur-sm">
-                      <Target className="w-3.5 h-3.5" />Sinyal Pro
-                    </button>
-                  </div>
+              {/* ══════════ PREMIUM BANNER CAROUSEL ══════════ */}
+              <div
+                className="relative rounded-2xl overflow-hidden mb-5"
+                style={{ boxShadow: '0 8px 40px rgba(37,99,235,0.25)' }}
+                onTouchStart={(e) => { bannerTouchStartX.current = e.touches[0].clientX }}
+                onTouchEnd={(e) => {
+                  bannerTouchEndX.current = e.changedTouches[0].clientX
+                  const diff = bannerTouchStartX.current - bannerTouchEndX.current
+                  if (Math.abs(diff) > 50) {
+                    if (diff > 0) setBannerIndex(prev => (prev + 1) % 5)
+                    else setBannerIndex(prev => (prev - 1 + 5) % 5)
+                    if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
+                    bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 5), 4000)
+                  }
+                }}
+              >
+                {/* Slides */}
+                <div className="relative w-full h-48 md:h-64">
+                  {[
+                    {
+                      img: '/banner-beranda-hero.png',
+                      overlay: 'linear-gradient(135deg, rgba(12,26,46,0.92) 0%, rgba(30,58,95,0.75) 35%, rgba(37,99,235,0.35) 100%)',
+                      badge: null,
+                      title: 'Investasi Cerdas,',
+                      titleAccent: 'Profit Maksimal',
+                      desc: 'Platform saham digital terpercaya dengan profit harian hingga 7% & sinyal trading real-time.',
+                      btns: [
+                        { label: 'Mulai Investasi', icon: <BarChart3 className="w-3.5 h-3.5" />, action: () => setActiveTab('market'), style: 'primary' as const },
+                        { label: 'Sinyal Pro', icon: <Target className="w-3.5 h-3.5" />, action: () => setActiveTab('sinyal'), style: 'ghost' as const },
+                      ],
+                      live: true,
+                    },
+                    {
+                      img: '/banner-sinyal-pro.png',
+                      overlay: 'linear-gradient(135deg, rgba(8,15,30,0.93) 0%, rgba(6,182,212,0.55) 100%)',
+                      badge: { icon: <Target className="w-4 h-4 text-cyan-300" />, text: 'SINYAL PRO' },
+                      title: 'Trading Cerdas',
+                      titleAccent: 'Payout 93%',
+                      desc: 'Prediksi arah harga saham real-time dengan candlestick chart profesional.',
+                      btns: [
+                        { label: 'Mulai Trading', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('sinyal'), style: 'primary' as const },
+                      ],
+                      live: true,
+                    },
+                    {
+                      img: '/banner-investasi-promo.png',
+                      overlay: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(180,83,9,0.5) 100%)',
+                      badge: { icon: <Gem className="w-4 h-4 text-amber-300" />, text: 'INVESTASI PRO' },
+                      title: 'Profit Harian',
+                      titleAccent: 'Hingga 7%',
+                      desc: 'Kontrak saham premium dengan profit otomatis setiap 00:00 WIB.',
+                      btns: [
+                        { label: 'Mulai Investasi', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('investasi'), style: 'primary' as const },
+                      ],
+                      live: false,
+                    },
+                    {
+                      img: '/banner-undang-bonus.png',
+                      overlay: 'linear-gradient(135deg, rgba(12,26,46,0.92) 0%, rgba(124,58,237,0.5) 100%)',
+                      badge: { icon: <UserPlus className="w-4 h-4 text-violet-300" />, text: 'UNDANG TEMAN' },
+                      title: 'Bonus Referral',
+                      titleAccent: 'Tanpa Batas',
+                      desc: 'Undang teman dan dapatkan bonus untuk setiap pendaftaran baru.',
+                      btns: [
+                        { label: 'Undang Sekarang', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('undang'), style: 'primary' as const },
+                      ],
+                      live: false,
+                    },
+                    {
+                      img: '/banner-daily-check.png',
+                      overlay: 'linear-gradient(135deg, rgba(12,26,46,0.93) 0%, rgba(245,158,11,0.45) 100%)',
+                      badge: { icon: <CalendarDays className="w-4 h-4 text-yellow-300" />, text: 'CEK HARIAN' },
+                      title: 'Klaim Bonus',
+                      titleAccent: 'Setiap Hari',
+                      desc: dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut!` : 'Klaim bonus harian Anda dan tingkatkan streak.',
+                      btns: dailyCheckStatus.canCheckToday
+                        ? [{ label: dailyCheckLoading ? '' : 'Klaim Sekarang', icon: dailyCheckLoading ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Gift className="w-3.5 h-3.5" />, action: handleDailyCheck, style: 'gold' as const }]
+                        : [],
+                      live: false,
+                      dailyCheck: true,
+                    },
+                  ].map((slide, i) => (
+                    <div
+                      key={i}
+                      className="absolute inset-0 transition-all duration-700 ease-in-out"
+                      style={{ opacity: bannerIndex === i ? 1 : 0, transform: bannerIndex === i ? 'scale(1)' : 'scale(1.05)' }}
+                    >
+                      <img src={slide.img} alt={slide.titleAccent} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0" style={{ background: slide.overlay }} />
+                      <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
+                        {/* Live badge */}
+                        {slide.live && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 h-5 px-2.5 rounded-full bg-green-500/20 border border-green-400/30 backdrop-blur-md">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                            <span className="text-[7px] font-black text-green-300 tracking-wider">LIVE</span>
+                          </div>
+                        )}
+                        {/* Badge */}
+                        {slide.badge && (
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <div className="w-7 h-7 rounded-lg bg-white/15 border border-white/10 grid place-items-center backdrop-blur-sm">{slide.badge.icon}</div>
+                            <span className="text-[9px] font-black tracking-[0.15em] uppercase text-white/90">{slide.badge.text}</span>
+                          </div>
+                        )}
+                        {/* Zevorix brand on first slide */}
+                        {i === 0 && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <ZevorixLogo size={28} />
+                            <span className="text-[8px] font-black tracking-[0.2em] uppercase text-blue-300/80">ZEVORIX</span>
+                          </div>
+                        )}
+                        <h2 className="text-[17px] md:text-[22px] font-black text-white leading-tight mb-1 drop-shadow-lg">{slide.title}<br /><span className="gradient-text">{slide.titleAccent}</span></h2>
+                        <p className="text-[9px] md:text-[11px] text-white/70 font-medium mb-3 max-w-[260px] leading-relaxed">{slide.desc}</p>
+                        {slide.btns.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            {slide.btns.map((btn, bi) => (
+                              <button
+                                key={bi}
+                                onClick={btn.action}
+                                disabled={slide.dailyCheck && dailyCheckLoading}
+                                className={`h-8 px-4 rounded-xl text-[9px] font-bold flex items-center gap-1.5 transition-all active:scale-[0.96] ${
+                                  btn.style === 'primary' ? 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white hover:from-[#60a5fa] hover:to-[#3b82f6] shadow-lg shadow-blue-500/30' :
+                                  btn.style === 'gold' ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 hover:from-yellow-300 hover:to-amber-400 shadow-lg shadow-yellow-500/30 disabled:opacity-60' :
+                                  'bg-white/10 border border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
+                                }`}
+                              >
+                                {btn.icon}{btn.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {/* Daily check reward display */}
+                        {slide.dailyCheck && dailyCheckReward !== null && (
+                          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                            className="mt-2 rounded-xl p-2 bg-yellow-500/20 border border-yellow-400/30 backdrop-blur-sm text-center">
+                            <span className="text-[8px] text-yellow-200 font-bold">Bonus Hari Ini</span>
+                            <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
+                          </motion.div>
+                        )}
+                        {slide.dailyCheck && !dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
+                          <div className="mt-2 rounded-xl p-2 bg-white/10 border border-white/15 backdrop-blur-sm text-center">
+                            <span className="text-[8px] text-white/70 font-bold">Bonus Hari Ini</span>
+                            <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {/* Live badge */}
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 h-5 px-2 rounded-full bg-green-500/20 border border-green-400/30 backdrop-blur-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-[7px] font-black text-green-300">LIVE</span>
+                {/* Dot Indicators */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                  {[0,1,2,3,4].map(i => (
+                    <button
+                      key={i}
+                      onClick={() => { setBannerIndex(i); if (bannerTimerRef.current) clearInterval(bannerTimerRef.current); bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 5), 4000) }}
+                      className="transition-all duration-300 rounded-full"
+                      style={{
+                        width: bannerIndex === i ? 24 : 8,
+                        height: 8,
+                        background: bannerIndex === i ? 'linear-gradient(90deg, #3b82f6, #06b6d4)' : 'rgba(255,255,255,0.5)',
+                        boxShadow: bannerIndex === i ? '0 0 8px rgba(59,130,246,0.5)' : 'none',
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
 
               {/* ══════════ PREMIUM WALLET CARD ══════════ */}
-              <div className="relative rounded-2xl overflow-hidden mb-4 border border-blue-500/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 40%, #2563eb 100%)', boxShadow: '0 6px 28px rgba(37,99,235,0.2)' }}>
+              <div className="relative rounded-2xl overflow-hidden mb-5 border border-blue-500/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 40%, #2563eb 100%)', boxShadow: '0 6px 32px rgba(37,99,235,0.22)' }}>
+                {/* Decorative dots */}
                 <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-blue-400/10 blur-3xl" />
+                <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-blue-400/10 blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-cyan-400/8 blur-3xl" />
                 <div className="relative p-4 text-white">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 grid place-items-center">
-                        <Wallet className="w-4.5 h-4.5 text-yellow-300" />
+                      <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 grid place-items-center backdrop-blur-sm">
+                        <Wallet className="w-5 h-5 text-yellow-300" />
                       </div>
                       <div>
                         <span className="text-[10px] font-black tracking-wider block">RINGKASAN SALDO</span>
@@ -2068,25 +2231,25 @@ function Dashboard() {
                   {/* Main Balance */}
                   <div className="mb-4">
                     <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">Total Saldo</span>
-                    <b className="block text-[22px] md:text-2xl font-black tracking-tight">{showBalance ? formatRupiah((user?.balance || 0) + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
+                    <b className="block text-[24px] md:text-[28px] font-black tracking-tight">{showBalance ? formatRupiah((user?.balance || 0) + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
                   </div>
 
                   {/* Dual Wallets */}
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
-                      <div className="flex items-center gap-1 mb-1.5">
-                        <div className="w-4 h-4 rounded-md bg-yellow-400/20 grid place-items-center"><Wallet className="w-2.5 h-2.5 text-yellow-300" /></div>
-                        <span className="text-[6px] font-black text-blue-200/80 uppercase tracking-wider">Dompet Utama</span>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <div className="w-5 h-5 rounded-lg bg-yellow-400/20 grid place-items-center"><Wallet className="w-3 h-3 text-yellow-300" /></div>
+                        <span className="text-[7px] font-black text-blue-200/80 uppercase tracking-wider">Dompet Utama</span>
                       </div>
-                      <b className="block text-[13px] font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••'}</b>
+                      <b className="block text-[14px] font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••'}</b>
                       <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Deposit & trading</span>
                     </div>
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
-                      <div className="flex items-center gap-1 mb-1.5">
-                        <div className="w-4 h-4 rounded-md bg-blue-400/20 grid place-items-center"><CreditCard className="w-2.5 h-2.5 text-blue-300" /></div>
-                        <span className="text-[6px] font-black text-blue-200/80 uppercase tracking-wider">Penarikan</span>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <div className="w-5 h-5 rounded-lg bg-blue-400/20 grid place-items-center"><CreditCard className="w-3 h-3 text-blue-300" /></div>
+                        <span className="text-[7px] font-black text-blue-200/80 uppercase tracking-wider">Penarikan</span>
                       </div>
-                      <b className="block text-[13px] font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••'}</b>
+                      <b className="block text-[14px] font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••'}</b>
                       <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
@@ -2096,10 +2259,10 @@ function Dashboard() {
                     <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
                       <Plus className="w-3.5 h-3.5" />Deposit
                     </button>
-                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/10 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
                       <Minus className="w-3.5 h-3.5" />Tarik
                     </button>
-                    <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/10 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                    <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
                       <Briefcase className="w-3.5 h-3.5" />Investasi
                     </button>
                   </div>
@@ -2107,20 +2270,20 @@ function Dashboard() {
               </div>
 
               {/* ══════════ QUICK ACCESS MENU ══════════ */}
-              <div className="mb-4">
-                <div className="mb-2.5 flex items-center gap-2">
+              <div className="mb-5">
+                <div className="mb-3 flex items-center gap-2">
                   <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #06b6d4)' }} />
                   <h3 className="text-[12px] md:text-sm font-black gradient-text">Akses Cepat</h3>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-2.5">
                   {[
-                    { icon: <Target className="w-5 h-5" />, label: 'Sinyal Pro', desc: 'Trading', action: () => setActiveTab('sinyal'), gradient: 'from-blue-600 to-blue-500', iconBg: 'bg-blue-500/20', iconColor: 'text-blue-400' },
-                    { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Saham', action: () => setActiveTab('market'), gradient: 'from-cyan-600 to-cyan-500', iconBg: 'bg-cyan-500/20', iconColor: 'text-cyan-400' },
-                    { icon: <DollarSign className="w-5 h-5" />, label: 'Investasi', desc: 'Profit 7%', action: () => setActiveTab('investasi'), gradient: 'from-amber-600 to-amber-500', iconBg: 'bg-amber-500/20', iconColor: 'text-amber-400' },
-                    { icon: <UserPlus className="w-5 h-5" />, label: 'Undang', desc: 'Bonus', action: () => setActiveTab('undang'), gradient: 'from-violet-600 to-violet-500', iconBg: 'bg-violet-500/20', iconColor: 'text-violet-400' },
+                    { icon: <Target className="w-5 h-5" />, label: 'Sinyal Pro', desc: 'Trading', action: () => setActiveTab('sinyal'), iconBg: 'bg-blue-500/15', iconColor: 'text-blue-400', glow: 'rgba(59,130,246,0.08)' },
+                    { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Saham', action: () => setActiveTab('market'), iconBg: 'bg-cyan-500/15', iconColor: 'text-cyan-400', glow: 'rgba(6,182,212,0.08)' },
+                    { icon: <DollarSign className="w-5 h-5" />, label: 'Investasi', desc: 'Profit 7%', action: () => setActiveTab('investasi'), iconBg: 'bg-amber-500/15', iconColor: 'text-amber-400', glow: 'rgba(245,158,11,0.08)' },
+                    { icon: <UserPlus className="w-5 h-5" />, label: 'Undang', desc: 'Bonus', action: () => setActiveTab('undang'), iconBg: 'bg-violet-500/15', iconColor: 'text-violet-400', glow: 'rgba(139,92,246,0.08)' },
                   ].map((a, i) => (
-                    <button key={i} onClick={a.action} className="stock-card flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all active:scale-[0.96]">
-                      <div className={`w-10 h-10 rounded-xl ${a.iconBg} grid place-items-center ${a.iconColor}`}>{a.icon}</div>
+                    <button key={i} onClick={a.action} className="stock-card flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg transition-all active:scale-[0.96]" style={{ boxShadow: `0 4px 20px ${a.glow}` }}>
+                      <div className={`w-11 h-11 rounded-xl ${a.iconBg} grid place-items-center ${a.iconColor}`}>{a.icon}</div>
                       <span className="text-[8px] md:text-[9px] font-black text-[var(--zv-text)]">{a.label}</span>
                       <span className="text-[6px] font-bold text-[var(--zv-muted)]">{a.desc}</span>
                     </button>
@@ -2128,108 +2291,79 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══════════ PROMO BANNER CAROUSEL ══════════ */}
-              <div className="flex gap-3 overflow-x-auto pb-2 mb-4 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                {/* Banner 1 — Cek Harian */}
-                <div className="flex-shrink-0 w-[280px] md:w-[320px] rounded-2xl overflow-hidden relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 20px rgba(37,99,235,0.18)' }}>
-                  <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
-                  <div className="relative p-4 text-white">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/10 grid place-items-center">
-                          <CalendarDays className="w-5 h-5 text-yellow-300" />
-                        </div>
-                        <div>
-                          <b className="text-[11px] font-black">CEK HARIAN</b>
-                          <span className="block text-[8px] font-semibold text-blue-200">
-                            {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
-                          </span>
-                        </div>
+              {/* ══════════ DAILY CHECK BANNER (full-width) ══════════ */}
+              <div className="rounded-2xl overflow-hidden mb-5 border border-blue-500/15 relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.18)' }}>
+                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
+                <div className="absolute top-0 right-0 w-28 h-28 rounded-full bg-yellow-400/8 blur-2xl" />
+                <div className="relative p-4 text-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/10 grid place-items-center backdrop-blur-sm">
+                        <CalendarDays className="w-5 h-5 text-yellow-300" />
+                      </div>
+                      <div>
+                        <b className="text-[12px] font-black">CEK HARIAN</b>
+                        <span className="block text-[8px] font-semibold text-blue-200">
+                          {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
+                        </span>
                       </div>
                     </div>
-                    {dailyCheckStatus.canCheckToday ? (
-                      <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
-                        className="w-full h-9 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/25">
-                        {dailyCheckLoading ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : 'Klaim Sekarang'}
-                      </button>
-                    ) : (
-                      <div className="w-full h-9 rounded-xl bg-white/15 border border-white/10 text-[10px] font-bold flex items-center justify-center gap-1.5">
-                        <CheckCircle className="w-4 h-4 text-blue-300" />Sudah Dicek
-                      </div>
-                    )}
-                    {dailyCheckReward !== null && (
-                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                        className="rounded-xl p-2 bg-yellow-500/20 border border-yellow-400/30 text-center mt-2">
-                        <span className="text-[8px] text-yellow-200 font-bold">Bonus Hari Ini</span>
-                        <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
-                      </motion.div>
-                    )}
-                    {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
-                      <div className="rounded-xl p-2 bg-white/10 border border-white/15 text-center mt-2">
-                        <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
-                        <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 h-6 px-2.5 rounded-full bg-white/8 border border-white/10">
+                      <Flame className="w-3 h-3 text-orange-400" />
+                      <span className="text-[8px] font-black text-orange-300">{dailyCheckStatus.streak}</span>
+                    </div>
                   </div>
-                </div>
-
-                {/* Banner 2 — Sinyal Pro Promo */}
-                <div className="flex-shrink-0 w-[280px] md:w-[320px] rounded-2xl overflow-hidden relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.18)' }}>
-                  <img src="/banner-sinyal.png" alt="Sinyal Pro" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(37,99,235,0.6) 100%)' }} />
-                  <div className="relative p-4 text-white">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Target className="w-5 h-5 text-cyan-300" />
-                      <b className="text-[11px] font-black">SINYAL PRO</b>
-                    </div>
-                    <p className="text-[8px] text-blue-200/80 leading-relaxed mb-3">Prediksi arah harga saham real-time dengan payout hingga 93%. Trading cerdas dengan candlestick chart profesional.</p>
-                    <button onClick={() => setActiveTab('sinyal')} className="h-8 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[9px] font-bold hover:from-cyan-400 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/25">
-                      Mulai Trading <ArrowRight className="w-3 h-3" />
+                  {dailyCheckStatus.canCheckToday ? (
+                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
+                      className="w-full h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/25">
+                      {dailyCheckLoading ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><Gift className="w-4 h-4" />Klaim Sekarang</>}
                     </button>
-                  </div>
-                </div>
-
-                {/* Banner 3 — Investasi Promo */}
-                <div className="flex-shrink-0 w-[280px] md:w-[320px] rounded-2xl overflow-hidden relative" style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.15)' }}>
-                  <img src="/banner-promo.png" alt="Investasi" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(180,83,9,0.5) 100%)' }} />
-                  <div className="relative p-4 text-white">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Gem className="w-5 h-5 text-amber-300" />
-                      <b className="text-[11px] font-black">INVESTASI PRO</b>
+                  ) : (
+                    <div className="w-full h-10 rounded-xl bg-white/15 border border-white/10 text-[10px] font-bold flex items-center justify-center gap-1.5 backdrop-blur-sm">
+                      <CheckCircle className="w-4 h-4 text-blue-300" />Sudah Dicek Hari Ini
                     </div>
-                    <p className="text-[8px] text-amber-100/80 leading-relaxed mb-3">Profit harian hingga 7% dengan kontrak saham premium. Profit masuk setiap 00:00 WIB secara otomatis.</p>
-                    <button onClick={() => setActiveTab('investasi')} className="h-8 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[9px] font-bold hover:from-amber-400 hover:to-yellow-400 transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/25">
-                      Mulai Investasi <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
+                  )}
+                  {dailyCheckReward !== null && (
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                      className="rounded-xl p-2.5 bg-yellow-500/20 border border-yellow-400/30 text-center mt-3 backdrop-blur-sm">
+                      <span className="text-[8px] text-yellow-200 font-bold">🎉 Bonus Hari Ini</span>
+                      <b className="block text-[16px] font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
+                    </motion.div>
+                  )}
+                  {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
+                    <div className="rounded-xl p-2.5 bg-white/10 border border-white/15 text-center mt-3 backdrop-blur-sm">
+                      <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
+                      <b className="block text-[16px] font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* ══════════ PORTFOLIO OVERVIEW ══════════ */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-[var(--zv-border)]" style={{ background: 'var(--zv-panel)' }}>
-                <div className="p-3.5">
-                  <div className="flex items-center justify-between mb-3">
+              <div className="rounded-2xl overflow-hidden mb-5 border border-[var(--zv-border)] relative" style={{ background: 'var(--zv-panel)', boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #3b82f6, #06b6d4, transparent)' }} />
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3.5">
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #06b6d4)' }} />
                       <h3 className="text-[12px] font-black gradient-text">Portofolio & Investasi</h3>
                     </div>
-                    <button onClick={() => setActiveTab('portfolio')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Selengkapnya →</button>
+                    <button onClick={() => setActiveTab('portfolio')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Selengkapnya <ChevronRight className="w-3 h-3" /></button>
                   </div>
 
                   {/* Portfolio Stats Row */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                  <div className="grid grid-cols-3 gap-2.5 mb-3">
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(37,99,235,0.05)' }}>
                       <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Investasi</span>
                       <b className="block text-[11px] font-black text-[#3b82f6]">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••'}</b>
                     </div>
-                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(37,99,235,0.05)' }}>
                       <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Profit/Loss</span>
                       <b className={`block text-[11px] font-black ${portfolioSummary.totalProfitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                         {showBalance ? formatRupiah(Math.abs(portfolioSummary.totalProfitLoss)) : '••••'}
                       </b>
                     </div>
-                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(37,99,235,0.05)' }}>
                       <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Return</span>
                       <b className={`block text-[11px] font-black ${portfolioSummary.totalProfitLossPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
                         {portfolioSummary.totalProfitLossPercent >= 0 ? '+' : ''}{portfolioSummary.totalProfitLossPercent.toFixed(1)}%
@@ -2239,7 +2373,7 @@ function Dashboard() {
 
                   {/* Portfolio Chart */}
                   {portfolio.length > 0 && (
-                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 10px rgba(37,99,235,0.05)' }}>
                       <div className="w-20 h-20 flex-shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <RePieChart><Pie data={portfolioPieData} innerRadius={20} outerRadius={35} paddingAngle={2} dataKey="value">
@@ -2247,10 +2381,10 @@ function Dashboard() {
                           </Pie></RePieChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="flex-1 space-y-1 max-h-20 overflow-y-auto custom-scrollbar">
+                      <div className="flex-1 space-y-1.5 max-h-20 overflow-y-auto custom-scrollbar">
                         {portfolio.slice(0, 4).map(p => (
                           <div key={p.id} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
                             <span className="text-[8px] font-black text-[#3b82f6] flex-shrink-0">{p.stock.code}</span>
                             <span className="flex-1" />
                             <span className={`text-[8px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(p.profitLossPercent)}</span>
@@ -2264,51 +2398,52 @@ function Dashboard() {
 
               {/* ══════════ TOP MOVERS ══════════ */}
               {stocks.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #22c55e, transparent, #ef5350)' }} />
+                  <div className="flex items-center justify-between mb-3.5">
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #22c55e, #ef5350)' }} />
                       <h3 className="text-[12px] font-black gradient-text">Top Movers</h3>
                     </div>
-                    <button onClick={() => setActiveTab('market')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Lihat Semua →</button>
+                    <button onClick={() => setActiveTab('market')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Lihat Semua <ChevronRight className="w-3 h-3" /></button>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {/* Gainers */}
-                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                      <div className="flex items-center gap-1 mb-2">
-                        <TrendingUp className="w-3 h-3 text-[#22c55e]" />
+                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(34,197,94,0.05)' }}>
+                      <div className="flex items-center gap-1.5 mb-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-green-500/15 grid place-items-center"><TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /></div>
                         <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-wider">Gainers</span>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         {topGainers.slice(0, 3).map(s => (
-                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1 transition-colors">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center">
-                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[6px] font-black text-[#22c55e]">{s.code.slice(0, 2)}</span>}
+                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1.5 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center border border-[var(--zv-border)]">
+                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#22c55e]">{s.code.slice(0, 2)}</span>}
                               </div>
                               <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
                             </div>
-                            <span className="text-[8px] font-black text-[#22c55e] bg-green-500/10 px-1.5 py-0.5 rounded">+{s.changePercent.toFixed(2)}%</span>
+                            <span className="text-[8px] font-black text-[#22c55e] bg-green-500/10 px-2 py-0.5 rounded-md">+{s.changePercent.toFixed(2)}%</span>
                           </button>
                         ))}
                       </div>
                     </div>
                     {/* Losers */}
-                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                      <div className="flex items-center gap-1 mb-2">
-                        <TrendingDown className="w-3 h-3 text-[#ef5350]" />
+                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(239,83,80,0.05)' }}>
+                      <div className="flex items-center gap-1.5 mb-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-red-500/15 grid place-items-center"><TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" /></div>
                         <span className="text-[8px] font-black text-[#ef5350] uppercase tracking-wider">Losers</span>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         {topLosers.slice(0, 3).map(s => (
-                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1 transition-colors">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-6 h-6 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center">
-                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[6px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}
+                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1.5 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center border border-[var(--zv-border)]">
+                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}
                               </div>
                               <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
                             </div>
-                            <span className="text-[8px] font-black text-[#ef5350] bg-red-500/10 px-1.5 py-0.5 rounded">{s.changePercent.toFixed(2)}%</span>
+                            <span className="text-[8px] font-black text-[#ef5350] bg-red-500/10 px-2 py-0.5 rounded-md">{s.changePercent.toFixed(2)}%</span>
                           </button>
                         ))}
                       </div>
@@ -2318,45 +2453,47 @@ function Dashboard() {
               )}
 
               {/* ══════════ TASKS & REWARDS ══════════ */}
-              <div className="grid grid-cols-2 gap-2.5 mb-4">
+              <div className="grid grid-cols-2 gap-3 mb-5">
                 {/* Tugas */}
-                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/15 grid place-items-center">
-                      <ListChecks className="w-3.5 h-3.5 text-amber-500" />
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                  <div className="absolute top-0 left-4 w-8 h-[2px] rounded-full bg-amber-500/50" />
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 grid place-items-center">
+                      <ListChecks className="w-4 h-4 text-amber-500" />
                     </div>
                     <div>
-                      <b className="text-[9px] font-black text-[var(--zv-text)]">Tugas</b>
-                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">{tasks.filter(t => t.completed).length}/{tasks.length}</span>
+                      <b className="text-[10px] font-black text-[var(--zv-text)]">Tugas</b>
+                      <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{tasks.filter(t => t.completed).length}/{tasks.length} selesai</span>
                     </div>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-2">
+                  <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-2.5 border border-[var(--zv-border)]">
                     <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500" style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0}%` }} />
                   </div>
                   <button onClick={() => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }}
-                    className="w-full h-7 rounded-lg bg-amber-500/15 text-amber-500 text-[8px] font-bold hover:bg-amber-500/25 transition-colors">
+                    className="w-full h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-500 text-[8px] font-bold hover:bg-amber-500/25 transition-colors">
                     Lihat Tugas
                   </button>
                 </div>
                 {/* Cek Harian mini */}
-                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-500/15 grid place-items-center">
-                      <CalendarDays className="w-3.5 h-3.5 text-[#3b82f6]" />
+                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                  <div className="absolute top-0 left-4 w-8 h-[2px] rounded-full bg-blue-500/50" />
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/20 grid place-items-center">
+                      <CalendarDays className="w-4 h-4 text-[#3b82f6]" />
                     </div>
                     <div>
-                      <b className="text-[9px] font-black text-[var(--zv-text)]">Cek Harian</b>
-                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">{dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} hari streak` : 'Klaim sekarang'}</span>
+                      <b className="text-[10px] font-black text-[var(--zv-text)]">Cek Harian</b>
+                      <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} hari streak` : 'Klaim sekarang'}</span>
                     </div>
                   </div>
                   {dailyCheckStatus.canCheckToday ? (
                     <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
-                      className="w-full h-7 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[8px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all disabled:opacity-60">
+                      className="w-full h-8 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[8px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all disabled:opacity-60 shadow-md shadow-yellow-500/20">
                       {dailyCheckLoading ? '...' : 'Klaim Bonus'}
                     </button>
                   ) : (
-                    <div className="w-full h-7 rounded-lg bg-[#22c55e]/15 text-[#22c55e] text-[8px] font-bold flex items-center justify-center gap-1">
-                      <CheckCircle className="w-3 h-3" />Sudah Dicek
+                    <div className="w-full h-8 rounded-lg bg-[#22c55e]/15 border border-[#22c55e]/20 text-[#22c55e] text-[8px] font-bold flex items-center justify-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" />Sudah Dicek
                     </div>
                   )}
                 </div>
@@ -2364,19 +2501,20 @@ function Dashboard() {
 
               {/* ══════════ WATCHLIST ══════════ */}
               {watchlist.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #f59e0b, transparent)' }} />
+                  <div className="flex items-center justify-between mb-3.5">
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-5 rounded-full bg-[#f59e0b]" />
-                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Watchlist</h3>
+                      <h3 className="text-[12px] font-black gradient-text">Watchlist</h3>
                     </div>
-                    <Star className="w-3.5 h-3.5 text-[#f59e0b]" />
+                    <Star className="w-4 h-4 text-[#f59e0b]" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {watchlist.slice(0, 4).map(w => (
-                      <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-1.5 hover:bg-[var(--zv-hover)] rounded-lg px-1 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{w.stock.logo ? <img src={w.stock.logo} alt={w.stock.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#3b82f6]">{w.stock.code.slice(0, 2)}</span>}</div>
+                      <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-2 px-2 hover:bg-[var(--zv-hover)] rounded-xl transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center border border-[var(--zv-border)]">{w.stock.logo ? <img src={w.stock.logo} alt={w.stock.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#3b82f6]">{w.stock.code.slice(0, 2)}</span>}</div>
                           <div className="text-left">
                             <span className="block text-[9px] font-bold text-[var(--zv-text)]">{w.stock.code}</span>
                             <span className="block text-[7px] text-[var(--zv-muted)]">{w.stock.name.slice(0, 15)}</span>
@@ -2394,19 +2532,20 @@ function Dashboard() {
 
               {/* ══════════ RECENT TRANSACTIONS ══════════ */}
               {transactions.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #3b82f6, transparent)' }} />
+                  <div className="flex items-center justify-between mb-3.5">
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-5 rounded-full bg-[#3b82f6]" />
-                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Transaksi Terakhir</h3>
+                      <h3 className="text-[12px] font-black gradient-text">Transaksi Terakhir</h3>
                     </div>
-                    <button onClick={() => setActiveTab('history')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Semua →</button>
+                    <button onClick={() => setActiveTab('history')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Semua <ChevronRight className="w-3 h-3" /></button>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {transactions.slice(0, 3).map(tx => (
-                      <div key={tx.id} className="flex items-center justify-between py-1.5 px-1">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-blue-500/10' : 'bg-red-500/10'}`}>
+                      <div key={tx.id} className="flex items-center justify-between py-2 px-2 rounded-xl hover:bg-[var(--zv-hover)] transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-blue-500/10 border border-blue-500/15' : 'bg-red-500/10 border border-red-500/15'}`}>
                             {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#3b82f6]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
                           </div>
                           <div>
@@ -2425,23 +2564,24 @@ function Dashboard() {
 
               {/* ══════════ NEWS ══════════ */}
               {news.length > 0 && (
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #06b6d4, transparent)' }} />
+                  <div className="flex items-center justify-between mb-3.5">
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-5 rounded-full bg-[#06b6d4]" />
-                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Berita Terkini</h3>
+                      <h3 className="text-[12px] font-black gradient-text">Berita Terkini</h3>
                     </div>
-                    <button onClick={() => setActiveTab('news')} className="text-[8px] font-bold text-[#3b82f6] hover:underline">Semua →</button>
+                    <button onClick={() => setActiveTab('news')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Semua <ChevronRight className="w-3 h-3" /></button>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {news.slice(0, 3).map(n => (
-                      <div key={n.id} className="flex items-start gap-2 p-2 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                        <div className="w-7 h-7 rounded-lg bg-cyan-500/10 grid place-items-center flex-shrink-0 mt-0.5">
-                          <Newspaper className="w-3.5 h-3.5 text-cyan-500" />
+                      <div key={n.id} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/20 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/15 grid place-items-center flex-shrink-0 mt-0.5">
+                          <Newspaper className="w-4 h-4 text-cyan-500" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="block text-[9px] font-bold text-[var(--zv-text)] leading-snug line-clamp-2">{n.title}</span>
-                          <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5">{formatDate(n.createdAt)} • <span className="text-cyan-500">{n.category}</span></span>
+                          <span className="block text-[7px] text-[var(--zv-muted)] mt-1">{formatDate(n.createdAt)} • <span className="text-cyan-500">{n.category}</span></span>
                         </div>
                       </div>
                     ))}
@@ -2450,32 +2590,22 @@ function Dashboard() {
               )}
 
               {/* ══════════ TRUST BADGES ══════════ */}
-              <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)]">
-                <div className="flex items-center justify-center gap-4 mb-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center">
-                      <Shield className="w-4.5 h-4.5 text-[#3b82f6]" />
+              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4, #22c55e, #f59e0b)' }} />
+                <div className="flex items-center justify-center gap-5 mb-3.5">
+                  {[
+                    { icon: <Shield className="w-4.5 h-4.5" />, label: 'Aman', color: 'blue', bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-[#3b82f6]' },
+                    { icon: <CheckCircle className="w-4.5 h-4.5" />, label: 'Berlisensi', color: 'amber', bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-500' },
+                    { icon: <Lock className="w-4.5 h-4.5" />, label: 'Terenkripsi', color: 'cyan', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-500' },
+                    { icon: <Users className="w-4.5 h-4.5" />, label: '125K++', color: 'green', bg: 'bg-green-500/10', border: 'border-green-500/20', text: 'text-green-500' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1.5">
+                      <div className={`w-10 h-10 rounded-xl ${item.bg} border ${item.border} grid place-items-center ${item.text}`}>
+                        {item.icon}
+                      </div>
+                      <span className={`text-[7px] font-black ${item.text}`}>{item.label}</span>
                     </div>
-                    <span className="text-[7px] font-black text-[#3b82f6]">Aman</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 grid place-items-center">
-                      <CheckCircle className="w-4.5 h-4.5 text-amber-500" />
-                    </div>
-                    <span className="text-[7px] font-black text-amber-500">Berlisensi</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 grid place-items-center">
-                      <Lock className="w-4.5 h-4.5 text-cyan-500" />
-                    </div>
-                    <span className="text-[7px] font-black text-cyan-500">Terenkripsi</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 grid place-items-center">
-                      <Users className="w-4.5 h-4.5 text-green-500" />
-                    </div>
-                    <span className="text-[7px] font-black text-green-500">125K++</span>
-                  </div>
+                  ))}
                 </div>
                 <p className="text-center text-[7px] font-black text-[var(--zv-muted)] tracking-wider uppercase">ZEVORIX • Aset Saham Terdaftar & Diawasi • V2.0</p>
               </div>
@@ -3321,41 +3451,44 @@ function Dashboard() {
 
               {/* Top Bar: Stock selector pills + Balance */}
               <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
                   {stocks.slice(0, 10).map(s => {
                     const tier = getStockPayoutTier(s.code)
                     const isSelected = selectedSinyalStock?.id === s.id
                     const displayPayout = isSelected ? chartPayoutRates.up.toFixed(0) : tier.upRange[1]
                     return (
                       <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
-                        className={`flex-shrink-0 h-6 px-2 rounded-md text-[9px] font-bold flex items-center gap-0.5 transition-all border ${
-                          isSelected ? 'bg-[#1e3a5f] text-white border-[#2563eb]' : 'bg-[#0d1117] text-gray-400 border-[#1e293b] hover:border-[#2563eb]/40'
+                        className={`flex-shrink-0 h-7 px-2.5 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-all border ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-[#1e3a5f] to-[#1d4ed8] text-white border-[#3b82f6] shadow-lg shadow-blue-500/20'
+                            : 'bg-[var(--zv-surface)] text-[var(--zv-text)] border-[var(--zv-border)] hover:border-[#3b82f6]/50 hover:bg-[var(--zv-hover)]'
                         }`}>
                         <span>{s.code}</span>
-                        <span className={`text-[7px] ${isSelected ? 'text-green-400' : 'text-green-500/60'}`}>+{displayPayout}%</span>
+                        <span className={`text-[7px] font-black ${isSelected ? 'text-green-300' : 'text-green-500'}`}>+{displayPayout}%</span>
                       </button>
                     )
                   })}
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                  <Wallet className="w-3 h-3 text-[#f59e0b]" />
+                <div className="flex items-center gap-1.5 flex-shrink-0 ml-2 h-7 px-2.5 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                  <Wallet className="w-3.5 h-3.5 text-[#f59e0b]" />
                   <span className="text-[9px] font-black text-[#f59e0b]">{formatRupiah(user?.balance || 0)}</span>
                 </div>
               </div>
 
-              {/* ── MAIN CHART AREA — Stockity dark style ── */}
+              {/* ── MAIN CHART AREA — Premium dark style ── */}
               {selectedSinyalStock && (
-                <div className="relative rounded-lg overflow-hidden" style={{ background: '#0a0e17', minHeight: '320px', flex: 1 }}>
+                <div className="relative rounded-xl overflow-hidden border border-[#1e293b]" style={{ background: 'linear-gradient(180deg, #0c1424 0%, #0a0e17 40%, #080c14 100%)', minHeight: '320px', flex: 1, boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(59,130,246,0.08)' }}>
                   {/* Chart Header — Stockity info bar */}
-                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2 pt-1.5 pb-1" style={{ background: 'linear-gradient(to bottom, #0a0e17 60%, transparent)' }}>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-[7px] font-black text-green-400 tracking-widest">LIVE</span>
-                      <span className="text-[7px] text-gray-600">|</span>
-                      <span className="text-[9px] font-black text-white">{selectedSinyalStock.code}</span>
-                      <div className="flex items-center gap-0.5 ml-0.5">
-                        <span className="h-3.5 px-1 rounded text-[6px] font-black bg-green-500/15 text-green-400">↑{chartPayoutRates.up.toFixed(0)}%</span>
-                        <span className="h-3.5 px-1 rounded text-[6px] font-black bg-red-500/15 text-red-400">↓{chartPayoutRates.down.toFixed(0)}%</span>
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 pt-2 pb-1.5" style={{ background: 'linear-gradient(to bottom, rgba(12,20,36,0.95) 50%, transparent)' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 h-5 px-2 rounded-full bg-green-500/10 border border-green-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-[7px] font-black text-green-400 tracking-widest">LIVE</span>
+                      </div>
+                      <span className="text-[10px] font-black text-white drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{selectedSinyalStock.code}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="h-5 px-1.5 rounded-md text-[7px] font-black bg-green-500/10 border border-green-500/20 text-green-400 flex items-center">↑{chartPayoutRates.up.toFixed(0)}%</span>
+                        <span className="h-5 px-1.5 rounded-md text-[7px] font-black bg-red-500/10 border border-red-500/20 text-red-400 flex items-center">↓{chartPayoutRates.down.toFixed(0)}%</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -3381,12 +3514,14 @@ function Dashboard() {
                   </div>
 
                   {/* Timeframe selector */}
-                  <div className="absolute top-6 left-0 right-0 z-10 flex items-center justify-between px-2 py-0.5">
-                    <div className="flex items-center gap-0.5">
+                  <div className="absolute top-8 left-0 right-0 z-10 flex items-center justify-between px-3 py-0.5">
+                    <div className="flex items-center gap-1 bg-[#0d1117]/60 rounded-lg p-0.5 border border-[#1e293b]/50" style={{ backdropFilter: 'blur(8px)' }}>
                       {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
                         <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
-                          className={`h-4 px-1.5 rounded text-[7px] font-bold transition-all ${
-                            sinyalTimeframe === tf ? 'bg-blue-600/30 text-blue-400 border border-blue-500/40' : 'text-gray-500 hover:text-gray-300 border border-transparent'
+                          className={`h-5 px-2 rounded-md text-[7px] font-bold transition-all ${
+                            sinyalTimeframe === tf
+                              ? 'bg-blue-600/30 text-blue-400 border border-blue-500/40 shadow-sm shadow-blue-500/20'
+                              : 'text-gray-500 hover:text-gray-300 border border-transparent hover:bg-white/5'
                           }`}>
                           {tf}
                         </button>
@@ -3410,7 +3545,7 @@ function Dashboard() {
 
                   {/* Active Trades Overlay */}
                   {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                    <div className="absolute top-12 left-2 z-10 flex flex-col gap-0.5">
+                    <div className="absolute top-14 left-2 z-10 flex flex-col gap-1">
                       {sinyalPositions.filter(p => p.status === 'active').map(ap => {
                         const remaining = sinyalTimers[ap.id] ?? ap.duration
                         const progress = Math.max(0, (1 - remaining / ap.duration) * 100)
@@ -3420,7 +3555,7 @@ function Dashboard() {
                         const circumference = 2 * Math.PI * radius
                         const strokeDash = circumference * (remaining / ap.duration)
                         return (
-                          <div key={ap.id} className="flex items-center gap-1.5">
+                          <div key={ap.id} className={`flex items-center gap-2 px-2 py-1 rounded-lg border ${isUp ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`} style={{ backdropFilter: 'blur(8px)' }}>
                             <svg width="34" height="34" className="flex-shrink-0">
                               <circle cx="17" cy="17" r={radius} fill="none" stroke="#1e293b" strokeWidth="3" />
                               <circle cx="17" cy="17" r={radius} fill="none" stroke={isUp ? '#22c55e' : '#ef5350'} strokeWidth="3"
@@ -3429,9 +3564,9 @@ function Dashboard() {
                                 style={{ transition: 'stroke-dasharray 0.5s linear' }} />
                               <text x="17" y="20" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white">{remaining}</text>
                             </svg>
-                            <div className={`h-5 px-1.5 rounded flex items-center gap-0.5 ${isUp ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                              <span className={`text-[8px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{ap.direction}</span>
-                              <span className="text-[7px] text-gray-500">{formatRupiah(ap.amount)}</span>
+                            <div>
+                              <span className={`text-[8px] font-black block ${isUp ? 'text-green-400' : 'text-red-400'}`}>{ap.direction}</span>
+                              <span className="text-[7px] text-gray-400 font-bold">{formatRupiah(ap.amount)}</span>
                             </div>
                           </div>
                         )
@@ -3439,8 +3574,8 @@ function Dashboard() {
                     </div>
                   )}
 
-                  {/* ── CANDLESTICK CHART SVG — Stockity style with panning ── */}
-                  <div className="w-full h-full pt-12"
+                  {/* ── CANDLESTICK CHART SVG — Premium style with panning ── */}
+                  <div className="w-full h-full pt-14"
                     onMouseMove={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect()
                       setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top, w: rect.width, h: rect.height })
@@ -3586,8 +3721,8 @@ function Dashboard() {
                             const priceLabel = paddedMax - (paddedRange / 5) * gi
                             return (
                               <g key={`hg-${gi}`}>
-                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="#1e293b" strokeWidth="0.4" strokeDasharray="1,3" />
-                                <text x={padL + chartW + 3} y={gy + 3} fontSize="5.5" fill="#64748b" fontFamily="monospace">{compactPrice(Math.round(priceLabel))}</text>
+                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="#334155" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.8" />
+                                <text x={padL + chartW + 3} y={gy + 3} fontSize="6" fill="#cbd5e1" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(priceLabel))}</text>
                               </g>
                             )
                           })}
@@ -3598,14 +3733,14 @@ function Dashboard() {
                             const vx = padL + (idx + 0.5) * candleSpacing
                             return (
                               <g key={`vg-${i}`}>
-                                <line x1={vx} y1={0} x2={vx} y2={priceAreaH} stroke="#1e293b" strokeWidth="0.3" strokeDasharray="1,3" />
-                                <text x={vx} y={priceAreaH + 10} fontSize="5" fill="#4b5563" textAnchor="middle" fontFamily="monospace">{c.time}</text>
+                                <line x1={vx} y1={0} x2={vx} y2={priceAreaH} stroke="#334155" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.5" />
+                                <text x={vx} y={priceAreaH + 10} fontSize="5.5" fill="#cbd5e1" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{c.time}</text>
                               </g>
                             )
                           })}
 
                           {/* Volume separator line */}
-                          <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="#1e293b" strokeWidth="0.4" />
+                          <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="#334155" strokeWidth="0.4" opacity="0.6" />
 
                           {/* Volume bars */}
                           {visibleCandles.map((c, i) => {
@@ -3667,10 +3802,11 @@ function Dashboard() {
                           })()}
                           {/* MA legend */}
                           <g>
-                            <line x1={padL + 4} y1={8} x2={padL + 14} y2={8} stroke="#eab308" strokeWidth="1" opacity="0.7" />
-                            <text x={padL + 16} y={10} fontSize="4.5" fill="#eab308" fontFamily="monospace" opacity="0.8">MA5</text>
-                            <line x1={padL + 32} y1={8} x2={padL + 42} y2={8} stroke="#06b6d4" strokeWidth="1" opacity="0.5" />
-                            <text x={padL + 44} y={10} fontSize="4.5" fill="#06b6d4" fontFamily="monospace" opacity="0.7">MA20</text>
+                            <rect x={padL + 1} y={1} width={58} height={12} rx="3" fill="rgba(15,23,42,0.8)" stroke="#1e293b" strokeWidth="0.3" />
+                            <line x1={padL + 5} y1={7} x2={padL + 15} y2={7} stroke="#eab308" strokeWidth="1" opacity="0.8" />
+                            <text x={padL + 17} y={9} fontSize="5" fill="#eab308" fontFamily="monospace" fontWeight="bold">MA5</text>
+                            <line x1={padL + 33} y1={7} x2={padL + 43} y2={7} stroke="#06b6d4" strokeWidth="1" opacity="0.6" />
+                            <text x={padL + 45} y={9} fontSize="5" fill="#06b6d4" fontFamily="monospace" fontWeight="bold">MA20</text>
                           </g>
 
                           {/* Active position entry lines */}
@@ -3681,9 +3817,9 @@ function Dashboard() {
                             return (
                               <g key={`pos-line-${pos.id}`}>
                                 <line x1={padL} y1={entryY} x2={padL + chartW} y2={entryY}
-                                  stroke={lineColor} strokeWidth="0.6" strokeDasharray="4,3" opacity="0.7" />
-                                <rect x={padL} y={entryY - 5} width={24} height="10" rx="2" fill={lineColor} opacity="0.85" />
-                                <text x={padL + 12} y={entryY + 3} fontSize="5" fill="white" textAnchor="middle" fontWeight="bold">{isPosUp ? 'UP' : 'DN'}</text>
+                                  stroke={lineColor} strokeWidth="0.7" strokeDasharray="4,3" opacity="0.6" />
+                                <rect x={padL + chartW - 28} y={entryY - 6} width={28} height="12" rx="3" fill={lineColor} opacity="0.9" />
+                                <text x={padL + chartW - 14} y={entryY + 3} fontSize="5.5" fill="white" textAnchor="middle" fontWeight="bold">{isPosUp ? 'UP' : 'DOWN'}</text>
                               </g>
                             )
                           })}
@@ -3708,14 +3844,14 @@ function Dashboard() {
                             const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
                             const crossPrice = paddedMax - (svgY / priceAreaH) * paddedRange
                             return (
-                              <g opacity="0.6">
-                                <line x1={svgX} y1={0} x2={svgX} y2={priceAreaH} stroke="#475569" strokeWidth="0.4" strokeDasharray="2,2" />
-                                <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke="#475569" strokeWidth="0.4" strokeDasharray="2,2" />
+                              <g opacity="0.7">
+                                <line x1={svgX} y1={0} x2={svgX} y2={priceAreaH} stroke="#64748b" strokeWidth="0.4" strokeDasharray="2,2" />
+                                <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke="#64748b" strokeWidth="0.4" strokeDasharray="2,2" />
                                 {/* Crosshair price label */}
                                 {svgY > 0 && svgY < priceAreaH && (
                                   <>
-                                    <rect x={padL + chartW + 1} y={svgY - 5} width={padR - 3} height="10" rx="2" fill="#334155" />
-                                    <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="5.5" fill="#94a3b8" textAnchor="middle" fontFamily="monospace">{compactPrice(Math.round(crossPrice))}</text>
+                                    <rect x={padL + chartW + 1} y={svgY - 6} width={padR - 3} height="12" rx="2" fill="#334155" />
+                                    <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="5.5" fill="#e2e8f0" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(crossPrice))}</text>
                                   </>
                                 )}
                               </g>
@@ -3730,26 +3866,26 @@ function Dashboard() {
                   {sinyalChartOffset > 0 && (
                     <button
                       onClick={() => setSinyalChartOffset(0)}
-                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-6 px-3 rounded-full bg-blue-600/80 text-white text-[8px] font-bold flex items-center gap-1 hover:bg-blue-500 transition-colors backdrop-blur-sm"
-                      style={{ boxShadow: '0 2px 12px rgba(37,99,235,0.4)' }}>
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-7 px-4 rounded-full bg-blue-600/80 text-white text-[8px] font-bold flex items-center gap-1.5 hover:bg-blue-500 transition-colors backdrop-blur-sm border border-blue-400/30"
+                      style={{ boxShadow: '0 2px 16px rgba(37,99,235,0.5)' }}>
                       <ChevronRight className="w-3 h-3 rotate-180" />
                       Terbaru
                     </button>
                   )}
 
                   {/* Zoom Controls */}
-                  <div className="absolute bottom-3 right-2 z-20 flex flex-col gap-0.5">
+                  <div className="absolute bottom-3 right-2 z-20 flex flex-col gap-1">
                     <button
                       onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                      className="h-6 w-6 rounded bg-[#0d1117]/90 border border-[#1e293b] flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm text-[14px] font-bold"
+                      className="h-7 w-7 rounded-lg bg-[#0d1117]/90 border border-[#1e293b]/60 flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-[#0d1117] transition-all backdrop-blur-sm text-[14px] font-bold shadow-md"
                     >+</button>
                     <button
                       onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                      className="h-6 w-6 rounded bg-[#0d1117]/90 border border-[#1e293b] flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm text-[14px] font-bold"
+                      className="h-7 w-7 rounded-lg bg-[#0d1117]/90 border border-[#1e293b]/60 flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-[#0d1117] transition-all backdrop-blur-sm text-[14px] font-bold shadow-md"
                     >−</button>
                     <button
                       onClick={() => { setSinyalChartZoom(40); setSinyalChartOffset(0) }}
-                      className="h-6 w-6 rounded bg-[#0d1117]/90 border border-[#1e293b] flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm"
+                      className="h-7 w-7 rounded-lg bg-[#0d1117]/90 border border-[#1e293b]/60 flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-[#0d1117] transition-all backdrop-blur-sm shadow-md"
                     >
                       <RotateCcw className="w-3 h-3" />
                     </button>
@@ -3761,13 +3897,15 @@ function Dashboard() {
                     if (Date.now() - latest.shownAt > 2500) return null
                     return (
                       <motion.div key={latest.id} initial={{ opacity: 0, y: 20, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }}
-                        className="absolute bottom-2 right-2 z-20 pointer-events-none">
-                        <div className={`px-3 py-2 rounded-lg border ${latest.won ? 'border-green-500/40 bg-green-900/60' : 'border-red-500/40 bg-red-900/60'}`} style={{ backdropFilter: 'blur(12px)' }}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[16px]">{latest.won ? '✅' : '❌'}</span>
+                        className="absolute bottom-3 right-3 z-20 pointer-events-none">
+                        <div className={`px-4 py-3 rounded-xl border ${latest.won ? 'border-green-500/30 bg-green-900/70 shadow-lg shadow-green-500/20' : 'border-red-500/30 bg-red-900/70 shadow-lg shadow-red-500/20'}`} style={{ backdropFilter: 'blur(16px)' }}>
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${latest.won ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                              <span className="text-[18px]">{latest.won ? '✅' : '❌'}</span>
+                            </div>
                             <div>
-                              <h4 className={`text-[10px] font-black ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? 'BENAR!' : 'SALAH'}</h4>
-                              <span className={`text-[9px] font-bold ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
+                              <h4 className={`text-[11px] font-black ${latest.won ? 'text-green-300' : 'text-red-300'}`}>{latest.won ? 'BENAR!' : 'SALAH'}</h4>
+                              <span className={`text-[10px] font-bold ${latest.won ? 'text-green-400' : 'text-red-400'}`}>{latest.won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
                             </div>
                           </div>
                         </div>
@@ -3777,33 +3915,36 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* ── BOTTOM PANEL — Stockity compact style ── */}
-              <div className="mt-1.5 space-y-1.5">
+              {/* ── BOTTOM PANEL — Premium compact style ── */}
+              <div className="mt-2 space-y-2">
                 {/* Row 1: Amount input */}
-                <div className="flex gap-1">
+                <div className="flex gap-1.5">
                   {/* Amount input */}
-                  <div className="flex-1 flex gap-1">
+                  <div className="flex-1 flex gap-1.5">
                     <div className="flex-1 relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[8px] font-bold text-gray-500">Rp</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[8px] font-bold text-blue-400">Rp</span>
                       <input type="number" value={sinyalAmount} onChange={(e) => setSinyalAmount(e.target.value)} placeholder="100.000"
-                        className="w-full h-8 rounded-md bg-[#0d1117] border border-[#1e293b] pl-6 pr-1 text-[10px] font-semibold text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-600" />
+                        className="w-full h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-7 pr-2 text-[11px] font-bold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-[var(--zv-muted)]" />
                     </div>
                     <button onClick={() => setSinyalAmount(String(Math.min((parseInt(sinyalAmount) || 100000) * 2, (user?.balance || 0))))}
-                      className="h-8 w-7 rounded-md bg-[#0d1117] border border-[#1e293b] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:border-blue-500/30 transition-all">
-                      <Plus className="w-3 h-3" />
+                      className="h-9 w-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all">
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => setSinyalAmount(String(Math.max(Math.floor((parseInt(sinyalAmount) || 200000) / 2), 100000)))}
-                      className="h-8 w-7 rounded-md bg-[#0d1117] border border-[#1e293b] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:border-blue-500/30 transition-all">
-                      <Minus className="w-3 h-3" />
+                      className="h-9 w-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-muted)] hover:text-blue-400 hover:border-blue-500/30 transition-all">
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
                 {/* Quick Amounts */}
-                <div className="flex gap-0.5">
+                <div className="flex gap-1">
                   {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
                     <button key={amt} onClick={() => setSinyalAmount(amt)}
-                      className={`flex-1 h-6 rounded text-[7px] font-bold transition-all ${sinyalAmount === amt ? 'bg-[#1e3a5f] border border-blue-500/50 text-blue-400' : 'bg-[#0d1117] border border-[#1e293b] text-gray-500 hover:text-gray-300'}`}>
+                      className={`flex-1 h-7 rounded-lg text-[7px] font-bold transition-all ${sinyalAmount === amt
+                        ? 'bg-gradient-to-r from-[#1e3a5f] to-[#1d4ed8] border border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/20'
+                        : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/30'
+                      }`}>
                       {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
                     </button>
                   ))}
@@ -3811,20 +3952,20 @@ function Dashboard() {
 
                 {/* Profit preview */}
                 {sinyalAmount && parseInt(sinyalAmount) >= 100000 && (
-                  <div className="flex gap-1">
-                    <div className="flex-1 rounded-md px-2 py-1 bg-green-500/5 border border-green-500/10 flex items-center justify-between">
-                      <span className="text-[7px] text-green-400/60 font-bold">NAIK +{chartPayoutRates.up.toFixed(0)}%</span>
-                      <span className="text-[9px] font-black text-green-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.up / 100))}</span>
+                  <div className="flex gap-1.5">
+                    <div className="flex-1 rounded-lg px-2.5 py-1.5 bg-green-500/8 border border-green-500/15 flex items-center justify-between">
+                      <span className="text-[7px] text-green-400 font-bold">NAIK +{chartPayoutRates.up.toFixed(0)}%</span>
+                      <span className="text-[10px] font-black text-green-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.up / 100))}</span>
                     </div>
-                    <div className="flex-1 rounded-md px-2 py-1 bg-red-500/5 border border-red-500/10 flex items-center justify-between">
-                      <span className="text-[7px] text-red-400/60 font-bold">TURUN +{chartPayoutRates.down.toFixed(0)}%</span>
-                      <span className="text-[9px] font-black text-red-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.down / 100))}</span>
+                    <div className="flex-1 rounded-lg px-2.5 py-1.5 bg-red-500/8 border border-red-500/15 flex items-center justify-between">
+                      <span className="text-[7px] text-red-400 font-bold">TURUN +{chartPayoutRates.down.toFixed(0)}%</span>
+                      <span className="text-[10px] font-black text-red-400">+{formatRupiah(Math.round(parseInt(sinyalAmount) * chartPayoutRates.down / 100))}</span>
                     </div>
                   </div>
                 )}
 
-                {/* ── NAIK / TURUN — Stockity side-by-side large buttons ── */}
-                <div className="grid grid-cols-2 gap-1.5">
+                {/* ── NAIK / TURUN — Premium side-by-side large buttons ── */}
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
                       setSinyalDirection('NAIK')
@@ -3836,13 +3977,13 @@ function Dashboard() {
                         toast({ title: 'Saldo tidak cukup', variant: 'destructive' })
                       }
                     }}
-                    className="h-14 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-b from-[#16a34a] to-[#15803d] text-white shadow-lg shadow-green-900/40 active:scale-[0.97]">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="text-[14px] font-black tracking-wide">NAIK</span>
+                    className="h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-b from-[#22c55e] to-[#16a34a] text-white shadow-lg shadow-green-600/30 active:scale-[0.97] border border-green-400/20">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="w-5 h-5" />
+                      <span className="text-[15px] font-black tracking-wide">NAIK</span>
                     </div>
-                    <span className="text-[10px] font-bold text-green-200">+{chartPayoutRates.up.toFixed(0)}%</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
+                    <span className="text-[10px] font-bold text-green-100">+{chartPayoutRates.up.toFixed(0)}%</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite]" />
                   </button>
                   <button
                     onClick={() => {
@@ -3855,22 +3996,22 @@ function Dashboard() {
                         toast({ title: 'Saldo tidak cukup', variant: 'destructive' })
                       }
                     }}
-                    className="h-14 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-b from-[#dc2626] to-[#b91c1c] text-white shadow-lg shadow-red-900/40 active:scale-[0.97]">
-                    <div className="flex items-center gap-1">
-                      <TrendingDown className="w-4 h-4" />
-                      <span className="text-[14px] font-black tracking-wide">TURUN</span>
+                    className="h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative overflow-hidden bg-gradient-to-b from-[#ef4444] to-[#dc2626] text-white shadow-lg shadow-red-600/30 active:scale-[0.97] border border-red-400/20">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingDown className="w-5 h-5" />
+                      <span className="text-[15px] font-black tracking-wide">TURUN</span>
                     </div>
-                    <span className="text-[10px] font-bold text-red-200">+{chartPayoutRates.down.toFixed(0)}%</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
+                    <span className="text-[10px] font-bold text-red-100">+{chartPayoutRates.down.toFixed(0)}%</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shine_3s_infinite_1s]" />
                   </button>
                 </div>
 
                 {/* Active positions bar */}
                 {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0d1117] border border-[#1e293b]">
-                    <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
-                    <span className="text-[8px] font-bold text-blue-400">{sinyalPositions.filter(p => p.status === 'active').length} aktif</span>
-                    <span className="text-[7px] text-gray-500">• {formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + p.amount, 0))}</span>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--zv-surface)] border border-blue-500/20" style={{ boxShadow: '0 0 12px rgba(59,130,246,0.08)' }}>
+                    <Zap className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+                    <span className="text-[9px] font-black text-blue-400">{sinyalPositions.filter(p => p.status === 'active').length} posisi aktif</span>
+                    <span className="text-[8px] text-[var(--zv-muted)]">• Total: {formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + p.amount, 0))}</span>
                   </div>
                 )}
 
@@ -6279,7 +6420,7 @@ function Dashboard() {
         {showWelcomeModal && user && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={handleWelcomeClose} />
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 top-4 left-4 right-4 bottom-20 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md md:bottom-auto bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
               <div className="relative">
                 {/* Green Header */}
                 <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>

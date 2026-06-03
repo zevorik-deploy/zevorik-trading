@@ -426,3 +426,29 @@ Stage Summary:
 - Consistent blue gradient theme throughout
 - Both dark and light modes working correctly
 - All interactive elements (buttons, links) functional
+---
+Task ID: 1
+Agent: Main Agent
+Task: Redesign Beranda premium + Fix Sinyal Pro dark mode
+
+Work Log:
+- Generated 5 premium banner images using AI image generation (hero, sinyal pro, investasi, undang bonus, daily check)
+- Redesigned Beranda section with premium auto-scrolling banner carousel (5 slides, dot indicators, touch/swipe support, auto-advance every 4s)
+- Enhanced wallet card with larger icons, better balance display, decorative blur orbs
+- Upgraded Quick Access menu with per-icon glow shadows and larger icon containers
+- Added full-width Daily Check banner with streak counter
+- Applied premium blue glow shadows and gradient accent bars to all section cards
+- Fixed Sinyal Pro dark mode: enhanced chart area with premium border, gradient background, glassmorphism overlays
+- Improved chart grid line contrast (#334155, opacity 0.8) and price labels (#cbd5e1, fontSize 6)
+- Enhanced stock selector pills with gradient selected state and theme-aware colors
+- Upgraded bottom panel with theme-aware inputs, larger buttons, premium NAIK/TURUN buttons (h-16, rounded-xl, border glow)
+- Improved result toast with larger size, icon container, and shadow effects
+- Fixed welcome modal blocking bottom nav (bottom-20 inset, auto-dismiss after 5s)
+- Fixed carousel dot indicators (8px inactive → 24px active, better visibility)
+
+Stage Summary:
+- Beranda now has premium banner carousel with 5 auto-scrolling slides and dot indicators
+- Sinyal Pro dark mode is clear and beautiful with improved contrast on all chart elements
+- All sections have consistent premium styling with blue glow shadows and gradient accents
+- Both dark and light modes work correctly via CSS variable system
+- Welcome modal no longer blocks bottom navigation
