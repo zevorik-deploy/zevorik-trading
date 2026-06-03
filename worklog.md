@@ -188,3 +188,34 @@ Stage Summary:
 - All trading logic preserved (same chart simulation, payout calculation, position management)
 - The chart now shows a smooth area/line chart instead of candlesticks (like Stockity)
 - OOM issue in sandbox environment prevents persistent server - code is correct
+
+---
+Task ID: 11
+Agent: main
+Task: Fix Sinyal Pro chart to match Stockity (candlestick, not area/line) - user complained chart regressed
+
+Work Log:
+- Analyzed current Sinyal Pro chart rendering (area/line chart from Task 10)
+- User explicitly wants CANDLESTICK chart like Stockity, not area/line
+- Added `sinyalCrosshair` state for mouse tracking (crosshair on hover)
+- Replaced entire area/line chart SVG with proper candlestick chart:
+  1. **Candlestick bars**: Green (#22c55e) bullish / Red (#ef5350) bearish with body + wicks
+  2. **Volume bars**: At bottom of chart, green/red tinted, separated by divider line
+  3. **Grid lines**: Dashed horizontal + vertical lines (#1e293b)
+  4. **Price axis**: Right-side labels with compact price formatting (K/M)
+  5. **Time axis**: Bottom time labels from candle data
+  6. **Crosshair**: Follows mouse with price label on right axis
+  7. **Current price**: Dashed horizontal line + pulsing dot + colored label
+  8. **Position entry lines**: Shows UP/DN labels at entry prices for active positions
+- Enhanced chart header with stock name and price change percentage
+- Increased chart container minHeight from 260px to 320px
+- Chart viewBox: 600x220 (180px price area + 40px volume area)
+- Up to 40 candles visible at once
+- All existing trading logic preserved (payout rates, positions, timers, rigging)
+- Lint passes clean
+
+Stage Summary:
+- Sinyal Pro now shows proper candlestick chart matching Stockity style
+- All 10 verification points pass (candlestick bars, volume bars, grid, axes, crosshair, etc.)
+- Chart is interactive with crosshair on hover
+- Full Stockity trading experience: candlestick + volume + dark theme

@@ -766,6 +766,7 @@ function Dashboard() {
   const [sinyalCandles, setSinyalCandles] = useState<CandleData[]>([])
   const [sinyalCurrentPrice, setSinyalCurrentPrice] = useState(0)
   const [sinyalChartTick, setSinyalChartTick] = useState(0)
+  const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number } | null>(null)
   const sinyalChartSimRef = useRef<{
     price: number; basePrice: number; momentum: number; trend: number;
     phase: number; phaseLen: number; vol: number;
@@ -3139,23 +3140,40 @@ function Dashboard() {
 
               {/* ── MAIN CHART AREA — Stockity dark style ── */}
               {selectedSinyalStock && (
-                <div className="relative rounded-lg overflow-hidden" style={{ background: '#0a0e17', minHeight: '260px', flex: 1 }}>
-                  {/* Chart Header */}
+                <div className="relative rounded-lg overflow-hidden" style={{ background: '#0a0e17', minHeight: '320px', flex: 1 }}>
+                  {/* Chart Header — Stockity info bar */}
                   <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2 pt-1.5 pb-1" style={{ background: 'linear-gradient(to bottom, #0a0e17 60%, transparent)' }}>
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                       <span className="text-[7px] font-black text-green-400 tracking-widest">LIVE</span>
                       <span className="text-[7px] text-gray-600">|</span>
                       <span className="text-[9px] font-black text-white">{selectedSinyalStock.code}</span>
+                      <span className="text-[7px] text-gray-500">•</span>
+                      <span className="text-[7px] font-bold text-gray-400">{selectedSinyalStock.name}</span>
                       <div className="flex items-center gap-0.5 ml-0.5">
                         <span className="h-3.5 px-1 rounded text-[6px] font-black bg-green-500/15 text-green-400">↑{chartPayoutRates.up.toFixed(0)}%</span>
                         <span className="h-3.5 px-1 rounded text-[6px] font-black bg-red-500/15 text-red-400">↓{chartPayoutRates.down.toFixed(0)}%</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[12px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (sinyalChartSimRef.current?.currentCandle.open || 0) ? '#22c55e' : '#ef5350' }}>
-                        {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
-                      </span>
+                      {(() => {
+                        const sim = sinyalChartSimRef.current
+                        const openPrice = sim?.currentCandle.open || selectedSinyalStock.price
+                        const curPrice = sinyalCurrentPrice || selectedSinyalStock.price
+                        const priceChange = curPrice - openPrice
+                        const changePercent = openPrice > 0 ? (priceChange / openPrice) * 100 : 0
+                        const isPriceUp = priceChange >= 0
+                        return (
+                          <>
+                            <span className="text-[12px] font-black tabular-nums" style={{ color: isPriceUp ? '#22c55e' : '#ef5350' }}>
+                              {formatRupiah(curPrice)}
+                            </span>
+                            <span className={`text-[8px] font-bold ${isPriceUp ? 'text-green-400' : 'text-red-400'}`}>
+                              {isPriceUp ? '+' : ''}{changePercent.toFixed(2)}%
+                            </span>
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
 
@@ -3190,8 +3208,13 @@ function Dashboard() {
                     </div>
                   )}
 
-                  {/* ── AREA/LINE CHART SVG — Stockity style ── */}
-                  <div className="w-full h-full pt-8">
+                  {/* ── CANDLESTICK CHART SVG — Stockity style ── */}
+                  <div className="w-full h-full pt-8"
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                    }}
+                    onMouseLeave={() => setSinyalCrosshair(null)}>
                     {(() => {
                       const allCandles = [...sinyalCandles]
                       const sim = sinyalChartSimRef.current
@@ -3206,19 +3229,25 @@ function Dashboard() {
                       }
                       if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Memuat grafik...</div>
 
-                      const closes = allCandles.map(c => c.close)
-                      const minP = Math.min(...closes)
-                      const maxP = Math.max(...closes)
+                      // Calculate OHLC range
+                      const allHighs = allCandles.map(c => c.high)
+                      const allLows = allCandles.map(c => c.low)
+                      const minP = Math.min(...allLows)
+                      const maxP = Math.max(...allHighs)
                       const rangeP = maxP - minP || 1
-                      const paddedMin = minP - rangeP * 0.08
-                      const paddedMax = maxP + rangeP * 0.08
+                      const paddedMin = minP - rangeP * 0.1
+                      const paddedMax = maxP + rangeP * 0.1
                       const paddedRange = paddedMax - paddedMin
 
                       const W = 600
-                      const H = 200
-                      const padR = 50
-                      const padL = 4
+                      const chartH = 180
+                      const volH = 40
+                      const H = chartH + volH
+                      const padR = 52
+                      const padL = 2
+                      const padB = 14
                       const chartW = W - padR - padL
+                      const priceAreaH = chartH - padB
 
                       const compactPrice = (p: number) => {
                         if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
@@ -3226,73 +3255,153 @@ function Dashboard() {
                         return p.toFixed(0)
                       }
 
-                      // Build line points
-                      const points = closes.map((p, i) => {
-                        const x = padL + (i / (closes.length - 1)) * chartW
-                        const y = ((paddedMax - p) / paddedRange) * H
-                        return `${x},${y}`
-                      })
+                      const yScale = (price: number) => ((paddedMax - price) / paddedRange) * priceAreaH
 
-                      // Area fill path
-                      const areaPath = `M${padL},${H} L${points.join(' L')} L${padL + chartW},${H} Z`
+                      // Candle width calculation
+                      const maxVisible = 40
+                      const visibleCandles = allCandles.slice(-maxVisible)
+                      const candleCount = visibleCandles.length
+                      const candleSpacing = chartW / candleCount
+                      const candleBodyW = Math.max(2, Math.min(candleSpacing * 0.65, 12))
 
-                      // Determine current trend color
-                      const isUp = closes[closes.length - 1] >= closes[0]
-                      const lineColor = isUp ? '#22c55e' : '#ef5350'
-                      const areaGradId = isUp ? 'areaGreen' : 'areaRed'
+                      // Volume scale
+                      const maxVol = Math.max(...visibleCandles.map(c => c.volume), 1)
 
-                      // Current price Y
-                      const lastPrice = closes[closes.length - 1]
-                      const yLast = ((paddedMax - lastPrice) / paddedRange) * H
+                      // Last price info
+                      const lastCandle = visibleCandles[candleCount - 1]
+                      const lastPrice = lastCandle.close
+                      const yLast = yScale(lastPrice)
+                      const isUp = lastCandle.close >= lastCandle.open
+                      const priceColor = isUp ? '#22c55e' : '#ef5350'
+
+                      // Active position entry prices
+                      const activePositions = sinyalPositions.filter(p => p.status === 'active')
 
                       return (
                         <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }}>
                           <defs>
-                            <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#22c55e" stopOpacity="0.02" />
-                            </linearGradient>
-                            <linearGradient id="areaRed" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#ef5350" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#ef5350" stopOpacity="0.02" />
-                            </linearGradient>
-                            <filter id="lineGlow" x="-10%" y="-10%" width="120%" height="120%">
-                              <feGaussianBlur stdDeviation="3" result="blur" />
+                            <filter id="candleGlow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feGaussianBlur stdDeviation="2" result="blur" />
                               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                             </filter>
                           </defs>
 
-                          {/* Grid lines - subtle */}
-                          {[0, 1, 2, 3, 4].map(gi => {
-                            const gy = (gi / 4) * H
-                            const priceLabel = Math.round(paddedMax - (paddedRange / 4) * gi)
+                          {/* Background subtle gradient */}
+                          <rect x={padL} y={0} width={chartW} height={chartH} fill="transparent" />
+
+                          {/* Horizontal grid lines + price labels */}
+                          {[0, 1, 2, 3, 4, 5].map(gi => {
+                            const gy = (gi / 5) * priceAreaH
+                            const priceLabel = paddedMax - (paddedRange / 5) * gi
                             return (
-                              <g key={`g-${gi}`}>
-                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="#1e293b" strokeWidth="0.5" />
-                                <text x={padL + chartW + 3} y={gy + 3} fontSize="6" fill="#4b5563">{compactPrice(priceLabel)}</text>
+                              <g key={`hg-${gi}`}>
+                                <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="#1e293b" strokeWidth="0.4" strokeDasharray="1,3" />
+                                <text x={padL + chartW + 3} y={gy + 3} fontSize="5.5" fill="#64748b" fontFamily="monospace">{compactPrice(Math.round(priceLabel))}</text>
                               </g>
                             )
                           })}
 
-                          {/* Area fill */}
-                          <path d={areaPath} fill={`url(#${areaGradId})`} />
+                          {/* Vertical grid lines + time labels */}
+                          {visibleCandles.filter((_, i) => i % Math.max(1, Math.floor(candleCount / 6)) === 0).map((c, i) => {
+                            const idx = visibleCandles.indexOf(c)
+                            const vx = padL + (idx + 0.5) * candleSpacing
+                            return (
+                              <g key={`vg-${i}`}>
+                                <line x1={vx} y1={0} x2={vx} y2={priceAreaH} stroke="#1e293b" strokeWidth="0.3" strokeDasharray="1,3" />
+                                <text x={vx} y={priceAreaH + 10} fontSize="5" fill="#4b5563" textAnchor="middle" fontFamily="monospace">{c.time}</text>
+                              </g>
+                            )
+                          })}
 
-                          {/* Line */}
-                          <polyline fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round"
-                            points={points.join(' ')} filter="url(#lineGlow)" />
+                          {/* Volume separator line */}
+                          <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="#1e293b" strokeWidth="0.4" />
 
-                          {/* Current price indicator — pulsing dot */}
-                          <circle cx={padL + chartW} cy={yLast} r="3" fill={lineColor}>
-                            <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
-                          </circle>
+                          {/* Volume bars */}
+                          {visibleCandles.map((c, i) => {
+                            const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.7) / 2
+                            const volBarH = (c.volume / maxVol) * (volH - 8)
+                            const isBull = c.close >= c.open
+                            return (
+                              <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 4} width={candleBodyW * 0.7} height={Math.max(1, volBarH)}
+                                fill={isBull ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)'} rx="0.5" />
+                            )
+                          })}
+
+                          {/* Candlestick bars */}
+                          {visibleCandles.map((c, i) => {
+                            const cx = padL + (i + 0.5) * candleSpacing
+                            const isBull = c.close >= c.open
+                            const bodyTop = yScale(Math.max(c.open, c.close))
+                            const bodyBot = yScale(Math.min(c.open, c.close))
+                            const bodyH = Math.max(1, bodyBot - bodyTop)
+                            const wickTop = yScale(c.high)
+                            const wickBot = yScale(c.low)
+
+                            const fillColor = isBull ? '#22c55e' : '#ef5350'
+                            const strokeColor = isBull ? '#16a34a' : '#dc2626'
+
+                            return (
+                              <g key={`candle-${i}`}>
+                                {/* Upper wick */}
+                                <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth="1" />
+                                {/* Lower wick */}
+                                <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth="1" />
+                                {/* Body */}
+                                <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
+                                  fill={isBull ? fillColor : fillColor} stroke={strokeColor} strokeWidth="0.5" rx="0.5" />
+                              </g>
+                            )
+                          })}
+
+                          {/* Active position entry lines */}
+                          {activePositions.map(pos => {
+                            const entryY = yScale(pos.startPrice)
+                            const isPosUp = pos.direction === 'NAIK'
+                            const lineColor = isPosUp ? '#22c55e' : '#ef5350'
+                            return (
+                              <g key={`pos-line-${pos.id}`}>
+                                <line x1={padL} y1={entryY} x2={padL + chartW} y2={entryY}
+                                  stroke={lineColor} strokeWidth="0.6" strokeDasharray="4,3" opacity="0.7" />
+                                <rect x={padL} y={entryY - 5} width={24} height="10" rx="2" fill={lineColor} opacity="0.85" />
+                                <text x={padL + 12} y={entryY + 3} fontSize="5" fill="white" textAnchor="middle" fontWeight="bold">{isPosUp ? 'UP' : 'DN'}</text>
+                              </g>
+                            )
+                          })}
 
                           {/* Current price horizontal line */}
-                          <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast} stroke={lineColor} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.5" />
+                          <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
+                            stroke={priceColor} strokeWidth="0.5" strokeDasharray="2,2" opacity="0.6" />
 
-                          {/* Price label on right */}
-                          <rect x={padL + chartW + 1} y={yLast - 7} width={padR - 4} height="14" rx="2" fill={lineColor} />
-                          <text x={padL + chartW + padR / 2} y={yLast + 3.5} fontSize="7" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastPrice)}</text>
+                          {/* Current price pulsing dot */}
+                          <circle cx={padL + chartW} cy={yLast} r="2.5" fill={priceColor} filter="url(#candleGlow)">
+                            <animate attributeName="r" values="2.5;4;2.5" dur="1.2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite" />
+                          </circle>
+
+                          {/* Current price label on right */}
+                          <rect x={padL + chartW + 1} y={yLast - 6} width={padR - 3} height="12" rx="2" fill={priceColor} />
+                          <text x={padL + chartW + padR / 2} y={yLast + 3} fontSize="6" fill="white" textAnchor="middle" fontWeight="bold" fontFamily="monospace">{compactPrice(lastPrice)}</text>
+
+                          {/* Crosshair */}
+                          {sinyalCrosshair && (() => {
+                            const svgRect = { width: W, height: H }
+                            const svgX = (sinyalCrosshair.x / 100) * svgRect.width
+                            const svgY = (sinyalCrosshair.y / 100) * svgRect.height
+                            const crossPrice = paddedMax - (svgY / priceAreaH) * paddedRange
+                            return (
+                              <g opacity="0.6">
+                                <line x1={svgX} y1={0} x2={svgX} y2={priceAreaH} stroke="#475569" strokeWidth="0.4" strokeDasharray="2,2" />
+                                <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke="#475569" strokeWidth="0.4" strokeDasharray="2,2" />
+                                {/* Crosshair price label */}
+                                {svgY > 0 && svgY < priceAreaH && (
+                                  <>
+                                    <rect x={padL + chartW + 1} y={svgY - 5} width={padR - 3} height="10" rx="2" fill="#334155" />
+                                    <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="5.5" fill="#94a3b8" textAnchor="middle" fontFamily="monospace">{compactPrice(Math.round(crossPrice))}</text>
+                                  </>
+                                )}
+                              </g>
+                            )
+                          })()}
                         </svg>
                       )
                     })()}
