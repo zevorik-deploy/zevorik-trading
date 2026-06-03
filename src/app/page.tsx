@@ -756,7 +756,6 @@ function Dashboard() {
   }[]>([])
   const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalAmount, setSinyalAmount] = useState('')
-  const [sinyalDuration, setSinyalDuration] = useState(60)
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number}[]>([])
   // Track remaining time per position
@@ -767,9 +766,11 @@ function Dashboard() {
   const [sinyalCurrentPrice, setSinyalCurrentPrice] = useState(0)
   const [sinyalChartTick, setSinyalChartTick] = useState(0)
   const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number } | null>(null)
-  // Timeframe: how long each candle bar lasts (1m = 60s, 5m = 300s, etc.)
-  const [sinyalTimeframe, setSinyalTimeframe] = useState<'1m' | '5m' | '15m' | '30m' | '1h'>('1m')
-  const sinyalTimeframeSeconds: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '30m': 1800, '1h': 3600 }
+  // Timeframe: how long each candle bar lasts = trade duration = 1 batang
+  const [sinyalTimeframe, setSinyalTimeframe] = useState<'1m' | '2m' | '5m' | '10m' | '15m' | '30m' | '1h'>('1m')
+  const sinyalTimeframeSeconds: Record<string, number> = { '1m': 60, '2m': 120, '5m': 300, '10m': 600, '15m': 900, '30m': 1800, '1h': 3600 }
+  // Trade duration is derived from timeframe (1 batang = 1 candle = timeframe)
+  const sinyalDuration = sinyalTimeframeSeconds[sinyalTimeframe] || 60
   // Chart panning: how many candles to offset from the latest
   const [sinyalChartOffset, setSinyalChartOffset] = useState(0)
   const sinyalChartOffsetRef = useRef(0)
@@ -3208,10 +3209,10 @@ function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Timeframe selector — below header */}
+                  {/* Timeframe selector — below header, = 1 batang = trade duration */}
                   <div className="absolute top-6 left-0 right-0 z-10 flex items-center justify-between px-2 py-0.5">
                     <div className="flex items-center gap-0.5">
-                      {(['1m', '5m', '15m', '30m', '1h'] as const).map(tf => (
+                      {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
                         <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
                           className={`h-4 px-1.5 rounded text-[7px] font-bold transition-all ${
                             sinyalTimeframe === tf ? 'bg-blue-600/30 text-blue-400 border border-blue-500/40' : 'text-gray-500 hover:text-gray-300 border border-transparent'
@@ -3526,17 +3527,8 @@ function Dashboard() {
 
               {/* ── BOTTOM PANEL — Stockity compact style ── */}
               <div className="mt-1.5 space-y-1.5">
-                {/* Row 1: Trade Duration + Amount */}
-                <div className="flex gap-1.5">
-                  {/* Trade Duration (in minutes) */}
-                  <div className="flex gap-0.5">
-                    {[1, 2, 5, 10, 30].map(dur => (
-                      <button key={dur} onClick={() => setSinyalDuration(dur * 60)}
-                        className={`h-8 w-10 rounded-md text-[9px] font-bold transition-all ${sinyalDuration === dur * 60 ? 'bg-[#1e3a5f] text-blue-400 border border-blue-500/50' : 'bg-[#0d1117] border border-[#1e293b] text-gray-500 hover:text-gray-300'}`}>
-                        {dur}m
-                      </button>
-                    ))}
-                  </div>
+                {/* Row 1: Amount input */}
+                <div className="flex gap-1">
                   {/* Amount input */}
                   <div className="flex-1 flex gap-1">
                     <div className="flex-1 relative">
@@ -3580,6 +3572,11 @@ function Dashboard() {
                 )}
 
                 {/* ── NAIK / TURUN — Stockity side-by-side large buttons ── */}
+                {/* Trade info: 1 batang = timeframe */}
+                <div className="flex items-center justify-center gap-1">
+                  <Clock className="w-3 h-3 text-gray-500" />
+                  <span className="text-[8px] font-bold text-gray-400">1 Batang = {sinyalTimeframe}</span>
+                </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => {

@@ -256,3 +256,27 @@ Stage Summary:
 - Trade durations also in minutes (1m/2m/5m/10m/30m) to match candle timeframes
 - Candle countdown timer shows how long until current candle closes
 - All 7 verification points pass (timeframe selector, duration buttons, candlestick, countdown, crosshair, panning, timeframe switching)
+
+---
+Task ID: 13
+Agent: main
+Task: Merge timeframe and trade duration — 1 batang = 1 trade = timeframe
+
+Work Log:
+- Removed `sinyalDuration` state — now derived from `sinyalTimeframe` (const, not state)
+- `sinyalDuration = sinyalTimeframeSeconds[sinyalTimeframe]` — trade duration = candle duration = 1 batang
+- Added 2m and 10m to timeframe options: 1m, 2m, 5m, 10m, 15m, 30m, 1h
+- Removed separate trade duration buttons (1m/2m/5m/10m/30m) from bottom panel
+- Bottom panel now only has: amount input, +/- buttons, quick amounts, profit preview, NAIK/TURUN
+- Added "1 Batang = {timeframe}" indicator above NAIK/TURUN buttons with Clock icon
+- Timeframe selector in chart header is now the ONLY duration control
+- All trading logic automatically uses `sinyalDuration` derived from selected timeframe
+- Lint passes clean
+
+Stage Summary:
+- Timeframe = trade duration = 1 batang candle — ONE selector controls everything
+- User picks 1m → 1 batang = 1 menit, trade = 1 menit
+- User picks 5m → 1 batang = 5 menit, trade = 5 menit
+- "1 Batang = X" indicator makes it clear to the user
+- No more confusing separate trade duration buttons
+- All 7 verification points pass
