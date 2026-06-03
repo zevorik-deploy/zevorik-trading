@@ -765,7 +765,7 @@ function Dashboard() {
   const [sinyalCandles, setSinyalCandles] = useState<CandleData[]>([])
   const [sinyalCurrentPrice, setSinyalCurrentPrice] = useState(0)
   const [sinyalChartTick, setSinyalChartTick] = useState(0)
-  const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number } | null>(null)
+  const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
   // Timeframe: how long each candle bar lasts = trade duration = 1 batang
   const [sinyalTimeframe, setSinyalTimeframe] = useState<'1m' | '2m' | '5m' | '10m' | '15m' | '30m' | '1h'>('1m')
   const sinyalTimeframeSeconds: Record<string, number> = { '1m': 60, '2m': 120, '5m': 300, '10m': 600, '15m': 900, '30m': 1800, '1h': 3600 }
@@ -775,8 +775,13 @@ function Dashboard() {
   const [sinyalChartOffset, setSinyalChartOffset] = useState(0)
   const sinyalChartOffsetRef = useRef(0)
   useEffect(() => { sinyalChartOffsetRef.current = sinyalChartOffset }, [sinyalChartOffset])
+  // Chart zoom: number of visible candles (lower = more zoomed in)
+  const [sinyalChartZoom, setSinyalChartZoom] = useState(40)
+  const sinyalChartZoomRef = useRef(40)
+  useEffect(() => { sinyalChartZoomRef.current = sinyalChartZoom }, [sinyalChartZoom])
   // Drag state for panning
   const sinyalDragRef = useRef<{ startX: number; startOffset: number; dragging: boolean }>({ startX: 0, startOffset: 0, dragging: false })
+  const sinyalPinchRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const sinyalChartSimRef = useRef<{
     price: number; basePrice: number; momentum: number; trend: number;
     phase: number; phaseLen: number; vol: number;
@@ -3272,7 +3277,7 @@ function Dashboard() {
                   <div className="w-full h-full pt-12"
                     onMouseMove={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect()
-                      setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                      setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top, w: rect.width, h: rect.height })
                       // Handle drag panning
                       if (sinyalDragRef.current.dragging) {
                         const dx = e.clientX - sinyalDragRef.current.startX
@@ -3290,10 +3295,45 @@ function Dashboard() {
                     onMouseLeave={() => { setSinyalCrosshair(null); sinyalDragRef.current.dragging = false }}
                     onWheel={(e) => {
                       e.preventDefault()
-                      // Scroll: pan left/right
-                      const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY
-                      const direction = delta > 0 ? -1 : 1
-                      setSinyalChartOffset(prev => Math.max(0, prev + direction * 2))
+                      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                        // Shift+scroll or horizontal scroll = PAN
+                        const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY
+                        const direction = delta > 0 ? -1 : 1
+                        setSinyalChartOffset(prev => Math.max(0, prev + direction * 2))
+                      } else {
+                        // Vertical scroll = ZOOM
+                        const zoomDelta = e.deltaY > 0 ? 1 : -1
+                        const step = sinyalChartZoomRef.current > 60 ? 4 : sinyalChartZoomRef.current > 30 ? 2 : 1
+                        setSinyalChartZoom(prev => Math.max(8, Math.min(120, prev + zoomDelta * step)))
+                      }
+                    }}
+                    onDoubleClick={() => { setSinyalChartZoom(40); setSinyalChartOffset(0) }}
+                    onTouchStart={(e) => {
+                      if (e.touches.length === 1) {
+                        sinyalDragRef.current = { startX: e.touches[0].clientX, startOffset: sinyalChartOffsetRef.current, dragging: true }
+                      } else if (e.touches.length === 2) {
+                        sinyalDragRef.current.dragging = false
+                        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY)
+                        sinyalPinchRef.current = { startDist: dist, startZoom: sinyalChartZoomRef.current }
+                      }
+                    }}
+                    onTouchMove={(e) => {
+                      if (e.touches.length === 1 && sinyalDragRef.current.dragging) {
+                        const dx = e.touches[0].clientX - sinyalDragRef.current.startX
+                        const candlesPerPx = 3 / (e.currentTarget.getBoundingClientRect().width || 300)
+                        const offsetDelta = Math.round(dx * candlesPerPx)
+                        setSinyalChartOffset(Math.max(0, sinyalDragRef.current.startOffset + offsetDelta))
+                      } else if (e.touches.length === 2 && sinyalPinchRef.current) {
+                        e.preventDefault()
+                        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY)
+                        const scale = sinyalPinchRef.current.startDist / dist
+                        const newZoom = Math.max(8, Math.min(120, Math.round(sinyalPinchRef.current.startZoom * scale)))
+                        setSinyalChartZoom(newZoom)
+                      }
+                    }}
+                    onTouchEnd={() => {
+                      sinyalDragRef.current.dragging = false
+                      sinyalPinchRef.current = null
                     }}
                     style={{ cursor: sinyalDragRef.current?.dragging ? 'grabbing' : 'grab' }}>
                     {(() => {
@@ -3339,7 +3379,7 @@ function Dashboard() {
                       const yScale = (price: number) => ((paddedMax - price) / paddedRange) * priceAreaH
 
                       // Candle width calculation with panning support
-                      const maxVisible = 50
+                      const maxVisible = sinyalChartZoom
                       const totalCandles = allCandles.length
                       const endIdx = totalCandles - sinyalChartOffset
                       const startIdx = Math.max(0, endIdx - maxVisible)
@@ -3347,7 +3387,7 @@ function Dashboard() {
                       const candleCount = visibleCandles.length
                       if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[9px] text-gray-600">Geser kembali...</div>
                       const candleSpacing = chartW / candleCount
-                      const candleBodyW = Math.max(2, Math.min(candleSpacing * 0.65, 12))
+                      const candleBodyW = Math.max(1.5, Math.min(candleSpacing * 0.65, 14))
 
                       // Volume scale
                       const maxVol = Math.max(...visibleCandles.map(c => c.volume), 1)
@@ -3438,6 +3478,35 @@ function Dashboard() {
                             )
                           })}
 
+                          {/* MA5 line — yellow */}
+                          {(() => {
+                            const ma5 = computeMA(visibleCandles, 5)
+                            const points = ma5.filter(v => v !== null).map((v, i) => {
+                              const origIdx = ma5.findIndex((val, j) => val === v && j >= i)
+                              return { x: padL + (origIdx + 0.5) * candleSpacing, y: yScale(v!) }
+                            }).filter((_, i) => i > 0)
+                            if (points.length < 2) return null
+                            const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+                            return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="0.7" opacity="0.7" />
+                          })()}
+                          {/* MA20 line — cyan */}
+                          {(() => {
+                            const ma20 = computeMA(visibleCandles, 20)
+                            const points = ma20.filter(v => v !== null).map((v, i) => ({
+                              x: padL + (i + 0.5) * candleSpacing, y: yScale(v!)
+                            }))
+                            if (points.length < 2) return null
+                            const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+                            return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="0.7" opacity="0.5" />
+                          })()}
+                          {/* MA legend */}
+                          <g>
+                            <line x1={padL + 4} y1={8} x2={padL + 14} y2={8} stroke="#eab308" strokeWidth="1" opacity="0.7" />
+                            <text x={padL + 16} y={10} fontSize="4.5" fill="#eab308" fontFamily="monospace" opacity="0.8">MA5</text>
+                            <line x1={padL + 32} y1={8} x2={padL + 42} y2={8} stroke="#06b6d4" strokeWidth="1" opacity="0.5" />
+                            <text x={padL + 44} y={10} fontSize="4.5" fill="#06b6d4" fontFamily="monospace" opacity="0.7">MA20</text>
+                          </g>
+
                           {/* Active position entry lines */}
                           {activePositions.map(pos => {
                             const entryY = yScale(pos.startPrice)
@@ -3469,9 +3538,8 @@ function Dashboard() {
 
                           {/* Crosshair */}
                           {sinyalCrosshair && (() => {
-                            const svgRect = { width: W, height: H }
-                            const svgX = (sinyalCrosshair.x / 100) * svgRect.width
-                            const svgY = (sinyalCrosshair.y / 100) * svgRect.height
+                            const svgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
+                            const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
                             const crossPrice = paddedMax - (svgY / priceAreaH) * paddedRange
                             return (
                               <g opacity="0.6">
@@ -3502,6 +3570,24 @@ function Dashboard() {
                       Terbaru
                     </button>
                   )}
+
+                  {/* Zoom Controls */}
+                  <div className="absolute bottom-3 right-2 z-20 flex flex-col gap-0.5">
+                    <button
+                      onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
+                      className="h-6 w-6 rounded bg-[#0d1117]/90 border border-[#1e293b] flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm text-[14px] font-bold"
+                    >+</button>
+                    <button
+                      onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
+                      className="h-6 w-6 rounded bg-[#0d1117]/90 border border-[#1e293b] flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm text-[14px] font-bold"
+                    >−</button>
+                    <button
+                      onClick={() => { setSinyalChartZoom(40); setSinyalChartOffset(0) }}
+                      className="h-6 w-6 rounded bg-[#0d1117]/90 border border-[#1e293b] flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500/40 transition-all backdrop-blur-sm"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
 
                   {/* Result toast — NON-BLOCKING */}
                   {sinyalResults.length > 0 && (() => {

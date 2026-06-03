@@ -280,3 +280,33 @@ Stage Summary:
 - "1 Batang = X" indicator makes it clear to the user
 - No more confusing separate trade duration buttons
 - All 7 verification points pass
+
+---
+Task ID: 14
+Agent: main
+Task: Add zoom functionality to candlestick chart (like real TradingView/Stockity)
+
+Work Log:
+- Added `sinyalChartZoom` state (default 40 visible candles, range 8-120)
+- Added `sinyalChartZoomRef` for callback access
+- Added `sinyalPinchRef` for touch pinch-to-zoom support
+- Updated `sinyalCrosshair` type to include container width/height for accurate coordinate mapping
+- Modified wheel handler: vertical scroll = zoom, shift+scroll or horizontal scroll = pan
+- Smooth zoom steps: 1 candle at tight zoom, 2 at medium, 4 at wide
+- Updated candle width calculation to use `sinyalChartZoom` instead of hardcoded 50
+- Added MA5 (yellow) and MA20 (cyan) moving average lines with legend
+- Fixed crosshair coordinate calculation from `(x/100)*W` to `(x/w)*W`
+- Added zoom control buttons: + (zoom in), − (zoom out), ↺ (reset) at bottom-right
+- Added double-click to reset view (zoom + pan)
+- Added touch pinch-to-zoom (two-finger gesture)
+- Added single-finger touch panning support
+- All verified with Agent Browser: chart renders, zoom buttons work, MA lines visible, timeframe switching works
+
+Stage Summary:
+- Chart now has full zoom capability matching real trading platforms
+- Mouse wheel zooms in/out smoothly
+- Touch pinch-to-zoom for mobile
+- MA5/MA20 overlay lines for technical analysis
+- Zoom +/- buttons and reset button on chart
+- Double-click resets to default view
+- Crosshair accurately tracks mouse position at all zoom levels
