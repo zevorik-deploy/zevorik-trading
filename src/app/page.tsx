@@ -487,7 +487,7 @@ function LoginPage() {
                     <div className="mt-2 rounded-xl p-2.5 bg-blue-50 border border-blue-200">
                       <div className="flex items-start gap-1.5">
                         <Shield className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-[8px] font-bold text-blue-700 leading-relaxed">Akun real menggunakan uang asli. Deposit minimal Rp 100.000 via QRIS. Bisa withdraw kapan saja.</span>
+                        <span className="text-[8px] font-bold text-blue-700 leading-relaxed">Akun real menggunakan uang asli. Saldo awal Rp 0. Deposit minimal Rp 100.000 via QRIS. Bisa withdraw kapan saja.</span>
                       </div>
                     </div>
                   )}
@@ -751,7 +751,7 @@ function Dashboard() {
   const [showBalance, setShowBalance] = useState(true)
   const [investProducts, setInvestProducts] = useState<InvestProduct[]>([])
   const [userInvestments, setUserInvestments] = useState<UserInvestment[]>([])
-  const [investCategory, setInvestCategory] = useState<'potential' | 'dividen'>('potential')
+  const [investCategory, setInvestCategory] = useState<'starter' | 'growth' | 'premium'>('starter')
   const [showInvestModal, setShowInvestModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<InvestProduct | null>(null)
   const [investLoading, setInvestLoading] = useState(false)
@@ -3330,7 +3330,7 @@ function Dashboard() {
                               </div>
                               <div>
                                 <span className="block text-[10px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
-                                <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.product.category === 'potential' ? 'Potential' : 'Dividen'}</span>
+                                <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.product.category === 'starter' ? 'Starter' : inv.product.category === 'growth' ? 'Growth' : 'Premium'}</span>
                               </div>
                             </div>
                             <div className="text-right">
@@ -3365,17 +3365,17 @@ function Dashboard() {
                     <DollarSign className="w-5 h-5 text-yellow-300" />
                     <h2 className="text-[16px] md:text-xl font-black">Investasi</h2>
                   </div>
-                  <p className="text-[10px] md:text-[11px] text-blue-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Semua profit dikreditkan ke saldo Anda setiap 24 jam.</p>
+                  <p className="text-[10px] md:text-[11px] text-blue-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Mulai dari Rp 1.000 dengan bonus harian Rp 500!</p>
 
                   {/* Pasar Aktif Stats */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
                       <Package className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[8px] font-black text-white">{investProducts.length} Produk</span>
+                      <span className="text-[8px] font-black text-white">3 Paket</span>
                     </div>
                     <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
                       <Award className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[8px] font-black text-white">{new Set(investProducts.map(p => p.category)).size} Kategori</span>
+                      <span className="text-[8px] font-black text-white">3 Tier</span>
                     </div>
                     <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
@@ -3386,8 +3386,8 @@ function Dashboard() {
                   <div className="grid grid-cols-3 gap-2 mt-3">
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Package className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">{investProducts.length}</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Produk</span>
+                      <b className="block text-[8px] font-black">3</b>
+                      <span className="block text-[7px] text-blue-200 font-bold">Paket</span>
                     </div>
                     <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
                       <Sparkles className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
@@ -3403,318 +3403,144 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* Category Tabs */}
-              <div className="flex gap-2 mb-4">
-                <button onClick={() => setInvestCategory('potential')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${investCategory === 'potential' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  <TrendingUp className="w-3.5 h-3.5 inline mr-1" />Saham Potential
+              {/* Category Tabs - 3 Packages */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <button onClick={() => setInvestCategory('starter')} className={`h-12 rounded-2xl text-[10px] md:text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${investCategory === 'starter' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Starter 1K</span>
                 </button>
-                <button onClick={() => setInvestCategory('dividen')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${investCategory === 'dividen' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  <Award className="w-3.5 h-3.5 inline mr-1" />Saham Dividen
+                <button onClick={() => setInvestCategory('growth')} className={`h-12 rounded-2xl text-[10px] md:text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${investCategory === 'growth' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Growth 6K</span>
+                </button>
+                <button onClick={() => setInvestCategory('premium')} className={`h-12 rounded-2xl text-[10px] md:text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${investCategory === 'premium' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+                  <Award className="w-4 h-4" />
+                  <span>Premium 200K</span>
                 </button>
               </div>
 
               {/* Product Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="space-y-3">
                 {investProducts.filter(p => p.category === investCategory).map(product => {
-                  const movement = investMovement.get(product.id)
-                  const isUp = movement ? movement.changePercent >= 0 : true
-                  const currentVal = product.modal + (movement?.change || 0)
-                  const rawData = getInvestChartData(product)
-                  const chartData = getDataForTimeframe(rawData, investTimeframe)
-                  const chartColor = isUp ? '#2563eb' : '#ef4444'
-                  const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].close : product.modal
-
+                  const isStarter = product.category === 'starter'
+                  const isGrowth = product.category === 'growth'
+                  const isPremium = product.category === 'premium'
+                  const canBuy = (user?.balance || 0) >= product.modal
+                  
                   return (
-                    <div key={product.id} className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5 transition-all overflow-hidden card-depth">
-                      {/* Top badges */}
-                      <div className="px-3 pt-3 flex items-center gap-1.5 flex-wrap">
-                        <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-black text-[#3b82f6] flex items-center gap-0.5">
-                          <CheckCircle className="w-2.5 h-2.5" />Tersedia
-                        </span>
-                        <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-black text-[#f59e0b]">DAILY PROFIT</span>
-                        <span className="h-4 px-1.5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-bold text-[#3b82f6]">{product.duration} Hari</span>
+                    <div key={product.id} className="rounded-2xl overflow-hidden border-2 transition-all hover:shadow-lg" style={{ 
+                      borderColor: isPremium ? '#f59e0b40' : isGrowth ? '#3b82f640' : '#22c55e40',
+                      background: isPremium 
+                        ? 'linear-gradient(145deg, var(--zv-panel) 0%, rgba(245,158,11,0.05) 100%)' 
+                        : isGrowth 
+                        ? 'linear-gradient(145deg, var(--zv-panel) 0%, rgba(59,130,246,0.05) 100%)'
+                        : 'linear-gradient(145deg, var(--zv-panel) 0%, rgba(34,197,94,0.05) 100%)'
+                    }}>
+                      {/* Package Header */}
+                      <div className="p-4" style={{ 
+                        background: isPremium 
+                          ? 'linear-gradient(145deg, #92400e 0%, #b45309 54%, #d97706 100%)' 
+                          : isGrowth 
+                          ? 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)'
+                          : 'linear-gradient(145deg, #064e3b 0%, #065f46 54%, #059669 100%)'
+                      }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-10 h-10 rounded-xl bg-white/20 grid place-items-center">
+                              {isPremium ? <Award className="w-5 h-5 text-yellow-300" /> : isGrowth ? <TrendingUp className="w-5 h-5 text-blue-300" /> : <Sparkles className="w-5 h-5 text-green-300" />}
+                            </div>
+                            <div className="text-white">
+                              <h3 className="text-[14px] font-black">{product.name}</h3>
+                              <span className="text-[9px] font-bold text-white/60">
+                                {isStarter ? 'Paket Entry Level' : isGrowth ? 'Min. Deposit 1J' : 'Harus Beli Starter Dulu'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right text-white">
+                            <span className="block text-[18px] font-black">{formatRupiah(product.modal)}</span>
+                            <span className="text-[8px] font-bold text-white/60">INVESTASI</span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Product Name + Price */}
-                      <div className="px-3 pt-2 pb-1">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-[13px] font-black text-[var(--zv-text)]">{product.name}</h3>
-                            <span className="text-[8px] font-bold text-[var(--zv-muted)]">Aset Saham</span>
+                      {/* Package Details */}
+                      <div className="p-4 space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
+                            <span className="block text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Profit/Hari</span>
+                            <b className="block text-[12px] font-black text-[#22c55e]">+{formatRupiah(product.dailyProfit)}</b>
                           </div>
-                          <div className="text-right">
-                            <span className="block text-[12px] font-black tabular-nums" style={{ color: isUp ? '#22c55e' : '#ef5350' }}>{formatRupiah(lastValue)}</span>
-                            <span className={`text-[8px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                              {isUp ? '▲' : '▼'} {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
+                          <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
+                            <span className="block text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Durasi</span>
+                            <b className="block text-[12px] font-black text-[#3b82f6]">{product.duration} Hari</b>
+                          </div>
+                          <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
+                            <span className="block text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Total Return</span>
+                            <b className="block text-[12px] font-black text-[#f59e0b]">{formatRupiah(product.totalReturn)}</b>
+                          </div>
+                        </div>
+
+                        {/* ROI Badge */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="h-5 px-2 rounded-full text-[8px] font-black flex items-center gap-1" style={{ 
+                              background: isPremium ? 'rgba(245,158,11,0.1)' : isGrowth ? 'rgba(59,130,246,0.1)' : 'rgba(34,197,94,0.1)',
+                              color: isPremium ? '#f59e0b' : isGrowth ? '#3b82f6' : '#22c55e',
+                              border: `1px solid ${isPremium ? 'rgba(245,158,11,0.2)' : isGrowth ? 'rgba(59,130,246,0.2)' : 'rgba(34,197,94,0.2)'}`
+                            }}>
+                              <Zap className="w-3 h-3" />ROI {product.roi}%
+                            </span>
+                            <span className="h-5 px-2 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-[var(--zv-muted)]">
+                              {product.duration} hari
                             </span>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Chart Controls */}
-                      <div className="px-3 py-0.5">
-                        <div className="flex items-center justify-between">
-                          {/* Chart Type Selector */}
-                          <div className="flex items-center gap-0.5 bg-[var(--zv-surface)] rounded-lg p-0.5">
-                            {([
-                              { type: 'area' as const, icon: ' area', label: 'Area' },
-                              { type: 'line' as const, icon: ' line', label: 'Line' },
-                              { type: 'candle' as const, icon: ' candle', label: 'Candle' },
-                              { type: 'bar' as const, icon: ' bar', label: 'Bar' },
-                            ]).map(ct => (
-                              <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investChartType === ct.type ? 'bg-[var(--zv-panel)] text-[#3b82f6]' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
-                                {ct.label}
-                              </button>
-                            ))}
+                        {/* Prerequisites Warning */}
+                        {isGrowth && (user?.totalDeposit || 0) < 1000000 && (
+                          <div className="rounded-xl p-2.5 bg-yellow-500/5 border border-yellow-500/10 flex items-start gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[8px] font-bold text-yellow-600">Memerlukan total deposit minimum Rp 1.000.000</p>
+                              <p className="text-[7px] text-yellow-500/70">Deposit Anda: {formatRupiah(user?.totalDeposit || 0)}</p>
+                            </div>
                           </div>
-                          {/* Timeframe Selector */}
-                          <div className="flex items-center gap-0.5">
-                            {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
-                              <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                                className={`h-5 px-1.5 rounded-md text-[6px] font-black transition-all ${investTimeframe === tf ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
-                                {tf}
-                              </button>
-                            ))}
+                        )}
+                        {isPremium && !userInvestments.some(inv => inv.product.category === 'starter' && (inv.status === 'active' || inv.status === 'completed')) && (
+                          <div className="rounded-xl p-2.5 bg-yellow-500/5 border border-yellow-500/10 flex items-start gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-[8px] font-bold text-yellow-600">Beli Paket Starter 1K terlebih dahulu untuk membuka paket ini</p>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <div className="flex items-center gap-1">
-                            <BarChart3 className="w-2.5 h-2.5 text-[var(--zv-muted)]" />
-                            <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PERGERAKAN MARKET</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                            <span className="text-[6px] font-black text-[#3b82f6]">LIVE</span>
-                          </div>
-                        </div>
-                      </div>
+                        )}
 
-                      {/* Live Chart */}
-                      <div className="px-3 py-1">
-                        <div className="h-24 w-full relative rounded-lg border border-[var(--zv-border)]/50 overflow-hidden" style={{ background: 'var(--zv-panel)' }}>
-                          {chartData.length > 2 ? (() => {
-                              // Candlestick chart (small)
-                              if (investChartType === 'candle') {
-                                const candles = chartData
-                                const allPrices = candles.flatMap(c => [c.high, c.low])
-                                const minP = Math.min(...allPrices)
-                                const maxP = Math.max(...allPrices)
-                                const rangeP = maxP - minP || 1
-                                const totalCandles = candles.length
-                                const maxVol = Math.max(...candles.map(c => c.volume), 1)
-                                const priceH = 68
-                                const volH = 20
-                                const padTop = 4
-                                const padBot = 4
-                                const svgH = padTop + priceH + volH + padBot
-                                const priceScaleW = 42
-                                const leftPad = 6
-                                const candleW = Math.max(4, Math.floor(140 / totalCandles))
-                                const gapW = Math.max(2, Math.floor(30 / totalCandles))
-                                const chartW = totalCandles * (candleW + gapW) + gapW * 2
-                                const svgW = chartW + priceScaleW
-                                if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[8px] text-gray-400">Data kurang...</div>
-                                const compactPriceSmall = (p: number) => {
-                                  if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
-                                  if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K`
-                                  return p.toFixed(0)
-                                }
-                                return (
-                                  <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }} shapeRendering="crispEdges">
-                                    {/* Grid lines - dotted */}
-                                    {[0, 1, 2, 3, 4].map(gi => {
-                                      const gy = padTop + (gi / 4) * priceH
-                                      return (
-                                        <g key={`grid-${gi}`}>
-                                          <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                          <text x={chartW + 4} y={gy + 3} fontSize="5.5" fill="var(--zv-muted)">{compactPriceSmall(Math.round(maxP - (rangeP / 4) * gi))}</text>
-                                        </g>
-                                      )
-                                    })}
-                                    {/* Volume bars with opacity variation */}
-                                    {candles.map((c, i) => {
-                                      const x = leftPad + gapW + i * (candleW + gapW)
-                                      const isGreen = c.close >= c.open
-                                      const volBarH = (c.volume / maxVol) * volH
-                                      const volY = padTop + priceH + volH - volBarH
-                                      const volOpacity = 0.2 + (i / totalCandles) * 0.2
-                                      return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={volBarH} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="0.5" />
-                                    })}
-                                    {/* Candles - hollow bearish style */}
-                                    {candles.map((c, i) => {
-                                      const x = leftPad + gapW + i * (candleW + gapW)
-                                      const yH = padTop + ((maxP - c.high) / rangeP) * priceH
-                                      const yL = padTop + ((maxP - c.low) / rangeP) * priceH
-                                      const yO = padTop + ((maxP - c.open) / rangeP) * priceH
-                                      const yC = padTop + ((maxP - c.close) / rangeP) * priceH
-                                      const isGreen = c.close >= c.open
-                                      const bodyTop = Math.min(yO, yC)
-                                      const bodyH = Math.max(Math.abs(yO - yC), 1)
-                                      const isLast = i === totalCandles - 1
-                                      return (
-                                        <g key={i} opacity={isLast ? 1 : 0.85}>
-                                          <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" />
-                                          <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : '#ef5350'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" rx="0.5" />
-                                        </g>
-                                      )
-                                    })}
-                                    {/* Current price line */}
-                                    {candles.length > 0 && (() => {
-                                      const lastC = candles[candles.length - 1]
-                                      const isGreen = lastC.close >= lastC.open
-                                      const yLast = padTop + ((maxP - lastC.close) / rangeP) * priceH
-                                      return (
-                                        <>
-                                          <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.7" />
-                                          <rect x={chartW + 2} y={yLast - 5} width={priceScaleW - 4} height="10" rx="2" fill={isGreen ? '#22c55e' : '#ef5350'} />
-                                          <text x={chartW + priceScaleW / 2} y={yLast + 2.5} fontSize="5.5" fill="white" textAnchor="middle" fontWeight="bold">{compactPriceSmall(lastC.close)}</text>
-                                        </>
-                                      )
-                                    })()}
-                                  </svg>
-                                )
-                              }
-
-                              const values = chartData.map(d => d.close)
-                              const minV = Math.min(...values)
-                              const maxV = Math.max(...values)
-                              const rangeV = maxV - minV || 1
-                              const domain: [number, number] = [Math.floor(minV - rangeV * 0.1), Math.ceil(maxV + rangeV * 0.1)]
-
-                              // Bar chart
-                              if (investChartType === 'bar') {
-                                const barData = chartData.map((d, i) => ({
-                                  idx: d.idx,
-                                  close: d.close,
-                                  fill: i > 0 && d.close >= chartData[i - 1].close ? '#2563eb' : '#ef4444'
-                                }))
-                                return (
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <ReBarChart data={barData} margin={{ top: 2, right: 4, bottom: 2, left: 2 }}>
-                                      <XAxis dataKey="idx" hide />
-                                      <YAxis hide domain={domain} />
-                                      <Bar dataKey="close" radius={[2, 2, 0, 0]} isAnimationActive={true} animationDuration={400}
-                                        shape={(props: Record<string, unknown>) => {
-                                          const { x, y, width, height, fill: _fill } = props as { x: number; y: number; width: number; height: number; fill: string }
-                                          return <rect x={x} y={y} width={Math.max(width, 2)} height={Math.max(height, 1)} fill={_fill} rx={2} opacity={0.8} />
-                                        }}>
-                                        {barData.map((entry, index) => (
-                                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                      </Bar>
-                                    </ReBarChart>
-                                  </ResponsiveContainer>
-                                )
-                              }
-
-                              // Line chart
-                              if (investChartType === 'line') {
-                                return (
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
-                                      <XAxis dataKey="idx" hide />
-                                      <YAxis hide domain={domain} />
-                                      <Line type="monotone" dataKey="close" stroke={chartColor} strokeWidth={2} dot={false}
-                                        activeDot={false}
-                                        isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                )
-                              }
-
-                              // Area chart (default)
-                              return (
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <AreaChart data={chartData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
-                                    <defs>
-                                      <linearGradient id={`investGrad-${product.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stopColor={chartColor} stopOpacity="0.35" />
-                                        <stop offset="70%" stopColor={chartColor} stopOpacity="0.08" />
-                                        <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
-                                      </linearGradient>
-                                    </defs>
-                                    <XAxis dataKey="idx" hide />
-                                    <YAxis hide domain={domain} />
-                                    <Area type="monotone" dataKey="close" stroke={chartColor} fill={`url(#investGrad-${product.id})`} strokeWidth={1.8}
-                                      dot={(props: Record<string, unknown>) => {
-                                        const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                        if (index !== chartData.length - 1) return <g key={String(index)} />
-                                        return (
-                                          <g key={`invest-dot-${product.id}`}>
-                                            <circle cx={cx} cy={cy} r={5} fill={chartColor} opacity={0.2}>
-                                              <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-                                              <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
-                                            </circle>
-                                            <circle cx={cx} cy={cy} r={3} fill={chartColor} stroke="#fff" strokeWidth={1} />
-                                          </g>
-                                        )
-                                      }}
-                                      activeDot={false}
-                                      isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                                  </AreaChart>
-                                </ResponsiveContainer>
-                              )
-                            })() : (
-                              <div className="flex items-center justify-center h-full text-[8px] text-[var(--zv-muted)]">Memuat data...</div>
-                            )
-                          }
-                        </div>
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="px-3 pt-2 pb-1 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">MODAL</span>
-                          <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(product.modal)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PROFIT HARIAN</span>
-                          <span className="text-[10px] font-black text-[#22c55e]">+{formatRupiah(product.dailyProfit)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
-                          <div className="text-right">
-                            <span className="text-[10px] font-black text-[#22c55e]">{formatRupiah(product.totalReturn)}</span>
-                            <span className="ml-1 text-[7px] font-bold text-[#f59e0b] bg-[var(--zv-surface)] px-1 rounded">ROI {product.roi}%</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Profit Distribution Footer */}
-                      <div className="px-3 py-1.5 bg-[var(--zv-surface)] border-t border-[var(--zv-border)]">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
-                          <span className="text-[7px] font-bold text-[#3b82f6]">PROFIT MASUK: 00:00 WIB • {(() => {
-  const now = new Date()
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000
-  const jakarta = new Date(utc + 7 * 3600000)
-  const nextMidnight = new Date(jakarta)
-  nextMidnight.setHours(24, 0, 0, 0)
-  const diff = nextMidnight.getTime() - jakarta.getTime()
-  const h = Math.floor(diff / 3600000)
-  const m = Math.floor((diff % 3600000) / 60000)
-  const s = Math.floor((diff % 60000) / 1000)
-  return `${h}j ${m}m ${s}d`
-})()}</span>
-                        </div>
-                      </div>
-
-                      {/* Buttons */}
-                      <div className="px-3 pb-3 pt-2 flex gap-2">
-                        <button onClick={() => { setSelectedDetailProduct(product); setShowInvestDetailModal(true) }}
-                          className="flex-1 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#3b82f6] text-[9px] font-bold hover:bg-[var(--zv-surface)] transition-colors">
-                          Lihat Selengkapnya
-                        </button>
-                        <button onClick={() => { setSelectedProduct(product); setShowInvestModal(true) }}
-                          className="flex-1 h-9 rounded-xl text-white text-[9px] font-black tracking-wide hover:scale-[1.02] transition-transform"
-                          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
-                          Investasi Sekarang
+                        {/* Buy Button */}
+                        <button 
+                          onClick={() => { setSelectedProduct(product); setShowInvestModal(true) }}
+                          disabled={!canBuy}
+                          className={`w-full h-11 rounded-xl text-[11px] font-black tracking-wide flex items-center justify-center gap-2 transition-all ${canBuy ? 'text-white hover:scale-[1.02]' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed border border-[var(--zv-border)]'}`}
+                          style={canBuy ? { background: isPremium 
+                            ? 'linear-gradient(135deg, #92400e 0%, #b45309 50%, #d97706 100%)' 
+                            : isGrowth 
+                            ? 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)'
+                            : 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #059669 100%)'
+                          } : undefined}
+                        >
+                          {canBuy ? (
+                            <><DollarSign className="w-4 h-4" />Investasi Sekarang</>
+                          ) : (
+                            <><AlertCircle className="w-4 h-4" />Saldo Tidak Cukup</>
+                          )}
                         </button>
                       </div>
                     </div>
                   )
                 })}
+                {investProducts.filter(p => p.category === investCategory).length === 0 && (
+                  <div className="text-center py-8">
+                    <Package className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Paket tidak tersedia</p>
+                  </div>
+                )}
               </div>
 
               {/* Active Investments Summary */}
@@ -6337,7 +6163,7 @@ function Dashboard() {
                       <DollarSign className="w-5 h-5 text-yellow-300" />
                       <span className="text-[13px] font-black">{selectedProduct.name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedProduct.category === 'starter' ? 'Paket Starter' : selectedProduct.category === 'growth' ? 'Paket Growth' : 'Paket Premium'}</span>
                   </div>
                 </div>
 
@@ -6682,7 +6508,7 @@ function Dashboard() {
                   <h3 className="text-lg font-black text-white mb-1">
                     {dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} Hari Berturut-turut` : 'Mulai Streak Anda!'}
                   </h3>
-                  <p className="text-[9px] text-blue-200">Cek setiap hari untuk mendapat bonus Rp 1.000 - Rp 10.000</p>
+                  <p className="text-[9px] text-blue-200">Cek setiap hari untuk mendapat bonus Rp 500</p>
 
                   {/* Streak dots */}
                   <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -6952,7 +6778,7 @@ function Dashboard() {
                       <DollarSign className="w-5 h-5 text-yellow-300" />
                       <span className="text-[14px] font-black">{selectedDetailProduct.name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedDetailProduct.category === 'potential' ? 'Saham Potential' : 'Saham Dividen'}</span>
+                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedDetailProduct.category === 'starter' ? 'Paket Starter' : selectedDetailProduct.category === 'growth' ? 'Paket Growth' : 'Paket Premium'}</span>
                   </div>
                 </div>
 

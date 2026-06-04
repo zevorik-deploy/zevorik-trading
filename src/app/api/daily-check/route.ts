@@ -107,10 +107,8 @@ export async function POST(request: NextRequest) {
       streak = yesterdayCheck.streak + 1
     }
 
-    // Random reward between Rp 1,000 - Rp 10,000
-    const reward = Math.floor(Math.random() * 9000) + 1000
-    // Round to nearest 500
-    const roundedReward = Math.round(reward / 500) * 500
+    // Fixed daily bonus: 500 per check-in
+    const roundedReward = 500
 
     // Create daily check record
     const dailyCheck = await db.dailyCheck.create({

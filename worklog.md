@@ -1,31 +1,30 @@
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Implement Demo vs Real account separation system
+Task: Implement ZEVORIX platform updates - starting balance 0, 3 investment packages, daily bonus 500, task rewards 1K-100K
 
 Work Log:
-- Added `accountType` field to Prisma User schema (default: "real")
-- Updated auth store with `accountType?: string` in User interface
-- Updated Register API to accept accountType parameter:
-  - Demo accounts: 100M starting balance, no welcome bonus, no referral bonuses
-  - Real accounts: welcome bonus only (25K), must deposit for more
-- Updated Login API to return accountType in user response
-- Updated Withdrawal API to block demo accounts (403 error)
-- Updated Deposit API to block demo accounts (403 error)
-- Created Demo Balance Request API at /api/demo/balance
-- Added account type selector (Demo/Real) on register page with beautiful UI
-- Added DEMO badge on dashboard header, balance card, and profile
-- Added demo balance request feature on home tab and finance tab
-- Disabled withdraw button for demo accounts (greyed out, cursor-not-allowed)
-- Finance tab shows "Saldo Demo" instead of "Deposit" for demo accounts
-- Added frontend checks in handleDeposit and handleWithdraw for demo accounts
-- Updated demo account quick-login on login page (amber themed)
-- Fixed register API operator precedence bug (0 + welcomeBonus)
+- Read current project state: page.tsx (7715 lines), admin page, all API routes
+- Updated register route: balance starts at 0 for real accounts (removed 25K welcome bonus)
+- Updated investment products: replaced 17 products with 3 packages (Starter 1K, Growth 6K, Premium 200K)
+- Added package prerequisites: Growth requires min deposit 1J, Premium requires buying Starter first
+- Updated daily check-in: fixed 500 bonus per check (was random 1K-10K)
+- Updated task rewards: 1K-100K range (first_invest=1K, top_up=5K, verify=10K, check_7=10K, invite_3=50K, invest_3=100K)
+- Updated bonus system daily check-in to 500 base
+- Updated frontend: investment section with new 3-package design, category tabs (Starter/Growth/Premium)
+- Updated category display text in portfolio and modal sections
+- Updated registration info text for real accounts (saldo awal Rp 0)
+- Updated invest header text and stats
+- Reset database with new schema
+- Verified all features with Agent Browser
 
 Stage Summary:
-- Demo vs Real account system fully implemented (backend + frontend)
-- Demo accounts get 100M virtual balance, can request more, cannot deposit/withdraw
-- Real accounts start with 25K welcome bonus, must deposit via QRIS, can withdraw
-- All APIs properly validate accountType
-- Lint passes
-- Note: Agent Browser unavailable due to no X11/display; server works but OOM kills frequently due to 520KB page.tsx
+- Real accounts now start with Rp 0 balance (no welcome bonus)
+- 3 investment packages: Starter 1K, Growth 6K (min deposit 1J), Premium 200K (requires Starter)
+- Daily check-in bonus: Rp 500 (fixed)
+- Task rewards: 1K to 100K range
+- Demo accounts: 100M starting balance, can request more, cannot withdraw
+- Deposit flow: Select amount → Continue → QRIS appears (minimum 100K)
+- Withdrawal: Scrollable bank/e-wallet/crypto selection
+- KYC verification: verified=50K min withdraw, unverified=250K min, 10% admin fee
+- All features verified working via Agent Browser

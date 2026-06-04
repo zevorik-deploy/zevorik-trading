@@ -126,7 +126,8 @@ async function handleDailyCheckIn(user: { id: string; dailyCheckIn: number; last
     )
   }
 
-  const baseBonus = Math.floor(Math.random() * 41000) + 10000
+  // Fixed daily bonus: 500 per check-in
+  const baseBonus = 500
 
   const vipMultipliers: Record<string, number> = {
     Bronze: 1, Silver: 1.2, Gold: 1.5, Platinum: 2, Diamond: 3,

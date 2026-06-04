@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Demo: 100M balance, no welcome bonus
-    // Real: 0 balance + welcome bonus of 25000
-    const welcomeBonus = isDemo ? 0 : 25000
-    const initialBalance = isDemo ? 100000000 : welcomeBonus
+    // Real: 0 balance (user must deposit/topup)
+    const welcomeBonus = 0
+    const initialBalance = isDemo ? 100000000 : 0
 
     const user = await db.user.create({
       data: {
@@ -76,18 +76,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Only give welcome bonus for real accounts
-    if (!isDemo) {
-      await db.bonus.create({
-        data: {
-          userId: user.id,
-          type: 'welcome_bonus',
-          amount: welcomeBonus,
-          description: 'Bonus selamat datang untuk member baru',
-          status: 'completed',
-        },
-      })
-    }
+    // No welcome bonus - balance starts at 0 for real accounts
 
     // Handle referral - only for real accounts (demo money isn't real)
     if (referrerId && !isDemo) {
@@ -150,7 +139,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: user.id,
           title: 'Selamat Datang! 🎉',
-          message: `Selamat datang di TrendEdge! Ini adalah akun demo dengan saldo Rp 100.000.000. Coba fitur trading tanpa risiko!`,
+          message: `Selamat datang di ZEVORIX! Ini adalah akun demo dengan saldo Rp 100.000.000. Coba fitur trading tanpa risiko!`,
           type: 'system',
         },
       })
@@ -159,7 +148,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: user.id,
           title: 'Selamat Datang! 🎉',
-          message: `Selamat datang di TrendEdge! Anda mendapat bonus selamat datang Rp ${welcomeBonus.toLocaleString('id-ID')}. Mulai investasi Anda sekarang!`,
+          message: `Selamat datang di ZEVORIX! Mulai investasi Anda dengan deposit via QRIS. Lengkapi tugas harian untuk mendapat bonus!`,
           type: 'system',
         },
       })
