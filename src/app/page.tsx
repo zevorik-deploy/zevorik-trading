@@ -9,7 +9,7 @@ import {
   ChevronUp, ChevronDown, X, Search, Bell, Star,
   ArrowUpRight, ArrowDownRight, Home as HomeIcon, User, Copy, Check,
   Plus, Minus, Gift, Newspaper, Shield, CreditCard, Settings,
-  Clock, AlertCircle, CheckCircle, Info, ExternalLink, Share2,
+  Clock, AlertCircle, CheckCircle, XCircle, Info, ExternalLink, Share2,
   BookOpen, Award, Target, PieChart, Zap, Users, Menu,
   Phone, Lock, ChevronRight, Trophy, CalendarDays, Flame,
   MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
@@ -752,6 +752,13 @@ function Dashboard() {
 
   // ============ EXTRA MODALS STATE ============
   const [showKycModal, setShowKycModal] = useState(false)
+  const [kycForm, setKycForm] = useState({ fullName: '', idNumber: '', address: '', occupation: '', incomeRange: '' })
+  const [kycKtpFile, setKycKtpFile] = useState<File | null>(null)
+  const [kycSelfieFile, setKycSelfieFile] = useState<File | null>(null)
+  const [kycBankFile, setKycBankFile] = useState<File | null>(null)
+  const [kycAdditionalFile, setKycAdditionalFile] = useState<File | null>(null)
+  const [kycSubmitting, setKycSubmitting] = useState(false)
+  const [kycRecord, setKycRecord] = useState<any>(null)
   const [showVipModal, setShowVipModal] = useState(false)
   const [showCsModal, setShowCsModal] = useState(false)
   const [showAboutModal, setShowAboutModal] = useState(false)
@@ -1853,7 +1860,12 @@ function Dashboard() {
   const handleWithdraw = async () => {
     if (!user || !withdrawAmount) return
     const amount = parseFloat(withdrawAmount)
-    if (amount < 10000) { toast({ title: 'Minimum withdraw Rp 10.000', variant: 'destructive' }); return }
+    const isKycVerified = user?.kycStatus === 'verified'
+    const minWithdraw = isKycVerified ? 50000 : 250000
+    if (amount < minWithdraw) {
+      toast({ title: `Minimum Withdraw Rp ${minWithdraw.toLocaleString('id-ID')}`, description: isKycVerified ? '' : 'Verifikasi KYC untuk minimum Rp 50.000!', variant: 'destructive' })
+      return
+    }
     if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
     if (withdrawCategory !== 'crypto' && !withdrawAccountNumber) { toast({ title: 'Isi nomor rekening / HP terlebih dahulu', variant: 'destructive' }); return }
     if (withdrawCategory === 'bank' && !withdrawAccountHolder) { toast({ title: 'Isi nama pemilik rekening', variant: 'destructive' }); return }
@@ -1863,7 +1875,9 @@ function Dashboard() {
       const res = await fetch('/api/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, bankName: methodName, bankAccount: withdrawAccountNumber || user.bankAccount || '0000000', bankHolder: withdrawAccountHolder || user.name }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} via ${methodName} sedang diproses` })
+      const adminFee = data.adminFee || Math.round(amount * 0.10)
+      const netAmount = data.netAmount || (amount - adminFee)
+      toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} via ${methodName}. Biaya admin 10%: ${formatRupiah(adminFee)}. Diterima: ${formatRupiah(netAmount)}` })
       setWithdrawAmount(''); setWithdrawAccountNumber(''); setWithdrawAccountHolder(''); fetchPortfolio(); fetchWithdrawals()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setWithdrawLoading(false) }
@@ -1890,6 +1904,71 @@ function Dashboard() {
       await fetch('/api/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, notificationId: notifId, markAll: !notifId }) })
       fetchNotifications()
     } catch {}
+  }
+
+  // ============ KYC ============
+  const fetchKycStatus = async () => {
+    if (!user) return
+    try {
+      const r = await fetch(`/api/kyc?userId=${user.id}`)
+      const d = await r.json()
+      if (d.kycRecord) setKycRecord(d.kycRecord)
+      if (d.kycStatus) updateUser({ kycStatus: d.kycStatus })
+    } catch {}
+  }
+
+  const uploadKycFile = async (file: File): Promise<string | null> => {
+    if (!user) return null
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('userId', user.id)
+    try {
+      const r = await fetch('/api/upload', { method: 'POST', body: fd })
+      const d = await r.json()
+      if (d.url) return d.url
+      return null
+    } catch { return null }
+  }
+
+  const handleKycSubmit = async () => {
+    if (!user) return
+    if (!kycForm.fullName || !kycForm.idNumber || !kycForm.address || !kycForm.occupation || !kycForm.incomeRange) {
+      toast({ title: 'Lengkapi Data', description: 'Semua field wajib diisi', variant: 'destructive' }); return
+    }
+    if (!kycKtpFile) {
+      toast({ title: 'Upload KTP', description: 'Foto KTP wajib diupload', variant: 'destructive' }); return
+    }
+    if (!kycSelfieFile) {
+      toast({ title: 'Upload Selfie', description: 'Foto selfie dengan KTP wajib diupload', variant: 'destructive' }); return
+    }
+    setKycSubmitting(true)
+    try {
+      // Upload files
+      const ktpUrl = await uploadKycFile(kycKtpFile)
+      if (!ktpUrl) { toast({ title: 'Gagal Upload', description: 'Gagal upload foto KTP', variant: 'destructive' }); setKycSubmitting(false); return }
+      const selfieUrl = await uploadKycFile(kycSelfieFile)
+      if (!selfieUrl) { toast({ title: 'Gagal Upload', description: 'Gagal upload foto selfie', variant: 'destructive' }); setKycSubmitting(false); return }
+      let bankUrl: string | null = null
+      if (kycBankFile) { bankUrl = await uploadKycFile(kycBankFile) }
+      let additionalUrl: string | null = null
+      if (kycAdditionalFile) { additionalUrl = await uploadKycFile(kycAdditionalFile) }
+
+      const res = await fetch('/api/kyc', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id, ...kycForm,
+          ktpImage: ktpUrl, selfieImage: selfieUrl,
+          bankStatement: bankUrl, additionalDoc: additionalUrl,
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      updateUser({ kycStatus: 'pending' })
+      setKycRecord(data.kycRecord)
+      toast({ title: 'KYC Diajukan! 📋', description: 'Proses verifikasi 1-3 hari kerja. Setelah verified, minimum withdraw hanya Rp 50.000!' })
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Gagal mengajukan KYC', variant: 'destructive' })
+    } finally { setKycSubmitting(false) }
   }
 
   // ============ PROFILE ============
@@ -1995,6 +2074,128 @@ function Dashboard() {
   const filteredTransactions = transactions.filter(t => txFilter === 'all' || t.type === txFilter)
   const topGainers = [...stocks].sort((a, b) => b.changePercent - a.changePercent).slice(0, 5)
   const topLosers = [...stocks].sort((a, b) => a.changePercent - b.changePercent).slice(0, 5)
+
+  // ============ KYC FORM CONTENT ============
+  const kycFormContent = () => (
+    <div className="space-y-3">
+      {/* Personal Info */}
+      <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+        <p className="text-[9px] font-black text-[#3b82f6] uppercase tracking-widest mb-2">Data Pribadi</p>
+        <div className="space-y-2.5">
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Nama Lengkap (sesuai KTP) *</label>
+            <input type="text" value={kycForm.fullName} onChange={e => setKycForm({ ...kycForm, fullName: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 rounded-xl bg-[var(--zv-bg)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
+          </div>
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Nomor KTP (16 digit) *</label>
+            <input type="text" value={kycForm.idNumber} onChange={e => setKycForm({ ...kycForm, idNumber: e.target.value })} placeholder="16 digit nomor KTP" maxLength={16} className="w-full h-10 rounded-xl bg-[var(--zv-bg)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
+          </div>
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Alamat Lengkap *</label>
+            <input type="text" value={kycForm.address} onChange={e => setKycForm({ ...kycForm, address: e.target.value })} placeholder="Alamat sesuai KTP" className="w-full h-10 rounded-xl bg-[var(--zv-bg)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Pekerjaan *</label>
+              <select value={kycForm.occupation} onChange={e => setKycForm({ ...kycForm, occupation: e.target.value })} className="w-full h-10 rounded-xl bg-[var(--zv-bg)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all">
+                <option value="">Pilih</option>
+                <option value="Pegawai Swasta">Pegawai Swasta</option>
+                <option value="PNS">PNS</option>
+                <option value="Wiraswasta">Wiraswasta</option>
+                <option value="Freelancer">Freelancer</option>
+                <option value="Mahasiswa">Mahasiswa</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Penghasilan *</label>
+              <select value={kycForm.incomeRange} onChange={e => setKycForm({ ...kycForm, incomeRange: e.target.value })} className="w-full h-10 rounded-xl bg-[var(--zv-bg)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all">
+                <option value="">Pilih</option>
+                <option value="< 5 Juta">&lt; 5 Juta</option>
+                <option value="5-10 Juta">5-10 Juta</option>
+                <option value="10-25 Juta">10-25 Juta</option>
+                <option value="25-50 Juta">25-50 Juta</option>
+                <option value="> 50 Juta">&gt; 50 Juta</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Document Uploads */}
+      <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+        <p className="text-[9px] font-black text-[#3b82f6] uppercase tracking-widest mb-2">Upload Dokumen</p>
+        <div className="space-y-3">
+          {/* KTP Image */}
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1.5">Foto KTP * <span className="text-red-400">Wajib</span></label>
+            <div className="relative">
+              <input type="file" accept="image/*" onChange={e => setKycKtpFile(e.target.files?.[0] || null)} className="w-full text-[10px] file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[9px] file:font-bold file:bg-blue-50 dark:file:bg-blue-950/30 file:text-blue-600 file:cursor-pointer" />
+            </div>
+            {kycKtpFile && (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={URL.createObjectURL(kycKtpFile)} alt="KTP Preview" className="w-20 h-14 rounded-lg object-cover border border-[var(--zv-border)]" />
+                <div>
+                  <p className="text-[9px] font-bold text-green-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> KTP siap upload</p>
+                  <p className="text-[8px] text-[var(--zv-muted)]">{kycKtpFile.name} ({(kycKtpFile.size / 1024).toFixed(0)} KB)</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Selfie with KTP */}
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1.5">Selfie dengan KTP * <span className="text-red-400">Wajib</span></label>
+            <div className="relative">
+              <input type="file" accept="image/*" onChange={e => setKycSelfieFile(e.target.files?.[0] || null)} className="w-full text-[10px] file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[9px] file:font-bold file:bg-blue-50 dark:file:bg-blue-950/30 file:text-blue-600 file:cursor-pointer" />
+            </div>
+            {kycSelfieFile && (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={URL.createObjectURL(kycSelfieFile)} alt="Selfie Preview" className="w-20 h-14 rounded-lg object-cover border border-[var(--zv-border)]" />
+                <div>
+                  <p className="text-[9px] font-bold text-green-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Selfie siap upload</p>
+                  <p className="text-[8px] text-[var(--zv-muted)]">{kycSelfieFile.name} ({(kycSelfieFile.size / 1024).toFixed(0)} KB)</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bank Statement - Optional */}
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1.5">Buku Rekening / Statement Bank <span className="text-[var(--zv-muted)]">(Opsional)</span></label>
+            <input type="file" accept="image/*" onChange={e => setKycBankFile(e.target.files?.[0] || null)} className="w-full text-[10px] file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[9px] file:font-bold file:bg-gray-50 dark:file:bg-gray-800 file:text-gray-600 file:cursor-pointer" />
+            {kycBankFile && <p className="text-[8px] text-green-500 mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {kycBankFile.name}</p>}
+          </div>
+
+          {/* Additional Doc - Optional */}
+          <div>
+            <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1.5">Dokumen Tambahan <span className="text-[var(--zv-muted)]">(Opsional)</span></label>
+            <input type="file" accept="image/*" onChange={e => setKycAdditionalFile(e.target.files?.[0] || null)} className="w-full text-[10px] file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[9px] file:font-bold file:bg-gray-50 dark:file:bg-gray-800 file:text-gray-600 file:cursor-pointer" />
+            {kycAdditionalFile && <p className="text-[8px] text-green-500 mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {kycAdditionalFile.name}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Important Notes */}
+      <div className="rounded-xl p-2.5 bg-yellow-500/5 border border-yellow-500/10">
+        <p className="text-[8px] font-bold text-yellow-600 dark:text-yellow-400 mb-1">⚠️ Penting:</p>
+        <ul className="text-[8px] text-[var(--zv-muted)] space-y-0.5">
+          <li>• Pastikan foto KTP jelas dan tidak terpotong</li>
+          <li>• Selfie harus memegang KTP asli (bukan fotokopi)</li>
+          <li>• Data harus sesuai dengan KTP yang diupload</li>
+          <li>• Proses verifikasi 1-3 hari kerja</li>
+          <li>• Setelah verified, min. withdraw turun ke Rp 50.000</li>
+        </ul>
+      </div>
+
+      {/* Submit Button */}
+      <button onClick={handleKycSubmit} disabled={kycSubmitting}
+        className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[12px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
+        {kycSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+        {kycSubmitting ? 'Mengupload...' : 'Ajukan Verifikasi KYC'}
+      </button>
+    </div>
+  )
 
   // ============ RENDER ============
   return (
@@ -4261,6 +4462,32 @@ function Dashboard() {
                     ))}
                   </div>
 
+                  {/* KYC Withdrawal Info */}
+                  <div className={`rounded-xl p-2.5 mb-3 border ${user?.kycStatus === 'verified' ? 'bg-green-500/5 border-green-500/10' : 'bg-yellow-500/5 border-yellow-500/10'}`}>
+                    <div className="flex items-center gap-2">
+                      {user?.kycStatus === 'verified' ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      ) : (
+                        <Shield className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="text-[9px] font-bold text-[var(--zv-text)]">
+                          {user?.kycStatus === 'verified' ? 'KYC Verified' : 'Belum Verifikasi KYC'}
+                        </p>
+                        <p className="text-[8px] text-[var(--zv-muted)]">
+                          {user?.kycStatus === 'verified'
+                            ? 'Min. withdraw Rp 50.000 • Biaya admin 10%'
+                            : 'Min. withdraw Rp 250.000 • Biaya admin 10% • Verifikasi KYC untuk min. Rp 50.000'}
+                        </p>
+                      </div>
+                      {user?.kycStatus !== 'verified' && (
+                        <button onClick={() => { setShowKycModal(true); fetchKycStatus() }} className="shrink-0 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[8px] font-bold text-blue-500 hover:bg-blue-500/20 transition-colors">
+                          Verifikasi
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Withdraw Form Card */}
                   <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
 
@@ -4347,7 +4574,7 @@ function Dashboard() {
 
                     {/* Amount Input */}
                     <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Withdraw</label>
-                    <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder="Minimal Rp 10.000"
+                    <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder={user?.kycStatus === 'verified' ? 'Minimal Rp 50.000' : 'Minimal Rp 250.000'}
                       className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
                     <div className="grid grid-cols-4 gap-1.5 mb-3">
                       {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
@@ -5639,7 +5866,7 @@ function Dashboard() {
               {/* Menu Items */}
               <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden mb-4">
                 {[
-                  { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : 'Belum verifikasi', action: () => setShowKycModal(true) },
+                  { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : user?.kycStatus === 'pending' ? 'Menunggu verifikasi' : 'Belum verifikasi', action: () => { setShowKycModal(true); fetchKycStatus() } },
                   { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => setShowVipModal(true) },
                   { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Promosi & Bonus', desc: 'Klaim bonus & promo', action: () => setActiveTab('bonus') },
                   { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
@@ -6955,47 +7182,85 @@ function Dashboard() {
         {showKycModal && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowKycModal(false)} />
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-2 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[95vw] md:max-w-lg bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center"><Shield className="w-5 h-5 text-[#3b82f6]" /></div>
-                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Verifikasi KYC</h2>
+                    <div>
+                      <h2 className="text-[16px] font-black text-[var(--zv-text)]">Verifikasi KYC</h2>
+                      <p className="text-[9px] text-[var(--zv-muted)]">Wajib upload KTP & Selfie</p>
+                    </div>
                   </div>
                   <button onClick={() => setShowKycModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
                 </div>
+
                 {user?.kycStatus === 'verified' ? (
-                  <div className="text-center py-8">
+                  /* ===== VERIFIED STATE ===== */
+                  <div className="text-center py-6">
                     <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 grid place-items-center mx-auto mb-3"><CheckCircle className="w-8 h-8 text-green-500" /></div>
                     <h3 className="text-[14px] font-black text-green-500">Terverifikasi ✓</h3>
                     <p className="text-[10px] text-[var(--zv-muted)] mt-1">Akun Anda sudah terverifikasi</p>
+                    <div className="mt-4 rounded-xl bg-green-500/5 border border-green-500/10 p-3">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-[var(--zv-muted)]">Min. Withdrawal</span>
+                        <span className="font-bold text-green-500">Rp 50.000</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] mt-1">
+                        <span className="text-[var(--zv-muted)]">Biaya Admin</span>
+                        <span className="font-bold text-[var(--zv-text)]">10%</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : user?.kycStatus === 'pending' || kycRecord?.status === 'pending' ? (
+                  /* ===== PENDING STATE ===== */
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/20 grid place-items-center mx-auto mb-3"><Clock className="w-8 h-8 text-yellow-500" /></div>
+                    <h3 className="text-[14px] font-black text-yellow-500">Sedang Diverifikasi ⏳</h3>
+                    <p className="text-[10px] text-[var(--zv-muted)] mt-1">Pengajuan KYC Anda sedang diproses admin. Proses 1-3 hari kerja.</p>
+                    <div className="mt-4 rounded-xl bg-yellow-500/5 border border-yellow-500/10 p-3">
+                      <p className="text-[10px] text-yellow-600 dark:text-yellow-400 font-semibold">Saat ini minimum withdrawal Anda: Rp 250.000</p>
+                      <p className="text-[9px] text-[var(--zv-muted)] mt-1">Setelah verified, minimum withdrawal turun ke Rp 50.000</p>
+                    </div>
+                  </div>
+                ) : kycRecord?.status === 'rejected' ? (
+                  /* ===== REJECTED STATE ===== */
+                  <div className="py-4">
+                    <div className="text-center mb-4">
+                      <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 grid place-items-center mx-auto mb-3"><XCircle className="w-7 h-7 text-red-500" /></div>
+                      <h3 className="text-[14px] font-black text-red-500">KYC Ditolak</h3>
+                      <p className="text-[10px] text-[var(--zv-muted)] mt-1">Silakan ajukan ulang dengan data yang benar</p>
+                    </div>
+                    {kycRecord.rejectReason && (
+                      <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3 mb-4">
+                        <p className="text-[9px] font-bold text-red-500 mb-1">Alasan Penolakan:</p>
+                        <p className="text-[10px] text-[var(--zv-text)]">{kycRecord.rejectReason}</p>
+                      </div>
+                    )}
+                    {/* Re-submit form below */}
+                    {kycFormContent()}
                   </div>
                 ) : (
+                  /* ===== NEW/FORM STATE ===== */
                   <>
-                    <div className="rounded-2xl p-4 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
-                      <p className="text-[10px] text-[var(--zv-text)] leading-relaxed mb-3">Verifikasi identitas Anda untuk membuka fitur penarikan dan meningkatkan limit transaksi.</p>
-                      <div className="space-y-2">
-                        {['KTP / Identitas', 'Selfie dengan KTP', 'Nomor Rekening Bank'].map((step, i) => (
-                          <div key={i} className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 grid place-items-center text-[9px] font-black text-[#3b82f6]">{i + 1}</div>
-                            <span className="text-[10px] font-bold text-[var(--zv-text)]">{step}</span>
-                          </div>
-                        ))}
+                    {/* Benefits Card */}
+                    <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(135deg, #172554 0%, #1d4ed8 100%)' }}>
+                      <p className="text-[9px] text-blue-200 font-bold mb-2">🎯 Keuntungan Verifikasi KYC</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-white/10 p-2 text-center">
+                          <p className="text-[8px] text-blue-200">Min. Withdraw</p>
+                          <p className="text-[14px] font-black text-white">Rp 50K</p>
+                          <p className="text-[7px] text-blue-300">vs Rp 250K tanpa KYC</p>
+                        </div>
+                        <div className="rounded-xl bg-white/10 p-2 text-center">
+                          <p className="text-[8px] text-blue-200">Biaya Admin</p>
+                          <p className="text-[14px] font-black text-white">10%</p>
+                          <p className="text-[7px] text-blue-300">Sama untuk semua</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Nama Lengkap (sesuai KTP)</label>
-                        <input type="text" placeholder="Masukkan nama lengkap" className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Nomor KTP</label>
-                        <input type="text" placeholder="16 digit nomor KTP" className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-all" />
-                      </div>
-                      <button onClick={() => { setShowKycModal(false); toast({ title: 'Verifikasi Diajukan!', description: 'Proses verifikasi membutuhkan 1-3 hari kerja' }) }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20">
-                        Ajukan Verifikasi
-                      </button>
-                    </div>
+
+                    {kycFormContent()}
                   </>
                 )}
               </div>

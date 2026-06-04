@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp,
-  Newspaper, Gift, Image, Settings, LogOut, Search, RefreshCw,
+  Newspaper, Gift, Image as ImageIcon, Settings, LogOut, Search, RefreshCw,
   Check, X, Plus, Trash2, Edit3, Save, Upload, Eye, EyeOff, Menu,
   DollarSign, BarChart3, Clock, AlertCircle, CheckCircle2, Shield, QrCode,
   Zap, Bell, FileText, UserCheck, Activity, ChevronDown, LogIn, User,
@@ -33,7 +33,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; group: str
   { key: 'investments', label: 'Investasi', icon: <BarChart3 size={18} />, group: 'Konten' },
   { key: 'news', label: 'News', icon: <Newspaper size={18} />, group: 'Konten' },
   { key: 'promos', label: 'Promos', icon: <Gift size={18} />, group: 'Konten' },
-  { key: 'banners', label: 'Banners', icon: <Image size={18} alt="" />, group: 'Konten' },
+  { key: 'banners', label: 'Banners', icon: <ImageIcon size={18} />, group: 'Konten' },
   { key: 'notifications', label: 'Notifikasi', icon: <Bell size={18} />, group: 'Sistem' },
   { key: 'qris', label: 'QRIS Payment', icon: <QrCode size={18} />, group: 'Sistem' },
   { key: 'settings', label: 'Settings', icon: <Settings size={18} />, group: 'Sistem' },
@@ -584,13 +584,24 @@ function UsersSection({ adminId, api, showToast }: { adminId: string; api: any; 
 /* ═══════════════════ KYC ═══════════════════ */
 function KycSection({ adminId, api, showToast }: { adminId: string; api: any; showToast: any }) {
   const { data: records, loading, refresh } = useAdminFetch<any[]>('/api/admin/kyc', adminId, api, 'kycRecords')
+  const [detailKyc, setDetailKyc] = useState<any>(null)
+  const [rejectReason, setRejectReason] = useState('')
 
   const handleAction = async (id: string, status: string) => {
+    if (status === 'rejected' && !rejectReason.trim()) {
+      showToast('Alasan penolakan wajib diisi', 'err')
+      return
+    }
     const d = await api('/api/admin/kyc', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adminId, kycId: id, status })
+      body: JSON.stringify({ adminId, kycId: id, status, rejectReason: status === 'rejected' ? rejectReason : undefined })
     })
-    if (d?.kyc) { showToast(`KYC ${status === 'verified' ? 'disetujui' : 'ditolak'}`); refresh() }
+    if (d?.kyc) {
+      showToast(`KYC ${status === 'verified' ? 'disetujui' : 'ditolak'}`)
+      setDetailKyc(null)
+      setRejectReason('')
+      refresh()
+    }
     else showToast('Gagal update', 'err')
   }
 
@@ -606,7 +617,7 @@ function KycSection({ adminId, api, showToast }: { adminId: string; api: any; sh
           <table className="w-full text-xs">
             <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
               <tr>
-                {['User', 'Nama Lengkap', 'No. KTP', 'Pekerjaan', 'Penghasilan', 'Status', 'Tanggal', 'Aksi'].map(h => (
+                {['User', 'Nama', 'No. KTP', 'Dokumen', 'Status', 'Tanggal', 'Aksi'].map(h => (
                   <th key={h} className="text-left p-2.5 text-gray-500 font-semibold whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -617,25 +628,132 @@ function KycSection({ adminId, api, showToast }: { adminId: string; api: any; sh
                   <td className="p-2.5"><p className="font-semibold text-gray-800 dark:text-gray-200">{k.user?.name}</p><p className="text-gray-400">{k.user?.phone}</p></td>
                   <td className="p-2.5 text-gray-800 dark:text-gray-200">{k.fullName}</td>
                   <td className="p-2.5 text-gray-600 dark:text-gray-400 font-mono">{k.idNumber}</td>
-                  <td className="p-2.5 text-gray-600 dark:text-gray-400">{k.occupation}</td>
-                  <td className="p-2.5 text-gray-600 dark:text-gray-400">{k.incomeRange}</td>
+                  <td className="p-2.5">
+                    <div className="flex gap-1.5">
+                      {k.ktpImage && <button onClick={() => setDetailKyc(k)} className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-600 text-[9px] font-bold flex items-center gap-0.5"><ImageIcon size={10} />KTP</button>}
+                      {k.selfieImage && <button onClick={() => setDetailKyc(k)} className="px-1.5 py-0.5 rounded bg-green-50 dark:bg-green-950/30 text-green-600 text-[9px] font-bold flex items-center gap-0.5"><UserCheck size={10} />Selfie</button>}
+                      {k.bankStatement && <button onClick={() => setDetailKyc(k)} className="px-1.5 py-0.5 rounded bg-orange-50 dark:bg-orange-950/30 text-orange-600 text-[9px] font-bold flex items-center gap-0.5"><CreditCard size={10} />Bank</button>}
+                      {!k.ktpImage && !k.selfieImage && <span className="text-[9px] text-gray-400">-</span>}
+                    </div>
+                  </td>
                   <td className="p-2.5"><span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${statusBadge(k.status)}`}>{k.status}</span></td>
                   <td className="p-2.5 text-gray-400">{fmtDate(k.createdAt)}</td>
                   <td className="p-2.5">
-                    {k.status === 'pending' && (
+                    {k.status === 'pending' ? (
                       <div className="flex gap-1">
-                        <button onClick={() => handleAction(k.id, 'verified')} className="p-1 rounded bg-green-50 dark:bg-green-950/30 text-green-600"><Check size={12} /></button>
-                        <button onClick={() => handleAction(k.id, 'rejected')} className="p-1 rounded bg-red-50 dark:bg-red-950/30 text-red-600"><X size={12} /></button>
+                        <button onClick={() => setDetailKyc(k)} className="p-1 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-600" title="Lihat Detail"><Eye size={12} /></button>
+                        <button onClick={() => handleAction(k.id, 'verified')} className="p-1 rounded bg-green-50 dark:bg-green-950/30 text-green-600" title="Setujui"><Check size={12} /></button>
+                        <button onClick={() => { setDetailKyc(k); setRejectReason('') }} className="p-1 rounded bg-red-50 dark:bg-red-950/30 text-red-600" title="Tolak"><X size={12} /></button>
                       </div>
-                    )}
+                    ) : k.status === 'rejected' && k.rejectReason ? (
+                      <span className="text-[9px] text-red-500" title={k.rejectReason}>Ditolak: {k.rejectReason.substring(0, 20)}...</span>
+                    ) : null}
                   </td>
                 </tr>
               ))}
-              {(!records || records.length === 0) && !loading && <tr><td colSpan={8} className="p-8 text-center text-gray-400">Tidak ada data KYC</td></tr>}
+              {(!records || records.length === 0) && !loading && <tr><td colSpan={7} className="p-8 text-center text-gray-400">Tidak ada data KYC</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      {detailKyc && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setDetailKyc(null); setRejectReason('') }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Detail KYC - {detailKyc.fullName}</h3>
+              <button onClick={() => { setDetailKyc(null); setRejectReason('') }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"><X size={16} /></button>
+            </div>
+
+            {/* User Info */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="text-[9px] font-bold text-gray-500 uppercase">Nama Lengkap</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{detailKyc.fullName}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="text-[9px] font-bold text-gray-500 uppercase">No. KTP</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 font-mono">{detailKyc.idNumber}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="text-[9px] font-bold text-gray-500 uppercase">Alamat</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{detailKyc.address}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="text-[9px] font-bold text-gray-500 uppercase">Pekerjaan</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{detailKyc.occupation}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="text-[9px] font-bold text-gray-500 uppercase">Penghasilan</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{detailKyc.incomeRange}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="text-[9px] font-bold text-gray-500 uppercase">Status</p>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadge(detailKyc.status)}`}>{detailKyc.status}</span>
+              </div>
+            </div>
+
+            {/* Document Images */}
+            <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 mb-3">Dokumen Upload</h4>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {detailKyc.ktpImage && (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <p className="text-[9px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5">Foto KTP</p>
+                  <img src={detailKyc.ktpImage} alt="KTP" className="w-full h-48 object-contain bg-white" />
+                </div>
+              )}
+              {detailKyc.selfieImage && (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <p className="text-[9px] font-bold text-green-600 bg-green-50 dark:bg-green-950/30 px-3 py-1.5">Selfie dengan KTP</p>
+                  <img src={detailKyc.selfieImage} alt="Selfie" className="w-full h-48 object-contain bg-white" />
+                </div>
+              )}
+              {detailKyc.bankStatement && (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <p className="text-[9px] font-bold text-orange-600 bg-orange-50 dark:bg-orange-950/30 px-3 py-1.5">Buku Rekening</p>
+                  <img src={detailKyc.bankStatement} alt="Bank Statement" className="w-full h-48 object-contain bg-white" />
+                </div>
+              )}
+              {detailKyc.additionalDoc && (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <p className="text-[9px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-950/30 px-3 py-1.5">Dokumen Tambahan</p>
+                  <img src={detailKyc.additionalDoc} alt="Additional" className="w-full h-48 object-contain bg-white" />
+                </div>
+              )}
+            </div>
+
+            {/* Rejection Info */}
+            {detailKyc.status === 'rejected' && detailKyc.rejectReason && (
+              <div className="rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 p-3 mb-4">
+                <p className="text-[9px] font-bold text-red-600 mb-1">Alasan Penolakan:</p>
+                <p className="text-xs text-red-700 dark:text-red-400">{detailKyc.rejectReason}</p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {detailKyc.status === 'pending' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[9px] font-bold text-gray-500 uppercase mb-1">Alasan Penolakan (jika menolak)</label>
+                  <input type="text" value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Masukkan alasan penolakan..." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:border-red-400" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleAction(detailKyc.id, 'verified')}
+                    className="flex-1 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-500 flex items-center justify-center gap-1.5">
+                    <Check size={14} /> Setujui KYC
+                  </button>
+                  <button onClick={() => handleAction(detailKyc.id, 'rejected')}
+                    disabled={!rejectReason.trim()}
+                    className="flex-1 py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-1.5">
+                    <X size={14} /> Tolak KYC
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

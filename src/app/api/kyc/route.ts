@@ -35,9 +35,19 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Calculate withdrawal limits based on KYC status
+    const isVerified = user.kycStatus === 'verified'
+    const minWithdraw = isVerified ? 50000 : 250000
+    const adminFeePercent = 10
+
     return NextResponse.json({
       kycStatus: user.kycStatus,
       kycRecord,
+      withdrawalInfo: {
+        minWithdraw,
+        adminFeePercent,
+        isVerified,
+      },
     })
   } catch (error) {
     console.error('Get KYC error:', error)
@@ -48,15 +58,29 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Submit KYC (auto-approve for demo)
+// POST - Submit KYC (pending, admin must approve)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, fullName, idNumber, address, occupation, incomeRange } = body
+    const { userId, fullName, idNumber, address, occupation, incomeRange, ktpImage, selfieImage, bankStatement, additionalDoc } = body
 
     if (!userId || !fullName || !idNumber || !address || !occupation || !incomeRange) {
       return NextResponse.json(
-        { error: 'userId, fullName, idNumber, address, occupation, and incomeRange are required' },
+        { error: 'Semua field wajib diisi' },
+        { status: 400 }
+      )
+    }
+
+    if (!ktpImage) {
+      return NextResponse.json(
+        { error: 'Foto KTP wajib diupload' },
+        { status: 400 }
+      )
+    }
+
+    if (!selfieImage) {
+      return NextResponse.json(
+        { error: 'Foto selfie dengan KTP wajib diupload' },
         { status: 400 }
       )
     }
@@ -71,12 +95,23 @@ export async function POST(request: NextRequest) {
 
     if (user.kycStatus === 'verified') {
       return NextResponse.json(
-        { error: 'KYC already verified' },
+        { error: 'KYC sudah terverifikasi' },
         { status: 400 }
       )
     }
 
-    // Auto-approve for demo - create KYC record and update user
+    // Check if there's already a pending KYC
+    const existingPending = await db.kYC.findFirst({
+      where: { userId, status: 'pending' },
+    })
+    if (existingPending) {
+      return NextResponse.json(
+        { error: 'Anda sudah memiliki pengajuan KYC yang sedang diproses' },
+        { status: 400 }
+      )
+    }
+
+    // Create KYC record as pending - admin must approve
     const kycRecord = await db.kYC.create({
       data: {
         userId,
@@ -85,28 +120,33 @@ export async function POST(request: NextRequest) {
         address,
         occupation,
         incomeRange,
-        status: 'verified',
+        ktpImage,
+        selfieImage,
+        bankStatement: bankStatement || null,
+        additionalDoc: additionalDoc || null,
+        status: 'pending',
       },
     })
 
+    // Update user KYC status to pending (was not verified)
     await db.user.update({
       where: { id: userId },
-      data: { kycStatus: 'verified' },
+      data: { kycStatus: 'pending' },
     })
 
     await db.notification.create({
       data: {
         userId,
-        title: 'KYC Terverifikasi ✅',
-        message: 'Verifikasi identitas Anda telah berhasil. Akun Anda sekarang telah terverifikasi penuh.',
+        title: 'KYC Diajukan 📋',
+        message: 'Pengajuan verifikasi identitas Anda telah dikirim. Proses verifikasi membutuhkan 1-3 hari kerja. Keuntungan KYC: minimum withdrawal hanya Rp 50.000!',
         type: 'system',
       },
     })
 
     return NextResponse.json({
       kycRecord,
-      kycStatus: 'verified',
-      message: 'KYC submitted and auto-approved for demo',
+      kycStatus: 'pending',
+      message: 'KYC berhasil diajukan. Tunggu verifikasi admin 1-3 hari kerja.',
     }, { status: 201 })
   } catch (error) {
     console.error('Submit KYC error:', error)

@@ -219,15 +219,21 @@ model Bonus {
 }
 
 model KYC {
-  id          String   @id @default(cuid())
-  userId      String
-  fullName    String
-  idNumber    String
-  address     String
-  occupation  String
-  incomeRange String
-  status      String   @default("pending") // pending, verified, rejected
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  fullName        String
+  idNumber        String
+  address         String
+  occupation      String
+  incomeRange     String
+  ktpImage        String?   // URL gambar KTP
+  selfieImage     String?   // URL gambar selfie dengan KTP
+  bankStatement   String?   // URL buku rekening / statement bank
+  additionalDoc   String?   // URL dokumen tambahan
+  status          String   @default("pending") // pending, verified, rejected
+  rejectReason    String?   // Alasan penolakan jika rejected
+  reviewedAt      DateTime? // Kapan di-review oleh admin
+  createdAt       DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 }

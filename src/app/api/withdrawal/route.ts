@@ -28,9 +28,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // KYC-based minimum withdrawal
+    const isKycVerified = user.kycStatus === 'verified'
+    const minWithdraw = isKycVerified ? 50000 : 250000
+
+    if (amount < minWithdraw) {
+      return NextResponse.json(
+        { error: `Minimum penarikan ${isKycVerified ? 'dengan KYC terverifikasi' : 'tanpa verifikasi KYC'} adalah Rp ${minWithdraw.toLocaleString('id-ID')}. Verifikasi KYC untuk minimum Rp 50.000!` },
+        { status: 400 }
+      )
+    }
+
     if (user.balance < amount) {
       return NextResponse.json(
-        { error: 'Insufficient balance' },
+        { error: 'Saldo tidak cukup' },
         { status: 400 }
       )
     }
@@ -51,6 +62,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Calculate 10% admin fee
+    const adminFee = Math.round(amount * 0.10)
+    const netAmount = amount - adminFee
+
     // Create withdrawal and deduct balance
     const withdrawal = await db.withdrawal.create({
       data: {
@@ -60,6 +75,7 @@ export async function POST(request: NextRequest) {
         bankAccount,
         bankHolder,
         status: 'processing',
+        note: `Biaya admin 10%: Rp ${adminFee.toLocaleString('id-ID')} | Diterima: Rp ${netAmount.toLocaleString('id-ID')}`,
       },
     })
 
@@ -72,12 +88,16 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         title: 'Permintaan Penarikan',
-        message: `Penarikan sebesar Rp ${amount.toLocaleString('id-ID')} sedang diproses. Dana akan ditransfer dalam 1x24 jam.`,
+        message: `Penarikan sebesar Rp ${amount.toLocaleString('id-ID')} sedang diproses. Biaya admin 10%: Rp ${adminFee.toLocaleString('id-ID')}. Dana diterima: Rp ${netAmount.toLocaleString('id-ID')}. Transfer dalam 1x24 jam.`,
         type: 'info',
       },
     })
 
-    return NextResponse.json({ withdrawal }, { status: 201 })
+    return NextResponse.json({
+      withdrawal,
+      adminFee,
+      netAmount,
+    }, { status: 201 })
   } catch (error) {
     console.error('Withdrawal error:', error)
     return NextResponse.json(
@@ -99,12 +119,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { kycStatus: true },
+    })
+
+    const isKycVerified = user?.kycStatus === 'verified'
+
     const withdrawals = await db.withdrawal.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ withdrawals })
+    return NextResponse.json({
+      withdrawals,
+      withdrawalInfo: {
+        minWithdraw: isKycVerified ? 50000 : 250000,
+        adminFeePercent: 10,
+        isKycVerified,
+      },
+    })
   } catch (error) {
     console.error('Get withdrawals error:', error)
     return NextResponse.json(
