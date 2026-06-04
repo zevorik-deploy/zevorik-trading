@@ -658,9 +658,8 @@ function Dashboard() {
   const [withdrawLoading, setWithdrawLoading] = useState(false)
 
   // ============ DEPOSIT REDESIGN STATE ============
-  const [depositCategory, setDepositCategory] = useState<'bank' | 'ewallet' | 'qris'>('bank')
-  const [depositBankMethod, setDepositBankMethod] = useState('BCA')
-  const [depositEwalletMethod, setDepositEwalletMethod] = useState('GOPAY')
+  const [depositCategory, setDepositCategory] = useState<'qris'>('qris')
+  const [qrisImageUrl, setQrisImageUrl] = useState<string | null>(null)
 
   // ============ WITHDRAW REDESIGN STATE ============
   const [withdrawCategory, setWithdrawCategory] = useState<'bank' | 'ewallet' | 'crypto'>('bank')
@@ -1747,6 +1746,8 @@ function Dashboard() {
     fetchWithdrawals(); fetchReferral(); fetchBonuses(); fetchPromos(); fetchLeaderboard()
     fetchInvestProducts(); fetchUserInvestments()
     fetchDailyCheck(); fetchTasks(); fetchContracts()
+    // Fetch QRIS image from admin settings
+    fetch('/api/qris').then(r => r.json()).then(d => { if (d?.url) setQrisImageUrl(d.url) }).catch(() => {})
   }, [user])
 
   useEffect(() => { const iv = setInterval(refreshAll, 30000); return () => clearInterval(iv) }, [refreshAll])
@@ -1832,11 +1833,10 @@ function Dashboard() {
     if (amount < 10000) { toast({ title: 'Minimum deposit Rp 10.000', variant: 'destructive' }); return }
     setDepositLoading(true)
     try {
-      const methodName = depositCategory === 'bank' ? depositBankMethod : depositCategory === 'ewallet' ? depositEwalletMethod : 'QRIS'
-      const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: depositCategory === 'qris' ? 'qris' : depositCategory === 'ewallet' ? 'e_wallet' : 'bank_transfer', bankName: methodName }) })
+      const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: 'qris', bankName: 'QRIS' }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Deposit Berhasil!', description: `+${formatRupiah(amount)} via ${methodName} telah ditambahkan` })
+      toast({ title: 'Deposit Berhasil!', description: `+${formatRupiah(amount)} via QRIS telah ditambahkan` })
       setDepositAmount(''); fetchPortfolio(); fetchDeposits(); fetchNotifications()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setDepositLoading(false) }
@@ -4097,82 +4097,28 @@ function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Payment Category Tabs */}
-                  <div className="flex gap-1.5 mb-3">
-                    {[
-                      { key: 'bank' as const, label: 'Transfer Bank', icon: <Building2 className="w-3.5 h-3.5" /> },
-                      { key: 'ewallet' as const, label: 'E-Wallet', icon: <Wallet className="w-3.5 h-3.5" /> },
-                      { key: 'qris' as const, label: 'QRIS', icon: <CreditCard className="w-3.5 h-3.5" /> },
-                    ].map(cat => (
-                      <button key={cat.key} onClick={() => setDepositCategory(cat.key)}
-                        className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${depositCategory === cat.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                        {cat.icon}{cat.label}
-                      </button>
-                    ))}
+                  {/* QRIS Header Badge */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-7 px-2.5 rounded-full flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500">
+                      <CreditCard className="w-3 h-3 text-white" />
+                      <span className="text-[8px] font-black text-white tracking-wide">QRIS PAYMENT</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-[var(--zv-muted)]">Deposit hanya via QRIS</span>
                   </div>
 
                   {/* Deposit Form Card */}
                   <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
 
-                    {/* Bank Method Grid */}
-                    {depositCategory === 'bank' && (
-                      <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Bank</span>
-                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                          {[
-                            { code: 'BCA', name: 'Bank BCA', color: '#003399' },
-                            { code: 'BNI', name: 'Bank BNI', color: '#F15A22' },
-                            { code: 'BRI', name: 'Bank BRI', color: '#00529C' },
-                            { code: 'Mandiri', name: 'Bank Mandiri', color: '#003066' },
-                            { code: 'CIMB', name: 'CIMB Niaga', color: '#7B0E24' },
-                            { code: 'Permata', name: 'Bank Permata', color: '#005EAB' },
-                            { code: 'BSI', name: 'Bank BSI', color: '#00A650' },
-                            { code: 'Danamon', name: 'Bank Danamon', color: '#FDDA24' },
-                          ].map(bank => (
-                            <button key={bank.code} onClick={() => setDepositBankMethod(bank.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositBankMethod === bank.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
-                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
-                                {bank.code.slice(0, 2)}
-                              </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${depositBankMethod === bank.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{bank.code}</span>
-                            </button>
-                          ))}
+                    {/* QRIS Section - Always Show */}
+                    <div className="mb-3 flex flex-col items-center py-4">
+                      {qrisImageUrl ? (
+                        <div className="w-44 h-44 rounded-2xl bg-white border-2 border-[var(--zv-border)] p-2 mb-3 shadow-lg">
+                          <img src={qrisImageUrl} alt="QRIS Payment" className="w-full h-full object-contain rounded-lg" />
                         </div>
-                      </div>
-                    )}
-
-                    {/* E-Wallet Method Grid */}
-                    {depositCategory === 'ewallet' && (
-                      <div className="mb-3">
-                        <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
-                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                          {[
-                            { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
-                            { code: 'OVO', name: 'OVO', color: '#4C2A86' },
-                            { code: 'DANA', name: 'DANA', color: '#108EE9' },
-                            { code: 'SHOPEEPAY', name: 'ShopeePay', color: '#EE4D2D' },
-                            { code: 'LINKAJA', name: 'LinkAja', color: '#E82529' },
-                            { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
-                          ].map(ew => (
-                            <button key={ew.code} onClick={() => setDepositEwalletMethod(ew.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${depositEwalletMethod === ew.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
-                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
-                                {ew.name.slice(0, 2)}
-                              </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${depositEwalletMethod === ew.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{ew.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* QRIS Section */}
-                    {depositCategory === 'qris' && (
-                      <div className="mb-3 flex flex-col items-center py-4">
-                        <div className="w-40 h-40 rounded-2xl bg-[var(--zv-panel)] border-2 border-[var(--zv-border)] p-3 mb-3">
+                      ) : (
+                        <div className="w-44 h-44 rounded-2xl bg-[var(--zv-panel)] border-2 border-dashed border-[var(--zv-border)] p-3 mb-3 flex items-center justify-center">
                           <svg viewBox="0 0 200 200" className="w-full h-full">
                             <rect width="200" height="200" fill="white" rx="8" />
-                            {/* QR pattern simulation */}
                             <rect x="20" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
                             <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
                             <rect x="36" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
@@ -4182,67 +4128,30 @@ function Dashboard() {
                             <rect x="20" y="130" width="50" height="50" fill="#0c1a2e" rx="4" />
                             <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
                             <rect x="36" y="146" width="18" height="18" fill="#0c1a2e" rx="1" />
-                            {/* Middle pattern */}
                             <rect x="80" y="20" width="8" height="8" fill="#0c1a2e" />
                             <rect x="96" y="20" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="20" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="80" y="36" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="44" width="8" height="8" fill="#0c1a2e" />
                             <rect x="112" y="36" width="8" height="8" fill="#0c1a2e" />
                             <rect x="80" y="60" width="8" height="8" fill="#0c1a2e" />
                             <rect x="96" y="60" width="8" height="8" fill="#0c1a2e" />
                             <rect x="112" y="60" width="8" height="8" fill="#0c1a2e" />
-                            {/* Bottom middle */}
                             <rect x="20" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="36" y="80" width="8" height="8" fill="#0c1a2e" />
+                            <rect x="36" y="96" width="8" height="8" fill="#0c1a2e" />
                             <rect x="52" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="20" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="36" y="104" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="52" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="20" y="112" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="36" y="112" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="52" y="112" width="8" height="8" fill="#0c1a2e" />
-                            {/* Right middle */}
-                            <rect x="80" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="80" width="8" height="8" fill="#0c1a2e" />
                             <rect x="130" y="80" width="8" height="8" fill="#0c1a2e" />
                             <rect x="146" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="162" y="80" width="8" height="8" fill="#0c1a2e" />
                             <rect x="80" y="96" width="8" height="8" fill="#0c1a2e" />
                             <rect x="112" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="130" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="162" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="80" y="112" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="112" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="130" y="112" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="146" y="112" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="162" y="112" width="8" height="8" fill="#0c1a2e" />
-                            {/* Bottom section */}
-                            <rect x="80" y="130" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="130" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="130" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="80" y="146" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="146" width="8" height="8" fill="#0c1a2e" />
                             <rect x="130" y="130" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="146" y="146" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="162" y="130" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="130" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="146" y="162" width="8" height="8" fill="#0c1a2e" />
                             <rect x="162" y="162" width="8" height="8" fill="#0c1a2e" />
                             <rect x="80" y="162" width="8" height="8" fill="#0c1a2e" />
                             <rect x="96" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="20" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="36" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="52" y="162" width="8" height="8" fill="#0c1a2e" />
-                            {/* QRIS label */}
                             <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0c1a2e">QRIS</text>
                           </svg>
                         </div>
-                        <span className="text-[10px] font-bold text-[#3b82f6]">Scan QRIS untuk deposit</span>
-                        <span className="text-[8px] text-[var(--zv-muted)] mt-0.5">Gunakan aplikasi e-wallet atau mobile banking</span>
-                      </div>
-                    )}
+                      )}
+                      <span className="text-[10px] font-bold text-[#3b82f6]">Scan QRIS untuk deposit</span>
+                      <span className="text-[8px] text-[var(--zv-muted)] mt-0.5">Gunakan aplikasi e-wallet atau mobile banking</span>
+                    </div>
 
                     {/* Amount Input */}
                     <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Deposit</label>
@@ -4256,15 +4165,13 @@ function Dashboard() {
                       ))}
                     </div>
 
-                    {/* Selected Method Info */}
+                    {/* QRIS Method Info */}
                     <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-[#3b82f6]" />
                         <div>
-                          <span className="block text-[9px] font-bold text-[var(--zv-text)]">
-                            {depositCategory === 'bank' ? `Transfer ${depositBankMethod}` : depositCategory === 'ewallet' ? depositEwalletMethod : 'QRIS'}
-                          </span>
-                          <span className="block text-[7px] text-[var(--zv-muted)]">Metode pembayaran dipilih</span>
+                          <span className="block text-[9px] font-bold text-[var(--zv-text)]">QRIS</span>
+                          <span className="block text-[7px] text-[var(--zv-muted)]">Scan QR code untuk pembayaran</span>
                         </div>
                       </div>
                     </div>
@@ -4289,7 +4196,7 @@ function Dashboard() {
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Plus className="w-4 h-4 text-[#3b82f6]" /></div>
                           <div>
-                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{d.bankName || (d.method === 'bank_transfer' ? 'Transfer Bank' : 'E-Wallet')}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{d.method === 'qris' ? 'QRIS' : d.bankName || 'Transfer'}</span>
                             <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(d.createdAt)}</span>
                           </div>
                         </div>

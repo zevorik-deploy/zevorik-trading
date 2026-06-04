@@ -27,3 +27,33 @@ Stage Summary:
 - Full CRUD for all entities (stocks, investments, news, promos, banners)
 - User page.tsx no longer contains any admin code
 - Lint passes with zero errors
+---
+Task ID: 1
+Agent: Main Agent
+Task: Make deposit QRIS-only in user app + Add QRIS section in admin dashboard + Full admin dashboard verification
+
+Work Log:
+- Changed depositCategory state from 'bank'|'ewallet'|'qris' to just 'qris' (QRIS-only)
+- Removed depositBankMethod and depositEwalletMethod states
+- Removed bank transfer and e-wallet selection tabs from deposit UI
+- Updated handleDeposit to always use method='qris' and bankName='QRIS'
+- Added QRIS Payment badge header in deposit section
+- Added qrisImageUrl state to show admin-uploaded QRIS image
+- Created public /api/qris endpoint for fetching QRIS image without admin auth
+- Added QRIS image fetching on user login (from /api/qris)
+- Added dedicated QRIS Payment section in admin sidebar (QrCode icon)
+- Created QrisSection component with upload, preview, delete, and guide
+- Updated deposit history to show 'QRIS' label instead of bank/ewallet
+- Fixed QRIS API returning 500 (changed to return 200 with url:null)
+- Verified admin dashboard login works (080000000000/admin123)
+- Verified all 14 admin sidebar sections render correctly
+- Verified QRIS Payment section with upload button and guide
+- Lint passes clean
+
+Stage Summary:
+- Deposit in user app is now QRIS-ONLY (no bank/ewallet)
+- Admin dashboard has dedicated QRIS Payment section in sidebar
+- Admin can upload/delete QRIS image that displays to users during deposit
+- Public /api/qris endpoint returns QRIS image URL
+- Admin login credentials: 080000000000 / admin123
+- Full admin dashboard verified with 14 sections: Dashboard, Users, KYC, Deposits, Withdrawals, Trades, Contracts, Stocks, Investments, News, Promos, Banners, Notifications, QRIS Payment, Settings

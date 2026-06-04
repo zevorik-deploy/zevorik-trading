@@ -19,7 +19,7 @@ interface Stats {
   totalNews: number; activePromos: number; totalStocks: number; activeTrades: number; activeContracts: number;
 }
 
-type Section = 'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'stocks' | 'investments' | 'news' | 'promos' | 'banners' | 'trades' | 'contracts' | 'kyc' | 'notifications' | 'settings'
+type Section = 'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'stocks' | 'investments' | 'news' | 'promos' | 'banners' | 'trades' | 'contracts' | 'kyc' | 'notifications' | 'qris' | 'settings'
 
 const SECTIONS: { key: Section; label: string; icon: React.ReactNode; group: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, group: 'Utama' },
@@ -35,6 +35,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; group: str
   { key: 'promos', label: 'Promos', icon: <Gift size={18} />, group: 'Konten' },
   { key: 'banners', label: 'Banners', icon: <Image size={18} alt="" />, group: 'Konten' },
   { key: 'notifications', label: 'Notifikasi', icon: <Bell size={18} />, group: 'Sistem' },
+  { key: 'qris', label: 'QRIS Payment', icon: <QrCode size={18} />, group: 'Sistem' },
   { key: 'settings', label: 'Settings', icon: <Settings size={18} />, group: 'Sistem' },
 ]
 
@@ -321,6 +322,7 @@ export default function AdminDashboard() {
           {section === 'promos' && <PromosSection adminId={admin.id} api={api} showToast={showToast} />}
           {section === 'banners' && <BannersSection adminId={admin.id} api={api} showToast={showToast} uploadFile={uploadFile} />}
           {section === 'notifications' && <NotificationsSection adminId={admin.id} api={api} showToast={showToast} />}
+          {section === 'qris' && <QrisSection adminId={admin.id} api={api} showToast={showToast} uploadFile={uploadFile} />}
           {section === 'settings' && <SettingsSection adminId={admin.id} api={api} showToast={showToast} uploadFile={uploadFile} />}
         </div>
       </main>
@@ -1380,6 +1382,145 @@ function NotificationsSection({ adminId, api, showToast }: { adminId: string; ap
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════ QRIS PAYMENT ═══════════════════ */
+function QrisSection({ adminId, api, showToast, uploadFile }: { adminId: string; api: any; showToast: any; uploadFile: (f: File) => Promise<string | null> }) {
+  const [qrisImage, setQrisImage] = useState<string | null>(null)
+  const [qrisFile, setQrisFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+
+  const loadQris = useRef(false)
+  useEffect(() => {
+    if (loadQris.current) return
+    loadQris.current = true
+    api(`/api/admin/settings?userId=${adminId}`).then(d => {
+      if (d?.settings) {
+        const map: Record<string, string> = {}
+        d.settings.forEach((s: any) => { map[s.key] = s.value })
+        if (map.qris_image) setQrisImage(map.qris_image)
+      }
+      setLoading(false)
+    })
+  }, [adminId, api])
+
+  const fetchQris = useCallback(async () => {
+    setLoading(true)
+    const d = await api(`/api/admin/settings?userId=${adminId}`)
+    if (d?.settings) {
+      const map: Record<string, string> = {}
+      d.settings.forEach((s: any) => { map[s.key] = s.value })
+      if (map.qris_image) setQrisImage(map.qris_image)
+    }
+    setLoading(false)
+  }, [adminId, api])
+
+  const handleUpload = async () => {
+    if (!qrisFile) { showToast('Pilih file QRIS dulu', 'err'); return }
+    setUploading(true)
+    const url = await uploadFile(qrisFile)
+    if (!url) { setUploading(false); return }
+    await api('/api/admin/settings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminId, key: 'qris_image', value: url })
+    })
+    setQrisImage(url)
+    setQrisFile(null)
+    setUploading(false)
+    showToast('QRIS image berhasil diupload!')
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Hapus gambar QRIS? User tidak akan melihat QR code saat deposit.')) return
+    await api('/api/admin/settings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminId, key: 'qris_image', value: '' })
+    })
+    setQrisImage(null)
+    showToast('QRIS image dihapus')
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">QRIS Payment</h3>
+          <p className="text-[11px] text-gray-500 mt-0.5">Upload gambar QRIS yang akan ditampilkan saat user deposit. Deposit hanya via QRIS.</p>
+        </div>
+        <button onClick={fetchQris} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col items-center">
+          {/* Current QRIS Image Preview */}
+          {loading ? (
+            <div className="w-56 h-56 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse mb-4" />
+          ) : qrisImage ? (
+            <div className="mb-4">
+              <div className="w-56 h-56 rounded-2xl bg-white border-2 border-gray-200 dark:border-gray-700 p-3 shadow-lg mb-3">
+                <img src={qrisImage} alt="QRIS Payment" className="w-full h-full object-contain rounded-lg" />
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="px-2 py-1 rounded-full text-[9px] font-bold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">Active</span>
+                <span className="text-[10px] text-gray-500">Gambar ini ditampilkan ke user saat deposit</span>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4 w-56 h-56 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center gap-2">
+              <QrCode size={48} className="text-gray-300 dark:text-gray-600" />
+              <span className="text-[10px] font-bold text-gray-400">Belum ada gambar QRIS</span>
+              <span className="text-[8px] text-gray-400 text-center px-4">Upload gambar QRIS agar user bisa scan saat deposit</span>
+            </div>
+          )}
+
+          {/* Upload Area */}
+          <div className="w-full max-w-sm mt-2">
+            <label className="block mb-2 text-[10px] font-black text-gray-500 uppercase tracking-widest text-center">Upload Gambar QRIS Baru</label>
+            <div className="flex items-center gap-2">
+              <input type="file" accept="image/*" onChange={e => setQrisFile(e.target.files?.[0] || null)}
+                className="flex-1 text-xs file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-50 file:text-blue-600 file:cursor-pointer" />
+              <button onClick={handleUpload} disabled={!qrisFile || uploading}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 disabled:opacity-50 flex items-center gap-1.5 shrink-0">
+                {uploading ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}
+                Upload
+              </button>
+            </div>
+            {qrisFile && (
+              <p className="text-[9px] text-gray-500 mt-1.5 text-center">File: {qrisFile.name} ({(qrisFile.size / 1024).toFixed(1)} KB)</p>
+            )}
+          </div>
+
+          {/* Delete Button */}
+          {qrisImage && (
+            <button onClick={handleDelete}
+              className="mt-4 px-4 py-2 rounded-lg border border-red-200 dark:border-red-900/30 text-red-600 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-1.5">
+              <Trash2 size={12} /> Hapus Gambar QRIS
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* QRIS Info Card */}
+      <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-4 border border-blue-100 dark:border-blue-900/30">
+        <div className="flex items-start gap-3">
+          <QrCode size={20} className="text-blue-600 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-sm text-blue-800 dark:text-blue-300">Panduan QRIS</h4>
+            <ul className="mt-1.5 space-y-1 text-[11px] text-blue-700 dark:text-blue-400">
+              <li>- Upload gambar QR code yang akan ditampilkan ke user saat deposit</li>
+              <li>- User scan QRIS menggunakan e-wallet atau mobile banking</li>
+              <li>- Setelah user transfer, deposit akan muncul di halaman Deposit untuk di-approve</li>
+              <li>- Deposit hanya melalui QRIS, metode lain tidak tersedia</li>
+              <li>- Gambar harus format PNG/JPG dengan resolusi minimal 200x200px</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
