@@ -57,3 +57,35 @@ Stage Summary:
 - Public /api/qris endpoint returns QRIS image URL
 - Admin login credentials: 080000000000 / admin123
 - Full admin dashboard verified with 14 sections: Dashboard, Users, KYC, Deposits, Withdrawals, Trades, Contracts, Stocks, Investments, News, Promos, Banners, Notifications, QRIS Payment, Settings
+---
+Task ID: 2
+Agent: Main Agent
+Task: Redesign Deposit & Withdrawal UI - Two-step deposit flow, scrollable withdrawal selectors, QRIS logo, min 100K deposit
+
+Work Log:
+- Generated QRIS logo image at /public/qris-logo.png using AI image generation
+- Added depositStep state ('amount' | 'qris') for two-step deposit flow
+- Step 1 (Amount): Shows balance, QRIS badge, amount input (min 100K), quick amount buttons (100K-10jt), LANJUTKAN button
+- Step 2 (QRIS): Shows QRIS code, QRIS logo, total pembayaran amount, instructions, Kembali + Sudah Bayar buttons
+- Changed deposit minimum from Rp 10.000 to Rp 100.000 in handleDeposit
+- Updated deposit placeholder from "Minimal Rp 10.000" to "Minimal Rp 100.000"
+- Added depositStep reset to 'amount' on successful deposit and on tab switch
+- Redesigned withdrawal bank/e-wallet/crypto selectors from grid to horizontal scrollable carousels
+- Added carousel-hide-scrollbar CSS class in globals.css for cross-browser scrollbar hiding
+- Expanded bank list: Added OCBC, BTN, Mega, Sinarmas (total 14 banks)
+- Expanded e-wallet list: Added Doku, iSaku (total 10 e-wallets)
+- Expanded crypto list: Added SOL, XRP, DOGE (total 8 cryptos)
+- Each carousel item is 64px wide compact card with icon, name, and selected state highlight
+- Verified deposit Step 1 renders correctly with all elements
+- Verified withdrawal page shows all three categories with scrollable carousels
+- Verified KYC status badge shows correctly in withdrawal section
+- Lint passes with zero errors
+- No runtime errors in dev server
+
+Stage Summary:
+- Deposit flow is now two-step: Enter amount → Continue → See QRIS and pay
+- Deposit minimum is Rp 100.000
+- QRIS logo image generated at /public/qris-logo.png
+- Withdrawal selectors are now horizontal scrollable carousels (14 banks, 10 e-wallets, 8 cryptos)
+- All existing features (KYC limits, 10% admin fee, bank/ewallet/crypto categories) preserved
+- Clean, premium UI with consistent ZEVORIX blue theme

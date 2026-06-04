@@ -660,6 +660,7 @@ function Dashboard() {
   const [depositAmount, setDepositAmount] = useState('')
   const [depositMethod, setDepositMethod] = useState('bank_transfer')
   const [depositLoading, setDepositLoading] = useState(false)
+  const [depositStep, setDepositStep] = useState<'amount' | 'qris'>('amount')
   const [financeTab, setFinanceTab] = useState<'deposit' | 'withdraw'>('deposit')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawLoading, setWithdrawLoading] = useState(false)
@@ -1844,14 +1845,14 @@ function Dashboard() {
   const handleDeposit = async () => {
     if (!user || !depositAmount) return
     const amount = parseFloat(depositAmount)
-    if (amount < 10000) { toast({ title: 'Minimum deposit Rp 10.000', variant: 'destructive' }); return }
+    if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
     setDepositLoading(true)
     try {
       const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: 'qris', bankName: 'QRIS' }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast({ title: 'Deposit Berhasil!', description: `+${formatRupiah(amount)} via QRIS telah ditambahkan` })
-      setDepositAmount(''); fetchPortfolio(); fetchDeposits(); fetchNotifications()
+      setDepositAmount(''); setDepositStep('amount'); fetchPortfolio(); fetchDeposits(); fetchNotifications()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setDepositLoading(false) }
   }
@@ -4282,7 +4283,7 @@ function Dashboard() {
             <div className="max-w-lg mx-auto">
               {/* Finance Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => setFinanceTab('deposit')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+                <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
                 </button>
                 <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'withdraw' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
@@ -4292,109 +4293,152 @@ function Dashboard() {
 
               {financeTab === 'deposit' ? (
                 <>
-                  {/* Balance */}
-                  <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Saldo Saat Ini</span>
-                        <b className="block text-xl font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
-                      </div>
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
-                        <Wallet className="w-6 h-6 text-[#3b82f6]" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* QRIS Header Badge */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 px-2.5 rounded-full flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500">
-                      <CreditCard className="w-3 h-3 text-white" />
-                      <span className="text-[8px] font-black text-white tracking-wide">QRIS PAYMENT</span>
-                    </div>
-                    <span className="text-[8px] font-bold text-[var(--zv-muted)]">Deposit hanya via QRIS</span>
-                  </div>
-
-                  {/* Deposit Form Card */}
-                  <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-
-                    {/* QRIS Section - Always Show */}
-                    <div className="mb-3 flex flex-col items-center py-4">
-                      {qrisImageUrl ? (
-                        <div className="w-44 h-44 rounded-2xl bg-white border-2 border-[var(--zv-border)] p-2 mb-3 shadow-lg">
-                          <img src={qrisImageUrl} alt="QRIS Payment" className="w-full h-full object-contain rounded-lg" />
+                  {depositStep === 'amount' ? (
+                    <motion.div key="deposit-amount" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}>
+                      {/* Balance */}
+                      <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Saldo Saat Ini</span>
+                            <b className="block text-xl font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
+                          </div>
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+                            <Wallet className="w-6 h-6 text-[#3b82f6]" />
+                          </div>
                         </div>
-                      ) : (
-                        <div className="w-44 h-44 rounded-2xl bg-[var(--zv-panel)] border-2 border-dashed border-[var(--zv-border)] p-3 mb-3 flex items-center justify-center">
-                          <svg viewBox="0 0 200 200" className="w-full h-full">
-                            <rect width="200" height="200" fill="white" rx="8" />
-                            <rect x="20" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
-                            <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
-                            <rect x="36" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
-                            <rect x="130" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
-                            <rect x="138" y="28" width="34" height="34" fill="white" rx="2" />
-                            <rect x="146" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
-                            <rect x="20" y="130" width="50" height="50" fill="#0c1a2e" rx="4" />
-                            <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
-                            <rect x="36" y="146" width="18" height="18" fill="#0c1a2e" rx="1" />
-                            <rect x="80" y="20" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="20" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="36" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="80" y="60" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="60" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="60" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="20" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="36" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="52" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="130" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="146" y="80" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="80" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="112" y="96" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="130" y="130" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="162" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="80" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <rect x="96" y="162" width="8" height="8" fill="#0c1a2e" />
-                            <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0c1a2e">QRIS</text>
-                          </svg>
-                        </div>
-                      )}
-                      <span className="text-[10px] font-bold text-[#3b82f6]">Scan QRIS untuk deposit</span>
-                      <span className="text-[8px] text-[var(--zv-muted)] mt-0.5">Gunakan aplikasi e-wallet atau mobile banking</span>
-                    </div>
+                      </div>
 
-                    {/* Amount Input */}
-                    <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Deposit</label>
-                    <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Minimal Rp 10.000"
-                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
-                    <div className="grid grid-cols-4 gap-1.5 mb-4">
-                      {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
-                        <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 hover:text-white hover:border-transparent transition-all">
-                          {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+                      {/* QRIS Header Badge */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-7 px-2.5 rounded-full flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500">
+                          <CreditCard className="w-3 h-3 text-white" />
+                          <span className="text-[8px] font-black text-white tracking-wide">QRIS PAYMENT</span>
+                        </div>
+                        <span className="text-[8px] font-bold text-[var(--zv-muted)]">Deposit hanya via QRIS</span>
+                      </div>
+
+                      {/* Deposit Amount Form Card */}
+                      <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+
+                        {/* Amount Input */}
+                        <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Deposit</label>
+                        <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Minimal Rp 100.000"
+                          className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
+                        <div className="grid grid-cols-4 gap-1.5 mb-4">
+                          {['100000', '200000', '500000', '1000000', '2000000', '5000000', '10000000'].map(a => (
+                            <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 hover:text-white hover:border-transparent transition-all">
+                              {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* QRIS Method Info */}
+                        <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-[#3b82f6]" />
+                            <div>
+                              <span className="block text-[9px] font-bold text-[var(--zv-text)]">QRIS</span>
+                              <span className="block text-[7px] text-[var(--zv-muted)]">Scan QR code untuk pembayaran</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Lanjutkan Button */}
+                        <button onClick={() => {
+                          if (!depositAmount || parseFloat(depositAmount) < 100000) {
+                            toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' })
+                            return
+                          }
+                          setDepositStep('qris')
+                        }}
+                          className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+                          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+                          <span>Lanjutkan</span>
+                          <ArrowRight className="w-4 h-4" />
                         </button>
-                      ))}
-                    </div>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="deposit-qris" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
+                      {/* QRIS Payment Step */}
+                      <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
 
-                    {/* QRIS Method Info */}
-                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-[#3b82f6]" />
-                        <div>
-                          <span className="block text-[9px] font-bold text-[var(--zv-text)]">QRIS</span>
-                          <span className="block text-[7px] text-[var(--zv-muted)]">Scan QR code untuk pembayaran</span>
+                        {/* QRIS Code */}
+                        <div className="mb-4 flex flex-col items-center py-4">
+                          {qrisImageUrl ? (
+                            <div className="w-48 h-48 rounded-2xl bg-white border-2 border-[var(--zv-border)] p-2 mb-3 shadow-lg">
+                              <img src={qrisImageUrl} alt="QRIS Payment" className="w-full h-full object-contain rounded-lg" />
+                            </div>
+                          ) : (
+                            <div className="w-48 h-48 rounded-2xl bg-[var(--zv-panel)] border-2 border-dashed border-[var(--zv-border)] p-3 mb-3 flex items-center justify-center">
+                              <svg viewBox="0 0 200 200" className="w-full h-full">
+                                <rect width="200" height="200" fill="white" rx="8" />
+                                <rect x="20" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
+                                <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
+                                <rect x="36" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
+                                <rect x="130" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
+                                <rect x="138" y="28" width="34" height="34" fill="white" rx="2" />
+                                <rect x="146" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
+                                <rect x="20" y="130" width="50" height="50" fill="#0c1a2e" rx="4" />
+                                <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
+                                <rect x="36" y="146" width="18" height="18" fill="#0c1a2e" rx="1" />
+                                <rect x="80" y="20" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="96" y="20" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="112" y="36" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="80" y="60" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="96" y="60" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="112" y="60" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="20" y="80" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="36" y="96" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="52" y="80" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="130" y="80" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="146" y="80" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="80" y="96" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="112" y="96" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="130" y="130" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="162" y="162" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="80" y="162" width="8" height="8" fill="#0c1a2e" />
+                                <rect x="96" y="162" width="8" height="8" fill="#0c1a2e" />
+                                <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0c1a2e">QRIS</text>
+                              </svg>
+                            </div>
+                          )}
+
+                          {/* QRIS Logo */}
+                          <img src="/qris-logo.png" alt="QRIS" className="h-6 object-contain mb-3" />
+
+                          {/* Amount Display */}
+                          <div className="rounded-xl px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 mb-3 shadow-lg shadow-blue-500/20">
+                            <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider block">Total Pembayaran</span>
+                            <span className="text-lg font-black text-white">{formatRupiah(parseFloat(depositAmount) || 0)}</span>
+                          </div>
+
+                          {/* Instructions */}
+                          <div className="flex items-start gap-2 px-4 mb-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-[var(--zv-muted)] flex-shrink-0 mt-0.5" />
+                            <span className="text-[9px] text-[var(--zv-muted)] leading-relaxed">Scan QR code di atas menggunakan aplikasi e-wallet atau mobile banking Anda</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <button onClick={() => setDepositStep('amount')}
+                            className="flex-1 h-12 rounded-2xl text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-text)]">
+                            <span>Kembali</span>
+                          </button>
+                          <button onClick={handleDeposit} disabled={depositLoading}
+                            className="flex-[2] h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                            style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+                            {depositLoading ? (
+                              <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+                            ) : (
+                              <><CheckCircle className="w-4 h-4" />Sudah Bayar</>
+                            )}
+                          </button>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Deposit Button */}
-                    <button onClick={handleDeposit} disabled={depositLoading}
-                      className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                      style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
-                      {depositLoading ? (
-                        <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
-                      ) : (
-                        <><Plus className="w-4 h-4" />Deposit Sekarang</>
-                      )}
-                    </button>
-                  </div>
+                    </motion.div>
+                  )}
 
                   {/* Deposit History */}
                   <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Deposit</h3>
@@ -4491,40 +4535,44 @@ function Dashboard() {
                   {/* Withdraw Form Card */}
                   <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
 
-                    {/* Bank Method Grid */}
+                    {/* Bank Method Carousel */}
                     {withdrawCategory === 'bank' && (
                       <div className="mb-3">
                         <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Bank Tujuan</span>
-                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                        <div className="carousel-hide-scrollbar flex gap-2 overflow-x-auto flex-nowrap pb-1">
                           {[
-                            { code: 'BCA', name: 'Bank BCA', color: '#003399' },
-                            { code: 'BNI', name: 'Bank BNI', color: '#F15A22' },
-                            { code: 'BRI', name: 'Bank BRI', color: '#00529C' },
-                            { code: 'Mandiri', name: 'Bank Mandiri', color: '#003066' },
-                            { code: 'CIMB', name: 'CIMB Niaga', color: '#7B0E24' },
-                            { code: 'Permata', name: 'Bank Permata', color: '#005EAB' },
-                            { code: 'BSI', name: 'Bank BSI', color: '#00A650' },
-                            { code: 'Danamon', name: 'Bank Danamon', color: '#FDDA24' },
-                            { code: 'Panin', name: 'Bank Panin', color: '#003764' },
+                            { code: 'BCA', name: 'BCA', color: '#003399' },
+                            { code: 'BNI', name: 'BNI', color: '#F15A22' },
+                            { code: 'BRI', name: 'BRI', color: '#00529C' },
+                            { code: 'Mandiri', name: 'Mandiri', color: '#003066' },
+                            { code: 'CIMB', name: 'CIMB', color: '#7B0E24' },
+                            { code: 'Permata', name: 'Permata', color: '#005EAB' },
+                            { code: 'BSI', name: 'BSI', color: '#00A650' },
+                            { code: 'Danamon', name: 'Danamon', color: '#FDDA24' },
+                            { code: 'Panin', name: 'Panin', color: '#003764' },
                             { code: 'Maybank', name: 'Maybank', color: '#002F6C' },
+                            { code: 'OCBC', name: 'OCBC', color: '#E2231A' },
+                            { code: 'BTN', name: 'BTN', color: '#F7941D' },
+                            { code: 'Mega', name: 'Mega', color: '#00468B' },
+                            { code: 'Sinarmas', name: 'Sinarmas', color: '#0061AF' },
                           ].map(bank => (
                             <button key={bank.code} onClick={() => setWithdrawBankMethod(bank.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
-                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
-                                {bank.code.slice(0, 2)}
+                              className={`shrink-0 w-[64px] rounded-xl p-1.5 border-2 transition-all flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-sm shadow-blue-500/10' : 'border-[var(--zv-border)] bg-[var(--zv-surface)] hover:border-[#3b82f6]/30'}`}>
+                              <div className="w-8 h-8 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
+                                {bank.name.slice(0, 2)}
                               </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawBankMethod === bank.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{bank.code}</span>
+                              <span className={`text-[6px] font-bold text-center leading-tight ${withdrawBankMethod === bank.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{bank.name}</span>
                             </button>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* E-Wallet Method Grid */}
+                    {/* E-Wallet Method Carousel */}
                     {withdrawCategory === 'ewallet' && (
                       <div className="mb-3">
                         <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
-                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                        <div className="carousel-hide-scrollbar flex gap-2 overflow-x-auto flex-nowrap pb-1">
                           {[
                             { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
                             { code: 'OVO', name: 'OVO', color: '#4C2A86' },
@@ -4534,38 +4582,43 @@ function Dashboard() {
                             { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
                             { code: 'JENIUS', name: 'Jenius', color: '#00A651' },
                             { code: 'BLU', name: 'Blu by BCA', color: '#005BAA' },
+                            { code: 'DOKU', name: 'Doku', color: '#E71E26' },
+                            { code: 'ISAKU', name: 'iSaku', color: '#FF6B00' },
                           ].map(ew => (
                             <button key={ew.code} onClick={() => setWithdrawEwalletMethod(ew.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[52px] flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
-                              <div className="w-7 h-7 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
+                              className={`shrink-0 w-[64px] rounded-xl p-1.5 border-2 transition-all flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-sm shadow-blue-500/10' : 'border-[var(--zv-border)] bg-[var(--zv-surface)] hover:border-[#3b82f6]/30'}`}>
+                              <div className="w-8 h-8 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
                                 {ew.name.slice(0, 2)}
                               </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight ${withdrawEwalletMethod === ew.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{ew.name}</span>
+                              <span className={`text-[6px] font-bold text-center leading-tight ${withdrawEwalletMethod === ew.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{ew.name}</span>
                             </button>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Crypto Method Grid */}
+                    {/* Crypto Method Carousel */}
                     {withdrawCategory === 'crypto' && (
                       <div className="mb-3">
                         <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Crypto</span>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="carousel-hide-scrollbar flex gap-2 overflow-x-auto flex-nowrap pb-1">
                           {[
                             { code: 'USDT_TRC20', name: 'USDT', network: 'TRC20', color: '#26A17B' },
                             { code: 'USDT_ERC20', name: 'USDT', network: 'ERC20', color: '#627EEA' },
-                            { code: 'BTC', name: 'Bitcoin', network: 'BTC', color: '#F7931A' },
-                            { code: 'ETH', name: 'Ethereum', network: 'ERC20', color: '#627EEA' },
+                            { code: 'BTC', name: 'BTC', network: 'BTC', color: '#F7931A' },
+                            { code: 'ETH', name: 'ETH', network: 'ERC20', color: '#627EEA' },
                             { code: 'BNB', name: 'BNB', network: 'BEP20', color: '#F3BA2F' },
+                            { code: 'SOL', name: 'SOL', network: 'SOL', color: '#9945FF' },
+                            { code: 'XRP', name: 'XRP', network: 'XRP', color: '#23292F' },
+                            { code: 'DOGE', name: 'DOGE', network: 'DOGE', color: '#C2A633' },
                           ].map(cr => (
                             <button key={cr.code} onClick={() => setWithdrawCryptoMethod(cr.code)}
-                              className={`rounded-xl p-2 border-2 transition-all min-h-[56px] flex flex-col items-center justify-center gap-1 ${withdrawCryptoMethod === cr.code ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-surface)]'}`}>
-                              <div className="w-7 h-7 rounded-full grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: cr.color }}>
+                              className={`shrink-0 w-[64px] rounded-xl p-1.5 border-2 transition-all flex flex-col items-center justify-center gap-0.5 ${withdrawCryptoMethod === cr.code ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-sm shadow-blue-500/10' : 'border-[var(--zv-border)] bg-[var(--zv-surface)] hover:border-[#3b82f6]/30'}`}>
+                              <div className="w-7 h-7 rounded-full grid place-items-center text-white text-[7px] font-black" style={{ backgroundColor: cr.color }}>
                                 {cr.name.slice(0, 2)}
                               </div>
-                              <span className={`text-[8px] font-black text-center leading-tight ${withdrawCryptoMethod === cr.code ? 'text-[#3b82f6]' : 'text-[var(--zv-text)]'}`}>{cr.name}</span>
-                              <span className="text-[6px] font-bold text-[var(--zv-muted)]">{cr.network}</span>
+                              <span className={`text-[7px] font-black text-center leading-tight ${withdrawCryptoMethod === cr.code ? 'text-[#3b82f6]' : 'text-[var(--zv-text)]'}`}>{cr.name}</span>
+                              <span className="text-[5px] font-bold text-[var(--zv-muted)]">{cr.network}</span>
                             </button>
                           ))}
                         </div>

@@ -432,6 +432,15 @@
   box-shadow: 0 0 30px -10px rgba(59, 130, 246, 0.15);
 }
 
+/* Hide scrollbar for carousel containers */
+.carousel-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.carousel-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Theme transition */
 .theme-transition {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
