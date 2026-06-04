@@ -242,8 +242,10 @@ function LoginPage() {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      // If admin logs in on user page, redirect to admin dashboard
+      // If admin logs in on user page, store admin session and redirect to admin dashboard
       if (data.user?.role === 'admin') {
+        localStorage.setItem('adminId', data.user.id)
+        localStorage.setItem('adminToken', data.token)
         window.location.href = '/admin'
         return
       }
