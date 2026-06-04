@@ -810,6 +810,29 @@ function Dashboard() {
   const sinyalPositionsRef = useRef(sinyalPositions)
   useEffect(() => { sinyalPositionsRef.current = sinyalPositions }, [sinyalPositions])
 
+  // ============ ADMIN PANEL STATE ============
+  const [adminTab, setAdminTab] = useState<'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'stocks' | 'investments' | 'news' | 'promos'>('dashboard')
+  const [adminUsers, setAdminUsers] = useState<any[]>([])
+  const [adminDeposits, setAdminDeposits] = useState<any[]>([])
+  const [adminWithdrawals, setAdminWithdrawals] = useState<any[]>([])
+  const [adminStocks, setAdminStocks] = useState<any[]>([])
+  const [adminInvestments, setAdminInvestments] = useState<any[]>([])
+  const [adminNews, setAdminNews] = useState<any[]>([])
+  const [adminPromos, setAdminPromos] = useState<any[]>([])
+  const [adminStats, setAdminStats] = useState<any>({})
+  const [adminSearch, setAdminSearch] = useState('')
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [adminEditUser, setAdminEditUser] = useState<any>(null)
+  const [adminEditModal, setAdminEditModal] = useState(false)
+  const [adminEditStock, setAdminEditStock] = useState<any>(null)
+  const [adminEditStockModal, setAdminEditStockModal] = useState(false)
+  const [adminEditInvestModal, setAdminEditInvestModal] = useState(false)
+  const [adminEditInvest, setAdminEditInvest] = useState<any>(null)
+  const [adminEditNewsModal, setAdminEditNewsModal] = useState(false)
+  const [adminEditNews, setAdminEditNews] = useState<any>(null)
+  const [adminEditPromoModal, setAdminEditPromoModal] = useState(false)
+  const [adminEditPromo, setAdminEditPromo] = useState<any>(null)
+
   // Auto-select first stock when entering sinyal tab
   useEffect(() => {
     if (activeTab === 'sinyal' && !selectedSinyalStock && stocks.length > 0) {
@@ -1732,6 +1755,66 @@ function Dashboard() {
     try { const r = await fetch(`/api/contracts?userId=${user.id}`); const d = await r.json(); if (d.contracts) setUserContracts(d.contracts) } catch {}
   }, [user])
 
+  // ============ ADMIN FETCH FUNCTIONS ============
+  const fetchAdminStats = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/dashboard?userId=${user.id}`); const d = await r.json(); if (d.stats) setAdminStats(d.stats) } catch {}
+  }, [user])
+
+  const fetchAdminUsers = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/users?userId=${user.id}&search=${adminSearch}`); const d = await r.json(); if (d.users) setAdminUsers(d.users) } catch {}
+  }, [user, adminSearch])
+
+  const fetchAdminDeposits = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/deposits?userId=${user.id}`); const d = await r.json(); if (d.deposits) setAdminDeposits(d.deposits) } catch {}
+  }, [user])
+
+  const fetchAdminWithdrawals = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/withdrawals?userId=${user.id}`); const d = await r.json(); if (d.withdrawals) setAdminWithdrawals(d.withdrawals) } catch {}
+  }, [user])
+
+  const fetchAdminStocks = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/stocks?userId=${user.id}`); const d = await r.json(); if (d.stocks) setAdminStocks(d.stocks) } catch {}
+  }, [user])
+
+  const fetchAdminInvestments = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/investments?userId=${user.id}`); const d = await r.json(); if (d.investments) setAdminInvestments(d.investments) } catch {}
+  }, [user])
+
+  const fetchAdminNews = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/news?userId=${user.id}`); const d = await r.json(); if (d.news) setAdminNews(d.news) } catch {}
+  }, [user])
+
+  const fetchAdminPromos = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    try { const r = await fetch(`/api/admin/promos?userId=${user.id}`); const d = await r.json(); if (d.promos) setAdminPromos(d.promos) } catch {}
+  }, [user])
+
+  const fetchAdminAll = useCallback(async () => {
+    if (!user || user.role !== 'admin') return
+    setAdminLoading(true)
+    await Promise.all([fetchAdminStats(), fetchAdminUsers(), fetchAdminDeposits(), fetchAdminWithdrawals(), fetchAdminStocks(), fetchAdminInvestments(), fetchAdminNews(), fetchAdminPromos()])
+    setAdminLoading(false)
+  }, [user, fetchAdminStats, fetchAdminUsers, fetchAdminDeposits, fetchAdminWithdrawals, fetchAdminStocks, fetchAdminInvestments, fetchAdminNews, fetchAdminPromos])
+
+  const adminInitialized = useRef(false)
+  useEffect(() => {
+    if (activeTab === 'admin' && user?.role === 'admin') {
+      if (!adminInitialized.current) {
+        adminInitialized.current = true
+        fetchAdminAll()
+      }
+    } else {
+      adminInitialized.current = false
+    }
+  }, [activeTab, user])
+
   const refreshAll = useCallback(async () => {
     setRefreshing(true)
     try { await fetch('/api/stocks/update-prices', { method: 'POST' }) } catch {}
@@ -1747,7 +1830,7 @@ function Dashboard() {
     fetchWithdrawals(); fetchReferral(); fetchBonuses(); fetchPromos(); fetchLeaderboard()
     fetchInvestProducts(); fetchUserInvestments()
     fetchDailyCheck(); fetchTasks(); fetchContracts()
-  }, [user, fetchStocks, fetchPortfolio, fetchTransactions, fetchIndices, fetchNotifications, fetchNews, fetchWatchlist, fetchDeposits, fetchWithdrawals, fetchReferral, fetchBonuses, fetchPromos, fetchLeaderboard, fetchInvestProducts, fetchUserInvestments, fetchDailyCheck, fetchTasks, fetchContracts])
+  }, [user])
 
   useEffect(() => { const iv = setInterval(refreshAll, 30000); return () => clearInterval(iv) }, [refreshAll])
 
@@ -5760,6 +5843,673 @@ function Dashboard() {
               </button>
             </motion.div>
           )}
+
+          {/* ====== ADMIN PANEL TAB ====== */}
+          {activeTab === 'admin' && user?.role === 'admin' && (
+            <motion.div key="admin" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              {/* Admin Header */}
+              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                <div className="p-4 text-white text-center relative">
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                  <div className="relative z-10">
+                    <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/30 grid place-items-center mx-auto mb-2">
+                      <Shield className="w-7 h-7 text-yellow-300" />
+                    </div>
+                    <h2 className="text-[14px] md:text-lg font-black">Admin Panel</h2>
+                    <span className="text-[9px] text-blue-200">Kelola platform ZEVORIX</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Sub-Navigation */}
+              <div className="mb-4 overflow-x-auto custom-scrollbar -mx-1 px-1">
+                <div className="flex gap-1.5 min-w-max">
+                  {[
+                    { key: 'dashboard' as const, label: 'Dashboard', icon: BarChart3 },
+                    { key: 'users' as const, label: 'Users', icon: Users },
+                    { key: 'deposits' as const, label: 'Deposits', icon: ArrowDownRight },
+                    { key: 'withdrawals' as const, label: 'Withdrawals', icon: ArrowUpRight },
+                    { key: 'stocks' as const, label: 'Stocks', icon: TrendingUp },
+                    { key: 'investments' as const, label: 'Investments', icon: DollarSign },
+                    { key: 'news' as const, label: 'News', icon: Newspaper },
+                    { key: 'promos' as const, label: 'Promos', icon: Gift },
+                  ].map(t => (
+                    <button key={t.key} onClick={() => setAdminTab(t.key)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all ${adminTab === t.key ? 'bg-[#3b82f6] text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] text-[var(--zv-text)] border border-[var(--zv-border)] hover:bg-[var(--zv-surface)]'}`}>
+                      <t.icon className="w-3.5 h-3.5" />{t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Admin Loading */}
+              {adminLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 rounded-full border-[3px] border-[var(--zv-border)] border-t-[#3b82f6] animate-spin" />
+                </div>
+              )}
+
+              {/* ====== ADMIN DASHBOARD ====== */}
+              {adminTab === 'dashboard' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { label: 'Total Users', value: adminStats.totalUsers || 0, icon: Users, color: '#3b82f6', format: (v: number) => formatNumber(v) },
+                      { label: 'Total Balance', value: adminStats.totalBalance || 0, icon: Wallet, color: '#10b981', format: (v: number) => formatRupiah(v) },
+                      { label: 'Total Deposits', value: adminStats.totalDeposits || 0, icon: ArrowDownRight, color: '#f59e0b', format: (v: number) => formatRupiah(v) },
+                      { label: 'Total Withdrawals', value: adminStats.totalWithdrawals || 0, icon: ArrowUpRight, color: '#ef4444', format: (v: number) => formatRupiah(v) },
+                      { label: 'Active Investments', value: adminStats.activeInvestments || 0, icon: Briefcase, color: '#8b5cf6', format: (v: number) => formatNumber(v) },
+                      { label: 'Platform Revenue', value: adminStats.platformRevenue || 0, icon: DollarSign, color: '#06b6d4', format: (v: number) => formatRupiah(v) },
+                    ].map((stat, i) => (
+                      <div key={i} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 rounded-lg grid place-items-center" style={{ background: `${stat.color}15` }}>
+                            <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+                          </div>
+                        </div>
+                        <b className="block text-[12px] md:text-[14px] font-black text-[var(--zv-text)]">{stat.format(stat.value)}</b>
+                        <span className="block text-[8px] font-bold text-[var(--zv-muted)] mt-0.5">{stat.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Quick Stats Row */}
+                  <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                    <h3 className="text-[11px] font-black text-[#3b82f6] mb-3">Quick Overview</h3>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Pending Deposits', value: adminStats.pendingDeposits || 0, color: '#f59e0b' },
+                        { label: 'Pending Withdrawals', value: adminStats.pendingWithdrawals || 0, color: '#ef4444' },
+                        { label: 'Total News Articles', value: adminStats.totalNews || 0, color: '#3b82f6' },
+                        { label: 'Active Promos', value: adminStats.activePromos || 0, color: '#10b981' },
+                        { label: 'Total Stocks', value: adminStats.totalStocks || 0, color: '#8b5cf6' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
+                          <span className="text-[9px] font-bold text-[var(--zv-muted)]">{item.label}</span>
+                          <span className="text-[10px] font-black" style={{ color: item.color }}>{formatNumber(item.value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN USERS ====== */}
+              {adminTab === 'users' && !adminLoading && (
+                <div className="space-y-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--zv-muted)]" />
+                    <input type="text" value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} placeholder="Cari user..."
+                      className="w-full h-10 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] pl-9 pr-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-[var(--zv-muted)]" />
+                  </div>
+                  {/* Users List */}
+                  <div className="max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminUsers.length === 0 ? (
+                      <div className="text-center py-8 text-[var(--zv-muted)] text-[11px]">Tidak ada user ditemukan</div>
+                    ) : adminUsers.map((u: any) => (
+                      <div key={u.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <b className="text-[11px] font-black text-[var(--zv-text)] truncate">{u.name}</b>
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 flex-shrink-0 ${u.role === 'admin' ? 'bg-red-500/20 text-red-400 border border-red-400/30' : 'bg-blue-500/20 text-blue-300 border border-blue-400/30'}`}>
+                                {u.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}{u.role}
+                              </span>
+                              <span className="h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 flex-shrink-0 bg-yellow-500/20 text-yellow-300 border border-yellow-400/30">
+                                <Award className="w-2.5 h-2.5" />{u.vipLevel}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-[9px] text-[var(--zv-muted)]">
+                              <span className="flex items-center gap-0.5"><Phone className="w-2.5 h-2.5" />+62 {u.phone}</span>
+                              <span className="flex items-center gap-0.5"><Wallet className="w-2.5 h-2.5" />{formatRupiah(u.balance)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 ${u.kycStatus === 'verified' ? 'bg-green-500/20 text-green-400 border border-green-400/30' : u.kycStatus === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-400/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30'}`}>
+                                {u.kycStatus === 'verified' ? <CheckCircle className="w-2.5 h-2.5" /> : <AlertCircle className="w-2.5 h-2.5" />}KYC: {u.kycStatus}
+                              </span>
+                              <span className="text-[7px] text-[var(--zv-muted)]">Deposit: {formatRupiah(u.totalDeposit)}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => { setAdminEditUser(u); setAdminEditModal(true) }}
+                            className="h-7 px-2.5 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-1 hover:bg-[#1d4ed8] transition-colors flex-shrink-0">
+                            <Settings className="w-3 h-3" />Edit
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN DEPOSITS ====== */}
+              {adminTab === 'deposits' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-black text-[#3b82f6]">Deposit Requests</h3>
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)]">{adminDeposits.length} total</span>
+                  </div>
+                  <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminDeposits.length === 0 ? (
+                      <div className="text-center py-8 text-[var(--zv-muted)] text-[11px]">Tidak ada deposit</div>
+                    ) : adminDeposits.map((d: any) => (
+                      <div key={d.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <b className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(d.amount)}</b>
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 ${d.status === 'completed' ? 'bg-green-500/20 text-green-400 border border-green-400/30' : d.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-400/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30'}`}>
+                                {d.status === 'completed' ? <CheckCircle className="w-2.5 h-2.5" /> : d.status === 'rejected' ? <X className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}{d.status}
+                              </span>
+                            </div>
+                            <div className="text-[9px] text-[var(--zv-muted)]">
+                              <span className="flex items-center gap-0.5"><User className="w-2.5 h-2.5" />{d.user?.name || 'Unknown'}</span>
+                              <span className="flex items-center gap-0.5 mt-0.5"><CreditCard className="w-2.5 h-2.5" />{d.method} {d.bankName ? `• ${d.bankName}` : ''}</span>
+                              <span className="flex items-center gap-0.5 mt-0.5"><Clock className="w-2.5 h-2.5" />{formatDateTime(d.createdAt)}</span>
+                            </div>
+                          </div>
+                          {d.status === 'pending' && (
+                            <div className="flex gap-1.5 flex-shrink-0">
+                              <button onClick={async () => { await fetch(`/api/admin/deposits/${d.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, status: 'completed' }) }); fetchAdminDeposits(); fetchAdminStats(); toast({ title: 'Deposit disetujui' }) }}
+                                className="h-7 px-2 rounded-lg bg-green-500 text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-green-600 transition-colors">
+                                <CheckCircle className="w-3 h-3" />Approve
+                              </button>
+                              <button onClick={async () => { await fetch(`/api/admin/deposits/${d.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, status: 'rejected' }) }); fetchAdminDeposits(); fetchAdminStats(); toast({ title: 'Deposit ditolak' }) }}
+                                className="h-7 px-2 rounded-lg bg-red-500 text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-red-600 transition-colors">
+                                <X className="w-3 h-3" />Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN WITHDRAWALS ====== */}
+              {adminTab === 'withdrawals' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-black text-[#3b82f6]">Withdrawal Requests</h3>
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)]">{adminWithdrawals.length} total</span>
+                  </div>
+                  <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminWithdrawals.length === 0 ? (
+                      <div className="text-center py-8 text-[var(--zv-muted)] text-[11px]">Tidak ada withdrawal</div>
+                    ) : adminWithdrawals.map((w: any) => (
+                      <div key={w.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <b className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(w.amount)}</b>
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 ${w.status === 'completed' ? 'bg-green-500/20 text-green-400 border border-green-400/30' : w.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-400/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30'}`}>
+                                {w.status === 'completed' ? <CheckCircle className="w-2.5 h-2.5" /> : w.status === 'rejected' ? <X className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}{w.status}
+                              </span>
+                            </div>
+                            <div className="text-[9px] text-[var(--zv-muted)]">
+                              <span className="flex items-center gap-0.5"><User className="w-2.5 h-2.5" />{w.user?.name || 'Unknown'}</span>
+                              {w.bankName && <span className="flex items-center gap-0.5 mt-0.5"><Building2 className="w-2.5 h-2.5" />{w.bankName} • {w.bankAccount}</span>}
+                              <span className="flex items-center gap-0.5 mt-0.5"><Clock className="w-2.5 h-2.5" />{formatDateTime(w.createdAt)}</span>
+                            </div>
+                          </div>
+                          {w.status === 'pending' && (
+                            <div className="flex gap-1.5 flex-shrink-0">
+                              <button onClick={async () => { await fetch(`/api/admin/withdrawals/${w.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, status: 'completed' }) }); fetchAdminWithdrawals(); fetchAdminStats(); toast({ title: 'Withdrawal disetujui' }) }}
+                                className="h-7 px-2 rounded-lg bg-green-500 text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-green-600 transition-colors">
+                                <CheckCircle className="w-3 h-3" />Approve
+                              </button>
+                              <button onClick={async () => { await fetch(`/api/admin/withdrawals/${w.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, status: 'rejected' }) }); fetchAdminWithdrawals(); fetchAdminStats(); toast({ title: 'Withdrawal ditolak' }) }}
+                                className="h-7 px-2 rounded-lg bg-red-500 text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-red-600 transition-colors">
+                                <X className="w-3 h-3" />Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN STOCKS ====== */}
+              {adminTab === 'stocks' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-black text-[#3b82f6]">Manage Stocks</h3>
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)]">{adminStocks.length} total</span>
+                  </div>
+                  <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminStocks.map((s: any) => (
+                      <div key={s.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <b className="text-[11px] font-black text-[var(--zv-text)]">{s.code}</b>
+                              <span className="text-[9px] text-[var(--zv-muted)]">{s.name}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-[9px]">
+                              <span className="font-bold text-[var(--zv-text)]">{formatRupiah(s.price)}</span>
+                              <span className={`font-bold ${s.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatPercent(s.changePercent)}</span>
+                              <span className="text-[var(--zv-muted)]">{s.category}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button onClick={async () => { await fetch(`/api/admin/stocks/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, price: Math.round(s.price * 0.99) }) }); fetchAdminStocks(); toast({ title: 'Harga diturunkan 1%' }) }}
+                              className="h-7 w-7 rounded-lg bg-red-500/20 text-red-400 grid place-items-center hover:bg-red-500/30 transition-colors">
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <button onClick={async () => { await fetch(`/api/admin/stocks/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, price: Math.round(s.price * 1.01) }) }); fetchAdminStocks(); toast({ title: 'Harga dinaikkan 1%' }) }}
+                              className="h-7 w-7 rounded-lg bg-green-500/20 text-green-400 grid place-items-center hover:bg-green-500/30 transition-colors">
+                              <Plus className="w-3 h-3" />
+                            </button>
+                            <button onClick={() => { setAdminEditStock(s); setAdminEditStockModal(true) }}
+                              className="h-7 px-2 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-[#1d4ed8] transition-colors">
+                              <Settings className="w-3 h-3" />Edit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN INVESTMENTS ====== */}
+              {adminTab === 'investments' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-black text-[#3b82f6]">Investment Products</h3>
+                    <span className="text-[9px] font-bold text-[var(--zv-muted)]">{adminInvestments.length} total</span>
+                  </div>
+                  <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminInvestments.map((inv: any) => (
+                      <div key={inv.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <b className="text-[11px] font-black text-[var(--zv-text)]">{inv.name}</b>
+                              <span className="h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                                {inv.category}
+                              </span>
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 ${inv.isActive ? 'bg-green-500/20 text-green-400 border border-green-400/30' : 'bg-red-500/20 text-red-400 border border-red-400/30'}`}>
+                                {inv.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-[9px] text-[var(--zv-muted)]">
+                              <span>Modal: {formatRupiah(inv.modal)}</span>
+                              <span>Daily: {formatRupiah(inv.dailyProfit)}</span>
+                              <span>ROI: {inv.roi}%</span>
+                              <span>{inv.duration}d</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button onClick={async () => { await fetch(`/api/admin/investments/${inv.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, isActive: !inv.isActive }) }); fetchAdminInvestments(); toast({ title: inv.isActive ? 'Product dinonaktifkan' : 'Product diaktifkan' }) }}
+                              className={`h-7 px-2 rounded-lg text-[9px] font-bold flex items-center gap-0.5 transition-colors ${inv.isActive ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}>
+                              {inv.isActive ? <><X className="w-3 h-3" />Disable</> : <><CheckCircle className="w-3 h-3" />Enable</>}
+                            </button>
+                            <button onClick={() => { setAdminEditInvest(inv); setAdminEditInvestModal(true) }}
+                              className="h-7 px-2 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-[#1d4ed8] transition-colors">
+                              <Settings className="w-3 h-3" />Edit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN NEWS ====== */}
+              {adminTab === 'news' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-black text-[#3b82f6]">News Management</h3>
+                    <button onClick={() => { setAdminEditNews({ title: '', content: '', category: 'market', isPublished: true }); setAdminEditNewsModal(true) }}
+                      className="h-7 px-2.5 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-1 hover:bg-[#1d4ed8] transition-colors">
+                      <Plus className="w-3 h-3" />Add News
+                    </button>
+                  </div>
+                  <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminNews.length === 0 ? (
+                      <div className="text-center py-8 text-[var(--zv-muted)] text-[11px]">Tidak ada berita</div>
+                    ) : adminNews.map((n: any) => (
+                      <div key={n.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <b className="block text-[11px] font-black text-[var(--zv-text)] mb-0.5 truncate">{n.title}</b>
+                            <div className="flex items-center gap-2 text-[9px] text-[var(--zv-muted)]">
+                              <span className="h-4 px-1.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[7px] font-bold">{n.category}</span>
+                              <span>{formatDateTime(n.createdAt)}</span>
+                              {n.isPublished && <span className="text-green-500">Published</span>}
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <button onClick={() => { setAdminEditNews(n); setAdminEditNewsModal(true) }}
+                              className="h-7 px-2 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-[#1d4ed8] transition-colors">
+                              <Settings className="w-3 h-3" />Edit
+                            </button>
+                            <button onClick={async () => { await fetch(`/api/admin/news/${n.id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id }) }); fetchAdminNews(); fetchAdminStats(); toast({ title: 'Berita dihapus' }) }}
+                              className="h-7 px-2 rounded-lg bg-red-500 text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-red-600 transition-colors">
+                              <X className="w-3 h-3" />Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ====== ADMIN PROMOS ====== */}
+              {adminTab === 'promos' && !adminLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-black text-[#3b82f6]">Promo Management</h3>
+                    <button onClick={() => { setAdminEditPromo({ title: '', description: '', type: 'welcome_bonus', value: 0, isActive: true }); setAdminEditPromoModal(true) }}
+                      className="h-7 px-2.5 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-1 hover:bg-[#1d4ed8] transition-colors">
+                      <Plus className="w-3 h-3" />Add Promo
+                    </button>
+                  </div>
+                  <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-2">
+                    {adminPromos.length === 0 ? (
+                      <div className="text-center py-8 text-[var(--zv-muted)] text-[11px]">Tidak ada promo</div>
+                    ) : adminPromos.map((p: any) => (
+                      <div key={p.id} className="rounded-xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <b className="text-[11px] font-black text-[var(--zv-text)] truncate">{p.title}</b>
+                              <span className={`h-4 px-1.5 rounded-full text-[7px] font-bold flex items-center gap-0.5 flex-shrink-0 ${p.isActive ? 'bg-green-500/20 text-green-400 border border-green-400/30' : 'bg-red-500/20 text-red-400 border border-red-400/30'}`}>
+                                {p.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[9px] text-[var(--zv-muted)]">
+                              <span className="h-4 px-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[7px] font-bold">{p.type}</span>
+                              <span>Value: {formatRupiah(p.value)}</span>
+                              <span>{formatDateTime(p.startDate)}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <button onClick={() => { setAdminEditPromo(p); setAdminEditPromoModal(true) }}
+                              className="h-7 px-2 rounded-lg bg-[#3b82f6] text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-[#1d4ed8] transition-colors">
+                              <Settings className="w-3 h-3" />Edit
+                            </button>
+                            <button onClick={async () => { await fetch(`/api/admin/promos/${p.id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id }) }); fetchAdminPromos(); fetchAdminStats(); toast({ title: 'Promo dihapus' }) }}
+                              className="h-7 px-2 rounded-lg bg-red-500 text-white text-[9px] font-bold flex items-center gap-0.5 hover:bg-red-600 transition-colors">
+                              <X className="w-3 h-3" />Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ====== ADMIN EDIT USER MODAL ====== */}
+          {adminEditModal && adminEditUser && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md bg-[var(--zv-panel)] rounded-2xl border border-[var(--zv-border)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 border-b border-[var(--zv-border)]" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[13px] font-black text-white">Edit User: {adminEditUser.name}</h3>
+                    <button onClick={() => setAdminEditModal(false)} className="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-white"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Role</label>
+                    <select value={adminEditUser.role} onChange={(e) => setAdminEditUser({ ...adminEditUser, role: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]">
+                      <option value="investor">Investor</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">VIP Level</label>
+                    <select value={adminEditUser.vipLevel} onChange={(e) => setAdminEditUser({ ...adminEditUser, vipLevel: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]">
+                      <option value="Bronze">Bronze</option>
+                      <option value="Silver">Silver</option>
+                      <option value="Gold">Gold</option>
+                      <option value="Platinum">Platinum</option>
+                      <option value="Diamond">Diamond</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">KYC Status</label>
+                    <select value={adminEditUser.kycStatus} onChange={(e) => setAdminEditUser({ ...adminEditUser, kycStatus: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]">
+                      <option value="pending">Pending</option>
+                      <option value="verified">Verified</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Balance Adjustment</label>
+                    <div className="flex gap-2">
+                      <input type="number" value={adminEditUser.balanceAdjust || ''} onChange={(e) => setAdminEditUser({ ...adminEditUser, balanceAdjust: e.target.value })}
+                        placeholder="Amount (+/-)"
+                        className="flex-1 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] placeholder:text-[var(--zv-muted)]" />
+                      <span className="text-[9px] text-[var(--zv-muted)] self-center">Current: {formatRupiah(adminEditUser.balance)}</span>
+                    </div>
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      const body: any = { adminId: user?.id, role: adminEditUser.role, vipLevel: adminEditUser.vipLevel, kycStatus: adminEditUser.kycStatus }
+                      if (adminEditUser.balanceAdjust) body.balanceAdjust = Number(adminEditUser.balanceAdjust)
+                      await fetch(`/api/admin/users/${adminEditUser.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                      fetchAdminUsers(); fetchAdminStats(); setAdminEditModal(false); toast({ title: 'User updated' })
+                    } catch { toast({ title: 'Error', variant: 'destructive' }) }
+                  }} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* ====== ADMIN EDIT STOCK MODAL ====== */}
+          {adminEditStockModal && adminEditStock && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md bg-[var(--zv-panel)] rounded-2xl border border-[var(--zv-border)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 border-b border-[var(--zv-border)]" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[13px] font-black text-white">Edit Stock: {adminEditStock.code}</h3>
+                    <button onClick={() => setAdminEditStockModal(false)} className="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-white"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Name</label>
+                    <input type="text" value={adminEditStock.name} onChange={(e) => setAdminEditStock({ ...adminEditStock, name: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Price</label>
+                    <input type="number" value={adminEditStock.price} onChange={(e) => setAdminEditStock({ ...adminEditStock, price: Number(e.target.value) })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Category</label>
+                    <select value={adminEditStock.category} onChange={(e) => setAdminEditStock({ ...adminEditStock, category: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]">
+                      <option value="bluechip">Bluechip</option>
+                      <option value="midcap">Midcap</option>
+                      <option value="smallcap">Smallcap</option>
+                      <option value="crypto">Crypto</option>
+                    </select>
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      await fetch(`/api/admin/stocks/${adminEditStock.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, name: adminEditStock.name, price: adminEditStock.price, category: adminEditStock.category }) })
+                      fetchAdminStocks(); setAdminEditStockModal(false); toast({ title: 'Stock updated' })
+                    } catch { toast({ title: 'Error', variant: 'destructive' }) }
+                  }} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* ====== ADMIN EDIT INVESTMENT MODAL ====== */}
+          {adminEditInvestModal && adminEditInvest && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md bg-[var(--zv-panel)] rounded-2xl border border-[var(--zv-border)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 border-b border-[var(--zv-border)]" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[13px] font-black text-white">Edit Investment: {adminEditInvest.name}</h3>
+                    <button onClick={() => setAdminEditInvestModal(false)} className="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-white"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Name</label>
+                    <input type="text" value={adminEditInvest.name} onChange={(e) => setAdminEditInvest({ ...adminEditInvest, name: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Modal (IDR)</label>
+                      <input type="number" value={adminEditInvest.modal} onChange={(e) => setAdminEditInvest({ ...adminEditInvest, modal: Number(e.target.value) })}
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Daily Profit</label>
+                      <input type="number" value={adminEditInvest.dailyProfit} onChange={(e) => setAdminEditInvest({ ...adminEditInvest, dailyProfit: Number(e.target.value) })}
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Duration (days)</label>
+                      <input type="number" value={adminEditInvest.duration} onChange={(e) => setAdminEditInvest({ ...adminEditInvest, duration: Number(e.target.value) })}
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">ROI (%)</label>
+                      <input type="number" value={adminEditInvest.roi} onChange={(e) => setAdminEditInvest({ ...adminEditInvest, roi: Number(e.target.value) })}
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                    </div>
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      await fetch(`/api/admin/investments/${adminEditInvest.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, name: adminEditInvest.name, modal: adminEditInvest.modal, dailyProfit: adminEditInvest.dailyProfit, duration: adminEditInvest.duration, roi: adminEditInvest.roi }) })
+                      fetchAdminInvestments(); setAdminEditInvestModal(false); toast({ title: 'Investment updated' })
+                    } catch { toast({ title: 'Error', variant: 'destructive' }) }
+                  }} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* ====== ADMIN EDIT NEWS MODAL ====== */}
+          {adminEditNewsModal && adminEditNews && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md bg-[var(--zv-panel)] rounded-2xl border border-[var(--zv-border)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 border-b border-[var(--zv-border)]" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[13px] font-black text-white">{adminEditNews.id ? 'Edit' : 'Create'} News</h3>
+                    <button onClick={() => setAdminEditNewsModal(false)} className="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-white"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Title</label>
+                    <input type="text" value={adminEditNews.title} onChange={(e) => setAdminEditNews({ ...adminEditNews, title: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Content</label>
+                    <textarea value={adminEditNews.content} onChange={(e) => setAdminEditNews({ ...adminEditNews, content: e.target.value })} rows={4}
+                      className="w-full rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 py-2 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Category</label>
+                    <select value={adminEditNews.category} onChange={(e) => setAdminEditNews({ ...adminEditNews, category: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]">
+                      <option value="market">Market</option>
+                      <option value="company">Company</option>
+                      <option value="system">System</option>
+                      <option value="education">Education</option>
+                    </select>
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      if (adminEditNews.id) {
+                        await fetch(`/api/admin/news/${adminEditNews.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, title: adminEditNews.title, content: adminEditNews.content, category: adminEditNews.category }) })
+                      } else {
+                        await fetch('/api/admin/news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, title: adminEditNews.title, content: adminEditNews.content, category: adminEditNews.category }) })
+                      }
+                      fetchAdminNews(); fetchAdminStats(); setAdminEditNewsModal(false); toast({ title: adminEditNews.id ? 'News updated' : 'News created' })
+                    } catch { toast({ title: 'Error', variant: 'destructive' }) }
+                  }} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
+                    {adminEditNews.id ? 'Simpan Perubahan' : 'Create News'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* ====== ADMIN EDIT PROMO MODAL ====== */}
+          {adminEditPromoModal && adminEditPromo && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md bg-[var(--zv-panel)] rounded-2xl border border-[var(--zv-border)] overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 border-b border-[var(--zv-border)]" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[13px] font-black text-white">{adminEditPromo.id ? 'Edit' : 'Create'} Promo</h3>
+                    <button onClick={() => setAdminEditPromoModal(false)} className="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-white"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Title</label>
+                    <input type="text" value={adminEditPromo.title} onChange={(e) => setAdminEditPromo({ ...adminEditPromo, title: e.target.value })}
+                      className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Description</label>
+                    <textarea value={adminEditPromo.description} onChange={(e) => setAdminEditPromo({ ...adminEditPromo, description: e.target.value })} rows={3}
+                      className="w-full rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 py-2 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] resize-none" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Type</label>
+                      <select value={adminEditPromo.type} onChange={(e) => setAdminEditPromo({ ...adminEditPromo, type: e.target.value })}
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]">
+                        <option value="welcome_bonus">Welcome Bonus</option>
+                        <option value="deposit_bonus">Deposit Bonus</option>
+                        <option value="referral_program">Referral Program</option>
+                        <option value="trading_competition">Trading Competition</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Value (IDR)</label>
+                      <input type="number" value={adminEditPromo.value} onChange={(e) => setAdminEditPromo({ ...adminEditPromo, value: Number(e.target.value) })}
+                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6]" />
+                    </div>
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      if (adminEditPromo.id) {
+                        await fetch(`/api/admin/promos/${adminEditPromo.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, title: adminEditPromo.title, description: adminEditPromo.description, type: adminEditPromo.type, value: adminEditPromo.value, isActive: adminEditPromo.isActive }) })
+                      } else {
+                        await fetch('/api/admin/promos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: user?.id, title: adminEditPromo.title, description: adminEditPromo.description, type: adminEditPromo.type, value: adminEditPromo.value }) })
+                      }
+                      fetchAdminPromos(); fetchAdminStats(); setAdminEditPromoModal(false); toast({ title: adminEditPromo.id ? 'Promo updated' : 'Promo created' })
+                    } catch { toast({ title: 'Error', variant: 'destructive' }) }
+                  }} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
+                    {adminEditPromo.id ? 'Simpan Perubahan' : 'Create Promo'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </AnimatePresence>
       </main>
 
@@ -5771,6 +6521,7 @@ function Dashboard() {
             { key: 'market', label: 'Pasar', icon: BarChart3 },
             { key: 'sinyal', label: 'Sinyal', icon: Target },
             { key: 'investasi', label: 'Investasi', icon: DollarSign },
+            ...(user?.role === 'admin' ? [{ key: 'admin', label: 'Admin', icon: Shield }] : []),
             { key: 'more', label: 'Lainnya', icon: Menu },
           ].map(tab => {
             const isActive = activeTab === tab.key || (tab.key === 'more' && showSideMenu)
@@ -5808,6 +6559,7 @@ function Dashboard() {
           { key: 'history', label: 'Riwayat', icon: History },
           { key: 'bonus', label: 'Promosi', icon: Gift },
           { key: 'profile', label: 'Profil', icon: User },
+          ...(user?.role === 'admin' ? [{ key: 'admin', label: 'Admin', icon: Shield }] : []),
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
@@ -5871,6 +6623,7 @@ function Dashboard() {
                   { icon: <Gift className="w-4 h-4" />, label: 'Promosi & Bonus', key: 'bonus' },
                   { icon: <Trophy className="w-4 h-4" />, label: 'Leaderboard', key: 'leaderboard' },
                   { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profile' },
+                  ...(user?.role === 'admin' ? [{ icon: <Shield className="w-4 h-4" />, label: 'Admin Panel', key: 'admin' }] : []),
                 ].map(item => (
                   <button key={item.key} onClick={() => { setActiveTab(item.key); setShowSideMenu(false) }}
                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold transition-all ${activeTab === item.key ? 'bg-[var(--zv-surface)] text-[#3b82f6] border border-[var(--zv-border)]' : 'text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>

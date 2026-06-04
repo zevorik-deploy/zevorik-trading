@@ -511,3 +511,104 @@ Stage Summary:
 - 30 stocks shown in selector instead of 10
 - "Durasi Taruhan" bar shows countdown until candle closes
 - All verified working via Agent Browser in both themes
+
+---
+Task ID: 19
+Agent: main
+Task: Create comprehensive admin API routes for ZEVORIX trading platform
+
+Work Log:
+- Created admin auth helper at `/src/lib/admin-auth.ts` with `verifyAdmin()` and `getUserId()` utilities
+- Created 16 API route files under `/src/app/api/admin/`:
+  1. `/api/admin/dashboard/route.ts` — GET: Platform stats (users, balance, deposits, withdrawals, investments, predictions, stocks, revenue)
+  2. `/api/admin/users/route.ts` — GET: List users with search, pagination, filtering (role, kycStatus, vipLevel), includes deposit/withdrawal aggregates
+  3. `/api/admin/users/[id]/route.ts` — PATCH: Update user (role, balance, kycStatus, vipLevel, name, email, balanceAdjust)
+  4. `/api/admin/deposits/route.ts` — GET: List deposits with filtering (status, userId), pagination, includes user info
+  5. `/api/admin/deposits/[id]/route.ts` — PATCH: Approve/reject deposit (credits balance on approve, notifies user)
+  6. `/api/admin/withdrawals/route.ts` — GET: List withdrawals with filtering (status, userId), pagination, includes user info
+  7. `/api/admin/withdrawals/[id]/route.ts` — PATCH: Approve/reject withdrawal (returns balance on reject, notifies user)
+  8. `/api/admin/stocks/route.ts` — GET + POST: List/create stocks with pagination and all fields
+  9. `/api/admin/stocks/[id]/route.ts` — PATCH + DELETE: Update/delete stocks
+  10. `/api/admin/investments/route.ts` — GET + POST: List/create investment products with investment counts
+  11. `/api/admin/investments/[id]/route.ts` — PATCH + DELETE: Update/delete investment products (prevents delete with active investments)
+  12. `/api/admin/news/route.ts` — GET + POST: List/create news with category and publish filtering
+  13. `/api/admin/news/[id]/route.ts` — PATCH + DELETE: Update/delete news
+  14. `/api/admin/promos/route.ts` — GET + POST: List/create promos with type and active filtering
+  15. `/api/admin/promos/[id]/route.ts` — PATCH + DELETE: Update/delete promos
+  16. `/api/admin/seed-admin/route.ts` — POST: Seed admin user (phone: 080000000000, password: admin123, role: admin)
+- All routes verify admin role via `x-user-id` header or `userId` query param
+- All routes return proper HTTP status codes (400, 403, 404, 409, 500)
+- Deposit approve: credits user balance, updates VIP level, sends notification
+- Withdrawal reject: returns balance to user, sends notification
+- Investment delete: prevents deletion if product has active investments
+- Lint passes clean
+- All routes tested via curl: dashboard stats, user listing, stock CRUD, news CRUD, promo CRUD, investment CRUD, seed-admin
+
+Stage Summary:
+- 16 admin API routes created covering all platform management operations
+- Admin auth helper ensures all routes are protected (role === 'admin' check)
+- Full CRUD for stocks, investments, news, promos
+- Deposit/withdrawal approval workflow with balance management and notifications
+- User management with balance adjustment, role changes, VIP level updates
+- Comprehensive dashboard statistics endpoint
+- Seed-admin endpoint for initial admin user creation
+
+---
+Task ID: 3
+Agent: main
+Task: Build comprehensive admin panel UI inside ZEVORIX trading platform
+
+Work Log:
+- Read and analyzed the full page.tsx (~7291 lines) to understand structure: Dashboard component, bottom nav, desktop sidebar, side menu, tab system
+- Added 22 admin state variables (adminTab, adminUsers, adminDeposits, adminWithdrawals, adminStocks, adminInvestments, adminNews, adminPromos, adminStats, adminSearch, adminLoading, adminEditUser, adminEditModal, adminEditStock, adminEditStockModal, adminEditInvest, adminEditInvestModal, adminEditNews, adminEditNewsModal, adminEditPromo, adminEditPromoModal)
+- Added 9 admin fetch functions (fetchAdminStats, fetchAdminUsers, fetchAdminDeposits, fetchAdminWithdrawals, fetchAdminStocks, fetchAdminInvestments, fetchAdminNews, fetchAdminPromos, fetchAdminAll) with admin role verification
+- Added useEffect to auto-fetch admin data when activeTab === 'admin' && user?.role === 'admin'
+- Added "Admin" tab to bottom navigation (mobile) — only visible when user?.role === 'admin', uses Shield icon
+- Added "Admin" tab to desktop sidebar — only visible when user?.role === 'admin', uses Shield icon
+- Added "Admin Panel" option to side menu (hamburger) — only visible when user?.role === 'admin', uses Shield icon
+- Built complete Admin Panel UI section with 8 sub-tabs:
+  1. **Dashboard** — 6 stat cards (Total Users, Total Balance, Total Deposits, Total Withdrawals, Active Investments, Platform Revenue) + Quick Overview panel (Pending Deposits, Pending Withdrawals, Total News, Active Promos, Total Stocks)
+  2. **Users** — Search bar + user list with name, phone, balance, role badge, VIP badge, KYC status badge, deposit amount, Edit button
+  3. **Deposits** — Deposit request list with status badges (pending/completed/rejected), user info, amount, method, Approve/Reject buttons for pending
+  4. **Withdrawals** — Withdrawal request list with status badges, bank info, Approve/Reject buttons for pending
+  5. **Stocks** — Stock list with code, name, price, change%, category, quick price +/-1% buttons, Edit button
+  6. **Investments** — Investment product list with name, category, modal, daily profit, ROI, duration, Enable/Disable toggle, Edit button
+  7. **News** — News article list with title, category, date, published status, Add/Edit/Delete buttons
+  8. **Promos** — Promo list with title, type, value, active status, Add/Edit/Delete buttons
+- Built 5 edit modals:
+  - Edit User Modal (role, VIP level, KYC status, balance adjustment)
+  - Edit Stock Modal (name, price, category)
+  - Edit Investment Modal (name, modal, daily profit, duration, ROI)
+  - Edit News Modal (title, content, category) — supports both create and edit
+  - Edit Promo Modal (title, description, type, value) — supports both create and edit
+- Created 15 backend API route files under /src/app/api/admin/:
+  - /api/admin/dashboard — GET platform stats
+  - /api/admin/users — GET users list with search
+  - /api/admin/users/[id] — PATCH user (role, vipLevel, kycStatus, balanceAdjust)
+  - /api/admin/deposits — GET deposits list with user info
+  - /api/admin/deposits/[id] — PATCH approve/reject (credits balance on approve)
+  - /api/admin/withdrawals — GET withdrawals list with user info
+  - /api/admin/withdrawals/[id] — PATCH approve/reject (returns balance on reject)
+  - /api/admin/stocks — GET stocks list
+  - /api/admin/stocks/[id] — PATCH stock (name, price, category with auto change calculation)
+  - /api/admin/investments — GET investment products
+  - /api/admin/investments/[id] — PATCH investment (name, modal, dailyProfit, duration, roi, isActive)
+  - /api/admin/news — GET/POST news
+  - /api/admin/news/[id] — PATCH/DELETE news
+  - /api/admin/promos — GET/POST promos
+  - /api/admin/promos/[id] — PATCH/DELETE promos
+- All API routes verify admin role before processing
+- Deposit approve: credits user balance and sends notification
+- Withdrawal reject: returns balance to user and sends notification
+- Stock price update: auto-calculates change and changePercent
+- Lint passes clean
+- All API endpoints tested via curl and verified working
+- Admin user exists in database (phone: 080000000000, role: admin)
+
+Stage Summary:
+- Comprehensive admin panel UI integrated into main page.tsx with 8 management sections
+- Admin tab only visible to users with role === 'admin' in all 3 navigation areas
+- 5 edit modals for granular management of users, stocks, investments, news, promos
+- 15 backend API routes with admin verification, balance management, and notifications
+- Premium ZEVORIX blue theme styling with dark/light mode support
+- All existing functionality preserved intact
