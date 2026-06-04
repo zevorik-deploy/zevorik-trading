@@ -612,3 +612,60 @@ Stage Summary:
 - 15 backend API routes with admin verification, balance management, and notifications
 - Premium ZEVORIX blue theme styling with dark/light mode support
 - All existing functionality preserved intact
+
+---
+Task ID: 2-3
+Agent: main
+Task: Separate admin dashboard from user Dashboard into its own component with sidebar layout
+
+Work Log:
+- Analyzed the current page.tsx (~8045 lines) to identify all admin-related code:
+  - Admin state variables (lines 814-834): adminTab, adminUsers, adminDeposits, adminWithdrawals, adminStocks, adminInvestments, adminNews, adminPromos, adminStats, adminSearch, adminLoading, adminEditUser, adminEditModal, adminEditStock, adminEditStockModal, adminEditInvestModal, adminEditInvest, adminEditNewsModal, adminEditNews, adminEditPromoModal, adminEditPromo
+  - Admin fetch functions (lines 1758-1804): fetchAdminStats, fetchAdminUsers, fetchAdminDeposits, fetchAdminWithdrawals, fetchAdminStocks, fetchAdminInvestments, fetchAdminNews, fetchAdminPromos, fetchAdminAll
+  - Admin useEffect for initialization (lines 1806-1816)
+  - Admin tab content block (lines 5848-6248): Header, sub-navigation, dashboard stats, users list, deposits list, withdrawals list, stocks list, investments list, news list, promos list
+  - Admin edit modals (lines 6251-6512): Edit User, Edit Stock, Edit Investment, Edit News, Edit Promo
+  - Admin entries in bottom nav (line 6524), desktop sidebar (line 6562), side menu (line 6626)
+- Removed all admin state variables from Dashboard component
+- Removed all admin fetch functions from Dashboard component
+- Removed admin useEffect initialization from Dashboard component
+- Removed the entire admin tab content block (ADMIN PANEL TAB section)
+- Removed all 5 admin edit modals (Edit User, Edit Stock, Edit Investment, Edit News, Edit Promo)
+- Removed admin entries from bottom navigation, desktop sidebar, and side menu
+- Created new standalone `AdminDashboard` component with:
+  - **Desktop**: Left sidebar (w-56) with dark navy background (#0a0f1a), logo, 8 nav items, User Mode switch button, Logout button
+  - **Mobile**: Top bar with logo + User Mode button + hamburger, horizontal tab bar below
+  - **Content area**: Dark background (#0f172a), scrollable, responsive padding
+  - 8 sub-sections: Dashboard, Users, Deposits, Withdrawals, Stocks, Investments, News, Promos
+  - Desktop: Table layouts for data; Mobile: Card layouts for data
+  - 5 edit modals with dark theme (bg-[#1e293b], border-[#334155])
+  - Pending count badges on Deposits/Withdrawals sidebar items
+  - Refresh button on Dashboard tab
+  - Quick action cards on Dashboard tab (Manage Deposits, Manage Withdrawals)
+  - Debounced search on Users tab
+  - Loading spinner on initial load
+- Added "Switch to User Mode" feature: `showUserMode` state flag that renders `<Dashboard />` component when toggled
+- Modified `Home` export component to route admin users to `AdminDashboard`:
+  ```
+  if (!isLoggedIn) return <LoginPage />
+  if (user?.role === 'admin') return <AdminDashboard />
+  return <Dashboard />
+  ```
+- Fixed ESLint `react-hooks/set-state-in-effect` errors:
+  - Replaced direct fetchAdminAll() call in useEffect with inline Promise.all pattern
+  - Used `adminInitialized` ref to prevent re-fetching
+  - Implemented debounced search with setTimeout pattern for user search
+  - Set `adminLoading` initial state to `true` instead of calling setAdminLoading(true) in effect
+- Lint passes clean
+- Dev server running without errors
+- All admin API endpoints responding correctly (verified via dev.log)
+
+Stage Summary:
+- Admin panel completely separated from user Dashboard into its own AdminDashboard component
+- Admin users are automatically routed to AdminDashboard via Home component
+- New admin layout: Left sidebar (desktop) / Top tabs (mobile) with dark navy theme (#0f172a, #1e293b, #0a0f1a)
+- 8 management sections with both table (desktop) and card (mobile) layouts
+- Switch to User Mode button lets admin preview user experience
+- All admin functionality preserved: user management, deposit/withdrawal approval, stock price control, investment product management, news/promo CRUD
+- Zero admin references remain in Dashboard component
+- File size: 8473 lines (from ~8045, net +428 lines for new component minus removals)
