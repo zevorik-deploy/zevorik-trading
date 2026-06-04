@@ -242,6 +242,11 @@ function LoginPage() {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      // If admin logs in on user page, redirect to admin dashboard
+      if (data.user?.role === 'admin') {
+        window.location.href = '/admin'
+        return
+      }
       login(data.user, data.token)
       toast({ title: isLogin ? 'Selamat Datang!' : 'Registrasi Berhasil!', description: `Halo, ${data.user.name}` })
     } catch (err: unknown) {
