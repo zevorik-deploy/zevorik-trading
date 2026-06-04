@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
       totalNews,
       activePromos,
       totalStocks,
+      activeTrades,
+      activeContracts,
+      recentDeposits,
+      recentWithdrawals,
+      recentUsers,
     ] = await Promise.all([
       db.user.count(),
       db.user.aggregate({ _sum: { balance: true } }),
@@ -36,6 +41,23 @@ export async function GET(request: NextRequest) {
       db.news.count(),
       db.promo.count({ where: { isActive: true } }),
       db.stock.count(),
+      db.predictionTrade.count({ where: { status: 'active' } }),
+      db.stockContract.count({ where: { status: 'active' } }),
+      db.deposit.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: { user: { select: { name: true, phone: true } } }
+      }),
+      db.withdrawal.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: { user: { select: { name: true, phone: true } } }
+      }),
+      db.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, name: true, phone: true, balance: true, createdAt: true }
+      }),
     ])
 
     const totalBalance = balanceAgg._sum.balance || 0
@@ -56,7 +78,12 @@ export async function GET(request: NextRequest) {
         totalNews,
         activePromos,
         totalStocks,
+        activeTrades,
+        activeContracts,
       },
+      recentDeposits,
+      recentWithdrawals,
+      recentUsers,
     })
   } catch (error) {
     console.error('Admin dashboard error:', error)
