@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         balance: user.balance,
         role: user.role,
+        accountType: user.accountType,
         avatar: user.avatar,
         referralCode: user.referralCode,
         kycStatus: user.kycStatus,

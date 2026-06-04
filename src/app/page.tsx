@@ -202,6 +202,7 @@ function LoginPage() {
   const [mathB, setMathB] = useState(Math.floor(Math.random() * 15) + 1)
   const [mathAnswer, setMathAnswer] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
+  const [accountType, setAccountType] = useState<'demo' | 'real'>('real')
   const login = useAuthStore((s) => s.login)
 
   const refreshMath = () => {
@@ -238,7 +239,7 @@ function LoginPage() {
     setLoading(true)
     try {
       const url = isLogin ? '/api/auth/login' : '/api/auth/register'
-      const body = isLogin ? { phone, password } : { name, phone, password, referralCode: refCode || undefined }
+      const body = isLogin ? { phone, password } : { name, phone, password, referralCode: refCode || undefined, accountType }
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -448,6 +449,51 @@ function LoginPage() {
           {/* Form Section */}
           <div className="p-4 flex-1 flex flex-col overflow-y-auto custom-scrollbar">
             <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
+              {/* Register: Account Type Selector */}
+              {!isLogin && (
+                <div>
+                  <label className="flex items-center gap-1.5 mb-2 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Shield className="w-3 h-3 text-[#3b82f6]" /> Tipe Akun
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setAccountType('real')}
+                      className={`relative h-[68px] rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${accountType === 'real' ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-md shadow-blue-500/10' : 'border-slate-200 bg-slate-50 hover:border-[#3b82f6]/30'}`}>
+                      {accountType === 'real' && <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#3b82f6] grid place-items-center"><CheckCircle className="w-3 h-3 text-white" /></div>}
+                      <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] grid place-items-center">
+                        <DollarSign className="w-4 h-4 text-white" />
+                      </div>
+                      <span className={`text-[9px] font-black ${accountType === 'real' ? 'text-[#3b82f6]' : 'text-slate-600'}`}>AKUN REAL</span>
+                      <span className="text-[7px] font-bold text-slate-400">Deposit & Withdraw</span>
+                    </button>
+                    <button type="button" onClick={() => setAccountType('demo')}
+                      className={`relative h-[68px] rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${accountType === 'demo' ? 'border-amber-500 bg-amber-500/10 shadow-md shadow-amber-500/10' : 'border-slate-200 bg-slate-50 hover:border-amber-500/30'}`}>
+                      {accountType === 'demo' && <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 grid place-items-center"><CheckCircle className="w-3 h-3 text-white" /></div>}
+                      <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 grid place-items-center">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <span className={`text-[9px] font-black ${accountType === 'demo' ? 'text-amber-600' : 'text-slate-600'}`}>AKUN DEMO</span>
+                      <span className="text-[7px] font-bold text-slate-400">Saldo Virtual</span>
+                    </button>
+                  </div>
+                  {accountType === 'demo' && (
+                    <div className="mt-2 rounded-xl p-2.5 bg-amber-50 border border-amber-200">
+                      <div className="flex items-start gap-1.5">
+                        <Info className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-[8px] font-bold text-amber-700 leading-relaxed">Akun demo mendapat saldo virtual Rp 100.000.000. Bisa request tambah saldo, namun <b>TIDAK BISA WITHDRAW</b>.</span>
+                      </div>
+                    </div>
+                  )}
+                  {accountType === 'real' && (
+                    <div className="mt-2 rounded-xl p-2.5 bg-blue-50 border border-blue-200">
+                      <div className="flex items-start gap-1.5">
+                        <Shield className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-[8px] font-bold text-blue-700 leading-relaxed">Akun real menggunakan uang asli. Deposit minimal Rp 100.000 via QRIS. Bisa withdraw kapan saja.</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Register: Username */}
               {!isLogin && (
                 <div>
@@ -585,17 +631,22 @@ function LoginPage() {
                 )}
               </p>
 
-              {/* Demo Account */}
-              <div className="rounded-2xl p-3 bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+              {/* Demo Account Quick Login */}
+              {isLogin && (
+              <div className="rounded-2xl p-3 bg-amber-50 border border-amber-200 flex items-center justify-between gap-2">
                 <div>
-                  <b className="block text-[10px] font-black text-[#1d4ed8]">Akun Demo</b>
-                  <span className="block mt-0.5 text-[8px] font-bold text-slate-500">+62 81234567890 / demo123</span>
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <b className="block text-[10px] font-black text-amber-600">Coba Akun Demo</b>
+                  </div>
+                  <span className="block mt-0.5 text-[8px] font-bold text-amber-400">+62 81234567890 / demo123</span>
                 </div>
                 <button type="button" onClick={() => { setPhone('081234567890'); setPassword('demo123'); setIsLogin(true); }}
-                  className="text-[8px] font-black text-white bg-[#3b82f6] px-3 py-1.5 rounded-lg hover:bg-[#1d4ed8] transition-colors">
+                  className="text-[8px] font-black text-white bg-amber-500 px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors">
                   Gunakan
                 </button>
               </div>
+              )}
             </form>
           </div>
         </div>
@@ -676,6 +727,11 @@ function Dashboard() {
   const [withdrawCryptoMethod, setWithdrawCryptoMethod] = useState('USDT_TRC20')
   const [withdrawAccountNumber, setWithdrawAccountNumber] = useState('')
   const [withdrawAccountHolder, setWithdrawAccountHolder] = useState('')
+
+  // ============ DEMO BALANCE REQUEST STATE ============
+  const [demoRequestAmount, setDemoRequestAmount] = useState('')
+  const [demoRequestLoading, setDemoRequestLoading] = useState(false)
+  const isDemo = user?.accountType === 'demo'
 
   const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
 
@@ -1844,6 +1900,7 @@ function Dashboard() {
   // ============ DEPOSIT ============
   const handleDeposit = async () => {
     if (!user || !depositAmount) return
+    if (user.accountType === 'demo') { toast({ title: 'Akun demo tidak dapat deposit', variant: 'destructive' }); return }
     const amount = parseFloat(depositAmount)
     if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
     setDepositLoading(true)
@@ -1860,6 +1917,7 @@ function Dashboard() {
   // ============ WITHDRAW ============
   const handleWithdraw = async () => {
     if (!user || !withdrawAmount) return
+    if (user.accountType === 'demo') { toast({ title: 'Akun demo tidak dapat withdraw', variant: 'destructive' }); return }
     const amount = parseFloat(withdrawAmount)
     const isKycVerified = user?.kycStatus === 'verified'
     const minWithdraw = isKycVerified ? 50000 : 250000
@@ -1882,6 +1940,24 @@ function Dashboard() {
       setWithdrawAmount(''); setWithdrawAccountNumber(''); setWithdrawAccountHolder(''); fetchPortfolio(); fetchWithdrawals()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setWithdrawLoading(false) }
+  }
+
+  // ============ DEMO BALANCE REQUEST ============
+  const handleDemoBalanceRequest = async () => {
+    if (!user || !demoRequestAmount) return
+    const amount = parseFloat(demoRequestAmount)
+    if (amount <= 0) { toast({ title: 'Masukkan jumlah saldo', variant: 'destructive' }); return }
+    if (amount > 1000000000) { toast({ title: 'Maksimal Rp 1.000.000.000 per request', variant: 'destructive' }); return }
+    setDemoRequestLoading(true)
+    try {
+      const res = await fetch('/api/demo/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount }) })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      updateBalance(data.newBalance)
+      toast({ title: 'Saldo Demo Ditambahkan! 🎮', description: `+${formatRupiah(amount)} saldo virtual telah ditambahkan` })
+      setDemoRequestAmount('')
+    } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
+    finally { setDemoRequestLoading(false) }
   }
 
   // ============ WATCHLIST ============
@@ -2433,7 +2509,15 @@ function Dashboard() {
                         <Wallet className="w-5 h-5 text-yellow-300" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-black tracking-wider block">RINGKASAN SALDO</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-black tracking-wider block">RINGKASAN SALDO</span>
+                          {isDemo && (
+                            <div className="h-4 px-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center gap-0.5">
+                              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+                              <span className="text-[6px] font-black text-amber-300">DEMO</span>
+                            </div>
+                          )}
+                        </div>
                         <span className="text-[7px] font-bold text-blue-300/70">Selamat datang, {user?.name?.split(' ')[0]}</span>
                       </div>
                     </div>
@@ -2444,11 +2528,20 @@ function Dashboard() {
 
                   {/* Main Balance */}
                   <div className="mb-4">
-                    <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">Total Saldo</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">{isDemo ? 'Saldo Virtual' : 'Total Saldo'}</span>
+                      {isDemo && (
+                        <div className="h-4 px-2 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+                          <span className="text-[7px] font-black text-amber-300 tracking-wide">DEMO</span>
+                        </div>
+                      )}
+                    </div>
                     <b className="block text-[24px] md:text-[28px] font-black tracking-tight">{showBalance ? formatRupiah((user?.balance || 0) + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
                   </div>
 
                   {/* Dual Wallets */}
+                  {!isDemo && (
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 mb-1.5">
@@ -2467,18 +2560,60 @@ function Dashboard() {
                       <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
+                  )}
+
+                  {/* Demo Balance Request (only for demo accounts) */}
+                  {isDemo && (
+                  <div className="rounded-xl p-3 bg-amber-400/10 border border-amber-400/20 backdrop-blur-sm mb-4">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span className="text-[9px] font-black text-amber-200 uppercase tracking-wider">Request Saldo Demo</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="number" value={demoRequestAmount} onChange={(e) => setDemoRequestAmount(e.target.value)} placeholder="Jumlah saldo"
+                        className="flex-1 h-9 rounded-xl bg-white/10 border border-white/15 px-3 text-[12px] font-semibold text-white outline-none focus:border-amber-400/50 placeholder:text-white/30" />
+                      <button onClick={handleDemoBalanceRequest} disabled={demoRequestLoading}
+                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 text-[9px] font-black hover:from-amber-300 hover:to-amber-400 transition-all disabled:opacity-60 flex items-center gap-1.5">
+                        {demoRequestLoading ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><Plus className="w-3.5 h-3.5" />Tambah</>}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
+                      {['10000000', '50000000', '100000000', '500000000'].map(a => (
+                        <button key={a} onClick={() => setDemoRequestAmount(a)} className="h-7 rounded-lg bg-white/8 border border-white/10 text-[7px] font-bold text-amber-200 hover:bg-amber-400/20 hover:border-amber-400/30 transition-all">
+                          {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-3 gap-2">
-                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
-                      <Plus className="w-3.5 h-3.5" />Deposit
-                    </button>
-                    <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                      <Minus className="w-3.5 h-3.5" />Tarik
-                    </button>
-                    <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                      <Briefcase className="w-3.5 h-3.5" />Investasi
-                    </button>
+                    {isDemo ? (
+                      <>
+                        <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-amber-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-amber-500/25 active:scale-[0.97]">
+                          <Sparkles className="w-3.5 h-3.5" />Saldo
+                        </button>
+                        <button disabled className="h-10 rounded-xl bg-white/5 border border-white/10 text-white/30 text-[9px] font-bold flex items-center justify-center gap-1 cursor-not-allowed">
+                          <Minus className="w-3.5 h-3.5" />Tarik
+                        </button>
+                        <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                          <Briefcase className="w-3.5 h-3.5" />Investasi
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
+                          <Plus className="w-3.5 h-3.5" />Deposit
+                        </button>
+                        <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                          <Minus className="w-3.5 h-3.5" />Tarik
+                        </button>
+                        <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                          <Briefcase className="w-3.5 h-3.5" />Investasi
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -4283,15 +4418,66 @@ function Dashboard() {
             <div className="max-w-lg mx-auto">
               {/* Finance Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
+                <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? (isDemo ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-900 shadow-md shadow-amber-500/20' : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20') : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+                  {isDemo ? <Sparkles className="w-3.5 h-3.5 inline mr-1" /> : <Plus className="w-3.5 h-3.5 inline mr-1" />}{isDemo ? 'Saldo Demo' : 'Deposit'}
                 </button>
+                {!isDemo && (
                 <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'withdraw' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
                 </button>
+                )}
               </div>
 
-              {financeTab === 'deposit' ? (
+              {/* Demo Account: Balance Request Instead of Deposit */}
+              {isDemo && financeTab === 'deposit' ? (
+                <>
+                  {/* Demo Balance Info */}
+                  <div className="rounded-2xl p-4 bg-gradient-to-br from-amber-500/10 to-amber-400/5 border border-amber-500/20 mb-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="w-5 h-5 text-amber-500" />
+                      <div>
+                        <span className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Akun Demo</span>
+                        <span className="block text-[8px] font-bold text-amber-500/70">Saldo virtual — tidak dapat ditarik</span>
+                      </div>
+                    </div>
+                    <b className="block text-2xl font-black text-amber-600 mb-1">{formatRupiah(user?.balance || 0)}</b>
+                    <span className="text-[8px] font-bold text-amber-500/50">Saldo saat ini</span>
+                  </div>
+
+                  {/* Demo Balance Request Form */}
+                  <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+                    <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Tambah Saldo Demo</label>
+                    <input type="number" value={demoRequestAmount} onChange={(e) => setDemoRequestAmount(e.target.value)} placeholder="Masukkan jumlah saldo"
+                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all mb-2" />
+                    <div className="grid grid-cols-4 gap-1.5 mb-4">
+                      {['10000000', '50000000', '100000000', '250000000', '500000000', '750000000', '1000000000'].map(a => (
+                        <button key={a} onClick={() => setDemoRequestAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-amber-500 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-400 hover:text-slate-900 hover:border-transparent transition-all">
+                          {parseFloat(a) >= 1e9 ? `${(parseFloat(a) / 1e9).toFixed(0)}M` : parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleDemoBalanceRequest} disabled={demoRequestLoading}
+                      className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-900">
+                      {demoRequestLoading ? (
+                        <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+                      ) : (
+                        <><Sparkles className="w-4 h-4" />Tambah Saldo Demo</>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Demo Notice */}
+                  <div className="rounded-xl p-3 bg-amber-500/5 border border-amber-500/10 mb-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[9px] font-bold text-amber-600 mb-0.5">Akun Demo</p>
+                        <p className="text-[8px] text-amber-500/70 leading-relaxed">Saldo demo adalah saldo virtual yang tidak memiliki nilai riil. Anda dapat menambah saldo demo kapan saja untuk belajar trading. Akun demo <b>TIDAK DAPAT melakukan withdraw</b>.</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : !isDemo && financeTab === 'deposit' ? (
                 <>
                   {depositStep === 'amount' ? (
                     <motion.div key="deposit-amount" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}>
@@ -5846,6 +6032,11 @@ function Dashboard() {
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2 mt-2">
+                    {isDemo && (
+                      <span className="h-5 px-2 rounded-full bg-amber-400/20 border border-amber-400/30 text-[7px] font-bold text-amber-300 flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />DEMO
+                      </span>
+                    )}
                     <span className="h-5 px-2 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[7px] font-bold text-yellow-300 flex items-center gap-1">
                       <Award className="w-2.5 h-2.5" />Gold VIP
                     </span>

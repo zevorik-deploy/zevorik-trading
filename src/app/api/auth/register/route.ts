@@ -14,7 +14,7 @@ function generateReferralCode(): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, phone, password, referralCode: inputReferralCode } = body
+    const { name, phone, password, referralCode: inputReferralCode, accountType } = body
 
     if (!name || !phone || !password) {
       return NextResponse.json(
@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const isDemo = accountType === 'demo'
+    const effectiveAccountType = isDemo ? 'demo' : 'real'
 
     const existingUser = await db.user.findUnique({ where: { phone } })
     if (existingUser) {
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     let referrerId: string | null = null
-    if (inputReferralCode) {
+    if (inputReferralCode && !isDemo) {
       const referrer = await db.user.findUnique({
         where: { referralCode: inputReferralCode },
       })
@@ -50,8 +53,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Give welcome bonus
-    const welcomeBonus = 25000
+    // Demo: 100M balance, no welcome bonus
+    // Real: 0 balance + welcome bonus of 25000
+    const welcomeBonus = isDemo ? 0 : 25000
+    const initialBalance = isDemo ? 100000000 : welcomeBonus
 
     const user = await db.user.create({
       data: {
@@ -59,8 +64,9 @@ export async function POST(request: NextRequest) {
         username: name.toLowerCase().replace(/\s+/g, '_'),
         phone,
         password: hashedPassword,
-        balance: 100000000 + welcomeBonus, // Default balance + welcome bonus
-        role: 'investor',
+        balance: initialBalance,
+        role: isDemo ? 'investor' : 'investor',
+        accountType: effectiveAccountType,
         referralCode,
         referredBy: referrerId,
         vipLevel: 'Bronze',
@@ -70,19 +76,21 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create welcome bonus
-    await db.bonus.create({
-      data: {
-        userId: user.id,
-        type: 'welcome_bonus',
-        amount: welcomeBonus,
-        description: 'Bonus selamat datang untuk member baru',
-        status: 'completed',
-      },
-    })
+    // Only give welcome bonus for real accounts
+    if (!isDemo) {
+      await db.bonus.create({
+        data: {
+          userId: user.id,
+          type: 'welcome_bonus',
+          amount: welcomeBonus,
+          description: 'Bonus selamat datang untuk member baru',
+          status: 'completed',
+        },
+      })
+    }
 
-    // Handle referral
-    if (referrerId) {
+    // Handle referral - only for real accounts (demo money isn't real)
+    if (referrerId && !isDemo) {
       const bonusAmount = 50000
       await db.referral.create({
         data: {
@@ -137,14 +145,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Welcome notification
-    await db.notification.create({
-      data: {
-        userId: user.id,
-        title: 'Selamat Datang! 🎉',
-        message: `Selamat datang di TrendEdge! Anda mendapat bonus selamat datang Rp ${welcomeBonus.toLocaleString('id-ID')}. Mulai investasi Anda sekarang!`,
-        type: 'system',
-      },
-    })
+    if (isDemo) {
+      await db.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Selamat Datang! 🎉',
+          message: `Selamat datang di TrendEdge! Ini adalah akun demo dengan saldo Rp 100.000.000. Coba fitur trading tanpa risiko!`,
+          type: 'system',
+        },
+      })
+    } else {
+      await db.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Selamat Datang! 🎉',
+          message: `Selamat datang di TrendEdge! Anda mendapat bonus selamat datang Rp ${welcomeBonus.toLocaleString('id-ID')}. Mulai investasi Anda sekarang!`,
+          type: 'system',
+        },
+      })
+    }
 
     const token = await generateToken({ userId: user.id, phone: user.phone })
 
@@ -157,6 +176,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         balance: user.balance,
         role: user.role,
+        accountType: user.accountType,
         avatar: user.avatar,
         referralCode: user.referralCode,
         kycStatus: user.kycStatus,

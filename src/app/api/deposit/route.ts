@@ -36,6 +36,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Block demo accounts from depositing
+    if (user.accountType === 'demo') {
+      return NextResponse.json(
+        { error: 'Akun demo tidak dapat melakukan deposit. Gunakan fitur request saldo demo.' },
+        { status: 403 }
+      )
+    }
+
     // Calculate deposit bonus
     const depositBonusThreshold = 1000000
     let bonusAmount = 0

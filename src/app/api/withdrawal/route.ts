@@ -28,6 +28,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Block demo accounts from withdrawing
+    if (user.accountType === 'demo') {
+      return NextResponse.json(
+        { error: 'Akun demo tidak dapat melakukan penarikan. Gunakan akun real untuk withdraw.' },
+        { status: 403 }
+      )
+    }
+
     // KYC-based minimum withdrawal
     const isKycVerified = user.kycStatus === 'verified'
     const minWithdraw = isKycVerified ? 50000 : 250000

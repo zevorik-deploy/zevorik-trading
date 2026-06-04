@@ -20,6 +20,7 @@ model User {
   referralCode    String   @unique
   referredBy      String?
   kycStatus       String   @default("pending") // pending, verified, rejected
+  accountType     String   @default("real") // "demo" or "real"
   vipLevel        String   @default("Bronze") // Bronze, Silver, Gold, Platinum, Diamond
   totalDeposit    Float    @default(0)
   totalTrading    Float    @default(0)

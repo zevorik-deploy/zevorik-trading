@@ -14,6 +14,7 @@ interface User {
   bankName?: string
   bankAccount?: string
   bankHolder?: string
+  accountType?: string  // 'demo' or 'real'
 }
 
 interface AuthState {
