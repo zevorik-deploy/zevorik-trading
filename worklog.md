@@ -162,3 +162,30 @@ Stage Summary:
 - Higher chart volatility (0.0020 vs 0.0012) for more dramatic candle movement
 - All UI elements show fee/working capital breakdown clearly
 - Browser verified: Fee 10% shows -Rp10,000, Modal Kerja shows Rp90,000, volume calculation correct
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Make balance display update in real-time following candle movement (saldo ikut alur batang)
+
+Work Log:
+- Added `liveBalance` computed value: baseBalance + totalWorkingCapital + totalLivePL
+- Updated home page main balance to show liveBalance (with P&L factored in) instead of static user.balance
+- Added LIVE badge (animated red pulse) when active positions exist on home page
+- Balance text color changes: green when P&L positive, red when P&L negative
+- Added P&L and Fee sub-text below main balance when positions are active
+- Updated Dompet Utama wallet to show liveBalance with LIVE indicator
+- Added "(ikut grafik)" label on Dompet Utama when positions are active
+- Changed Equity Summary title from "Ekuitas" to "Saldo Live" with ZAP icon
+- Saldo Live shows balance with color (green/red) based on P&L direction
+- Added "↑ Naik / ↓ Turun • ikut grafik" indicator in Saldo Live header
+- Fixed critical bug: moved liveBalance definition after getPositionLivePL (was referencing before definition)
+- Verified all elements render correctly via browser: SALDO LIVE, TERSEDIA, MODAL KERJA, FEE 10%, P&L LIVE
+
+Stage Summary:
+- Balance now "ikut alur batang" - follows the candle in real-time
+- When position goes against user, balance erodes visually and FAST
+- Home page balance + Sinyal tab Saldo Live both update in real-time
+- LIVE badge appears when positions are active
+- Balance color changes green/red based on P&L direction
+- Fee 10% and P&L shown separately for transparency

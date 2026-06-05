@@ -1541,6 +1541,21 @@ function Dashboard() {
     return Math.max(-wc, plAmount)
   }, [sinyalCurrentPrice])
 
+  // ============ LIVE BALANCE (includes active position P&L in real-time) ============
+  // This is the balance that "ikut alur batang" - follows the candle movement
+  // When position goes against user, this balance drops in real-time
+  const liveBalance = (() => {
+    const baseBalance = user?.balance || 0
+    const activePos = sinyalPositions.filter(p => p.status === 'active')
+    if (activePos.length === 0) return baseBalance
+    // Balance = base + sum of (working capital + live P&L) for each active position
+    // When position opens: balance -= full amount (including fee)
+    // Live view: balance + working capital + P&L (fee already gone, so net = base + WC + PL)
+    const totalWorkingCapital = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
+    const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
+    return baseBalance + totalWorkingCapital + totalLivePL
+  })()
+
   // Sinyal Pro live candlestick chart — initialize historical candles + real-time intrabar updates
   useEffect(() => {
     if (activeTab !== 'sinyal' || !selectedSinyalStock) return
@@ -2610,10 +2625,16 @@ function Dashboard() {
                     </button>
                   </div>
 
-                  {/* Main Balance */}
+                  {/* Main Balance — includes live P&L from active trading positions */}
                   <div className="mb-4">
                     <div className="flex items-center gap-2">
                       <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">{isDemo ? 'Saldo Virtual' : 'Total Saldo'}</span>
+                      {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+                        <div className="h-4 px-2 rounded-full bg-red-400/20 border border-red-400/30 flex items-center gap-1 animate-pulse">
+                          <Zap className="w-2.5 h-2.5 text-red-300" />
+                          <span className="text-[7px] font-black text-red-300 tracking-wide">LIVE</span>
+                        </div>
+                      )}
                       {isDemo && (
                         <div className="h-4 px-2 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center gap-1">
                           <Sparkles className="w-2.5 h-2.5 text-amber-300" />
@@ -2621,19 +2642,46 @@ function Dashboard() {
                         </div>
                       )}
                     </div>
-                    <b className="block text-[24px] md:text-[28px] font-black tracking-tight">{showBalance ? formatRupiah((user?.balance || 0) + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
+                    <b className={`block text-[24px] md:text-[28px] font-black tracking-tight transition-colors duration-300 ${
+                      sinyalPositions.filter(p => p.status === 'active').length > 0
+                        ? (() => {
+                            const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+                            return totalPL > 0 ? 'text-green-400' : totalPL < 0 ? 'text-red-400' : ''
+                          })()
+                        : ''
+                    }`}>{showBalance ? formatRupiah(liveBalance + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
+                    {sinyalPositions.filter(p => p.status === 'active').length > 0 && (() => {
+                      const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+                      const totalFee = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.fee || Math.round(p.amount * 0.1)), 0)
+                      return (
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className={`text-[8px] font-bold ${totalPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            P&L: {totalPL >= 0 ? '+' : ''}{formatRupiah(totalPL)}
+                          </span>
+                          <span className="text-[8px] font-bold text-red-400/60">
+                            Fee: -{formatRupiah(totalFee)}
+                          </span>
+                        </div>
+                      )
+                    })()}
                   </div>
 
-                  {/* Dual Wallets */}
+                  {/* Dual Wallets — Dompet Utama shows live balance */}
                   {!isDemo && (
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <div className="w-5 h-5 rounded-lg bg-yellow-400/20 grid place-items-center"><Wallet className="w-3 h-3 text-yellow-300" /></div>
                         <span className="text-[7px] font-black text-blue-200/80 uppercase tracking-wider">Dompet Utama</span>
+                        {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+                          <Zap className="w-2.5 h-2.5 text-red-400 animate-pulse" />
+                        )}
                       </div>
-                      <b className="block text-[14px] font-black">{showBalance ? formatRupiah(user?.balance || 0) : '••••••'}</b>
-                      <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Deposit & trading</span>
+                      <b className={`block text-[14px] font-black ${sinyalPositions.filter(p => p.status === 'active').length > 0 ? (() => {
+                        const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+                        return totalPL < 0 ? 'text-red-400' : totalPL > 0 ? 'text-green-400' : ''
+                      })() : ''}`}>{showBalance ? formatRupiah(liveBalance) : '••••••'}</b>
+                      <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Deposit & trading{sinyalPositions.filter(p => p.status === 'active').length > 0 ? ' (ikut grafik)' : ''}</span>
                     </div>
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 mb-1.5">
@@ -4393,15 +4441,35 @@ function Dashboard() {
                   </button>
                 </div>
 
-                {/* Equity Summary - Tuca style with fee transparency */}
+                {/* Equity Summary - saldo ikut alur batang (follows candle in real-time) */}
                 <div className="px-1">
                   <div className="rounded-xl border border-[var(--zv-border)] overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--zv-surface), var(--zv-panel))' }}>
                     <div className="px-3 py-2 border-b border-[var(--zv-border)]">
-                      <div className="flex items-center gap-1.5">
-                        <PieChart className="w-3.5 h-3.5 text-blue-400" />
-                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Ekuitas</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <PieChart className="w-3.5 h-3.5 text-blue-400" />
+                          <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Saldo Live</span>
+                          {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+                            <Zap className="w-3 h-3 text-red-400 animate-pulse" />
+                          )}
+                        </div>
+                        {(() => {
+                          const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+                          return totalPL !== 0 ? (
+                            <span className={`text-[8px] font-black ${totalPL > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {totalPL > 0 ? '↑ Naik' : '↓ Turun'} • ikut grafik
+                            </span>
+                          ) : null
+                        })()}
                       </div>
-                      <span className="text-[16px] font-black text-[var(--zv-text)]">{formatRupiah((user?.balance || 0) + sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)) + getPositionLivePL(p), 0))}</span>
+                      {(() => {
+                        const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+                        return (
+                          <b className={`block text-[18px] font-black transition-colors duration-300 ${totalPL > 0 ? 'text-green-400' : totalPL < 0 ? 'text-red-400' : 'text-[var(--zv-text)]'}`}>
+                            {formatRupiah(liveBalance)}
+                          </b>
+                        )
+                      })()}
                     </div>
                     <div className="grid grid-cols-4 divide-x divide-[var(--zv-border)]">
                       <div className="px-2 py-2 text-center">
