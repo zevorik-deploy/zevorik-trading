@@ -189,3 +189,26 @@ Stage Summary:
 - LIVE badge appears when positions are active
 - Balance color changes green/red based on P&L direction
 - Fee 10% and P&L shown separately for transparency
+---
+Task ID: 1
+Agent: Main
+Task: Fix MT5-style P&L system - remove rigged chart, make real trending, fix P&L calculation
+
+Work Log:
+- Removed rigged direction system that was manipulating chart at 70% candle duration (58% forced losses)
+- Removed `riggedDirection` and `riggedApplied` fields from chart simulation state
+- Replaced rigged chart movement with natural MT5-style trending (trend + momentum + noise)
+- Updated P&L formula to standard MT5 calculation: P&L = effectivePositionValue × (priceDiff / startPrice) × direction
+- effectivePositionValue = workingCapital × (leverage / 100) — gives ~1K-2K per tick for 100K investment
+- Applied same P&L formula to: getPositionLivePL(), closeSinyalPosition(), auto-resolve timer
+- Updated "Volume (Modal × Leverage)" label to "Posisi Efektif (MT5)" with correct effective position value
+- Added price change percentage display in position card ("Harga ↑ 0.32%")
+- Added P&L percentage display in position card ("+2.4%")
+- Updated confirmation modal with "Real MT5 trending" messaging
+- Browser verification confirmed: P&L updates in real-time following chart, JUAL profits when price drops, BELI profits when price rises
+
+Stage Summary:
+- Chart now moves naturally with real trending (no rigging)
+- P&L is proportional to actual price movement × direction × leverage
+- Balance follows candlestick movement in real-time (verified by browser test)
+- For 100K investment with 1:1000 leverage: ~9K per 1% price move

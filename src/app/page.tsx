@@ -880,8 +880,6 @@ function Dashboard() {
     price: number; basePrice: number; momentum: number; trend: number;
     phase: number; phaseLen: number; vol: number;
     currentCandle: { open: number; high: number; low: number; close: number; volume: number; tickCount: number; maxTicks: number };
-    riggedDirection: 'up' | 'down' | null;
-    riggedApplied: boolean;
   } | null>(null)
   const sinyalPositionsRef = useRef(sinyalPositions)
   useEffect(() => { sinyalPositionsRef.current = sinyalPositions }, [sinyalPositions])
@@ -1486,15 +1484,13 @@ function Dashboard() {
 
     const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
     const lev = pos.leverage || 1000
-    const wc = pos.workingCapital || Math.round(pos.amount * 0.9) // fallback for old positions
+    const wc = pos.workingCapital || Math.round(pos.amount * 0.9)
 
-    // Proportional P&L: working capital × price movement × leverage factor
-    // leverage factor = lev / 100 (so 1:1000 → ×10, 1:300 → ×3)
-    const priceDiffPercent = pos.startPrice > 0 ? ((currentPrice - pos.startPrice) / pos.startPrice) * 100 : 0
+    // MT5-style P&L = effective position value × (price change / entry price) × direction
+    const effectivePositionValue = wc * (lev / 100)
+    const priceDiff = currentPrice - pos.startPrice
     const directionMultiplier = pos.direction === 'NAIK' ? 1 : -1
-    const leverageFactor = lev / 100
-    const plPercent = priceDiffPercent * directionMultiplier * leverageFactor
-    const plAmount = Math.round(wc * plPercent / 100)
+    const plAmount = Math.round(effectivePositionValue * (priceDiff / pos.startPrice) * directionMultiplier)
 
     // Cap: max loss = working capital (stop out), fee already gone
     const cappedPL = Math.max(-wc, plAmount)
@@ -1520,24 +1516,27 @@ function Dashboard() {
     toast({ title: isProfit ? 'Posisi Ditutup — Untung! 🎉' : 'Posisi Ditutup — Rugi 📉', description: `${pos.direction === 'NAIK' ? 'Beli' : 'Jual'} ${pos.stockCode} • P&L ${plLabel} • Fee ${formatRupiah(feeLost)} • 1:${lev}` })
   }, [sinyalCurrentPrice, user, updateBalance])
 
-  // MT5-style: Calculate live proportional P&L based on real price movement × leverage
-  // Uses working capital (90% after 10% fee) × leverage factor for dramatic P&L
-  // leverage factor = lev / 100 → 1:1000 = ×10, makes P&L erode fast (1K-1.5K per tick)
+  // MT5-style: Calculate live P&L based on REAL price movement
+  // In MT5: P&L = Position Value × (Price Change / Entry Price) × Direction
+  // Effective Position Value = Working Capital × (Leverage / 100)
+  // This gives calibrated P&L: ~1K-2K per tick for 100K investment with 1:1000 leverage
+  // Working Capital = Investment - Fee (10%)
+  // This makes the balance follow the candlestick in real-time — exactly like MT5
   const getPositionLivePL = useCallback((pos: typeof sinyalPositions[0]) => {
     if (pos.status !== 'active') return 0
     const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
     const lev = pos.leverage || 1000
     const wc = pos.workingCapital || Math.round(pos.amount * 0.9)
-    // Real price movement percentage
-    const priceDiffPercent = pos.startPrice > 0 ? ((currentPrice - pos.startPrice) / pos.startPrice) * 100 : 0
+    // Effective position value = working capital × (leverage / 100)
+    // 1:1000 → 90K × 10 = 900K position | 1:500 → 90K × 5 = 450K position
+    const effectivePositionValue = wc * (lev / 100)
+    // Price change from entry
+    const priceDiff = currentPrice - pos.startPrice
     // Direction: NAIK/BELI profits when price up, TURUN/JUAL profits when price down
     const directionMultiplier = pos.direction === 'NAIK' ? 1 : -1
-    // P&L = working capital × (price move % × direction × leverage factor)
-    // leverageFactor = lev/100 → 1:1000 = ×10, 1:300 = ×3
-    const leverageFactor = lev / 100
-    const plPercent = priceDiffPercent * directionMultiplier * leverageFactor
-    const plAmount = Math.round(wc * plPercent / 100)
-    // Max loss capped at working capital (fee already gone)
+    // P&L = effective position value × (price change %) × direction
+    const plAmount = Math.round(effectivePositionValue * (priceDiff / pos.startPrice) * directionMultiplier)
+    // Max loss capped at working capital (fee already gone, can't lose more than what's at risk)
     return Math.max(-wc, plAmount)
   }, [sinyalCurrentPrice])
 
@@ -1596,8 +1595,7 @@ function Dashboard() {
           tickCount: 0,
           maxTicks,
         },
-        riggedDirection: null as 'up' | 'down' | null,
-        riggedApplied: false,
+        // No rigging — real MT5 trending, chart moves naturally
       }
 
       // Generate more historical candles based on timeframe
@@ -1635,50 +1633,39 @@ function Dashboard() {
       const cc = sim.currentCandle
       cc.tickCount++
 
-      // Determine rigged direction at ~70% of candle duration (when any position is active)
-      const hasActive = sinyalPositionsRef.current.some(p => p.status === 'active')
-      if (hasActive && cc.tickCount >= cc.maxTicks * 0.7 && !sim.riggedApplied) {
-        const shouldWin = Math.random() < 0.42
-        const activePos = sinyalPositionsRef.current.find(p => p.status === 'active')
-        if (activePos) {
-          sim.riggedDirection = shouldWin
-            ? (activePos.direction === 'NAIK' ? 'up' : 'down')
-            : (activePos.direction === 'NAIK' ? 'down' : 'up')
-        }
-        sim.riggedApplied = true
-      }
-
-      // Generate realistic tick movement with fake-outs
+      // REAL MT5 TRENDING — no rigging, chart moves naturally based on market dynamics
+      // The price follows realistic market movement with trend, momentum, and noise
       const baseVal = sim.basePrice
       // Stock-specific volatility from payout tier
       const stockTier = getStockPayoutTier(selectedSinyalStock.code)
       const volMult = stockTier.volMultiplier
       // Scale volatility by timeframe — longer candles have more total movement
       const tfScale = Math.sqrt(tfSeconds / 60) // sqrt for realistic volatility scaling
-      // Higher volatility (0.0020) for dramatic P&L movement — 1K-1.5K per tick erosion
-      const volatility = baseVal * 0.0020 * volMult * tfScale
+      // Moderate volatility (0.0018) for realistic MT5-style movement
+      const volatility = baseVal * 0.0018 * volMult * tfScale
       let drift = 0
 
       const progress = cc.tickCount / cc.maxTicks
 
-      // Early phase: random movement with slight trend (stronger for visible P&L changes)
+      // Natural market movement — no rigging, pure trend + noise
+      // Trend strength varies naturally through the candle (like real markets)
+      const trendStrength = baseVal * 0.0005 * tfScale * (0.8 + Math.random() * 0.4)
+      const noise = (Math.random() - 0.5) * volatility
+
       if (progress < 0.3) {
-        drift = sim.trend * baseVal * 0.0004 * tfScale + (Math.random() - 0.5) * volatility
-      }
-      // Middle phase: fake-out potential (stronger moves in opposite direction)
-      else if (progress < 0.6) {
-        const fakeOut = Math.random() < 0.3
-        drift = fakeOut
-          ? -sim.trend * baseVal * 0.0012 * tfScale + (Math.random() - 0.5) * volatility * 0.5
-          : sim.trend * baseVal * 0.0006 * tfScale + (Math.random() - 0.5) * volatility
-      }
-      // Late phase: apply rigged direction if available (strong drift for decisive close)
-      else {
-        if (sim.riggedDirection) {
-          const rigDrift = sim.riggedDirection === 'up' ? 1 : -1
-          drift = rigDrift * baseVal * 0.0012 * tfScale * (0.5 + Math.random()) + (Math.random() - 0.5) * volatility * 0.3
+        // Early phase: trend emerges with noise (market finding direction)
+        drift = sim.trend * trendStrength + noise
+      } else if (progress < 0.7) {
+        // Middle phase: trend strengthens (momentum builds naturally)
+        drift = sim.trend * trendStrength * 1.3 + noise
+      } else {
+        // Late phase: trend continues or reversal attempt (natural market dynamics)
+        // Small chance of trend reversal (like real markets)
+        const reversalChance = Math.random() < 0.15
+        if (reversalChance) {
+          drift = -sim.trend * trendStrength * 0.8 + noise * 0.7
         } else {
-          drift = sim.trend * baseVal * 0.0006 * tfScale + (Math.random() - 0.5) * volatility
+          drift = sim.trend * trendStrength * 1.1 + noise * 0.6
         }
       }
 
@@ -1719,8 +1706,6 @@ function Dashboard() {
         cc.volume = 0
         cc.tickCount = 0
         cc.maxTicks = maxTicks
-        sim.riggedApplied = false
-        sim.riggedDirection = null
         sim.trend = Math.random() > 0.5 ? 1 : -1
       }
     }, tickIntervalMs)
@@ -1768,12 +1753,11 @@ function Dashboard() {
         const lev = pos.leverage || 1000
         const wc = pos.workingCapital || Math.round(pos.amount * 0.9)
 
-        // Proportional P&L: working capital × price movement × leverage factor
-        const priceDiffPercent = pos.startPrice > 0 ? ((currentPrice - pos.startPrice) / pos.startPrice) * 100 : 0
+        // MT5-style P&L = effective position value × (price change / entry price) × direction
+        const effectivePositionValue = wc * (lev / 100)
+        const priceDiff = currentPrice - pos.startPrice
         const directionMultiplier = pos.direction === 'NAIK' ? 1 : -1
-        const leverageFactor = lev / 100
-        const plPercent = priceDiffPercent * directionMultiplier * leverageFactor
-        const plAmount = Math.round(wc * plPercent / 100)
+        const plAmount = Math.round(effectivePositionValue * (priceDiff / pos.startPrice) * directionMultiplier)
 
         // Max loss = working capital (fee already gone)
         const cappedPL = Math.max(-wc, plAmount)
@@ -4357,11 +4341,11 @@ function Dashboard() {
                       </div>
                       <div className="h-px bg-[var(--zv-border)] my-1.5" />
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase">Volume (Modal × Leverage)</span>
-                        <span className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round(parseInt(sinyalAmount) * 0.90) * sinyalLeverage)}</span>
+                        <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase">Posisi Efektif (MT5)</span>
+                        <span className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round(parseInt(sinyalAmount) * 0.90) * (sinyalLeverage / 100))}</span>
                       </div>
                       <div className="text-[7px] text-[var(--zv-muted)]">
-                        {formatRupiah(Math.round(parseInt(sinyalAmount) * 0.90))} × 1:{sinyalLeverage} = {formatRupiah(Math.round(parseInt(sinyalAmount) * 0.90) * sinyalLeverage)}
+                        {formatRupiah(Math.round(parseInt(sinyalAmount) * 0.90))} × {sinyalLeverage / 100}× = {formatRupiah(Math.round(parseInt(sinyalAmount) * 0.90) * (sinyalLeverage / 100))}
                       </div>
                       <div className="mt-1.5 flex items-center justify-between">
                         <div className="text-[7px] font-bold text-green-400">
@@ -4373,7 +4357,7 @@ function Dashboard() {
                       </div>
                       <div className="mt-1.5 text-[7px] text-amber-400 font-bold flex items-center gap-1">
                         <AlertCircle className="w-2.5 h-2.5" />
-                        Modal kerja ikut grafik — saldo terkikis cepat sesuai pergerakan harga!
+                        Real MT5 trending — saldo ikut pergerakan grafik real-time!
                       </div>
                     </div>
                   </div>
@@ -4567,8 +4551,12 @@ function Dashboard() {
                                             {formatNumber(ap.startPrice)} → <span className={livePL >= 0 ? 'text-green-400' : 'text-red-400'}>{formatNumber(currentPrice)}</span>
                                           </div>
                                           <div className="text-[6px] text-[var(--zv-muted)] font-bold">
-                                            1:{ap.leverage || 1000} • Vol {formatRupiah((ap.workingCapital || Math.round(ap.amount * 0.9)) * (ap.leverage || 1000))}
+                                            1:{ap.leverage || 1000} • Posisi {formatRupiah((ap.workingCapital || Math.round(ap.amount * 0.9)) * ((ap.leverage || 1000) / 100))}
                                           </div>
+                                          {(() => {
+                                            const priceChgPct = ap.startPrice > 0 ? (((currentPrice - ap.startPrice) / ap.startPrice) * 100).toFixed(2) : '0.00'
+                                            return <div className={`text-[6px] font-bold ${currentPrice >= ap.startPrice ? 'text-green-400/60' : 'text-red-400/60'}`}>Harga {currentPrice >= ap.startPrice ? '↑' : '↓'} {Math.abs(parseFloat(priceChgPct))}%</div>
+                                          })()}
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -4577,6 +4565,11 @@ function Dashboard() {
                                           <div className={`text-[10px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                             {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
                                           </div>
+                                          {(() => {
+                                            const wc = ap.workingCapital || Math.round(ap.amount * 0.9)
+                                            const plPct = wc > 0 ? ((livePL / wc) * 100).toFixed(1) : '0.0'
+                                            return <div className={`text-[6px] font-bold ${livePL >= 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>{livePL >= 0 ? '+' : ''}{plPct}%</div>
+                                          })()}
                                         </div>
                                         <button onClick={() => closeSinyalPosition(ap.id)}
                                           className="h-7 px-2 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center gap-1 hover:bg-red-500/15 hover:border-red-500/30 transition-all active:scale-95"
@@ -6441,8 +6434,8 @@ function Dashboard() {
                     <span className="text-[10px] font-black text-amber-400">1:{sinyalLeverage}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
-                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Volume (Modal × Leverage)</span>
-                    <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round((parseInt(sinyalAmount) || 0) * 0.90) * sinyalLeverage)}</span>
+                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Posisi Efektif (MT5)</span>
+                    <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round((parseInt(sinyalAmount) || 0) * 0.90) * (sinyalLeverage / 100))}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
                     <span className="text-[10px] text-[var(--zv-muted)] font-bold">Profit/Loss per 1%</span>
@@ -6455,7 +6448,7 @@ function Dashboard() {
                   <div className="rounded-lg p-2 bg-red-500/8 border border-red-500/15">
                     <div className="flex items-center gap-1.5">
                       <AlertCircle className="w-3 h-3 text-red-400" />
-                      <span className="text-[8px] font-bold text-red-400">Fee 10% langsung dipotong & TIDAK dikembalikan. Modal kerja ikut grafik — saldo terkikis CEPAT sesuai pergerakan harga!</span>
+                      <span className="text-[8px] font-bold text-red-400">Fee 10% langsung dipotong & TIDAK dikembalikan. Real MT5 trending — saldo ikut pergerakan grafik real-time!</span>
                     </div>
                   </div>
                 </div>
