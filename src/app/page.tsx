@@ -884,6 +884,11 @@ function Dashboard() {
   const sinyalPositionsRef = useRef(sinyalPositions)
   useEffect(() => { sinyalPositionsRef.current = sinyalPositions }, [sinyalPositions])
 
+  // Track cumulative P&L offset from closed trades (client-side trades aren't on server)
+  // When a trade closes, the net P&L (returnAmount - original investment) is added here
+  // This offset is applied on top of the server balance so portfolio fetch doesn't overwrite
+  const tradingPLOffsetRef = useRef(0)
+
   // Auto-select first stock when entering sinyal tab
   useEffect(() => {
     if (activeTab === 'sinyal' && !selectedSinyalStock && stocks.length > 0) {
@@ -1508,6 +1513,11 @@ function Dashboard() {
     }])
     setTimeout(() => setSinyalResults(prev => prev.filter(r => r.id !== posId)), 1200)
 
+    // Track the net P&L offset (returnAmount - original amount deducted)
+    // This ensures portfolio fetch doesn't overwrite the trade result
+    // Net P&L = returnAmount - pos.amount (e.g., returned 27K from 100K invested = -73K)
+    tradingPLOffsetRef.current += (returnAmount - pos.amount)
+
     // Return working capital + P&L to balance
     updateBalance((user?.balance || 0) + returnAmount)
 
@@ -1540,19 +1550,34 @@ function Dashboard() {
     return Math.max(-wc, plAmount)
   }, [sinyalCurrentPrice])
 
-  // ============ LIVE BALANCE (includes active position P&L in real-time) ============
-  // This is the balance that "ikut alur batang" - follows the candle movement
-  // When position goes against user, this balance drops in real-time
+  // ============ LIVE BALANCE (MT5 Equity) ============
+  // In MT5: Equity = Balance + Unrealized P&L
+  // This is the "saldo ikut alur batang" — follows the candle in real-time
+  // When position goes against you, your equity drops tick by tick
   const liveBalance = (() => {
     const baseBalance = user?.balance || 0
     const activePos = sinyalPositions.filter(p => p.status === 'active')
     if (activePos.length === 0) return baseBalance
-    // Balance = base + sum of (working capital + live P&L) for each active position
-    // When position opens: balance -= full amount (including fee)
-    // Live view: balance + working capital + P&L (fee already gone, so net = base + WC + PL)
+    // MT5 Equity = balance + unrealized P&L
+    // balance already had full amount deducted when position opened
+    // We add back working capital + P&L to show live equity
     const totalWorkingCapital = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
     const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
     return baseBalance + totalWorkingCapital + totalLivePL
+  })()
+
+  // ============ LIVE MODAL (MT5 Margin) ============
+  // This is the working capital that FOLLOWS THE CHART in real-time
+  // Modal Live = Working Capital + P&L
+  // When you open 100K: Modal = 90K
+  // If chart goes against you: Modal drops to 85K, 80K, 70K... until stop out
+  // If chart goes in your favor: Modal rises to 95K, 100K, 110K...
+  const liveModal = (() => {
+    const activePos = sinyalPositions.filter(p => p.status === 'active')
+    if (activePos.length === 0) return 0
+    const totalWorkingCapital = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
+    const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
+    return totalWorkingCapital + totalLivePL
   })()
 
   // Sinyal Pro live candlestick chart — initialize historical candles + real-time intrabar updates
@@ -1731,10 +1756,12 @@ function Dashboard() {
         const remaining = pos.duration - elapsed
         newTimers[pos.id] = remaining
 
-        // Check stop-out: if live loss >= 90% of working capital, auto close (margin call)
+        // MT5 Stop-Out: if Modal Live drops to 5% or less of working capital, auto close (margin call)
+        // This prevents Modal Live from showing 0 — position gets force-closed before total wipeout
         const livePL = getPositionLivePL(pos)
         const wc = pos.workingCapital || Math.round(pos.amount * 0.9)
-        if (livePL <= -(wc * 0.9)) {
+        const modalLive = wc + livePL
+        if (modalLive <= wc * 0.05) {
           toStopOut.push(pos.id)
         } else if (remaining <= 0) {
           toResolve.push(pos.id)
@@ -1781,6 +1808,9 @@ function Dashboard() {
         }])
         setTimeout(() => setSinyalResults(prev => prev.filter(r => r.id !== posId)), 1200)
 
+        // Track the net P&L offset so portfolio fetch doesn't overwrite the trade result
+        tradingPLOffsetRef.current += (returnAmount - pos.amount)
+
         // Return working capital + P&L to balance (fee already deducted)
         updateBalance((user?.balance || 0) + returnAmount)
 
@@ -1801,7 +1831,7 @@ function Dashboard() {
   }, [])
   const fetchPortfolio = useCallback(async () => {
     if (!user) return
-    try { const r = await fetch(`/api/portfolio?userId=${user.id}`); const d = await r.json(); if (d.portfolio) { setPortfolio(d.portfolio); setPortfolioSummary(d.summary); updateBalance(d.summary.cashBalance) } } catch {}
+    try { const r = await fetch(`/api/portfolio?userId=${user.id}`); const d = await r.json(); if (d.portfolio) { setPortfolio(d.portfolio); setPortfolioSummary(d.summary); /* Apply trading P&L offset + active trade deductions on top of server balance Server doesn't know about client-side trades, so we must adjust: - tradingPLOffsetRef: cumulative net P&L from closed trades - activeTradeDeductions: total amount locked in active positions (already deducted locally) */ const activeTradeDeductions = sinyalPositionsRef.current.filter(p => p.status === 'active').reduce((sum, p) => sum + p.amount, 0); const adjustedBalance = d.summary.cashBalance + tradingPLOffsetRef.current - activeTradeDeductions; updateBalance(adjustedBalance) } } catch {}
   }, [user, updateBalance])
   const fetchTransactions = useCallback(async () => {
     if (!user) return
@@ -3928,9 +3958,9 @@ function Dashboard() {
                               <div className="text-[6px] text-[var(--zv-muted)]">
                                 {formatNumber(ap.startPrice)} → <span className="text-[var(--zv-text)] font-bold">{formatNumber(currentPrice)}</span>
                               </div>
-                              {/* Live P&L */}
+                              {/* Modal Live - ikut grafik */}
                               <div className={`text-[9px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
+                                Modal: {formatRupiah((ap.workingCapital || Math.round(ap.amount * 0.9)) + livePL)}
                               </div>
                             </div>
                             {/* Close button */}
@@ -4425,7 +4455,7 @@ function Dashboard() {
                   </button>
                 </div>
 
-                {/* Equity Summary - saldo ikut alur batang (follows candle in real-time) */}
+                {/* Equity Summary - MT5 Style: Modal Kerja ikut grafik real-time */}
                 <div className="px-1">
                   <div className="rounded-xl border border-[var(--zv-border)] overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--zv-surface), var(--zv-panel))' }}>
                     <div className="px-3 py-2 border-b border-[var(--zv-border)]">
@@ -4455,25 +4485,32 @@ function Dashboard() {
                         )
                       })()}
                     </div>
-                    <div className="grid grid-cols-4 divide-x divide-[var(--zv-border)]">
+                    <div className="grid grid-cols-3 divide-x divide-[var(--zv-border)]">
                       <div className="px-2 py-2 text-center">
                         <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Tersedia</div>
                         <div className="text-[9px] font-black text-[var(--zv-text)]">{formatRupiah(user?.balance || 0)}</div>
                       </div>
                       <div className="px-2 py-2 text-center">
-                        <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Modal Kerja</div>
-                        <div className="text-[9px] font-black text-amber-400">{formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0))}</div>
+                        <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Modal Live</div>
+                        {(() => {
+                          const totalWC = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
+                          const modalColor = liveModal > 0 ? (liveModal >= totalWC ? 'text-green-400' : 'text-red-400') : 'text-amber-400'
+                          const modalPct = totalWC > 0 ? Math.max(0, Math.min(200, (liveModal / totalWC) * 100)) : 0
+                          return (
+                            <>
+                              <div className={`text-[9px] font-black ${modalColor}`}>{formatRupiah(liveModal)}</div>
+                              {totalWC > 0 && (
+                                <div className="w-full h-0.5 rounded-full bg-[var(--zv-border)]/30 mt-0.5">
+                                  <div className={`h-full rounded-full transition-all duration-500 ${liveModal >= totalWC ? 'bg-green-500' : liveModal >= totalWC * 0.5 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${Math.min(100, modalPct)}%` }} />
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                       <div className="px-2 py-2 text-center">
                         <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Fee 10%</div>
                         <div className="text-[9px] font-black text-red-400">{formatRupiah(sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.fee || Math.round(p.amount * 0.1)), 0))}</div>
-                      </div>
-                      <div className="px-2 py-2 text-center">
-                        <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">P&L Live</div>
-                        {(() => {
-                          const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
-                          return <div className={`text-[9px] font-black ${totalPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>{totalPL >= 0 ? '+' : ''}{formatRupiah(totalPL)}</div>
-                        })()}
                       </div>
                     </div>
                   </div>
@@ -4536,22 +4573,38 @@ function Dashboard() {
                                         <span className="text-[9px] font-black text-[var(--zv-text)] tabular-nums">{timerLabel}</span>
                                       </div>
                                     </div>
-                                    {/* Row 2: Amount, Fee, Working Capital, Entry → Current, Live P&L */}
+                                    {/* Row 2: Investment, Modal Live (ikut grafik), Entry → Current */}
                                     <div className="flex items-center justify-between mt-1">
                                       <div className="flex items-center gap-3">
                                         <div>
                                           <div className="text-[6px] text-[var(--zv-muted)] font-bold uppercase">Investasi</div>
                                           <div className="text-[9px] font-black text-[var(--zv-text)]">{formatRupiah(ap.amount)}</div>
                                           <div className="text-[6px] text-red-400 font-bold">Fee: {formatRupiah(ap.fee || Math.round(ap.amount * 0.1))}</div>
-                                          <div className="text-[6px] text-amber-400 font-bold">Modal: {formatRupiah(ap.workingCapital || Math.round(ap.amount * 0.9))}</div>
+                                        </div>
+                                        <div>
+                                          <div className="text-[6px] text-[var(--zv-muted)] font-bold uppercase">Modal Live <span className="text-amber-400">(ikut grafik)</span></div>
+                                          {(() => {
+                                            const wc = ap.workingCapital || Math.round(ap.amount * 0.9)
+                                            const modalLive = wc + livePL
+                                            const modalPct = Math.max(0, Math.min(200, (modalLive / wc) * 100))
+                                            return (
+                                              <>
+                                                <div className={`text-[10px] font-black ${modalLive >= wc ? 'text-green-400' : 'text-red-400'}`}>{formatRupiah(modalLive)}</div>
+                                                {/* Modal erosion bar — shows how much of working capital is left */}
+                                                <div className="w-full h-1 rounded-full bg-[var(--zv-border)]/30 mt-0.5">
+                                                  <div className={`h-full rounded-full transition-all duration-500 ${modalLive >= wc ? 'bg-green-500' : modalLive >= wc * 0.5 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${Math.min(100, modalPct)}%` }} />
+                                                </div>
+                                                <div className="text-[6px] text-[var(--zv-muted)] font-bold">
+                                                  1:{ap.leverage || 1000} • {(() => { const p = livePL >= 0 ? '+' : ''; return `${p}${formatRupiah(livePL)}` })()}
+                                                </div>
+                                              </>
+                                            )
+                                          })()}
                                         </div>
                                         <div>
                                           <div className="text-[6px] text-[var(--zv-muted)] font-bold uppercase">Entry → Sekarang</div>
                                           <div className="text-[8px] font-bold text-[var(--zv-text)]">
                                             {formatNumber(ap.startPrice)} → <span className={livePL >= 0 ? 'text-green-400' : 'text-red-400'}>{formatNumber(currentPrice)}</span>
-                                          </div>
-                                          <div className="text-[6px] text-[var(--zv-muted)] font-bold">
-                                            1:{ap.leverage || 1000} • Posisi {formatRupiah((ap.workingCapital || Math.round(ap.amount * 0.9)) * ((ap.leverage || 1000) / 100))}
                                           </div>
                                           {(() => {
                                             const priceChgPct = ap.startPrice > 0 ? (((currentPrice - ap.startPrice) / ap.startPrice) * 100).toFixed(2) : '0.00'
@@ -4561,22 +4614,13 @@ function Dashboard() {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <div className="text-right">
-                                          <div className="text-[6px] text-[var(--zv-muted)] font-bold uppercase">P&L Live</div>
-                                          <div className={`text-[10px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
-                                          </div>
-                                          {(() => {
-                                            const wc = ap.workingCapital || Math.round(ap.amount * 0.9)
-                                            const plPct = wc > 0 ? ((livePL / wc) * 100).toFixed(1) : '0.0'
-                                            return <div className={`text-[6px] font-bold ${livePL >= 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>{livePL >= 0 ? '+' : ''}{plPct}%</div>
-                                          })()}
+                                          <button onClick={() => closeSinyalPosition(ap.id)}
+                                            className="h-7 px-2 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center gap-1 hover:bg-red-500/15 hover:border-red-500/30 transition-all active:scale-95"
+                                            title="Tutup posisi">
+                                            <X className="w-3 h-3 text-[var(--zv-muted)]" />
+                                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">TUTUP</span>
+                                          </button>
                                         </div>
-                                        <button onClick={() => closeSinyalPosition(ap.id)}
-                                          className="h-7 px-2 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center gap-1 hover:bg-red-500/15 hover:border-red-500/30 transition-all active:scale-95"
-                                          title="Tutup posisi">
-                                          <X className="w-3 h-3 text-[var(--zv-muted)]" />
-                                          <span className="text-[7px] font-bold text-[var(--zv-muted)]">TUTUP</span>
-                                        </button>
                                       </div>
                                     </div>
                                   </div>
@@ -6434,7 +6478,7 @@ function Dashboard() {
                     <span className="text-[10px] font-black text-amber-400">1:{sinyalLeverage}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
-                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Posisi Efektif (MT5)</span>
+                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Posisi Efektif</span>
                     <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round((parseInt(sinyalAmount) || 0) * 0.90) * (sinyalLeverage / 100))}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">

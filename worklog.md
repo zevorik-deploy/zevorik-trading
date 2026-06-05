@@ -212,3 +212,26 @@ Stage Summary:
 - P&L is proportional to actual price movement × direction × leverage
 - Balance follows candlestick movement in real-time (verified by browser test)
 - For 100K investment with 1:1000 leverage: ~9K per 1% price move
+---
+Task ID: 2
+Agent: Main
+Task: Fix MT5-style Modal Live system - balance deduction, P&L tracking, stop-out
+
+Work Log:
+- Changed "Modal Kerja" from static display to dynamic "Modal Live" that follows the chart in real-time
+- Modal Live = Working Capital + P&L (starts at 90K, goes up/down with chart)
+- Added Modal Live erosion bar visualization (green/amber/red progress bar)
+- Fixed critical bug: balance was overwritten by server fetchPortfolio during active trades
+- Added tradingPLOffsetRef to track cumulative P&L from closed trades
+- Updated fetchPortfolio to apply: serverBalance + closedPLOffset - activeTradeDeductions
+- Fixed stop-out: triggers when Modal Live drops to 5% of working capital (prevents Modal = 0)
+- Removed P&L Live column from equity summary (replaced by dynamic Modal Live)
+- Updated chart overlay to show "Modal: RpXX" instead of raw P&L
+- Simplified position card: shows Modal Live (ikut grafik) as the main number
+
+Stage Summary:
+- Tersedia correctly deducted by 100K during active trade ✅
+- Modal Live changes in real-time following the chart ✅
+- After trade closes, balance reflects actual P&L result ✅
+- Stop-out triggers at 5% remaining working capital ✅
+- Math verified: 100M - 100K + 34K return = 99,934,079 ✅
