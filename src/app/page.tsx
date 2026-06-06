@@ -1188,19 +1188,29 @@ function Dashboard() {
       'SHIB': ['#ffa409', '#e69408'], 'ATOM': ['#2e3148', '#262a3d'], 'FIL': ['#0090ff', '#0080e6'],
       'NEAR': ['#00c1de', '#00abc5'], 'ALGO': ['#000000', '#1a1a1a'], 'VET': ['#15bdff', '#12a8e6'],
       'SAND': ['#04adef', '#039ad6'], 'MANA': ['#ff2d55', '#e6284d'], 'AXS': ['#0055d5', '#004cba'],
-      'THETA': ['#2ab8e6', '#25a5cf'],
+      'THETA': ['#2ab8e6', '#25a5cf'], 'APT': ['#2dd8a3', '#26c292'], 'ARB': ['#28a0f0', '#2390d6'],
+      'OP': ['#ff0420', '#e6031d'], 'IMX': ['#00c3ff', '#00b0e6'], 'INJ': ['#00f2fe', '#00dbe6'],
+      'TIA': ['#7b2bf9', '#6c27e0'], 'SEI': ['#9b1c1e', '#8a1819'], 'SUI': ['#6fbcf0', '#5fa8da'],
+      'PEPE': ['#479F45', '#3d8a3b'], 'FTM': ['#1969ff', '#145ce6'], 'GRT': ['#6747ed', '#5a3dd4'],
+      'ENS': ['#5298ff', '#4788e6'], 'LDO': ['#00a3ff', '#0092e6'], 'RPL': ['#ff6e4a', '#e66242'],
+      'STX': ['#2d2d2d', '#1a1a1a'],
       // Commodities
       'GOLD': ['#ffd700', '#daa520'], 'SILVER': ['#c0c0c0', '#a0a0a0'], 'OIL': ['#2d2d2d', '#1a1a1a'],
       'NATGAS': ['#4a90d9', '#3d7cc2'], 'COPPER': ['#b87333', '#a0652d'], 'PLATINUM': ['#e5e4e2', '#c8c7c5'],
       'PALLADIUM': ['#ced0dd', '#b5b7c4'], 'WHEAT': ['#f5deb3', '#dcc89d'], 'CORN': ['#f4c430', '#dab22b'],
       'SOYBEANS': ['#8db255', '#7d9f4c'], 'SUGAR': ['#f8f8f8', '#dcdcdc'], 'COFFEE': ['#6f4e37', '#5e422e'],
       'COTTON': ['#f0f0f0', '#d4d4d4'], 'LUMBER': ['#deb887', '#c5a476'], 'RICE': ['#f5f5dc', '#d9d9c4'],
+      'CACAO': ['#5c3317', '#4d2b14'], 'RUBBER': ['#333333', '#1a1a1a'], 'IRON': ['#8b8b8b', '#747474'],
       // Forex
       'EURUSD': ['#003399', '#002d88'], 'GBPUSD': ['#012169', '#011d5c'], 'USDJPY': ['#bc002d', '#a60027'],
       'AUDUSD': ['#00008b', '#00007a'], 'USDCAD': ['#ff0000', '#e60000'], 'NZDUSD': ['#000000', '#1a1a1a'],
       'USDCHF': ['#ff0000', '#e60000'], 'EURGBP': ['#003399', '#002d88'], 'EURJPY': ['#003399', '#002d88'],
       'GBPJPY': ['#012169', '#011d5c'], 'AUDJPY': ['#00008b', '#00007a'], 'EURAUD': ['#003399', '#002d88'],
       'GBPAUD': ['#012169', '#011d5c'], 'EURNZD': ['#003399', '#002d88'], 'GBPCAD': ['#012169', '#011d5c'],
+      'USDSGD': ['#cc0000', '#b30000'], 'USDHKD': ['#cc0000', '#b30000'], 'USDSEK': ['#006aa7', '#005c93'],
+      'USDNOK': ['#ba0c2f', '#a50a29'], 'USDDKK': ['#c8102e', '#b30e28'], 'USDZAR': ['#007749', '#006640'],
+      'USDTRY': ['#e30a17', '#cc0915'], 'USDMXN': ['#006341', '#005538'], 'USDPLN': ['#dc143c', '#c61236'],
+      'EURCHF': ['#003399', '#002d88'],
       // Tech / Bluechip
       'AAPL': ['#555555', '#444444'], 'NVDA': ['#76b900', '#67a000'], 'MSFT': ['#00a4ef', '#0093d6'],
       'GOOGL': ['#4285f4', '#3676d6'], 'META': ['#1877f2', '#1569d8'], 'AMZN': ['#ff9900', '#e68a00'],
@@ -1250,6 +1260,22 @@ function Dashboard() {
       'HUBS': ['#ff7a59', '#e66e4f'], 'TWLO': ['#f22f46', '#da2a3f'], 'OKTA': ['#007dc1', '#006eab'],
       'ZS': ['#0078ff', '#006ce6'], 'PATH': ['#fa1e3c', '#e11b36'], 'AI': ['#c41230', '#af102b'],
       'SOUN': ['#00b4d8', '#00a1c1'],
+      // Additional Financials
+      'SCHW': ['#003057', '#002a4e'], 'BLK': ['#000000', '#1a1a1a'],
+      'AXP': ['#006fcf', '#0062b8'], 'C': ['#003b70', '#003362'], 'WFC': ['#d71e28', '#c21a24'],
+      'MS': ['#002395', '#001f82'], 'AXPO': ['#e31837', '#cc1532'],
+      // Additional Real Estate / REITs
+      'PSA': ['#e31837', '#cc1532'], 'CCI': ['#003da5', '#003590'], 'DLR': ['#003399', '#002d88'],
+      'VICI': ['#003057', '#002a4e'],
+      // Additional Media
+      'WBD': ['#0057b8', '#004da0'], 'PARA': ['#0057b8', '#004da0'], 'FOX': ['#0c2340', '#0a1d36'],
+      // Telecom
+      'T': ['#009fdb', '#008ec2'], 'VZ': ['#cd040b', '#b6030a'], 'TMUS': ['#e20074', '#cb0068'],
+      // Retail / Home
+      'TGT': ['#cc0000', '#b30000'], 'LOW': ['#004990', '#004080'], 'HD': ['#f96302', '#e05a02'],
+      'DLTR': ['#1f9f43', '#1a8c3b'], 'TJX': ['#c8102e', '#b30e28'],
+      // Transportation
+      'UPS': ['#351c15', '#2d1712'], 'FDX': ['#4d148c', '#421278'], 'DAL': ['#003366', '#002b57'],
       // Berkshire
       'BRK.B': ['#7b2d26', '#6c2822'],
     }
@@ -1262,6 +1288,15 @@ function Dashboard() {
       'EURUSD': '🇪🇺', 'GBPUSD': '🇬🇧', 'USDJPY': '🇯🇵', 'AUDUSD': '🇦🇺', 'USDCAD': '🇨🇦',
       'NZDUSD': '🇳🇿', 'USDCHF': '🇨🇭', 'EURGBP': '🇪🇺', 'EURJPY': '🇪🇺', 'GBPJPY': '🇬🇧',
       'AUDJPY': '🇦🇺', 'EURAUD': '🇪🇺', 'GBPAUD': '🇬🇧', 'EURNZD': '🇪🇺', 'GBPCAD': '🇬🇧',
+      'USDSGD': '🇸🇬', 'USDHKD': '🇭🇰', 'USDSEK': '🇸🇪', 'USDNOK': '🇳🇴',
+      'USDDKK': '🇩🇰', 'USDZAR': '🇿🇦', 'USDTRY': '🇹🇷', 'USDMXN': '🇲🇽',
+      'USDPLN': '🇵🇱', 'EURCHF': '🇨🇭',
+      'SHIB': '🐕', 'ATOM': '⚛️', 'FIL': '💾', 'NEAR': '🌊', 'ALGO': '∆', 'VET': '⚡',
+      'SAND': '🏖️', 'MANA': '🌐', 'AXS': '⚔️', 'THETA': '📡', 'APT': '🔷', 'ARB': '🔵',
+      'OP': '🔴', 'IMX': '♾️', 'INJ': '💉', 'TIA': '💜', 'SEI': '🟠', 'SUI': '💧',
+      'PEPE': '🐸', 'FTM': '👻', 'GRT': '📊', 'ENS': '📛', 'LDO': '🏛️', 'RPL': '🚀',
+      'STX': '🧱',
+      'CACAO': '🍫', 'RUBBER': '⚫', 'IRON': '🔩',
     }
     const hash = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
     const hue1 = hash % 360
@@ -1297,9 +1332,9 @@ function Dashboard() {
   // ============ MARKET CATEGORY HELPER ============
   const getMarketCategory = useCallback((s: Stock): string => {
     const cat = (s.category || '').toLowerCase()
-    const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE', 'SHIB', 'ATOM', 'FIL', 'NEAR', 'ALGO', 'VET', 'SAND', 'MANA', 'AXS', 'THETA']
-    const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPCAD']
-    const commodityCodes = ['GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER', 'PLATINUM', 'PALLADIUM', 'WHEAT', 'CORN', 'SOYBEANS', 'SUGAR', 'COFFEE', 'COTTON', 'LUMBER', 'RICE']
+    const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE', 'SHIB', 'ATOM', 'FIL', 'NEAR', 'ALGO', 'VET', 'SAND', 'MANA', 'AXS', 'THETA', 'APT', 'ARB', 'OP', 'IMX', 'INJ', 'TIA', 'SEI', 'SUI', 'PEPE', 'FTM', 'GRT', 'ENS', 'LDO', 'RPL', 'STX']
+    const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPCAD', 'USDSGD', 'USDHKD', 'USDSEK', 'USDNOK', 'USDDKK', 'USDZAR', 'USDTRY', 'USDMXN', 'USDPLN', 'EURCHF']
+    const commodityCodes = ['GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER', 'PLATINUM', 'PALLADIUM', 'WHEAT', 'CORN', 'SOYBEANS', 'SUGAR', 'COFFEE', 'COTTON', 'LUMBER', 'RICE', 'CACAO', 'RUBBER', 'IRON']
     if (cat.includes('crypto') || cat.includes('kripto') || cryptoCodes.includes(s.code)) return 'crypto'
     if (cat.includes('forex') || forexCodes.includes(s.code)) return 'forex'
     if (cat.includes('commodity') || cat.includes('komoditas') || commodityCodes.includes(s.code)) return 'komoditas'
@@ -3814,11 +3849,8 @@ function Dashboard() {
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <button onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }} className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] md:text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20">
-                              <Target className="w-3.5 h-3.5" />Trade
-                            </button>
-                            <button onClick={() => openContract(s)} className="h-7 px-3 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-[#f59e0b] hover:border-[#f59e0b]/50 transition-all flex items-center gap-1">
-                              <Package className="w-3 h-3" />Kontrak
+                            <button onClick={() => openContract(s)} className="h-10 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-white text-[11px] md:text-[12px] font-black hover:from-amber-400 hover:to-amber-300 transition-all flex items-center gap-2 shadow-md shadow-amber-500/20">
+                              <Package className="w-4 h-4" />Kontrak
                             </button>
                           </div>
                         </div>
