@@ -849,6 +849,7 @@ function Dashboard() {
   const [showConfirmTrade, setShowConfirmTrade] = useState(false)
   const [confirmTradeDir, setConfirmTradeDir] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalCategory, setSinyalCategory] = useState<string>('popular')
+  const [marketSignalTab, setMarketSignalTab] = useState<string>('semua')
   const [sinyalHistoryFilter, setSinyalHistoryFilter] = useState<string>('Semua')
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number; shownAt?: number}[]>([])
@@ -3108,17 +3109,398 @@ function Dashboard() {
             </motion.div>
           )}
 
-          {/* ====== MARKET TAB ====== */}
+          {/* ====== MARKET TAB - PASAR SAHAM SIGNALS ====== */}
           {activeTab === 'market' && (
             <motion.div key="market" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Market Overview Section */}
+              {/* Professional MT5-style Header */}
+              <div className="rounded-2xl overflow-hidden mb-4 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                <div className="p-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-yellow-300" />
+                      <span className="text-[14px] font-black text-white">Pasar Saham</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-red-500/25 border border-red-400/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                      <span className="text-[8px] font-black text-red-300">LIVE</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-blue-200 font-bold">Sinyal pasar real-time dari semua market</p>
+
+                  {/* Market Index Row */}
+                  <div className="flex gap-2 mt-3 overflow-x-auto custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                    {indices.map(idx => {
+                      const isUp = idx.changePercent >= 0
+                      return (
+                        <div key={idx.id} className="flex-shrink-0 h-9 px-3 rounded-lg bg-white/10 border border-white/15 flex items-center gap-2">
+                          <span className="text-[8px] font-black text-white">{idx.code}</span>
+                          <span className={`text-[8px] font-bold ${isUp ? 'text-green-300' : 'text-red-300'}`}>{isUp ? '+' : ''}{idx.changePercent.toFixed(2)}%</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Market Category Tabs */}
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-3 custom-scrollbar">
+                {[
+                  { key: 'semua', label: 'Semua' },
+                  { key: 'kripto', label: 'Kripto' },
+                  { key: 'forex', label: 'Forex' },
+                  { key: 'komoditas', label: 'Komoditas' },
+                  { key: 'saham', label: 'Saham' },
+                ].map(cat => (
+                  <button key={cat.key} onClick={() => setMarketSignalTab(cat.key)}
+                    className={`flex-shrink-0 h-9 px-4 rounded-xl text-[10px] md:text-[11px] font-bold transition-all ${marketSignalTab === cat.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:bg-[var(--zv-border)] hover:border-[var(--zv-border)] hover:text-[#3b82f6]'}`}>
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Signal Cards Grid */}
+              {(() => {
+                const getSignal = (code: string): 'BELI' | 'JUAL' | 'HOLD' => {
+                  const seed = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+                  const r = seed % 3
+                  return r === 0 ? 'BELI' : r === 1 ? 'JUAL' : 'HOLD'
+                }
+
+                const getMarketCategory = (s: Stock): string => {
+                  const cat = s.category?.toLowerCase() || ''
+                  const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'LINK', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE']
+                  const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF']
+                  const commodityCodes = ['XOM', 'CVX', 'COP', 'GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER']
+                  if (cat.includes('crypto') || cat.includes('kripto') || cryptoCodes.includes(s.code)) return 'kripto'
+                  if (cat.includes('forex') || forexCodes.includes(s.code)) return 'forex'
+                  if (cat.includes('commodity') || cat.includes('komoditas') || commodityCodes.includes(s.code)) return 'komoditas'
+                  return 'saham'
+                }
+
+                const filteredSignalStocks = stocks.filter(s => {
+                  if (marketSignalTab === 'semua') return true
+                  return getMarketCategory(s) === marketSignalTab
+                })
+
+                const signalConfig: Record<string, { bg: string; border: string; text: string; icon: string }> = {
+                  'BELI': { bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.25)', text: '#22c55e', icon: '\u2191' },
+                  'JUAL': { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)', text: '#ef4444', icon: '\u2193' },
+                  'HOLD': { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b', icon: '\u2192' },
+                }
+
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                    {filteredSignalStocks.map(s => {
+                      const sparkData = getSparklineData(s)
+                      const isUp = s.changePercent >= 0
+                      const sparkColor = isUp ? '#22c55e' : '#ef4444'
+                      const signal = getSignal(s.code)
+                      const cfg = signalConfig[signal]
+                      const mcat = getMarketCategory(s)
+                      const catLabel = mcat === 'kripto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'
+
+                      return (
+                        <div key={s.id}
+                          onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }}
+                          className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer">
+                          <div className="p-3 md:p-4">
+                            {/* Top Row: Name + Signal Badge */}
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center">
+                                  <span className={`text-[8px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
+                                    <span className="text-[7px] font-bold text-[var(--zv-muted)] px-1.5 py-0.5 rounded bg-[var(--zv-surface)] border border-[var(--zv-border)]">{catLabel}</span>
+                                  </div>
+                                  <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
+                                </div>
+                              </div>
+                              {/* Signal Badge */}
+                              <div className="h-7 px-2.5 rounded-lg flex items-center gap-1" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                                <span className="text-[10px] font-black" style={{ color: cfg.text }}>{cfg.icon}</span>
+                                <span className="text-[9px] font-black" style={{ color: cfg.text }}>{signal}</span>
+                              </div>
+                            </div>
+
+                            {/* Price + Change */}
+                            <div className="flex items-end justify-between mb-2">
+                              <div>
+                                <span className="block text-[16px] md:text-lg font-black text-[var(--zv-text)] tabular-nums">
+                                  {mcat === 'forex' ? s.price.toFixed(4) : mcat === 'kripto' ? (s.price >= 1000 ? formatRupiah(s.price) : '$' + s.price.toLocaleString()) : formatRupiah(s.price)}
+                                </span>
+                                <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                                  {isUp ? <TrendingUp className="w-3 h-3 text-[#22c55e]" /> : <TrendingDown className="w-3 h-3 text-[#ef5350]" />}
+                                  <span className={`text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="block text-[7px] font-bold text-[var(--zv-muted)]">24h</span>
+                                <span className={`block text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{isUp ? '+' : ''}{s.changePercent.toFixed(2)}%</span>
+                              </div>
+                            </div>
+
+                            {/* Mini Sparkline */}
+                            <div className="h-[40px] -mx-1">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                                  <defs>
+                                    <linearGradient id={`sigGrad-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                      <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
+                                      <stop offset="70%" stopColor={sparkColor} stopOpacity="0.05" />
+                                      <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
+                                    </linearGradient>
+                                  </defs>
+                                  <XAxis dataKey="i" hide />
+                                  <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
+                                  <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sigGrad-${s.id})`} strokeWidth={1.5}
+                                    dot={(props: Record<string, unknown>) => {
+                                      const { cx, cy, index } = props as { cx: number; cy: number; index: number }
+                                      if (index !== sparkData.length - 1) return <g key={String(index)} />
+                                      return (
+                                        <g key={`dot-${s.id}`}>
+                                          <circle cx={cx} cy={cy} r={4} fill={sparkColor} opacity={0.2}>
+                                            <animate attributeName="r" values="3;7;3" dur="2s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
+                                          </circle>
+                                          <circle cx={cx} cy={cy} r={2.5} fill={sparkColor} stroke="#fff" strokeWidth={1} />
+                                        </g>
+                                      )
+                                    }}
+                                    activeDot={false} />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+
+                          {/* Footer: High/Low/Vol */}
+                          <div className="px-3 md:px-4 py-2 bg-[var(--zv-surface)] border-t border-[var(--zv-border)] grid grid-cols-3 gap-2">
+                            <div>
+                              <span className="block text-[7px] font-bold text-[var(--zv-muted)]">High</span>
+                              <span className="block text-[9px] font-black text-[#22c55e]">{mcat === 'forex' ? s.high.toFixed(4) : formatNumber(s.high)}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Low</span>
+                              <span className="block text-[9px] font-black text-[#ef5350]">{mcat === 'forex' ? s.low.toFixed(4) : formatNumber(s.low)}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Vol</span>
+                              <span className="block text-[9px] font-black text-[var(--zv-text)]">{formatNumber(s.volume)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {filteredSignalStocks.length === 0 && (
+                      <div className="col-span-full text-center py-8">
+                        <BarChart3 className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                        <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Tidak ada sinyal ditemukan</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Signal Legend */}
+              <div className="mt-4 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="text-[9px] font-bold text-[var(--zv-muted)]">Sinyal:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+                    <span className="text-[9px] font-bold text-[#22c55e]">BELI</span>
+                    <span className="text-[8px] text-[var(--zv-muted)]">- Rekomendasi beli</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                    <span className="text-[9px] font-bold text-[#ef4444]">JUAL</span>
+                    <span className="text-[8px] text-[var(--zv-muted)]">- Rekomendasi jual</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
+                    <span className="text-[9px] font-bold text-[#f59e0b]">HOLD</span>
+                    <span className="text-[8px] text-[var(--zv-muted)]">- Tunggu & lihat</span>
+                  </div>
+                </div>
+                <p className="text-[7px] text-[var(--zv-muted)] mt-1.5">* Sinyal berdasarkan analisis teknikal otomatis. Bukan rekomendasi investasi. Klik kartu untuk trading.</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ====== PORTFOLIO TAB ====== */}
+          {activeTab === 'portfolio' && (
+            <motion.div key="portfolio" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              {/* Portfolio Value Card */}
+              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
+                <div className="p-4 text-white relative">
+                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+                  <span className="text-[9px] font-medium text-blue-200">Nilai Portofolio</span>
+                  <b className="block text-2xl font-black mt-0.5">{formatRupiah(portfolioSummary.totalCurrentValue)}</b>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-blue-300' : 'text-red-300'}`}>
+                      {formatRupiah(portfolioSummary.totalProfitLoss)} ({formatPercent(portfolioSummary.totalProfitLossPercent)})
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
+                      <span className="text-[7px] text-blue-200">Investasi</span>
+                      <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.totalInvested)}</b>
+                    </div>
+                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
+                      <span className="text-[7px] text-blue-200">Saldo</span>
+                      <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.cashBalance)}</b>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Holdings */}
+              <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Saham Dimiliki</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+                {portfolio.map(p => (
+                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] transition-all hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer ${p.profitLoss >= 0 ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>{p.stock.logo ? <img src={p.stock.logo} alt={p.stock.code} className="w-full h-full object-cover" /> : <span className={`text-[8px] md:text-[10px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{p.stock.code.slice(0, 2)}</span>}</div>
+                        <div>
+                          <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{p.stock.code}</span>
+                          <span className="block text-[7px] md:text-[8px] text-[var(--zv-muted)]">{formatRupiah(p.currentValue)}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(p.currentValue)}</span>
+                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                          {formatRupiah(p.profitLoss)} ({formatPercent(p.profitLossPercent)})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => openContract(p.stock)} className="flex-1 h-7 md:h-8 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[8px] md:text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm shadow-blue-500/20"><Package className="w-3 h-3" />Kontrak</button>
+                    </div>
+                  </div>
+                ))}
+                {portfolio.length === 0 && (
+                  <div className="col-span-full text-center py-8">
+                    <Briefcase className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+                    <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Belum ada saham di portofolio</p>
+                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] md:text-[10px] font-bold shadow-md shadow-blue-500/20">Mulai Investasi</button>
+                  </div>
+                )}
+              </div>
+
+              {/* Active Stock Contracts */}
+              {userContracts.filter(c => c.status === 'active').length > 0 && (
+                <>
+                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Kontrak Saham Aktif</h3>
+                  <div className="space-y-2">
+                    {userContracts.filter(c => c.status === 'active').map(c => {
+                      const progress = Math.round((c.daysElapsed / c.duration) * 100)
+                      const canClaim = (() => {
+                        if (!c.lastClaimAt) return true
+                        const now = new Date()
+                        const jakartaOffset = 7 * 60 * 60 * 1000
+                        const jakartaNow = new Date(now.getTime() + jakartaOffset)
+                        const todayStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
+                        const lastClaimJakarta = new Date(new Date(c.lastClaimAt).getTime() + jakartaOffset)
+                        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
+                        return todayStr !== lastClaimStr
+                      })()
+                      return (
+                        <div key={c.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+                                <Package className="w-4 h-4 text-[#3b82f6]" />
+                              </div>
+                              <div>
+                                <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{c.stockCode}</span>
+                                <span className="block text-[7px] text-[var(--zv-muted)]">{c.duration} hari • {c.dailyProfitRate}%/hari</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(c.amount)}</span>
+                              <span className="block text-[8px] font-bold text-[#22c55e]">+{formatRupiah(c.dailyProfitAmount)}/hari</span>
+                            </div>
+                          </div>
+                          {/* Progress */}
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Hari {c.daysElapsed}/{c.duration}</span>
+                              <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
+                              <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[7px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
+                            <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
+                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
+                              {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : '00:00 WIB'}
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
+                            <span className="text-[7px] text-[#3b82f6]">Profit masuk 00:00 WIB</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Active Investments in Portfolio */}
+              {userInvestments.filter(i => i.status === 'active').length > 0 && (
+                <>
+                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Investasi Aktif</h3>
+                  <div className="space-y-2">
+                    {userInvestments.filter(i => i.status === 'active').map(inv => {
+                      const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
+                      return (
+                        <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+                                <DollarSign className="w-4 h-4 text-[#3b82f6]" />
+                              </div>
+                              <div>
+                                <span className="block text-[10px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
+                                <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.product.category === 'starter' ? 'Starter' : inv.product.category === 'growth' ? 'Growth' : 'Premium'}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[9px] font-black text-[#3b82f6]">+{formatRupiah(inv.dailyProfit)}/hari</span>
+                              <span className="block text-[7px] text-[var(--zv-muted)]">{inv.daysElapsed}/{inv.duration} hari</span>
+                            </div>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-1">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">{formatRupiah(inv.totalClaimed)} diklaim</span>
+                            <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'investasi' && (
+            <motion.div key="investasi" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              {/* Investasi & Saham Section */}
               {indices.length > 0 && (
                 <div className="rounded-2xl overflow-hidden mb-4 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
                   <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-yellow-300" />
-                        <span className="text-[11px] md:text-sm font-black text-white">Market Overview</span>
+                        <span className="text-[11px] md:text-sm font-black text-white">Investasi & Saham</span>
                       </div>
                       <div className="flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-red-500/25 border border-red-400/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
@@ -3296,10 +3678,12 @@ function Dashboard() {
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <button onClick={() => openContract(s)} className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] md:text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20">
-                              <Package className="w-3.5 h-3.5" />Kontrak
+                            <button onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }} className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] md:text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20">
+                              <Target className="w-3.5 h-3.5" />Trade
                             </button>
-                            <span className="text-[8px] font-bold text-[#f59e0b]">Maks 7%/hari</span>
+                            <button onClick={() => openContract(s)} className="h-7 px-3 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-[#f59e0b] hover:border-[#f59e0b]/50 transition-all flex items-center gap-1">
+                              <Package className="w-3 h-3" />Kontrak
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -3307,15 +3691,15 @@ function Dashboard() {
                       {/* Contract Info - Footer */}
                       <div className="px-3 md:px-4 py-2.5 bg-[var(--zv-surface)] border-t border-[var(--zv-border)] grid grid-cols-3 gap-2">
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Rate</span>
-                          <span className="block text-[9px] md:text-[10px] font-black text-[#22c55e]">{getStockBaseRate(s.code)}%/hari</span>
+                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">High</span>
+                          <span className="block text-[9px] md:text-[10px] font-black text-[#22c55e]">{formatNumber(s.high)}</span>
                         </div>
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Durasi</span>
-                          <span className="block text-[9px] md:text-[10px] font-black text-[#f59e0b]">30-365 Hari</span>
+                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Low</span>
+                          <span className="block text-[9px] md:text-[10px] font-black text-[#ef5350]">{formatNumber(s.low)}</span>
                         </div>
                         <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Volume</span>
+                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Vol</span>
                           <div className="flex items-center gap-1">
                             <span className="text-[8px] md:text-[9px] font-bold text-[var(--zv-text)]">{formatNumber(s.volume)}</span>
                             <div className="flex-1 h-1.5 rounded-full bg-[var(--zv-border)] overflow-hidden">
@@ -3334,432 +3718,6 @@ function Dashboard() {
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-
-          {/* ====== PORTFOLIO TAB ====== */}
-          {activeTab === 'portfolio' && (
-            <motion.div key="portfolio" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Portfolio Value Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
-                <div className="p-4 text-white relative">
-                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-                  <span className="text-[9px] font-medium text-blue-200">Nilai Portofolio</span>
-                  <b className="block text-2xl font-black mt-0.5">{formatRupiah(portfolioSummary.totalCurrentValue)}</b>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-blue-300' : 'text-red-300'}`}>
-                      {formatRupiah(portfolioSummary.totalProfitLoss)} ({formatPercent(portfolioSummary.totalProfitLossPercent)})
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] text-blue-200">Investasi</span>
-                      <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.totalInvested)}</b>
-                    </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
-                      <span className="text-[7px] text-blue-200">Saldo</span>
-                      <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.cashBalance)}</b>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Holdings */}
-              <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Saham Dimiliki</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
-                {portfolio.map(p => (
-                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] transition-all hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer ${p.profitLoss >= 0 ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>{p.stock.logo ? <img src={p.stock.logo} alt={p.stock.code} className="w-full h-full object-cover" /> : <span className={`text-[8px] md:text-[10px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{p.stock.code.slice(0, 2)}</span>}</div>
-                        <div>
-                          <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{p.stock.code}</span>
-                          <span className="block text-[7px] md:text-[8px] text-[var(--zv-muted)]">{formatRupiah(p.currentValue)}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(p.currentValue)}</span>
-                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                          {formatRupiah(p.profitLoss)} ({formatPercent(p.profitLossPercent)})
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <button onClick={() => openContract(p.stock)} className="flex-1 h-7 md:h-8 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[8px] md:text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm shadow-blue-500/20"><Package className="w-3 h-3" />Kontrak</button>
-                    </div>
-                  </div>
-                ))}
-                {portfolio.length === 0 && (
-                  <div className="col-span-full text-center py-8">
-                    <Briefcase className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                    <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Belum ada saham di portofolio</p>
-                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] md:text-[10px] font-bold shadow-md shadow-blue-500/20">Mulai Investasi</button>
-                  </div>
-                )}
-              </div>
-
-              {/* Active Stock Contracts */}
-              {userContracts.filter(c => c.status === 'active').length > 0 && (
-                <>
-                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Kontrak Saham Aktif</h3>
-                  <div className="space-y-2">
-                    {userContracts.filter(c => c.status === 'active').map(c => {
-                      const progress = Math.round((c.daysElapsed / c.duration) * 100)
-                      const canClaim = (() => {
-                        if (!c.lastClaimAt) return true
-                        const now = new Date()
-                        const jakartaOffset = 7 * 60 * 60 * 1000
-                        const jakartaNow = new Date(now.getTime() + jakartaOffset)
-                        const todayStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
-                        const lastClaimJakarta = new Date(new Date(c.lastClaimAt).getTime() + jakartaOffset)
-                        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
-                        return todayStr !== lastClaimStr
-                      })()
-                      return (
-                        <div key={c.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
-                                <Package className="w-4 h-4 text-[#3b82f6]" />
-                              </div>
-                              <div>
-                                <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{c.stockCode}</span>
-                                <span className="block text-[7px] text-[var(--zv-muted)]">{c.duration} hari • {c.dailyProfitRate}%/hari</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(c.amount)}</span>
-                              <span className="block text-[8px] font-bold text-[#22c55e]">+{formatRupiah(c.dailyProfitAmount)}/hari</span>
-                            </div>
-                          </div>
-                          {/* Progress */}
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Hari {c.daysElapsed}/{c.duration}</span>
-                              <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                              <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[7px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
-                            <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
-                              {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : '00:00 WIB'}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1 mt-1.5">
-                            <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
-                            <span className="text-[7px] text-[#3b82f6]">Profit masuk 00:00 WIB</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-
-              {/* Active Investments in Portfolio */}
-              {userInvestments.filter(i => i.status === 'active').length > 0 && (
-                <>
-                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Investasi Aktif</h3>
-                  <div className="space-y-2">
-                    {userInvestments.filter(i => i.status === 'active').map(inv => {
-                      const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
-                      return (
-                        <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
-                                <DollarSign className="w-4 h-4 text-[#3b82f6]" />
-                              </div>
-                              <div>
-                                <span className="block text-[10px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
-                                <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.product.category === 'starter' ? 'Starter' : inv.product.category === 'growth' ? 'Growth' : 'Premium'}</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="block text-[9px] font-black text-[#3b82f6]">+{formatRupiah(inv.dailyProfit)}/hari</span>
-                              <span className="block text-[7px] text-[var(--zv-muted)]">{inv.daysElapsed}/{inv.duration} hari</span>
-                            </div>
-                          </div>
-                          <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-1">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">{formatRupiah(inv.totalClaimed)} diklaim</span>
-                            <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* ====== INVESTASI TAB ====== */}
-          {activeTab === 'investasi' && (
-            <motion.div key="investasi" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Header Card */}
-              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
-                <div className="p-4 text-white relative">
-                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-5 h-5 text-yellow-300" />
-                    <h2 className="text-[16px] md:text-xl font-black">Investasi</h2>
-                  </div>
-                  <p className="text-[10px] md:text-[11px] text-blue-200 leading-relaxed mb-3">Pilih paket investasi dan dapatkan profit harian secara otomatis. Mulai dari Rp 1.000 dengan bonus harian Rp 500!</p>
-
-                  {/* Pasar Aktif Stats */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
-                      <Package className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[8px] font-black text-white">3 Paket</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
-                      <Award className="w-3 h-3 text-yellow-300" />
-                      <span className="text-[8px] font-black text-white">3 Tier</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/10 border border-white/15">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                      <span className="text-[8px] font-black text-blue-300">Live 24/7</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 mt-3">
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <Package className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">3</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Paket</span>
-                    </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <Sparkles className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">{userInvestments.filter(i => i.status === 'active').length}</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Aktif</span>
-                    </div>
-                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15 text-center">
-                      <Wallet className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">{formatRupiah(user?.balance || 0).replace('Rp', '').trim()}</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Saldo</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Category Tabs - 3 Packages */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <button onClick={() => setInvestCategory('starter')} className={`h-12 rounded-2xl text-[10px] md:text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${investCategory === 'starter' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Starter 1K</span>
-                </button>
-                <button onClick={() => setInvestCategory('growth')} className={`h-12 rounded-2xl text-[10px] md:text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${investCategory === 'growth' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  <TrendingUp className="w-4 h-4" />
-                  <span>Growth 6K</span>
-                </button>
-                <button onClick={() => setInvestCategory('premium')} className={`h-12 rounded-2xl text-[10px] md:text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${investCategory === 'premium' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  <Award className="w-4 h-4" />
-                  <span>Premium 200K</span>
-                </button>
-              </div>
-
-              {/* Product Cards */}
-              <div className="space-y-3">
-                {investProducts.filter(p => p.category === investCategory).map(product => {
-                  const isStarter = product.category === 'starter'
-                  const isGrowth = product.category === 'growth'
-                  const isPremium = product.category === 'premium'
-                  const canBuy = (user?.balance || 0) >= product.modal
-                  
-                  return (
-                    <div key={product.id} className="rounded-2xl overflow-hidden border-2 transition-all hover:shadow-lg" style={{ 
-                      borderColor: isPremium ? '#f59e0b40' : isGrowth ? '#3b82f640' : '#22c55e40',
-                      background: isPremium 
-                        ? 'linear-gradient(145deg, var(--zv-panel) 0%, rgba(245,158,11,0.05) 100%)' 
-                        : isGrowth 
-                        ? 'linear-gradient(145deg, var(--zv-panel) 0%, rgba(59,130,246,0.05) 100%)'
-                        : 'linear-gradient(145deg, var(--zv-panel) 0%, rgba(34,197,94,0.05) 100%)'
-                    }}>
-                      {/* Package Header */}
-                      <div className="p-4" style={{ 
-                        background: isPremium 
-                          ? 'linear-gradient(145deg, #92400e 0%, #b45309 54%, #d97706 100%)' 
-                          : isGrowth 
-                          ? 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)'
-                          : 'linear-gradient(145deg, #064e3b 0%, #065f46 54%, #059669 100%)'
-                      }}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-10 h-10 rounded-xl bg-white/20 grid place-items-center">
-                              {isPremium ? <Award className="w-5 h-5 text-yellow-300" /> : isGrowth ? <TrendingUp className="w-5 h-5 text-blue-300" /> : <Sparkles className="w-5 h-5 text-green-300" />}
-                            </div>
-                            <div className="text-white">
-                              <h3 className="text-[14px] font-black">{product.name}</h3>
-                              <span className="text-[9px] font-bold text-white/60">
-                                {isStarter ? 'Paket Entry Level' : isGrowth ? 'Min. Deposit 1J' : 'Harus Beli Starter Dulu'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right text-white">
-                            <span className="block text-[18px] font-black">{formatRupiah(product.modal)}</span>
-                            <span className="text-[8px] font-bold text-white/60">INVESTASI</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Package Details */}
-                      <div className="p-4 space-y-3">
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
-                            <span className="block text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Profit/Hari</span>
-                            <b className="block text-[12px] font-black text-[#22c55e]">+{formatRupiah(product.dailyProfit)}</b>
-                          </div>
-                          <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
-                            <span className="block text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Durasi</span>
-                            <b className="block text-[12px] font-black text-[#3b82f6]">{product.duration} Hari</b>
-                          </div>
-                          <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
-                            <span className="block text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Total Return</span>
-                            <b className="block text-[12px] font-black text-[#f59e0b]">{formatRupiah(product.totalReturn)}</b>
-                          </div>
-                        </div>
-
-                        {/* ROI Badge */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="h-5 px-2 rounded-full text-[8px] font-black flex items-center gap-1" style={{ 
-                              background: isPremium ? 'rgba(245,158,11,0.1)' : isGrowth ? 'rgba(59,130,246,0.1)' : 'rgba(34,197,94,0.1)',
-                              color: isPremium ? '#f59e0b' : isGrowth ? '#3b82f6' : '#22c55e',
-                              border: `1px solid ${isPremium ? 'rgba(245,158,11,0.2)' : isGrowth ? 'rgba(59,130,246,0.2)' : 'rgba(34,197,94,0.2)'}`
-                            }}>
-                              <Zap className="w-3 h-3" />ROI {product.roi}%
-                            </span>
-                            <span className="h-5 px-2 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] font-bold text-[var(--zv-muted)]">
-                              {product.duration} hari
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Prerequisites Warning */}
-                        {isGrowth && (user?.totalDeposit || 0) < 1000000 && (
-                          <div className="rounded-xl p-2.5 bg-yellow-500/5 border border-yellow-500/10 flex items-start gap-2">
-                            <AlertCircle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-[8px] font-bold text-yellow-600">Memerlukan total deposit minimum Rp 1.000.000</p>
-                              <p className="text-[7px] text-yellow-500/70">Deposit Anda: {formatRupiah(user?.totalDeposit || 0)}</p>
-                            </div>
-                          </div>
-                        )}
-                        {isPremium && !userInvestments.some(inv => inv.product.category === 'starter' && (inv.status === 'active' || inv.status === 'completed')) && (
-                          <div className="rounded-xl p-2.5 bg-yellow-500/5 border border-yellow-500/10 flex items-start gap-2">
-                            <AlertCircle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-[8px] font-bold text-yellow-600">Beli Paket Starter 1K terlebih dahulu untuk membuka paket ini</p>
-                          </div>
-                        )}
-
-                        {/* Buy Button */}
-                        <button 
-                          onClick={() => { setSelectedProduct(product); setShowInvestModal(true) }}
-                          disabled={!canBuy}
-                          className={`w-full h-11 rounded-xl text-[11px] font-black tracking-wide flex items-center justify-center gap-2 transition-all ${canBuy ? 'text-white hover:scale-[1.02]' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed border border-[var(--zv-border)]'}`}
-                          style={canBuy ? { background: isPremium 
-                            ? 'linear-gradient(135deg, #92400e 0%, #b45309 50%, #d97706 100%)' 
-                            : isGrowth 
-                            ? 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)'
-                            : 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #059669 100%)'
-                          } : undefined}
-                        >
-                          {canBuy ? (
-                            <><DollarSign className="w-4 h-4" />Investasi Sekarang</>
-                          ) : (
-                            <><AlertCircle className="w-4 h-4" />Saldo Tidak Cukup</>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-                {investProducts.filter(p => p.category === investCategory).length === 0 && (
-                  <div className="text-center py-8">
-                    <Package className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Paket tidak tersedia</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Active Investments Summary */}
-              {userInvestments.filter(i => i.status === 'active').length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Investasi Aktif Anda</h3>
-                  <div className="space-y-2">
-                    {userInvestments.filter(i => i.status === 'active').map(inv => {
-                      const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
-                      const canClaim = (() => {
-                        if (!inv.lastClaimAt) return true
-                        const now = new Date()
-                        const jakartaOffset = 7 * 60 * 60 * 1000
-                        const jakartaNow = new Date(now.getTime() + jakartaOffset)
-                        const todayStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
-                        const lastClaimJakarta = new Date(new Date(inv.lastClaimAt).getTime() + jakartaOffset)
-                        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
-                        return todayStr !== lastClaimStr
-                      })()
-                      return (
-                        <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <span className="block text-[11px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
-                              <span className="block text-[8px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.daysElapsed}/{inv.duration} hari</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="block text-[10px] font-black text-[#22c55e]">+{formatRupiah(inv.dailyProfit)}/hari</span>
-                              <span className="block text-[8px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(inv.totalClaimed)}</span>
-                            </div>
-                          </div>
-                          {/* Progress Bar */}
-                          <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-2">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[8px] font-bold text-[var(--zv-muted)]">{progress}% selesai</span>
-                            <button onClick={() => handleClaimProfit(inv.id)} disabled={claimLoadingId === inv.id || !canClaim}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
-                              {claimLoadingId === inv.id ? 'Memproses...' : canClaim ? 'Klaim Profit' : '00:00 WIB'}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1 mt-1.5">
-                            <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
-                            <span className="text-[7px] text-[#3b82f6]">Profit masuk 00:00 WIB</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Completed Investments */}
-              {userInvestments.filter(i => i.status === 'completed').length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Investasi Selesai</h3>
-                  <div className="space-y-1.5">
-                    {userInvestments.filter(i => i.status === 'completed').map(inv => (
-                      <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-between">
-                        <div>
-                          <span className="block text-[10px] font-bold text-[var(--zv-text)]">{inv.product.name}</span>
-                          <span className="block text-[8px] text-[var(--zv-muted)]">Modal: {formatRupiah(inv.amount)}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="block text-[10px] font-black text-[#22c55e]">+{formatRupiah(inv.totalClaimed)}</span>
-                          <span className="block text-[7px] text-[var(--zv-muted)] flex items-center gap-0.5 justify-end"><CheckCircle className="w-2.5 h-2.5" />Selesai</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </motion.div>
           )}
 

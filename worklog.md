@@ -235,3 +235,62 @@ Stage Summary:
 - After trade closes, balance reflects actual P&L result ✅
 - Stop-out triggers at 5% remaining working capital ✅
 - Math verified: 100M - 100K + 34K return = 99,934,079 ✅
+
+---
+Task ID: 5
+Agent: Main
+Task: Restructure ZEVORIX tabs - Move market content to Investasi, create Market Signals dashboard
+
+Work Log:
+- Added `marketSignalTab` state variable for market signals category filter
+- Replaced Investasi tab content (old: investment packages Starter/Growth/Premium) with the Market tab content (stock cards with IHSG chart, top gainer/loser stats, search, category filters)
+- Changed Investasi tab header from "Investasi" to "Investasi & Saham"
+- Added "Trade" button (navigates to Sinyal tab) and "Kontrak" button to Investasi tab stock cards
+- Changed Investasi tab footer from Rate/Durasi/Volume to High/Low/Vol
+- Replaced Market tab content with new Market Signals dashboard featuring:
+  - Professional MT5-style dark header with "Pasar Saham" title and LIVE indicator
+  - Market index row (DOW, NASDAQ, RUSSELL, SP500, VIX) with real-time change %
+  - Category filter tabs: Semua, Kripto, Forex, Komoditas, Saham
+  - Signal cards showing: instrument code, name, category label, current price, 24h change %, signal badge (BELI/JUAL/HOLD), mini sparkline chart, High/Low/Vol footer
+  - Signal legend explaining BELI (green), JUAL (red), HOLD (yellow)
+  - Click-to-trade: clicking a signal card navigates to Sinyal tab with that stock selected
+- Added `getSignal()` helper function for deterministic signal generation based on stock code
+- Added `getMarketCategory()` helper function for categorizing stocks into Kripto/Forex/Komoditas/Saham
+- Added 27 new instruments to stock seed data:
+  - 15 crypto: BTC, ETH, XRP, SOL, DOGE, ADA, AVAX, DOT, LINK, MATIC, BCH, LTC, XLM, UNI, AAVE
+  - 7 forex: EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, NZDUSD, USDCHF
+  - 5 commodities: GOLD, SILVER, OIL, NATGAS, COPPER
+- Re-seeded database (77 total stocks now vs 50 before)
+- All lint checks passed
+- Browser verified: Market tab shows signal cards with category filtering, Investasi tab shows stock cards with Trade/Kontrak buttons
+
+Stage Summary:
+- Market tab: Now a Market Signals dashboard with category filters and signal indicators
+- Investasi tab: Now contains the old market tab content (stock cards, IHSG chart, search, filters)
+- Old Investasi tab content (investment packages) has been completely removed
+- 27 new instruments added (crypto, forex, commodities) for comprehensive market coverage
+- All existing tabs (home, sinyal, portfolio, profile, etc.) still work correctly
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Restructure tabs - Move Pasar Saham content to Investasi, make Pasar Saham a market signals dashboard
+
+Work Log:
+- Analyzed user request: Move current Pasar Saham content to Investasi, delete old Investasi packages, fill Pasar Saham with market signals
+- Read current tab structure - market tab key is 'market', investasi tab key is 'investasi'
+- Used full-stack-developer subagent to implement the changes
+- Replaced Investasi tab content with the old market tab content (stock cards with Trade/Kontrak buttons, sparklines, search, category filters)
+- Replaced market tab with new Market Signals Dashboard showing all markets (Kripto, Forex, Komoditas, Saham) with BELI/JUAL/HOLD signal badges
+- Added 27 new market instruments (15 crypto, 7 forex, 5 commodities) to the database
+- Added new state variable marketSignalTab for category filtering
+- Each signal card shows: instrument code/name, price, 24h change %, signal badge, sparkline, High/Low/Vol
+- Ran lint - passes with 0 errors
+- Verified with agent browser - all tabs confirmed correct
+
+Stage Summary:
+- Pasar Saham = Complete market signals dashboard with BELI/JUAL/HOLD signals for all markets (Kripto, Forex, Komoditas, Saham)
+- Investasi = Stock selection cards with Trade/Kontrak buttons, search, filters (moved from Pasar Saham)
+- Sinyal = Trading terminal with chart (unchanged)
+- Bottom nav: Beranda, Pasar, Sinyal, Investasi, Profil
+- All browser verification tests passed
