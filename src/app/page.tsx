@@ -1179,6 +1179,7 @@ function Dashboard() {
   // ============ SVG INSTRUMENT LOGO GENERATOR ============
   const getInstrumentLogo = useCallback((code: string, size: number = 40) => {
     const specialColors: Record<string, [string, string]> = {
+      // Crypto
       'BTC': ['#f7931a', '#e88a17'], 'ETH': ['#627eea', '#4c6edb'], 'XRP': ['#00aae4', '#0099cc'],
       'SOL': ['#9945ff', '#14f195'], 'DOGE': ['#c3a634', '#ba9e2d'], 'ADA': ['#0033ad', '#002d99'],
       'AVAX': ['#e84142', '#d13a3b'], 'DOT': ['#e6007a', '#cc006b'], 'LINK': ['#2a5ada', '#2450c2'],
@@ -1188,27 +1189,87 @@ function Dashboard() {
       'NEAR': ['#00c1de', '#00abc5'], 'ALGO': ['#000000', '#1a1a1a'], 'VET': ['#15bdff', '#12a8e6'],
       'SAND': ['#04adef', '#039ad6'], 'MANA': ['#ff2d55', '#e6284d'], 'AXS': ['#0055d5', '#004cba'],
       'THETA': ['#2ab8e6', '#25a5cf'],
+      // Commodities
       'GOLD': ['#ffd700', '#daa520'], 'SILVER': ['#c0c0c0', '#a0a0a0'], 'OIL': ['#2d2d2d', '#1a1a1a'],
       'NATGAS': ['#4a90d9', '#3d7cc2'], 'COPPER': ['#b87333', '#a0652d'], 'PLATINUM': ['#e5e4e2', '#c8c7c5'],
       'PALLADIUM': ['#ced0dd', '#b5b7c4'], 'WHEAT': ['#f5deb3', '#dcc89d'], 'CORN': ['#f4c430', '#dab22b'],
       'SOYBEANS': ['#8db255', '#7d9f4c'], 'SUGAR': ['#f8f8f8', '#dcdcdc'], 'COFFEE': ['#6f4e37', '#5e422e'],
       'COTTON': ['#f0f0f0', '#d4d4d4'], 'LUMBER': ['#deb887', '#c5a476'], 'RICE': ['#f5f5dc', '#d9d9c4'],
+      // Forex
       'EURUSD': ['#003399', '#002d88'], 'GBPUSD': ['#012169', '#011d5c'], 'USDJPY': ['#bc002d', '#a60027'],
       'AUDUSD': ['#00008b', '#00007a'], 'USDCAD': ['#ff0000', '#e60000'], 'NZDUSD': ['#000000', '#1a1a1a'],
       'USDCHF': ['#ff0000', '#e60000'], 'EURGBP': ['#003399', '#002d88'], 'EURJPY': ['#003399', '#002d88'],
       'GBPJPY': ['#012169', '#011d5c'], 'AUDJPY': ['#00008b', '#00007a'], 'EURAUD': ['#003399', '#002d88'],
       'GBPAUD': ['#012169', '#011d5c'], 'EURNZD': ['#003399', '#002d88'], 'GBPCAD': ['#012169', '#011d5c'],
+      // Tech / Bluechip
       'AAPL': ['#555555', '#444444'], 'NVDA': ['#76b900', '#67a000'], 'MSFT': ['#00a4ef', '#0093d6'],
       'GOOGL': ['#4285f4', '#3676d6'], 'META': ['#1877f2', '#1569d8'], 'AMZN': ['#ff9900', '#e68a00'],
       'TSLA': ['#cc0000', '#b30000'], 'AMD': ['#ed1c24', '#d4191f'], 'JPM': ['#003087', '#002b78'],
       'V': ['#1a1f71', '#151a63'], 'MA': ['#ff5f00', '#e65500'],
+      // Banking
+      'GS': ['#7b9abb', '#6a89a8'], 'BAC': ['#012169', '#011d5c'], 'PGR': ['#0072ce', '#0065b5'],
+      // Healthcare
+      'UNH': ['#002677', '#001f63'], 'JNJ': ['#d51900', '#bf1700'], 'PFE': ['#0063b2', '#005699'],
+      'LLY': ['#d52b1e', '#bf261a'], 'ABBV': ['#071d49', '#061840'], 'MRK': ['#00857c', '#00746c'],
+      'ABT': ['#009cde', '#008ac5'], 'TMO': ['#ee3124', '#d62c20'], 'DHR': ['#004b87', '#004075'],
+      'ISRG': ['#00573f', '#004b36'], 'SYK': ['#5a2d82', '#4e2772'], 'BSX': ['#00854a', '#007440'],
+      'EW': ['#e31837', '#cc1532'], 'GILD': ['#c41230', '#af102b'], 'AMGN': ['#0064b4', '#005799'],
+      'BIIB': ['#1a3c6e', '#153360'], 'REGN': ['#c8102e', '#b30e28'], 'MRNA': ['#05204a', '#041b3f'],
+      'VRTX': ['#6236a5', '#562e92'], 'CVS': ['#cc0000', '#b30000'], 'CI': ['#003c71', '#003462'],
+      'HUM': ['#00539b', '#004887'], 'CNC': ['#005eb8', '#0052a0'],
+      // Consumer
+      'WMT': ['#0071ce', '#0064b5'], 'COST': ['#e31837', '#cc1532'], 'NKE': ['#f56565', '#e05555'],
+      'MCD': ['#ffc72c', '#e6b427'], 'KO': ['#f40009', '#da0008'], 'SBUX': ['#006241', '#005538'],
+      'PEP': ['#004b93', '#004080'], 'PG': ['#003DA5', '#003590'], 'CL': ['#d4002a', '#bf0026'],
+      'EL': ['#0b2265', '#091d57'], 'PM': ['#003057', '#002a4e'], 'MO': ['#003057', '#002a4e'],
+      'SPG': ['#c8102e', '#b30e28'], 'PLD': ['#003da5', '#003590'], 'AMT': ['#e31837', '#cc1532'],
+      'EQIX': ['#ed1c24', '#d4191f'], 'O': ['#003da5', '#003590'],
+      // Energy
+      'XOM': ['#ed1c24', '#d4191f'], 'CVX': ['#0055a5', '#004c93'], 'COP': ['#c8102e', '#b30e28'],
+      'SLB': ['#005cb9', '#0051a2'], 'FANG': ['#2e4a2e', '#264026'], 'MPC': ['#00539b', '#004887'],
+      'PSX': ['#0d2344', '#0b1d3a'], 'OXY': ['#c8102e', '#b30e28'], 'EOG': ['#006241', '#005538'],
+      // Infrastructure / Defense
+      'CAT': ['#ffcd11', '#e6b810'], 'BA': ['#0033a0', '#002d8f'], 'GE': ['#3b73b9', '#3366a3'],
+      'HON': ['#e31e26', '#cc1b22'], 'DE': ['#367c2b', '#2e6c24'], 'LMT': ['#0033a0', '#002d8f'],
+      'NOC': ['#0033a0', '#002d8f'], 'RTX': ['#0033a0', '#002d8f'], 'GD': ['#0033a0', '#002d8f'],
+      // Media
+      'DIS': ['#113ccf', '#0f35b8'], 'NFLX': ['#e50914', '#cc0812'], 'CMCSA': ['#0c0c0c', '#1a1a1a'],
+      // Tech / Growth
+      'COIN': ['#0052ff', '#0049e6'], 'SQ': ['#006aff', '#005fe6'], 'PYPL': ['#003087', '#002b78'],
+      'AVGO': ['#cc092f', '#b6082a'], 'INTC': ['#0071c5', '#0065ae'], 'TSM': ['#c41230', '#af102b'],
+      'CRM': ['#00a1e0', '#0090c7'], 'ORCL': ['#f80000', '#df0000'], 'ADBE': ['#ff0000', '#e60000'],
+      'IBM': ['#054ada', '#0442c2'], 'NOW': ['#81b5a1', '#73a291'], 'UBER': ['#000000', '#1a1a1a'],
+      'SNAP': ['#fffc00', '#e6e300'], 'PINS': ['#e60023', '#cc001f'], 'RIVN': ['#f5f5f5', '#dcdcdc'],
+      'LCID': ['#f5a623', '#db951f'], 'NIO': ['#00bfff', '#00ace6'], 'PLTR': ['#101010', '#1a1a1a'],
+      'DKNG': ['#53d769', '#4ac15e'], 'RBLX': ['#e2231a', '#cb1f17'], 'SHOP': ['#96bf48', '#84a83f'],
+      'SE': ['#e8333a', '#d02e34'], 'GRAB': ['#00b14f', '#009d45'], 'HOOD': ['#00c805', '#00b405'],
+      'ROKU': ['#6d1be1', '#6118ca'], 'ZM': ['#2d8cff', '#267de6'], 'TEAM': ['#0052cc', '#0049b8'],
+      // Cybersecurity / Software
+      'CRWD': ['#e8243c', '#d02036'], 'PANW': ['#fa582d', '#e14f28'], 'MNDY': ['#ff3d57', '#e6364f'],
+      'DDOG': ['#632ca6', '#572795'], 'NET': ['#f38020', '#da731d'], 'MDB': ['#00ed64', '#00d55a'],
+      'HUBS': ['#ff7a59', '#e66e4f'], 'TWLO': ['#f22f46', '#da2a3f'], 'OKTA': ['#007dc1', '#006eab'],
+      'ZS': ['#0078ff', '#006ce6'], 'PATH': ['#fa1e3c', '#e11b36'], 'AI': ['#c41230', '#af102b'],
+      'SOUN': ['#00b4d8', '#00a1c1'],
+      // Berkshire
+      'BRK.B': ['#7b2d26', '#6c2822'],
+    }
+    // Emoji prefix map for special instrument types
+    const emojiMap: Record<string, string> = {
+      'BTC': '₿', 'ETH': 'Ξ', 'XRP': '✕', 'SOL': '◎', 'DOGE': 'Ð',
+      'GOLD': '🥇', 'SILVER': '🥈', 'OIL': '🛢️', 'NATGAS': '🔥', 'COPPER': '🔶',
+      'PLATINUM': '💍', 'PALLADIUM': '💎', 'WHEAT': '🌾', 'CORN': '🌽',
+      'SOYBEANS': '🫘', 'SUGAR': '🍬', 'COFFEE': '☕', 'COTTON': '🧵', 'LUMBER': '🪵', 'RICE': '🍚',
+      'EURUSD': '🇪🇺', 'GBPUSD': '🇬🇧', 'USDJPY': '🇯🇵', 'AUDUSD': '🇦🇺', 'USDCAD': '🇨🇦',
+      'NZDUSD': '🇳🇿', 'USDCHF': '🇨🇭', 'EURGBP': '🇪🇺', 'EURJPY': '🇪🇺', 'GBPJPY': '🇬🇧',
+      'AUDJPY': '🇦🇺', 'EURAUD': '🇪🇺', 'GBPAUD': '🇬🇧', 'EURNZD': '🇪🇺', 'GBPCAD': '🇬🇧',
     }
     const hash = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
     const hue1 = hash % 360
     const hue2 = (hash * 7) % 360
-    const gradientId = `logo-${code}`
-    const displayText = code.length <= 3 ? code.slice(0, 2) : code.slice(0, 3)
+    const gradientId = `logo-${code}-${size}`
     const colors = specialColors[code] || [`hsl(${hue1}, 70%, 50%)`, `hsl(${hue2}, 60%, 40%)`]
+    const emoji = emojiMap[code]
+    const displayText = code.length <= 3 ? code.slice(0, 2) : code.slice(0, 3)
     return (
       <svg width={size} height={size} viewBox="0 0 40 40" style={{ flexShrink: 0 }}>
         <defs>
@@ -1218,10 +1279,17 @@ function Dashboard() {
           </linearGradient>
         </defs>
         <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
-        <text x="20" y="20" textAnchor="middle" dominantBaseline="central"
-          fill="white" fontSize={displayText.length > 2 ? "9" : "12"} fontWeight="900" fontFamily="system-ui">
-          {displayText}
-        </text>
+        {emoji ? (
+          <text x="20" y="21" textAnchor="middle" dominantBaseline="central"
+            fill="white" fontSize="14" fontWeight="900" fontFamily="system-ui">
+            {emoji}
+          </text>
+        ) : (
+          <text x="20" y="20" textAnchor="middle" dominantBaseline="central"
+            fill="white" fontSize={displayText.length > 2 ? "9" : "12"} fontWeight="900" fontFamily="system-ui">
+            {displayText}
+          </text>
+        )}
       </svg>
     )
   }, [])
@@ -1235,6 +1303,7 @@ function Dashboard() {
     if (cat.includes('crypto') || cat.includes('kripto') || cryptoCodes.includes(s.code)) return 'crypto'
     if (cat.includes('forex') || forexCodes.includes(s.code)) return 'forex'
     if (cat.includes('commodity') || cat.includes('komoditas') || commodityCodes.includes(s.code)) return 'komoditas'
+    // All stock categories (tech, bluechip, banking, healthcare, consumer, energy, infrastructure, media, etc.) map to 'saham'
     return 'saham'
   }, [])
 
@@ -3191,7 +3260,7 @@ function Dashboard() {
               {/* Header - Dark Trading App Style */}
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-[16px] font-black text-[var(--zv-text)]">Trade</h2>
+                  <h2 className="text-[16px] font-black text-[var(--zv-text)]">Pasar Saham</h2>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                       <Wallet className="w-3.5 h-3.5 text-[#f59e0b]" />
@@ -3223,22 +3292,26 @@ function Dashboard() {
 
                 {/* Market Type Filter */}
                 <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                  {[
-                    { key: 'semua', label: 'Semua' },
-                    { key: 'crypto', label: '🪙 Kripto' },
-                    { key: 'forex', label: '💱 Forex' },
-                    { key: 'komoditas', label: '🛢️ Komoditas' },
-                    { key: 'saham', label: '📊 Saham' },
-                  ].map(cat => (
-                    <button key={cat.key} onClick={() => setMarketFavFilter(cat.key)}
-                      className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${
-                        marketFavFilter === cat.key
-                          ? 'bg-[var(--zv-text)] text-[var(--zv-background)]'
-                          : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)] border border-[var(--zv-border)]'
-                      }`}>
-                      {cat.label}
-                    </button>
-                  ))}
+                  {(() => {
+                    const counts: Record<string, number> = { semua: stocks.length, crypto: 0, forex: 0, komoditas: 0, saham: 0 }
+                    stocks.forEach(s => { const c = getMarketCategory(s); if (counts[c] !== undefined) counts[c]++ })
+                    return [
+                      { key: 'semua', label: 'Semua' },
+                      { key: 'crypto', label: '🪙 Kripto' },
+                      { key: 'forex', label: '💱 Forex' },
+                      { key: 'komoditas', label: '🛢️ Komoditas' },
+                      { key: 'saham', label: '📊 Saham' },
+                    ].map(cat => (
+                      <button key={cat.key} onClick={() => setMarketFavFilter(cat.key)}
+                        className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${
+                          marketFavFilter === cat.key
+                            ? 'bg-[var(--zv-text)] text-[var(--zv-background)]'
+                            : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)] border border-[var(--zv-border)]'
+                        }`}>
+                        {cat.label} <span className="opacity-60">{counts[cat.key] || 0}</span>
+                      </button>
+                    ))
+                  })()}
                 </div>
               </div>
 
@@ -3316,12 +3389,12 @@ function Dashboard() {
 
                         return (
                           <div key={s.id}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:bg-[var(--zv-hover)] transition-all active:scale-[0.99] cursor-pointer group"
+                            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:bg-[var(--zv-hover)] transition-all active:scale-[0.99] cursor-pointer group"
                             onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }}>
                             
                             {/* Logo */}
                             <div className="flex-shrink-0" onClick={(e) => { e.stopPropagation() }}>
-                              {getInstrumentLogo(s.code, 40)}
+                              {getInstrumentLogo(s.code, 36)}
                             </div>
 
                             {/* Name + Description */}
@@ -6326,7 +6399,7 @@ function Dashboard() {
           )}
 
           {/* ====== PROFILE TAB ====== */}
-          {activeTab === 'profile' && (
+          {activeTab === 'profil' && (
             <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {/* Profile Header */}
               <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
@@ -6420,12 +6493,13 @@ function Dashboard() {
               {/* Menu Items */}
               <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden mb-4">
                 {[
+                  { icon: <Briefcase className="w-4 h-4 text-[#3b82f6]" />, label: 'Portofolio', desc: 'Lihat portofolio investasi', action: () => setActiveTab('portfolio') },
+                  { icon: <Wallet className="w-4 h-4 text-[#22c55e]" />, label: 'Keuangan', desc: 'Deposit & penarikan', action: () => setActiveTab('finance') },
+                  { icon: <History className="w-4 h-4 text-[#f59e0b]" />, label: 'Riwayat', desc: 'Riwayat transaksi', action: () => setActiveTab('history') },
+                  { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Promosi', desc: 'Klaim bonus & promo', action: () => setActiveTab('bonus') },
+                  { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang Teman', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
+                  { icon: <Settings className="w-4 h-4 text-[var(--zv-muted)]" />, label: 'Pengaturan', desc: 'Edit profil & keamanan', action: () => { setProfileForm({ name: user?.name || '', email: user?.email || '', bankName: user?.bankName || '', bankAccount: user?.bankAccount || '', bankHolder: user?.bankHolder || '' }); setProfileEdit(true) } },
                   { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : user?.kycStatus === 'pending' ? 'Menunggu verifikasi' : 'Belum verifikasi', action: () => { setShowKycModal(true); fetchKycStatus() } },
-                  { icon: <Award className="w-4 h-4 text-[#f59e0b]" />, label: 'VIP Level', desc: 'Gold', action: () => setShowVipModal(true) },
-                  { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Promosi & Bonus', desc: 'Klaim bonus & promo', action: () => setActiveTab('bonus') },
-                  { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
-                  { icon: <Headphones className="w-4 h-4 text-[#3b82f6]" />, label: 'Layanan Pelanggan', desc: 'Bantuan & CS 24/7', action: () => setShowCsModal(true) },
-                  { icon: <Building2 className="w-4 h-4 text-[#3b82f6]" />, label: 'Profil Perusahaan', desc: 'Tentang ZEVORIX', action: () => setShowAboutModal(true) },
                   { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => setShowHelpModal(true) },
                 ].map((item, i) => (
                   <button key={i} onClick={item.action} className="w-full flex items-center gap-3 p-3 border-b border-[var(--zv-border)] last:border-0 hover:bg-[var(--zv-surface)] transition-colors">
@@ -6437,6 +6511,22 @@ function Dashboard() {
                     <ChevronRight className="w-4 h-4 text-[var(--zv-muted)]" />
                   </button>
                 ))}
+              </div>
+
+              {/* Account Type Badge */}
+              <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl grid place-items-center ${isDemo ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-green-500/15 border border-green-500/25'}`}>
+                    {isDemo ? <Sparkles className="w-5 h-5 text-amber-400" /> : <CheckCircle className="w-5 h-5 text-green-400" />}
+                  </div>
+                  <div className="flex-1">
+                    <span className="block text-[10px] font-black text-[var(--zv-text)]">Akun {isDemo ? 'Demo' : 'Real'}</span>
+                    <span className="block text-[8px] text-[var(--zv-muted)]">{isDemo ? 'Saldo virtual untuk latihan' : 'Saldo riil untuk trading'}</span>
+                  </div>
+                  <span className={`h-5 px-2 rounded-full text-[7px] font-bold flex items-center gap-1 ${isDemo ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-green-500/20 border border-green-400/30 text-green-300'}`}>
+                    {isDemo ? 'DEMO' : 'REAL'}
+                  </span>
+                </div>
               </div>
 
               {/* Regulatory Footer */}
@@ -6539,16 +6629,15 @@ function Dashboard() {
         <div className="max-w-7xl mx-auto flex">
           {[
             { key: 'home', label: 'Beranda', icon: HomeIcon },
-            { key: 'market', label: 'Pasar', icon: BarChart3 },
+            { key: 'market', label: 'Pasar Saham', icon: BarChart3 },
             { key: 'sinyal', label: 'Sinyal', icon: Target },
             { key: 'investasi', label: 'Investasi', icon: DollarSign },
-            { key: 'more', label: 'Lainnya', icon: Menu },
+            { key: 'profil', label: 'Profil', icon: User },
           ].map(tab => {
-            const isActive = activeTab === tab.key || (tab.key === 'more' && showSideMenu)
+            const isActive = activeTab === tab.key
             return (
               <button key={tab.key} onClick={() => {
-                if (tab.key === 'more') setShowSideMenu(true)
-                else setActiveTab(tab.key)
+                setActiveTab(tab.key)
               }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[var(--zv-text)]'}`}>
                 {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-b-full" style={{ background: 'linear-gradient(135deg, #3b82f6, #60a5fa)' }} />}
                 <div className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${isActive ? 'bg-[#3b82f6]/10' : ''}`}>
@@ -6573,12 +6662,12 @@ function Dashboard() {
           { key: 'market', label: 'Pasar', icon: BarChart3 },
           { key: 'sinyal', label: 'Sinyal', icon: Target },
           { key: 'investasi', label: 'Investasi', icon: DollarSign },
-          { key: 'undang', label: 'Undang', icon: UserPlus },
+          { key: 'profil', label: 'Profil', icon: User },
           { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
           { key: 'finance', label: 'Keuangan', icon: Wallet },
           { key: 'history', label: 'Riwayat', icon: History },
+          { key: 'undang', label: 'Undang', icon: UserPlus },
           { key: 'bonus', label: 'Promosi', icon: Gift },
-          { key: 'profile', label: 'Profil', icon: User },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
@@ -6641,7 +6730,7 @@ function Dashboard() {
                   { icon: <Newspaper className="w-4 h-4" />, label: 'Berita', key: 'news' },
                   { icon: <Gift className="w-4 h-4" />, label: 'Promosi & Bonus', key: 'bonus' },
                   { icon: <Trophy className="w-4 h-4" />, label: 'Leaderboard', key: 'leaderboard' },
-                  { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profile' },
+                  { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profil' },
                 ].map(item => (
                   <button key={item.key} onClick={() => { setActiveTab(item.key); setShowSideMenu(false) }}
                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold transition-all ${activeTab === item.key ? 'bg-[var(--zv-surface)] text-[#3b82f6] border border-[var(--zv-border)]' : 'text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
