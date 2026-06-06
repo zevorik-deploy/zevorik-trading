@@ -849,7 +849,10 @@ function Dashboard() {
   const [showConfirmTrade, setShowConfirmTrade] = useState(false)
   const [confirmTradeDir, setConfirmTradeDir] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalCategory, setSinyalCategory] = useState<string>('popular')
-  const [marketSignalTab, setMarketSignalTab] = useState<string>('semua')
+  const [marketSignalTab, setMarketSignalTab] = useState<string>('favorit')
+  const [marketFavFilter, setMarketFavFilter] = useState<string>('semua')
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [marketSearchQuery, setMarketSearchQuery] = useState<string>('')
   const [sinyalHistoryFilter, setSinyalHistoryFilter] = useState<string>('Semua')
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number; shownAt?: number}[]>([])
@@ -1171,6 +1174,78 @@ function Dashboard() {
     // Save simulation state for live updates
     sparklineSimRef.current.set(stock.id, { val: stock.price, prevD: momentum * 0.25, trend: mainDir * stock.price * 0.0003, momentum: 0 })
     return pts
+  }, [])
+
+  // ============ SVG INSTRUMENT LOGO GENERATOR ============
+  const getInstrumentLogo = useCallback((code: string, size: number = 40) => {
+    const specialColors: Record<string, [string, string]> = {
+      'BTC': ['#f7931a', '#e88a17'], 'ETH': ['#627eea', '#4c6edb'], 'XRP': ['#00aae4', '#0099cc'],
+      'SOL': ['#9945ff', '#14f195'], 'DOGE': ['#c3a634', '#ba9e2d'], 'ADA': ['#0033ad', '#002d99'],
+      'AVAX': ['#e84142', '#d13a3b'], 'DOT': ['#e6007a', '#cc006b'], 'LINK': ['#2a5ada', '#2450c2'],
+      'MATIC': ['#8247e5', '#703cc9'], 'BCH': ['#0ac18e', '#09ad7e'], 'LTC': ['#bfbbbb', '#a8a5a5'],
+      'XLM': ['#14b6e7', '#11a0cc'], 'UNI': ['#ff007a', '#e6006e'], 'AAVE': ['#b6509e', '#9e448c'],
+      'SHIB': ['#ffa409', '#e69408'], 'ATOM': ['#2e3148', '#262a3d'], 'FIL': ['#0090ff', '#0080e6'],
+      'NEAR': ['#00c1de', '#00abc5'], 'ALGO': ['#000000', '#1a1a1a'], 'VET': ['#15bdff', '#12a8e6'],
+      'SAND': ['#04adef', '#039ad6'], 'MANA': ['#ff2d55', '#e6284d'], 'AXS': ['#0055d5', '#004cba'],
+      'THETA': ['#2ab8e6', '#25a5cf'],
+      'GOLD': ['#ffd700', '#daa520'], 'SILVER': ['#c0c0c0', '#a0a0a0'], 'OIL': ['#2d2d2d', '#1a1a1a'],
+      'NATGAS': ['#4a90d9', '#3d7cc2'], 'COPPER': ['#b87333', '#a0652d'], 'PLATINUM': ['#e5e4e2', '#c8c7c5'],
+      'PALLADIUM': ['#ced0dd', '#b5b7c4'], 'WHEAT': ['#f5deb3', '#dcc89d'], 'CORN': ['#f4c430', '#dab22b'],
+      'SOYBEANS': ['#8db255', '#7d9f4c'], 'SUGAR': ['#f8f8f8', '#dcdcdc'], 'COFFEE': ['#6f4e37', '#5e422e'],
+      'COTTON': ['#f0f0f0', '#d4d4d4'], 'LUMBER': ['#deb887', '#c5a476'], 'RICE': ['#f5f5dc', '#d9d9c4'],
+      'EURUSD': ['#003399', '#002d88'], 'GBPUSD': ['#012169', '#011d5c'], 'USDJPY': ['#bc002d', '#a60027'],
+      'AUDUSD': ['#00008b', '#00007a'], 'USDCAD': ['#ff0000', '#e60000'], 'NZDUSD': ['#000000', '#1a1a1a'],
+      'USDCHF': ['#ff0000', '#e60000'], 'EURGBP': ['#003399', '#002d88'], 'EURJPY': ['#003399', '#002d88'],
+      'GBPJPY': ['#012169', '#011d5c'], 'AUDJPY': ['#00008b', '#00007a'], 'EURAUD': ['#003399', '#002d88'],
+      'GBPAUD': ['#012169', '#011d5c'], 'EURNZD': ['#003399', '#002d88'], 'GBPCAD': ['#012169', '#011d5c'],
+      'AAPL': ['#555555', '#444444'], 'NVDA': ['#76b900', '#67a000'], 'MSFT': ['#00a4ef', '#0093d6'],
+      'GOOGL': ['#4285f4', '#3676d6'], 'META': ['#1877f2', '#1569d8'], 'AMZN': ['#ff9900', '#e68a00'],
+      'TSLA': ['#cc0000', '#b30000'], 'AMD': ['#ed1c24', '#d4191f'], 'JPM': ['#003087', '#002b78'],
+      'V': ['#1a1f71', '#151a63'], 'MA': ['#ff5f00', '#e65500'],
+    }
+    const hash = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    const hue1 = hash % 360
+    const hue2 = (hash * 7) % 360
+    const gradientId = `logo-${code}`
+    const displayText = code.length <= 3 ? code.slice(0, 2) : code.slice(0, 3)
+    const colors = specialColors[code] || [`hsl(${hue1}, 70%, 50%)`, `hsl(${hue2}, 60%, 40%)`]
+    return (
+      <svg width={size} height={size} viewBox="0 0 40 40" style={{ flexShrink: 0 }}>
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={colors[0]} />
+            <stop offset="100%" stopColor={colors[1]} />
+          </linearGradient>
+        </defs>
+        <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
+        <text x="20" y="20" textAnchor="middle" dominantBaseline="central"
+          fill="white" fontSize={displayText.length > 2 ? "9" : "12"} fontWeight="900" fontFamily="system-ui">
+          {displayText}
+        </text>
+      </svg>
+    )
+  }, [])
+
+  // ============ MARKET CATEGORY HELPER ============
+  const getMarketCategory = useCallback((s: Stock): string => {
+    const cat = (s.category || '').toLowerCase()
+    const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE', 'SHIB', 'ATOM', 'FIL', 'NEAR', 'ALGO', 'VET', 'SAND', 'MANA', 'AXS', 'THETA']
+    const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPCAD']
+    const commodityCodes = ['GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER', 'PLATINUM', 'PALLADIUM', 'WHEAT', 'CORN', 'SOYBEANS', 'SUGAR', 'COFFEE', 'COTTON', 'LUMBER', 'RICE']
+    if (cat.includes('crypto') || cat.includes('kripto') || cryptoCodes.includes(s.code)) return 'crypto'
+    if (cat.includes('forex') || forexCodes.includes(s.code)) return 'forex'
+    if (cat.includes('commodity') || cat.includes('komoditas') || commodityCodes.includes(s.code)) return 'komoditas'
+    return 'saham'
+  }, [])
+
+  // ============ TOGGLE FAVORITE ============
+  const toggleFavorite = useCallback((code: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (next.has(code)) next.delete(code)
+      else next.add(code)
+      return next
+    })
   }, [])
 
   // Live sparkline update — shifts data left and adds new point every 2.5 seconds
@@ -3112,219 +3187,207 @@ function Dashboard() {
           {/* ====== MARKET TAB - PASAR SAHAM SIGNALS ====== */}
           {activeTab === 'market' && (
             <motion.div key="market" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Professional MT5-style Header */}
-              <div className="rounded-2xl overflow-hidden mb-4 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                <div className="p-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-yellow-300" />
-                      <span className="text-[14px] font-black text-white">Pasar Saham</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-red-500/25 border border-red-400/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                      <span className="text-[8px] font-black text-red-300">LIVE</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-blue-200 font-bold">Sinyal pasar real-time dari semua market</p>
 
-                  {/* Market Index Row */}
-                  <div className="flex gap-2 mt-3 overflow-x-auto custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                    {indices.map(idx => {
-                      const isUp = idx.changePercent >= 0
-                      return (
-                        <div key={idx.id} className="flex-shrink-0 h-9 px-3 rounded-lg bg-white/10 border border-white/15 flex items-center gap-2">
-                          <span className="text-[8px] font-black text-white">{idx.code}</span>
-                          <span className={`text-[8px] font-bold ${isUp ? 'text-green-300' : 'text-red-300'}`}>{isUp ? '+' : ''}{idx.changePercent.toFixed(2)}%</span>
-                        </div>
-                      )
-                    })}
+              {/* Header - Dark Trading App Style */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-[16px] font-black text-[var(--zv-text)]">Trade</h2>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                      <Wallet className="w-3.5 h-3.5 text-[#f59e0b]" />
+                      <span className="text-[10px] font-black text-[#f59e0b]">{formatRupiah(user?.balance || 0)}</span>
+                    </div>
+                    <button onClick={() => setMarketSearchQuery('')} className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-hover)] transition-colors">
+                      <Search className="w-4 h-4 text-[var(--zv-muted)]" />
+                    </button>
                   </div>
+                </div>
+
+                {/* Category Tabs - Favorit / Paling Ditraded / Top Movers */}
+                <div className="flex gap-1 mb-2">
+                  {[
+                    { key: 'favorit', label: 'Favorit' },
+                    { key: 'populer', label: 'Paling Ditraded' },
+                    { key: 'top', label: 'Top Movers' },
+                  ].map(tab => (
+                    <button key={tab.key} onClick={() => setMarketSignalTab(tab.key)}
+                      className={`flex-shrink-0 h-8 px-3 rounded-lg text-[10px] font-bold transition-all ${
+                        marketSignalTab === tab.key
+                          ? 'bg-[#3b82f6] text-white'
+                          : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]'
+                      }`}>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Market Type Filter */}
+                <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  {[
+                    { key: 'semua', label: 'Semua' },
+                    { key: 'crypto', label: '🪙 Kripto' },
+                    { key: 'forex', label: '💱 Forex' },
+                    { key: 'komoditas', label: '🛢️ Komoditas' },
+                    { key: 'saham', label: '📊 Saham' },
+                  ].map(cat => (
+                    <button key={cat.key} onClick={() => setMarketFavFilter(cat.key)}
+                      className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${
+                        marketFavFilter === cat.key
+                          ? 'bg-[var(--zv-text)] text-[var(--zv-background)]'
+                          : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)] border border-[var(--zv-border)]'
+                      }`}>
+                      {cat.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Market Category Tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-3 custom-scrollbar">
-                {[
-                  { key: 'semua', label: 'Semua' },
-                  { key: 'kripto', label: 'Kripto' },
-                  { key: 'forex', label: 'Forex' },
-                  { key: 'komoditas', label: 'Komoditas' },
-                  { key: 'saham', label: 'Saham' },
-                ].map(cat => (
-                  <button key={cat.key} onClick={() => setMarketSignalTab(cat.key)}
-                    className={`flex-shrink-0 h-9 px-4 rounded-xl text-[10px] md:text-[11px] font-bold transition-all ${marketSignalTab === cat.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:bg-[var(--zv-border)] hover:border-[var(--zv-border)] hover:text-[#3b82f6]'}`}>
-                    {cat.label}
+              {/* Search */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--zv-muted)]" />
+                <input
+                  type="text"
+                  value={marketSearchQuery}
+                  onChange={(e) => setMarketSearchQuery(e.target.value)}
+                  placeholder="Cari instrumen..."
+                  className="w-full h-9 pl-9 pr-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[11px] text-[var(--zv-text)] placeholder:text-[var(--zv-muted)] focus:outline-none focus:border-[#3b82f6]/50 transition-colors"
+                />
+                {marketSearchQuery && (
+                  <button onClick={() => setMarketSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[var(--zv-border)] grid place-items-center">
+                    <X className="w-3 h-3 text-[var(--zv-muted)]" />
                   </button>
-                ))}
+                )}
               </div>
 
-              {/* Signal Cards Grid */}
+              {/* Instrument List - Vertical Cards */}
               {(() => {
-                const getSignal = (code: string): 'BELI' | 'JUAL' | 'HOLD' => {
-                  const seed = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-                  const r = seed % 3
-                  return r === 0 ? 'BELI' : r === 1 ? 'JUAL' : 'HOLD'
-                }
-
-                const getMarketCategory = (s: Stock): string => {
-                  const cat = s.category?.toLowerCase() || ''
-                  const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'LINK', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE']
-                  const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF']
-                  const commodityCodes = ['XOM', 'CVX', 'COP', 'GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER']
-                  if (cat.includes('crypto') || cat.includes('kripto') || cryptoCodes.includes(s.code)) return 'kripto'
-                  if (cat.includes('forex') || forexCodes.includes(s.code)) return 'forex'
-                  if (cat.includes('commodity') || cat.includes('komoditas') || commodityCodes.includes(s.code)) return 'komoditas'
-                  return 'saham'
-                }
-
-                const filteredSignalStocks = stocks.filter(s => {
-                  if (marketSignalTab === 'semua') return true
-                  return getMarketCategory(s) === marketSignalTab
+                // Filter by search
+                let filteredMarketStocks = stocks.filter(s => {
+                  const q = marketSearchQuery.toLowerCase()
+                  if (q && !s.code.toLowerCase().includes(q) && !s.name.toLowerCase().includes(q)) return false
+                  return true
                 })
 
-                const signalConfig: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-                  'BELI': { bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.25)', text: '#22c55e', icon: '\u2191' },
-                  'JUAL': { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)', text: '#ef4444', icon: '\u2193' },
-                  'HOLD': { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b', icon: '\u2192' },
+                // Filter by market category
+                if (marketFavFilter !== 'semua') {
+                  filteredMarketStocks = filteredMarketStocks.filter(s => getMarketCategory(s) === marketFavFilter)
+                }
+
+                // Filter/sort by tab
+                if (marketSignalTab === 'favorit') {
+                  if (favorites.size === 0) {
+                    // Show all when no favorites yet
+                  } else {
+                    filteredMarketStocks = filteredMarketStocks.filter(s => favorites.has(s.code))
+                  }
+                } else if (marketSignalTab === 'populer') {
+                  filteredMarketStocks = [...filteredMarketStocks].sort((a, b) => b.volume - a.volume)
+                } else if (marketSignalTab === 'top') {
+                  filteredMarketStocks = [...filteredMarketStocks].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
+                }
+
+                const formatPrice = (s: Stock) => {
+                  const mcat = getMarketCategory(s)
+                  if (mcat === 'forex') return s.price.toFixed(4)
+                  if (mcat === 'crypto') {
+                    if (s.price >= 1000000) return formatRupiah(s.price)
+                    return '$' + s.price.toLocaleString()
+                  }
+                  return formatRupiah(s.price)
                 }
 
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                    {filteredSignalStocks.map(s => {
-                      const sparkData = getSparklineData(s)
-                      const isUp = s.changePercent >= 0
-                      const sparkColor = isUp ? '#22c55e' : '#ef4444'
-                      const signal = getSignal(s.code)
-                      const cfg = signalConfig[signal]
-                      const mcat = getMarketCategory(s)
-                      const catLabel = mcat === 'kripto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'
+                  <div className="space-y-1.5">
+                    {/* Results count */}
+                    <div className="flex items-center justify-between px-1 mb-1">
+                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">{filteredMarketStocks.length} instrumen</span>
+                      {marketSignalTab === 'favorit' && favorites.size > 0 && (
+                        <span className="text-[9px] font-bold text-[#f59e0b]">{favorites.size} favorit</span>
+                      )}
+                    </div>
 
-                      return (
-                        <div key={s.id}
-                          onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }}
-                          className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer">
-                          <div className="p-3 md:p-4">
-                            {/* Top Row: Name + Signal Badge */}
-                            <div className="flex items-center justify-between mb-2.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center">
-                                  <span className={`text-[8px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
-                                    <span className="text-[7px] font-bold text-[var(--zv-muted)] px-1.5 py-0.5 rounded bg-[var(--zv-surface)] border border-[var(--zv-border)]">{catLabel}</span>
-                                  </div>
-                                  <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
-                                </div>
-                              </div>
-                              {/* Signal Badge */}
-                              <div className="h-7 px-2.5 rounded-lg flex items-center gap-1" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-                                <span className="text-[10px] font-black" style={{ color: cfg.text }}>{cfg.icon}</span>
-                                <span className="text-[9px] font-black" style={{ color: cfg.text }}>{signal}</span>
-                              </div>
+                    <div className="max-h-[calc(100vh-320px)] overflow-y-auto space-y-1.5 pr-0.5" style={{ scrollbarWidth: 'thin' }}>
+                      {filteredMarketStocks.map(s => {
+                        const isUp = s.changePercent >= 0
+                        const sparkData = getSparklineData(s)
+                        const sparkColor = isUp ? '#22c55e' : '#ef5350'
+                        const mcat = getMarketCategory(s)
+                        const isFav = favorites.has(s.code)
+
+                        return (
+                          <div key={s.id}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:bg-[var(--zv-hover)] transition-all active:scale-[0.99] cursor-pointer group"
+                            onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }}>
+                            
+                            {/* Logo */}
+                            <div className="flex-shrink-0" onClick={(e) => { e.stopPropagation() }}>
+                              {getInstrumentLogo(s.code, 40)}
                             </div>
 
-                            {/* Price + Change */}
-                            <div className="flex items-end justify-between mb-2">
-                              <div>
-                                <span className="block text-[16px] md:text-lg font-black text-[var(--zv-text)] tabular-nums">
-                                  {mcat === 'forex' ? s.price.toFixed(4) : mcat === 'kripto' ? (s.price >= 1000 ? formatRupiah(s.price) : '$' + s.price.toLocaleString()) : formatRupiah(s.price)}
+                            {/* Name + Description */}
+                            <div className="flex-1 min-w-0 text-left">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] font-black text-[var(--zv-text)]">{s.code}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${
+                                  mcat === 'crypto' ? 'bg-orange-500/10 text-orange-400' :
+                                  mcat === 'forex' ? 'bg-blue-500/10 text-blue-400' :
+                                  mcat === 'komoditas' ? 'bg-amber-500/10 text-amber-400' :
+                                  'bg-emerald-500/10 text-emerald-400'
+                                }`}>
+                                  {mcat === 'crypto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'}
                                 </span>
-                                <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                                  {isUp ? <TrendingUp className="w-3 h-3 text-[#22c55e]" /> : <TrendingDown className="w-3 h-3 text-[#ef5350]" />}
-                                  <span className={`text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
-                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="block text-[7px] font-bold text-[var(--zv-muted)]">24h</span>
-                                <span className={`block text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{isUp ? '+' : ''}{s.changePercent.toFixed(2)}%</span>
-                              </div>
+                              <span className="block text-[9px] text-[var(--zv-muted)] truncate">{s.name}</span>
                             </div>
 
                             {/* Mini Sparkline */}
-                            <div className="h-[40px] -mx-1">
+                            <div className="flex-shrink-0 w-16 h-8 hidden sm:block">
                               <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
+                                <AreaChart data={sparkData.slice(-15)} margin={{ top: 1, right: 0, bottom: 1, left: 0 }}>
                                   <defs>
-                                    <linearGradient id={`sigGrad-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <linearGradient id={`ml-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
                                       <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
-                                      <stop offset="70%" stopColor={sparkColor} stopOpacity="0.05" />
                                       <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
                                     </linearGradient>
                                   </defs>
-                                  <XAxis dataKey="i" hide />
-                                  <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
-                                  <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sigGrad-${s.id})`} strokeWidth={1.5}
-                                    dot={(props: Record<string, unknown>) => {
-                                      const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                      if (index !== sparkData.length - 1) return <g key={String(index)} />
-                                      return (
-                                        <g key={`dot-${s.id}`}>
-                                          <circle cx={cx} cy={cy} r={4} fill={sparkColor} opacity={0.2}>
-                                            <animate attributeName="r" values="3;7;3" dur="2s" repeatCount="indefinite" />
-                                            <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
-                                          </circle>
-                                          <circle cx={cx} cy={cy} r={2.5} fill={sparkColor} stroke="#fff" strokeWidth={1} />
-                                        </g>
-                                      )
-                                    }}
-                                    activeDot={false} />
+                                  <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#ml-${s.id})`} strokeWidth={1.5} dot={false} />
                                 </AreaChart>
                               </ResponsiveContainer>
                             </div>
-                          </div>
 
-                          {/* Footer: High/Low/Vol */}
-                          <div className="px-3 md:px-4 py-2 bg-[var(--zv-surface)] border-t border-[var(--zv-border)] grid grid-cols-3 gap-2">
-                            <div>
-                              <span className="block text-[7px] font-bold text-[var(--zv-muted)]">High</span>
-                              <span className="block text-[9px] font-black text-[#22c55e]">{mcat === 'forex' ? s.high.toFixed(4) : formatNumber(s.high)}</span>
+                            {/* Price + Change */}
+                            <div className="flex-shrink-0 text-right">
+                              <span className="block text-[12px] font-black text-[var(--zv-text)] tabular-nums">{formatPrice(s)}</span>
+                              <span className={`flex items-center justify-end gap-0.5 text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                                {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
+                              </span>
                             </div>
-                            <div>
-                              <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Low</span>
-                              <span className="block text-[9px] font-black text-[#ef5350]">{mcat === 'forex' ? s.low.toFixed(4) : formatNumber(s.low)}</span>
-                            </div>
-                            <div>
-                              <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Vol</span>
-                              <span className="block text-[9px] font-black text-[var(--zv-text)]">{formatNumber(s.volume)}</span>
-                            </div>
+
+                            {/* Favorite star */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleFavorite(s.code) }}
+                              className="flex-shrink-0 w-7 h-7 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] transition-colors"
+                            >
+                              <Star className={`w-3.5 h-3.5 transition-colors ${isFav ? 'fill-[#f59e0b] text-[#f59e0b]' : 'text-[var(--zv-muted)] group-hover:text-[#f59e0b]'}`} />
+                            </button>
                           </div>
-                        </div>
-                      )
-                    })}
-                    {filteredSignalStocks.length === 0 && (
-                      <div className="col-span-full text-center py-8">
+                        )
+                      })}
+                    </div>
+
+                    {filteredMarketStocks.length === 0 && (
+                      <div className="text-center py-8">
                         <BarChart3 className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                        <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Tidak ada sinyal ditemukan</p>
+                        <p className="text-[11px] font-bold text-[var(--zv-muted)]">Tidak ada instrumen ditemukan</p>
+                        {marketSignalTab === 'favorit' && favorites.size === 0 && (
+                          <p className="text-[9px] text-[var(--zv-muted)] mt-1">Tap ⭐ untuk menambahkan favorit</p>
+                        )}
                       </div>
                     )}
                   </div>
                 )
               })()}
-
-              {/* Signal Legend */}
-              <div className="mt-4 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                <div className="flex items-center gap-4 flex-wrap">
-                  <span className="text-[9px] font-bold text-[var(--zv-muted)]">Sinyal:</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-                    <span className="text-[9px] font-bold text-[#22c55e]">BELI</span>
-                    <span className="text-[8px] text-[var(--zv-muted)]">- Rekomendasi beli</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
-                    <span className="text-[9px] font-bold text-[#ef4444]">JUAL</span>
-                    <span className="text-[8px] text-[var(--zv-muted)]">- Rekomendasi jual</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
-                    <span className="text-[9px] font-bold text-[#f59e0b]">HOLD</span>
-                    <span className="text-[8px] text-[var(--zv-muted)]">- Tunggu & lihat</span>
-                  </div>
-                </div>
-                <p className="text-[7px] text-[var(--zv-muted)] mt-1.5">* Sinyal berdasarkan analisis teknikal otomatis. Bukan rekomendasi investasi. Klik kartu untuk trading.</p>
-              </div>
             </motion.div>
           )}
 
