@@ -134,3 +134,108 @@ Stage Summary:
 - Bottom nav: Beranda, Pasar, Sinyal, Saldo, Profil (Investasi in sidebar)
 - Server OOM issues with agent-browser due to 580KB file size, but preview panel works
 - All API endpoints responding correctly (verified through dev log)
+
+## Task 1: Redesign ZEVORIX Saldo Dashboard & Sinyal Tab - Super Beautiful MT5 Real Trading Look
+
+### Date: 2025-03-04
+
+### Summary
+Completely redesigned the Saldo Live Dashboard and improved the Sinyal Tab to achieve a premium MT5 terminal look with comprehensive trading features.
+
+### Saldo Dashboard Changes (lines ~4860-5324)
+1. **Account Summary Card** — Premium dark gradient card with:
+   - "ZEVORIX Terminal" branding header
+   - DEMO/REAL account badge with appropriate colors (amber for DEMO, green for REAL)
+   - LIVE indicator when positions are active
+   - Balance displayed big and prominent (26px font)
+   - Equity with real-time color change based on floating P&L
+   - Floating P&L indicator with green/red background and trend icons (TrendingUp/TrendingDown)
+   - Subtle top highlight line and glow effects
+
+2. **MT5 Terminal Stats Grid** (3x2 grid):
+   - Saldo (Balance) with Wallet icon
+   - Equity with BarChart3 icon and real-time color
+   - Margin (Used) with Shield icon, amber color
+   - Free Margin with CreditCard icon, color-coded (green if >30% balance, white if positive, red if negative)
+   - Level Margin with Zap icon, progress bar, and color coding (>200% green, >100% amber, <100% red, <50% danger)
+   - Modal Live with Target icon, updates with P&L
+
+3. **Margin Level Warning Bar**:
+   - Shows when Margin Level < 100% (Margin Call warning, amber)
+   - Shows when Margin Level < 50% (Stop Out risk, red, pulsing)
+   - Auto-hides when no active positions or margin level is healthy
+
+4. **Trading Performance Section**:
+   - Total Trades count
+   - Win Rate with circular SVG progress indicator
+   - Total Net P&L summary
+   - Today's P&L
+
+5. **Quick Action Buttons** (3-column grid):
+   - "Mulai Trading" → navigates to Sinyal tab (blue gradient)
+   - "Deposit" → navigates to Finance tab (green)
+   - "Withdraw" → navigates to Finance tab (red, only for REAL accounts)
+   - "Saldo Demo" → navigates to Finance tab (amber, only for DEMO accounts)
+
+6. **Active Positions** — Premium card design:
+   - Gradient top border (green for Beli, red for Jual)
+   - Stock code + direction badge + leverage badge row
+   - 4-column stats grid: Lot, Entry Price, Current Price, Modal Live
+   - Timer with visual progress bar (blue >30%, amber >10%, red <10%)
+   - Large P&L display with text shadow glow
+   - "✕ Tutup" close button with hover effects
+   - Total Floating P&L summary bar at top
+   - "CLOSE ALL" button when multiple positions open
+
+7. **Trading History** — Improved design:
+   - Summary bar showing Win/Loss counts and Net P&L
+   - Better filter buttons with active state styling
+   - Each entry has gradient top border
+   - Date/time display
+   - Volume, Fee, P&L, and Net P&L breakdown
+
+### Sinyal Tab Changes (lines ~4124-4869)
+1. **Top Bar** — More compact:
+   - Removed balance display (belongs in Saldo tab now)
+   - Category tabs with emoji icons (🔥 Popular, 📈 Saham, ₿ Kripto, 🛢 Komoditas, 💱 Forex)
+   - Full-width compact pills
+   - Cleaner stock pills with smaller payout percentage text
+
+2. **Lot Size Input** — With +/- buttons:
+   - Centered input with minus/plus buttons on each side
+   - Cleaner lot-to-rupiah conversion display
+   - Quick lot buttons remain
+
+3. **Leverage Selector** — Visual card design:
+   - Grid layout (4 columns)
+   - Selected state with amber gradient and shadow
+   - Subtle glass overlay on selected
+
+4. **Volume Calculation** — Cleaner breakdown:
+   - Fee 10% with Minus icon
+   - Modal Kerja with Target icon
+   - P&L per 1% move in separate colored cards (green for up, red for down)
+
+5. **BELI/JUAL Buttons** — BIGGER & More Prominent:
+   - Height increased from h-14 to h-16
+   - Font size increased from 13px to 16px
+   - Icons increased from w-4 to w-5
+   - Gradient backgrounds with inset highlights
+   - Larger box shadows for depth
+   - Active scale feedback
+
+6. **Position Summary** — Improved with live P&L:
+   - Dynamic background color based on P&L (green/red)
+   - Pulsing dot indicator
+   - Direct link to Saldo tab
+
+### Technical Notes
+- All existing state variables and functions preserved (no variable name changes)
+- Used IIFE pattern for computed values in the Saldo tab to avoid re-creating closures
+- Margin calculations follow MT5 standard:
+  - Equity = Balance + Floating P&L
+  - Used Margin = sum of workingCapital for active positions
+  - Free Margin = Equity - Used Margin
+  - Margin Level = (Equity / Used Margin) × 100%
+- ESLint passes with no errors
+- Dev server running successfully
