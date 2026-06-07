@@ -90,3 +90,47 @@ Stage Summary:
 - Pasar Global properly renamed everywhere (tab header, bottom nav, sidebar, quick access)
 - Real logos loading correctly: stocks via Google Favicon, crypto via CoinCap, forex via FlagCDN
 - Market cards show comprehensive data: price, change%, high, low, volume, market cap
+
+---
+Task ID: 3
+Agent: Full-stack Developer (Subagent) + Main
+Task: Create separate Saldo Live dashboard, redesign Sinyal with LOT system, fix logos, rename features
+
+Work Log:
+- Created `LogoWithFallback` component (line ~190) with state-based error handling for broken images
+- Added `sinyalLots` state and `LOT_SIZE = 100000` constant (1 Lot = Rp 100,000)
+- Added `sinyalAmountFromLots` computed value for auto lot→Rupiah conversion
+- Added `saldoSubTab` state for Posisi/Riwayat sub-tabs in Saldo dashboard
+- Created new Saldo Live tab (`activeTab === 'saldo'`) with MT5-style dark card:
+  - Saldo (account balance)
+  - Equity (live balance with unrealized P&L, color-coded)
+  - Margin (total working capital of active positions)
+  - Margin Bebas (Free Margin = Balance - Margin)
+  - Level Margin (%) with visual progress bar
+  - P&L Live summary row
+  - Posisi/Riwayat sub-tabs
+  - MT5-style position table: Instrument, Action, Entry→Current, P&L, Close button
+- Removed Saldo Live equity summary section from Sinyal tab
+- Replaced Sinyal amount input with LOT-based system:
+  - Lot size input (number, step 0.01)
+  - Quick lot buttons: 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10
+  - Lot → Rupiah conversion display
+  - BELI/JUAL buttons show lot count + Rupiah equivalent
+  - Trade confirmation modal shows "Lot" row
+  - Position open toast shows lot count
+- Added compact position summary in Sinyal tab (links to Saldo tab)
+- Updated bottom navigation: Beranda, Pasar, Sinyal, Saldo, Profil
+- Moved Investasi to desktop sidebar only
+- Applied LogoWithFallback to crypto (CoinCap) and stock (Google Favicon) logo images
+- Added onError fallback to forex flag images
+- Renamed "ASET SAHAM" → "ASET GLOBAL" in profile footer
+- Updated `openSinyalPosition` to use `sinyalAmountFromLots`
+- Lint passes with no errors
+
+Stage Summary:
+- New Saldo Live tab: MT5-style dashboard with Saldo, Equity, Margin, Margin Bebas, Level Margin
+- Sinyal tab: Clean trading view with LOT system (0.01-10 lots), chart, BELI/JUAL
+- LogoWithFallback component handles broken external images gracefully
+- Bottom nav: Beranda, Pasar, Sinyal, Saldo, Profil (Investasi in sidebar)
+- Server OOM issues with agent-browser due to 580KB file size, but preview panel works
+- All API endpoints responding correctly (verified through dev log)
