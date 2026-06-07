@@ -4232,10 +4232,15 @@ function Dashboard() {
                             const secs = elapsed % 60
                             return (
                               <motion.div key={ap.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border ${isUp ? 'bg-green-500/10 border-green-500/25' : 'bg-red-500/10 border-red-500/25'}`}
-                                style={{ backdropFilter: 'blur(10px)' }}>
-                                <div className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                                  <Clock className="w-3.5 h-3.5 text-blue-400" />
+                                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border overflow-hidden"
+                                style={{
+                                  backdropFilter: 'blur(10px)',
+                                  borderColor: isUp ? 'rgba(34,197,94,0.25)' : 'rgba(239,83,80,0.25)',
+                                  background: isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,83,80,0.08)'
+                                }}>
+                                <div className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full overflow-hidden"
+                                  style={{ background: isUp ? 'linear-gradient(180deg, #4ade80, #22c55e)' : 'linear-gradient(180deg, #f87171, #ef5350)' }}>
+                                  <Clock className="w-3.5 h-3.5 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1">
@@ -4251,9 +4256,10 @@ function Dashboard() {
                                   </div>
                                 </div>
                                 <button onClick={() => closeSinyalPosition(ap.id)}
-                                  className="w-5 h-5 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/40 transition-all flex-shrink-0"
+                                  className="w-5 h-5 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+                                  style={{ background: 'linear-gradient(180deg, #f87171, #ef5350)', boxShadow: '0 1px 4px rgba(239,83,80,0.3)' }}
                                   title="Tutup posisi">
-                                  <X className="w-2.5 h-2.5 text-[var(--zv-muted)]" />
+                                  <X className="w-2.5 h-2.5 text-white" />
                                 </button>
                               </motion.div>
                             )
@@ -4591,16 +4597,18 @@ function Dashboard() {
                           <span className="text-[8px] font-bold text-[var(--zv-muted)]">{selectedSinyalStock.code}</span>
                         )}
                       </div>
-                      {/* BID/ASK display */}
+                      {/* BID/ASK display — Vibrant matching chart colors */}
                       {selectedSinyalStock && sinyalCurrentPrice > 0 && (
-                        <div className="mt-2 grid grid-cols-2 gap-1.5">
-                          <div className="px-2 py-1.5 rounded-lg bg-red-500/8 border border-red-500/15 text-center">
-                            <div className="text-[7px] font-bold text-red-400/70 uppercase">BID</div>
-                            <div className="text-[11px] font-black text-red-400 tabular-nums">{formatRupiah(bidPrice)}</div>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <div className="relative px-2.5 py-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(239,83,80,0.12) 0%, rgba(239,83,80,0.06) 100%)', border: '1px solid rgba(239,83,80,0.25)' }}>
+                            <div className="absolute top-0 left-0 w-1 h-full" style={{ background: 'linear-gradient(180deg, #ef5350, #dc2626)' }} />
+                            <div className="text-[7px] font-black text-red-400/80 uppercase tracking-wider ml-1">BID / JUAL</div>
+                            <div className="text-[12px] font-black text-red-400 tabular-nums ml-1">{formatRupiah(bidPrice)}</div>
                           </div>
-                          <div className="px-2 py-1.5 rounded-lg bg-green-500/8 border border-green-500/15 text-center">
-                            <div className="text-[7px] font-bold text-green-400/70 uppercase">ASK</div>
-                            <div className="text-[11px] font-black text-green-400 tabular-nums">{formatRupiah(askPrice)}</div>
+                          <div className="relative px-2.5 py-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.06) 100%)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                            <div className="absolute top-0 left-0 w-1 h-full" style={{ background: 'linear-gradient(180deg, #22c55e, #16a34a)' }} />
+                            <div className="text-[7px] font-black text-green-400/80 uppercase tracking-wider ml-1">ASK / BELI</div>
+                            <div className="text-[12px] font-black text-green-400 tabular-nums ml-1">{formatRupiah(askPrice)}</div>
                           </div>
                         </div>
                       )}
@@ -4700,14 +4708,14 @@ function Dashboard() {
                             <div className="text-[6px] text-[var(--zv-muted)] mb-1.5">
                               {formatRupiah(Math.round(sinyalAmountFromLots * 0.90))} × {sinyalLeverage / 100}×
                             </div>
-                            <div className="grid grid-cols-2 gap-1">
-                              <div className="flex items-center justify-between px-1.5 py-1 rounded-md bg-green-500/8 border border-green-500/10">
-                                <span className="text-[6px] font-bold text-green-400">↑ +1%</span>
-                                <span className="text-[8px] font-black text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.06) 100%)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                                <span className="text-[7px] font-black text-green-400 flex items-center gap-0.5"><TrendingUp className="w-2 h-2" />+1%</span>
+                                <span className="text-[9px] font-black text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
                               </div>
-                              <div className="flex items-center justify-between px-1.5 py-1 rounded-md bg-red-500/8 border border-red-500/10">
-                                <span className="text-[6px] font-bold text-red-400">↓ -1%</span>
-                                <span className="text-[8px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
+                              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(239,83,80,0.15) 0%, rgba(239,83,80,0.06) 100%)', border: '1px solid rgba(239,83,80,0.2)' }}>
+                                <span className="text-[7px] font-black text-red-400 flex items-center gap-0.5"><TrendingDown className="w-2 h-2" />-1%</span>
+                                <span className="text-[9px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
                               </div>
                             </div>
                           </div>
@@ -4727,10 +4735,10 @@ function Dashboard() {
                       </div>
                     </div>
 
-                    {/* ══ BELI / JUAL with BID/ASK prices — MT5 style ══ */}
-                    <div className="px-2.5 pb-2.5 pt-1 border-t border-[var(--zv-chart-border)]">
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {/* JUAL / SELL — BID price */}
+                    {/* ══ BELI / JUAL — Super Vibrant Green/Red matching Chart Candles ══ */}
+                    <div className="px-2 pb-2 pt-1.5 border-t border-[var(--zv-chart-border)]">
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* ════ JUAL / SELL — Vibrant RED matching chart down-candles (#ef5350) ════ */}
                         <button
                           onClick={() => {
                             if (sinyalAmountFromLots < 10000) {
@@ -4742,16 +4750,25 @@ function Dashboard() {
                             setConfirmTradeDir('TURUN')
                             setShowConfirmTrade(true)
                           }}
-                          className="relative rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.96] h-[52px]"
-                          style={{ background: 'linear-gradient(180deg, #ef4444 0%, #b91c1c 100%)', boxShadow: '0 4px 20px rgba(239,68,68,0.35), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
-                          <div className="absolute inset-0 opacity-20" style={{ background: 'linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 100%)' }} />
-                          <div className="relative flex items-center gap-1.5">
-                            <TrendingDown className="w-4 h-4 text-white" />
-                            <span className="text-[13px] font-black tracking-wider text-white">JUAL</span>
+                          className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[58px] group"
+                          style={{ background: 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)', boxShadow: '0 6px 28px rgba(239,83,80,0.45), 0 2px 8px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }}>
+                          {/* Shimmer overlay */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
+                          {/* Top highlight */}
+                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' }} />
+                          {/* Pulse glow ring */}
+                          <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-red 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(239,83,80,0.3)' }} />
+                          <div className="relative flex items-center gap-2">
+                            <TrendingDown className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
+                            <span className="text-[16px] font-black tracking-[0.15em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">JUAL</span>
                           </div>
-                          <span className="relative text-[8px] font-bold text-red-100 tabular-nums">SELL @ {sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
+                          <div className="relative flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-white/60" />
+                            <span className="text-[9px] font-bold text-white/90 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
+                          </div>
                         </button>
-                        {/* BELI / BUY — ASK price */}
+
+                        {/* ════ BELI / BUY — Vibrant GREEN matching chart up-candles (#22c55e) ════ */}
                         <button
                           onClick={() => {
                             if (sinyalAmountFromLots < 10000) {
@@ -4763,19 +4780,30 @@ function Dashboard() {
                             setConfirmTradeDir('NAIK')
                             setShowConfirmTrade(true)
                           }}
-                          className="relative rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.96] h-[52px]"
-                          style={{ background: 'linear-gradient(180deg, #22c55e 0%, #15803d 100%)', boxShadow: '0 4px 20px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
-                          <div className="absolute inset-0 opacity-20" style={{ background: 'linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 100%)' }} />
-                          <div className="relative flex items-center gap-1.5">
-                            <TrendingUp className="w-4 h-4 text-white" />
-                            <span className="text-[13px] font-black tracking-wider text-white">BELI</span>
+                          className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[58px] group"
+                          style={{ background: 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)', boxShadow: '0 6px 28px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }}>
+                          {/* Shimmer overlay */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
+                          {/* Top highlight */}
+                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' }} />
+                          {/* Pulse glow ring */}
+                          <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-green 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(34,197,94,0.3)' }} />
+                          <div className="relative flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
+                            <span className="text-[16px] font-black tracking-[0.15em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">BELI</span>
                           </div>
-                          <span className="relative text-[8px] font-bold text-green-100 tabular-nums">BUY @ {sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
+                          <div className="relative flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-white/60" />
+                            <span className="text-[9px] font-bold text-white/90 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
+                          </div>
                         </button>
                       </div>
                       {sinyalAmountFromLots > 0 && (
-                        <div className="mt-1 text-center">
-                          <span className="text-[7px] font-bold text-[var(--zv-muted)]">{sinyalLots} Lot • {formatRupiah(sinyalAmountFromLots)}</span>
+                        <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                          <Package className="w-2.5 h-2.5 text-blue-400" />
+                          <span className="text-[8px] font-bold text-blue-300">{sinyalLots} Lot</span>
+                          <span className="text-[8px] text-[var(--zv-muted)]">•</span>
+                          <span className="text-[8px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots)}</span>
                         </div>
                       )}
                     </div>
@@ -4852,7 +4880,10 @@ function Dashboard() {
                         <div key={pos.id} className={`grid grid-cols-12 gap-0 px-2 py-1.5 items-center text-[7px] font-bold ${idx % 2 === 0 ? 'bg-white/[0.02]' : ''} hover:bg-white/[0.04] transition-colors`}>
                           <div className="col-span-2 text-[var(--zv-text)] font-black">{pos.stockCode}</div>
                           <div className="col-span-1">
-                            <span className={`px-1 py-0.5 rounded text-[6px] font-black ${isUp ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
+                            <span className="px-1 py-0.5 rounded text-[6px] font-black text-white"
+                              style={isUp
+                                ? { background: 'linear-gradient(180deg, #4ade80, #22c55e)' }
+                                : { background: 'linear-gradient(180deg, #f87171, #ef5350)' }}>
                               {isUp ? 'BUY' : 'SELL'}
                             </span>
                           </div>
@@ -4864,9 +4895,10 @@ function Dashboard() {
                           </div>
                           <div className="col-span-1 flex justify-end">
                             <button onClick={() => closeSinyalPosition(pos.id)}
-                              className="h-5 w-5 rounded-md bg-red-500/10 border border-red-500/20 flex items-center justify-center hover:bg-red-500/30 transition-all"
+                              className="h-5 w-5 rounded-md flex items-center justify-center transition-all"
+                              style={{ background: 'linear-gradient(180deg, #f87171, #ef5350)', boxShadow: '0 1px 3px rgba(239,83,80,0.25)' }}
                               title="Tutup posisi">
-                              <X className="w-2.5 h-2.5 text-red-400" />
+                              <X className="w-2.5 h-2.5 text-white" />
                             </button>
                           </div>
                         </div>
@@ -5175,7 +5207,8 @@ function Dashboard() {
                           </span>
                           {activePos.length > 1 && (
                             <button onClick={() => activePos.forEach(p => closeSinyalPosition(p.id))}
-                              className="h-6 px-3 rounded-lg bg-red-500/15 border border-red-500/25 text-[7px] font-black text-red-400 hover:bg-red-500/25 transition-all">
+                              className="relative h-7 px-3 rounded-lg overflow-hidden text-[7px] font-black text-white transition-all active:scale-[0.95]"
+                              style={{ background: 'linear-gradient(180deg, #f87171 0%, #ef5350 50%, #dc2626 100%)', boxShadow: '0 2px 8px rgba(239,83,80,0.3)' }}>
                               CLOSE ALL
                             </button>
                           )}
@@ -5204,14 +5237,18 @@ function Dashboard() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-[12px] font-black text-[var(--zv-text)]">{ap.stockCode}</span>
-                                  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[8px] font-black ${isUp ? 'bg-green-500/15 text-green-400 border border-green-500/20' : 'bg-red-500/15 text-red-400 border border-red-500/20'}`}>
+                                  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[8px] font-black text-white ${isUp ? '' : ''}`}
+                                    style={isUp
+                                      ? { background: 'linear-gradient(180deg, #4ade80, #22c55e)', boxShadow: '0 2px 6px rgba(34,197,94,0.3)' }
+                                      : { background: 'linear-gradient(180deg, #f87171, #ef5350)', boxShadow: '0 2px 6px rgba(239,83,80,0.3)' }}>
                                     {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                                     {isUp ? 'BELI' : 'JUAL'}
                                   </span>
                                   <span className="text-[8px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/15">1:{ap.leverage || 1000}</span>
                                 </div>
                                 <button onClick={() => closeSinyalPosition(ap.id)}
-                                  className="h-7 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[8px] font-black text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-all active:scale-[0.95]">
+                                  className="relative h-7 px-3 rounded-lg overflow-hidden text-[8px] font-black text-white transition-all active:scale-[0.95]"
+                                  style={{ background: 'linear-gradient(180deg, #f87171 0%, #ef5350 50%, #dc2626 100%)', boxShadow: '0 2px 8px rgba(239,83,80,0.3)' }}>
                                   ✕ Tutup
                                 </button>
                               </div>
@@ -7174,9 +7211,15 @@ function Dashboard() {
                 <button onClick={() => {
                   openSinyalPosition(confirmTradeDir)
                   setShowConfirmTrade(false)
-                }} className={`w-full h-12 rounded-xl text-white text-[12px] font-black tracking-wide flex items-center justify-center gap-2 transition-all active:scale-[0.97] ${confirmTradeDir === 'NAIK' ? 'bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/30' : 'bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-500/30'}`}>
-                  {confirmTradeDir === 'NAIK' ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-                  KONFIRMASI {confirmTradeDir === 'NAIK' ? 'BELI' : 'JUAL'}
+                }}
+                  className="relative w-full h-14 rounded-xl text-white text-[13px] font-black tracking-wide flex items-center justify-center gap-2 transition-all active:scale-[0.96] overflow-hidden"
+                  style={confirmTradeDir === 'NAIK'
+                    ? { background: 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)', boxShadow: '0 6px 28px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.2)' }
+                    : { background: 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)', boxShadow: '0 6px 28px rgba(239,83,80,0.45), 0 2px 8px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.2)' }
+                  }>
+                  <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)' }} />
+                  {confirmTradeDir === 'NAIK' ? <TrendingUp className="w-5 h-5 relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" /> : <TrendingDown className="w-5 h-5 relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />}
+                  <span className="relative drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">KONFIRMASI {confirmTradeDir === 'NAIK' ? 'BELI' : 'JUAL'}</span>
                 </button>
                 <button onClick={() => setShowConfirmTrade(false)} className="w-full h-10 mt-2 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[10px] font-bold text-[var(--zv-muted)] hover:text-[var(--zv-text)] transition-all">
                   Batal
@@ -8750,6 +8793,7 @@ function Dashboard() {
 export default function Home() {
   const { isLoggedIn } = useAuthStore()
   const [mounted, setMounted] = useState(false)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true) }, [])
   if (!mounted) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>

@@ -367,6 +367,27 @@
   50% { opacity: 0.4; }
 }
 
+/* ===== BELI/JUAL Button Glow Animations ===== */
+@keyframes pulse-green {
+  0%, 100% { box-shadow: inset 0 0 15px rgba(34,197,94,0.2); }
+  50% { box-shadow: inset 0 0 25px rgba(34,197,94,0.35); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: inset 0 0 15px rgba(239,83,80,0.2); }
+  50% { box-shadow: inset 0 0 25px rgba(239,83,80,0.35); }
+}
+
+@keyframes btn-glow-green {
+  0%, 100% { box-shadow: 0 6px 28px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.3), inset 0 0 15px rgba(34,197,94,0.2); }
+  50% { box-shadow: 0 6px 35px rgba(34,197,94,0.55), 0 2px 12px rgba(34,197,94,0.4), inset 0 0 25px rgba(34,197,94,0.3); }
+}
+
+@keyframes btn-glow-red {
+  0%, 100% { box-shadow: 0 6px 28px rgba(239,83,80,0.45), 0 2px 8px rgba(239,83,80,0.3), inset 0 0 15px rgba(239,83,80,0.2); }
+  50% { box-shadow: 0 6px 35px rgba(239,83,80,0.55), 0 2px 12px rgba(239,83,80,0.4), inset 0 0 25px rgba(239,83,80,0.3); }
+}
+
 @keyframes ai-metric-bar {
   0% { width: 0%; }
   100% { width: var(--metric-width); }
