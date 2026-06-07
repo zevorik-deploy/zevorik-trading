@@ -449,3 +449,32 @@ Stage Summary:
 - Categories covered: crypto (40), forex (25), commodities (18), healthcare (23), consumer (12), defense (4), energy (9), tech/growth (15), cybersecurity (13), financials (13), REITs (9), media (6), telecom (3), retail (10), industrials (8), bluechip (10), plus original tech/semiconductor/enterprise stocks
 - Frontend (page.tsx) already updated by prior Task ID: 2 agent with matching specialColors, emojiMap, and getMarketCategory arrays
 - No code changes needed outside seed file - all frontend arrays already support 250 instruments
+---
+Task ID: 2
+Agent: Main Agent
+Task: Redesign and upgrade AI SIGNAL section in Sinyal tab for ZEVORIX trading platform
+
+Work Log:
+- Read existing page.tsx (~8200+ lines) to understand Sinyal tab structure
+- Identified insertion point: between chart area (line 4437) and bottom panel (line 4439)
+- Added 15+ CSS keyframe animations to globals.css (radar-scan, hologram-line, ai-pulse-glow, radar-ping, neon-border-flow, prediction-draw, signal-strength-pulse, scanline-move, border-glow-cycle, flash-warning, ai-metric-bar)
+- Added aiSignalExpanded state variable
+- Inserted comprehensive AI Signal Pro JSX section (~350 lines) with:
+  - Signal Strength header with radar scanner SVG animation, signal type labels (STRONG BUY/BUY/HOLD/SELL/STRONG SELL), AI Confidence ring
+  - Hologram scan line effect and scanline overlay
+  - AI Metrics row (Accuracy%, Winrate%, Momentum, Prob↑%, Volatility) with animated progress bars
+  - AI Deep Analysis panel (Smart Money Concept, Liquidity Zone, Fake Breakout Detection, Whale Activity, Trend Strength, Volatility Scanner)
+  - Signal Details (Entry Price, Stop Loss, Take Profit 1/2, Risk:Reward, Est. Profit) with prediction line SVG
+  - News Impact Monitor (CPI, FOMC, NFP events) with HIGH IMPACT NEWS DETECTED warning mode
+  - Signal History (WIN/LOSS/RUNNING entries with profit tracking)
+  - Expand/collapse toggle button
+- Made News Impact and Signal History always visible (not conditionally hidden)
+- Verified with Agent Browser + VLM: all 6 sections render correctly, chart/BELI/JUAL intact, dark glassmorphism + neon glow design confirmed
+
+Stage Summary:
+- AI Signal Pro section fully implemented with futuristic dark glassmorphism design
+- All visual effects working: radar scanner animation, hologram scan line, neon glow, signal pulse, animated metric bars, prediction line drawing
+- Chart, market watch, BELI/JUAL buttons, sidebar, layout all preserved unchanged
+- Signal type dynamically computed from live chart candle data
+- News Impact shows CPI/FOMC/NFP with active/inactive states
+- Signal History tracks WIN/LOSS/RUNNING with profit amounts

@@ -858,6 +858,7 @@ function Dashboard() {
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number; shownAt?: number}[]>([])
   // Track remaining time per position
   const [sinyalTimers, setSinyalTimers] = useState<Record<string, number>>({})
+  const [aiSignalExpanded, setAiSignalExpanded] = useState(true)
 
   // Sinyal Pro live candlestick chart
   const [sinyalCandles, setSinyalCandles] = useState<CandleData[]>([])
@@ -4435,6 +4436,371 @@ function Dashboard() {
                   })()}
                 </div>
               )}
+
+              {/* ── AI SIGNAL PRO — Premium Analysis Panel ── */}
+              {selectedSinyalStock && (() => {
+                // === COMPUTE AI SIGNAL DATA FROM LIVE CHART ===
+                const allCandles = [...sinyalCandles]
+                const sim = sinyalChartSimRef.current
+                if (sim?.currentCandle && sim.currentCandle.tickCount > 0) {
+                  allCandles.push({
+                    idx: allCandles.length,
+                    open: sim.currentCandle.open,
+                    high: sim.currentCandle.high,
+                    low: sim.currentCandle.low,
+                    close: sim.currentCandle.close,
+                    volume: sim.currentCandle.volume,
+                    time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+                  })
+                }
+
+                // Signal strength from recent candles
+                const recentCandles = allCandles.slice(-10)
+                let bullCount = 0
+                let totalChange = 0
+                for (const c of recentCandles) {
+                  if (c.close > c.open) bullCount++
+                  totalChange += (c.close - c.open) / (c.open || 1)
+                }
+                const bearCount = recentCandles.length - bullCount
+                const avgChange = recentCandles.length > 0 ? totalChange / recentCandles.length : 0
+
+                let signalType: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL'
+                if (avgChange > 0.003 && bullCount >= 7) signalType = 'STRONG_BUY'
+                else if (avgChange > 0.001 && bullCount >= 6) signalType = 'BUY'
+                else if (avgChange < -0.003 && bearCount >= 7) signalType = 'STRONG_SELL'
+                else if (avgChange < -0.001 && bearCount >= 6) signalType = 'SELL'
+                else signalType = 'HOLD'
+
+                const signalConfig: Record<string, { label: string; color: string; bg: string; border: string; glow: string }> = {
+                  STRONG_BUY: { label: 'STRONG BUY', color: '#00ff88', bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.25)', glow: '0 0 20px rgba(0,255,136,0.25)' },
+                  BUY: { label: 'BUY', color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', glow: '0 0 15px rgba(34,197,94,0.2)' },
+                  HOLD: { label: 'HOLD', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', glow: '0 0 15px rgba(245,158,11,0.2)' },
+                  SELL: { label: 'SELL', color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', glow: '0 0 15px rgba(239,68,68,0.2)' },
+                  STRONG_SELL: { label: 'STRONG SELL', color: '#ff3333', bg: 'rgba(255,51,51,0.08)', border: 'rgba(255,51,51,0.25)', glow: '0 0 20px rgba(255,51,51,0.25)' },
+                }
+                const cfg = signalConfig[signalType]
+                const curPrice = sinyalCurrentPrice || selectedSinyalStock.price
+                const stockSeed = selectedSinyalStock.code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+
+                // AI Metrics
+                const aiConfidence = Math.min(98, 75 + (bullCount * 2) + (stockSeed % 10))
+                const aiAccuracy = Math.min(96, 82 + (stockSeed % 9))
+                const winCount = sinyalPositions.filter(p => p.status === 'won').length
+                const loseCount = sinyalPositions.filter(p => p.status === 'lost').length
+                const aiWinrate = (winCount + loseCount) > 0 ? Math.round((winCount / (winCount + loseCount)) * 100) : (84 + (stockSeed % 7))
+                const momentumLabel = signalType === 'STRONG_BUY' ? 'Strong Bullish' : signalType === 'BUY' ? 'Bullish' : signalType === 'HOLD' ? 'Neutral' : signalType === 'SELL' ? 'Bearish' : 'Strong Bearish'
+                const momentumColor = signalType.includes('BUY') ? '#22c55e' : signalType.includes('SELL') ? '#ef4444' : '#f59e0b'
+                const probabilityUp = signalType === 'STRONG_BUY' ? 92 : signalType === 'BUY' ? 78 : signalType === 'HOLD' ? 52 : signalType === 'SELL' ? 28 : 12
+
+                // AI Analysis
+                const smcStatus = signalType.includes('BUY') ? 'Accumulation' : signalType.includes('SELL') ? 'Distribution' : 'Consolidation'
+                const smcColor = signalType.includes('BUY') ? 'text-green-400' : signalType.includes('SELL') ? 'text-red-400' : 'text-amber-400'
+                const liquidityZone = curPrice * (1 + (signalType.includes('BUY') ? 0.02 : -0.02))
+                const fakeBreakout = (stockSeed % 5 === 0) ? 'Caution' : 'Clear'
+                const fakeBreakoutColor = fakeBreakout === 'Caution' ? 'text-amber-400' : 'text-green-400'
+                const whaleActivity = (signalType === 'STRONG_BUY' || signalType === 'STRONG_SELL') ? 'High' : signalType === 'HOLD' ? 'Low' : 'Medium'
+                const whaleColor = whaleActivity === 'High' ? 'text-red-400' : whaleActivity === 'Medium' ? 'text-amber-400' : 'text-green-400'
+                const trendStrength = (signalType === 'STRONG_BUY' || signalType === 'STRONG_SELL') ? 'Strong' : signalType === 'HOLD' ? 'Weak' : 'Moderate'
+                const trendColor = trendStrength === 'Strong' ? 'text-cyan-400' : trendStrength === 'Moderate' ? 'text-amber-400' : 'text-[var(--zv-muted)]'
+                const volatility = (stockSeed % 3 === 0) ? 'High' : (stockSeed % 3 === 1) ? 'Medium' : 'Low'
+                const volColor = volatility === 'High' ? 'text-red-400' : volatility === 'Medium' ? 'text-amber-400' : 'text-green-400'
+
+                // Signal Details
+                const isBuySignal = signalType.includes('BUY')
+                const entryPrice = curPrice
+                const stopLoss = isBuySignal ? curPrice * 0.98 : curPrice * 1.02
+                const takeProfit1 = isBuySignal ? curPrice * 1.03 : curPrice * 0.97
+                const takeProfit2 = isBuySignal ? curPrice * 1.05 : curPrice * 0.95
+                const estimatedProfit = sinyalAmount && parseInt(sinyalAmount) >= 100000 ? Math.round(parseInt(sinyalAmount) * 0.9 * (sinyalLeverage / 100) * 0.03) : 0
+
+                // News Impact
+                const newsEvents = [
+                  { name: 'CPI', impact: 'HIGH', time: '14:30 WIB', active: stockSeed % 3 === 0 },
+                  { name: 'FOMC', impact: 'HIGH', time: '21:00 WIB', active: stockSeed % 4 === 0 },
+                  { name: 'NFP', impact: 'HIGH', time: '14:30 WIB', active: stockSeed % 5 === 0 },
+                ]
+                const hasHighImpact = newsEvents.some(n => n.active)
+
+                // Signal History from positions
+                const signalHistoryEntries = [
+                  ...sinyalPositions.filter(p => p.status !== 'active').slice(-5).reverse().map(p => ({
+                    pair: p.stockCode,
+                    signal: p.direction === 'NAIK' ? 'BUY' : 'SELL',
+                    result: p.status === 'won' ? 'WIN' : 'LOSS' as string,
+                    profit: p.closedPL !== undefined ? p.closedPL : (p.status === 'won' ? Math.round((p.workingCapital || Math.round(p.amount * 0.9)) * p.profitPercent / 100) : -(p.workingCapital || Math.round(p.amount * 0.9))),
+                    timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                  })),
+                ]
+                if (sinyalPositions.some(p => p.status === 'active')) {
+                  const activePos = sinyalPositions.find(p => p.status === 'active')!
+                  signalHistoryEntries.unshift({
+                    pair: activePos.stockCode,
+                    signal: activePos.direction === 'NAIK' ? 'BUY' : 'SELL',
+                    result: 'RUNNING',
+                    profit: getPositionLivePL(activePos),
+                    timestamp: 'now',
+                  })
+                }
+
+                return (
+                <div className="mt-2 space-y-2 px-1">
+                  {/* ── Signal Strength Header with AI Scanning ── */}
+                  <div className="relative rounded-xl overflow-hidden animate-ai-pulse-glow animate-border-glow-cycle border"
+                    style={{ background: `linear-gradient(135deg, ${cfg.bg} 0%, rgba(6,182,212,0.04) 30%, rgba(15,23,42,0.95) 60%, ${cfg.bg} 100%)`, borderColor: cfg.border }}>
+                    {/* Hologram scan line */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
+                      <div className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-hologram-line" />
+                      <div className="absolute inset-0 opacity-[0.03]" style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.1) 2px, rgba(6,182,212,0.1) 4px)' }} />
+                    </div>
+
+                    <div className="relative z-10 flex items-center justify-between px-3 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        {/* Radar scanner icon */}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: `radial-gradient(circle, ${cfg.bg} 0%, transparent 70%)` }}>
+                            <svg width="32" height="32" viewBox="0 0 32 32" className="animate-radar-scan">
+                              <circle cx="16" cy="16" r="14" fill="none" stroke={cfg.color} strokeWidth="0.5" opacity="0.3" />
+                              <circle cx="16" cy="16" r="10" fill="none" stroke={cfg.color} strokeWidth="0.5" opacity="0.2" />
+                              <circle cx="16" cy="16" r="6" fill="none" stroke={cfg.color} strokeWidth="0.5" opacity="0.15" />
+                              <line x1="16" y1="16" x2="16" y2="2" stroke={cfg.color} strokeWidth="1.5" opacity="0.8" strokeLinecap="round" />
+                              <circle cx="16" cy="16" r="2" fill={cfg.color} opacity="0.9" />
+                            </svg>
+                          </div>
+                          <div className="absolute inset-0 rounded-full animate-radar-ping" style={{ border: `1px solid ${cfg.color}`, opacity: 0.3 }} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <Sparkles className="w-3 h-3 text-cyan-400" />
+                            <span className="text-[7px] font-black text-cyan-400 uppercase tracking-[0.2em]">AI Signal Pro</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[14px] font-black animate-signal-pulse" style={{ color: cfg.color }}>{cfg.label}</span>
+                            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Confidence Ring */}
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <span className="text-[6px] text-cyan-400/60 font-black uppercase tracking-widest block">AI Confidence</span>
+                          <span className="text-[16px] font-black text-cyan-400">{aiConfidence}%</span>
+                        </div>
+                        <div className="relative w-11 h-11 flex-shrink-0">
+                          <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
+                            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--zv-border)" strokeWidth="3" />
+                            <circle cx="22" cy="22" r="18" fill="none" stroke={cfg.color} strokeWidth="3"
+                              strokeDasharray={`${(aiConfidence / 100) * 113.1} ${113.1 - (aiConfidence / 100) * 113.1}`}
+                              strokeLinecap="round" style={{ filter: `drop-shadow(0 0 4px ${cfg.color})`, transition: 'stroke-dasharray 1s ease' }} />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expand/Collapse Button */}
+                    <button onClick={() => setAiSignalExpanded(!aiSignalExpanded)}
+                      className="relative z-10 w-full h-6 flex items-center justify-center border-t transition-colors hover:bg-white/5"
+                      style={{ borderColor: cfg.border }}>
+                      <ChevronDown className={`w-3 h-3 text-[var(--zv-muted)] transition-transform ${aiSignalExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* ── Expanded AI Signal Content ── */}
+                  {aiSignalExpanded && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}
+                    className="space-y-2 overflow-hidden">
+
+                    {/* ── AI Metrics Row ── */}
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[
+                        { label: 'Accuracy', value: `${aiAccuracy}%`, color: '#22c55e' },
+                        { label: 'Winrate', value: `${aiWinrate}%`, color: '#06b6d4' },
+                        { label: 'Momentum', value: momentumLabel.split(' ')[0], color: momentumColor },
+                        { label: 'Prob ↑', value: `${probabilityUp}%`, color: probabilityUp > 60 ? '#22c55e' : probabilityUp > 40 ? '#f59e0b' : '#ef4444' },
+                        { label: 'Volatility', value: volatility, color: volatility === 'High' ? '#ef4444' : volatility === 'Medium' ? '#f59e0b' : '#22c55e' },
+                      ].map((m, i) => (
+                        <div key={i} className="relative rounded-lg p-2 border overflow-hidden"
+                          style={{ background: `linear-gradient(135deg, rgba(6,182,212,0.04) 0%, rgba(15,23,42,0.9) 100%)`, borderColor: `${m.color}20` }}>
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--zv-border)]/30">
+                            <div className="h-full animate-ai-metric-bar" style={{ background: m.color, '--metric-width': `${parseInt(m.value) || 50}%` } as React.CSSProperties} />
+                          </div>
+                          <span className="block text-[6px] text-[var(--zv-muted)] font-black uppercase tracking-wider">{m.label}</span>
+                          <span className="block text-[11px] font-black mt-0.5" style={{ color: m.color }}>{m.value}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ── AI Analysis Panel ── */}
+                    <div className="rounded-xl border overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.03) 0%, rgba(15,23,42,0.95) 100%)', borderColor: 'rgba(6,182,212,0.15)' }}>
+                      <div className="px-3 py-1.5 border-b flex items-center gap-1.5" style={{ borderColor: 'rgba(6,182,212,0.1)' }}>
+                        <Eye className="w-3 h-3 text-cyan-400" />
+                        <span className="text-[7px] font-black text-cyan-400 uppercase tracking-[0.15em]">AI Deep Analysis</span>
+                        <div className="flex-1" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-[6px] font-bold text-cyan-400/60">SCANNING</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-px" style={{ background: 'rgba(6,182,212,0.06)' }}>
+                        {[
+                          { icon: '◈', label: 'Smart Money', value: smcStatus, color: smcColor },
+                          { icon: '◇', label: 'Liquidity Zone', value: `¥${formatNumber(Math.round(liquidityZone))}`, color: 'text-cyan-400' },
+                          { icon: '⟐', label: 'Fake Breakout', value: fakeBreakout, color: fakeBreakoutColor },
+                          { icon: '🐋', label: 'Whale Activity', value: whaleActivity, color: whaleColor },
+                          { icon: '◈', label: 'Trend Strength', value: trendStrength, color: trendColor },
+                          { icon: '◎', label: 'Vol Scanner', value: volatility, color: volColor },
+                        ].map((item, i) => (
+                          <div key={i} className="px-2.5 py-2" style={{ background: 'rgba(15,23,42,0.95)' }}>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="text-[8px]" style={{ color: 'rgba(6,182,212,0.5)' }}>{item.icon}</span>
+                              <span className="text-[6px] text-[var(--zv-muted)] font-bold uppercase tracking-wider">{item.label}</span>
+                            </div>
+                            <span className={`text-[9px] font-black ${item.color}`}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ── Signal Details ── */}
+                    <div className="rounded-xl border overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.03) 0%, rgba(15,23,42,0.95) 100%)', borderColor: 'rgba(6,182,212,0.15)' }}>
+                      <div className="px-3 py-1.5 border-b flex items-center gap-1.5" style={{ borderColor: 'rgba(6,182,212,0.1)' }}>
+                        <Target className="w-3 h-3 text-cyan-400" />
+                        <span className="text-[7px] font-black text-cyan-400 uppercase tracking-[0.15em]">Signal Details</span>
+                        <div className="flex-1" />
+                        <span className="h-4 px-1.5 rounded text-[6px] font-black flex items-center gap-0.5" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                          <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: cfg.color }} />
+                          LIVE
+                        </span>
+                      </div>
+                      <div className="p-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                        {[
+                          { label: 'Entry Price', value: formatRupiah(Math.round(entryPrice)), color: 'text-[var(--zv-text)]' },
+                          { label: 'Stop Loss', value: formatRupiah(Math.round(stopLoss)), color: 'text-red-400' },
+                          { label: 'Take Profit 1', value: formatRupiah(Math.round(takeProfit1)), color: 'text-green-400' },
+                          { label: 'Take Profit 2', value: formatRupiah(Math.round(takeProfit2)), color: 'text-green-400' },
+                          { label: 'Risk:Reward', value: '1:2.5', color: 'text-cyan-400' },
+                          { label: 'Est. Profit', value: estimatedProfit > 0 ? `+${formatRupiah(estimatedProfit)}` : '—', color: 'text-green-400' },
+                        ].map((d, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <span className="text-[7px] text-[var(--zv-muted)] font-bold uppercase">{d.label}</span>
+                            <span className={`text-[9px] font-black tabular-nums ${d.color}`}>{d.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Prediction line SVG */}
+                      <div className="px-2.5 pb-2">
+                        <div className="h-8 rounded-lg overflow-hidden" style={{ background: 'rgba(6,182,212,0.03)', border: '1px solid rgba(6,182,212,0.08)' }}>
+                          <svg className="w-full h-full" viewBox="0 0 300 32" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id={`predGrad-${signalType}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor={cfg.color} stopOpacity="0.15" />
+                                <stop offset="100%" stopColor={cfg.color} stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            {isBuySignal ? (
+                              <>
+                                <path d="M0,24 L40,22 L80,18 L120,14 L160,12 L200,8 L240,5 L280,3 L300,2 L300,32 L0,32Z" fill={`url(#predGrad-${signalType})`} />
+                                <path d="M0,24 L40,22 L80,18 L120,14 L160,12 L200,8 L240,5 L280,3 L300,2" fill="none" stroke={cfg.color} strokeWidth="1.5" className="animate-prediction-draw" style={{ filter: `drop-shadow(0 0 3px ${cfg.color})` }} />
+                              </>
+                            ) : signalType === 'HOLD' ? (
+                              <>
+                                <path d="M0,16 L40,15 L80,17 L120,16 L160,14 L200,16 L240,15 L280,17 L300,16 L300,32 L0,32Z" fill={`url(#predGrad-${signalType})`} />
+                                <path d="M0,16 L40,15 L80,17 L120,16 L160,14 L200,16 L240,15 L280,17 L300,16" fill="none" stroke={cfg.color} strokeWidth="1.5" className="animate-prediction-draw" style={{ filter: `drop-shadow(0 0 3px ${cfg.color})` }} />
+                              </>
+                            ) : (
+                              <>
+                                <path d="M0,8 L40,10 L80,14 L120,18 L160,20 L200,24 L240,27 L280,29 L300,30 L300,32 L0,32Z" fill={`url(#predGrad-${signalType})`} />
+                                <path d="M0,8 L40,10 L80,14 L120,18 L160,20 L200,24 L240,27 L280,29 L300,30" fill="none" stroke={cfg.color} strokeWidth="1.5" className="animate-prediction-draw" style={{ filter: `drop-shadow(0 0 3px ${cfg.color})` }} />
+                              </>
+                            )}
+                            <circle cx="0" cy={isBuySignal ? 24 : signalType === 'HOLD' ? 16 : 8} r="2" fill={cfg.color}>
+                              <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                              <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+                            </circle>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── News Impact ── */}
+                    <div className={`rounded-xl border overflow-hidden ${hasHighImpact ? 'animate-flash-warning' : ''}`}
+                      style={{ background: `linear-gradient(135deg, ${hasHighImpact ? 'rgba(239,68,68,0.08)' : 'rgba(6,182,212,0.03)'} 0%, rgba(15,23,42,0.95) 100%)`, borderColor: hasHighImpact ? 'rgba(239,68,68,0.3)' : 'rgba(6,182,212,0.15)' }}>
+                      <div className="px-3 py-1.5 border-b flex items-center gap-1.5" style={{ borderColor: hasHighImpact ? 'rgba(239,68,68,0.2)' : 'rgba(6,182,212,0.1)' }}>
+                        <AlertCircle className={`w-3 h-3 ${hasHighImpact ? 'text-red-400' : 'text-cyan-400'}`} />
+                        <span className={`text-[7px] font-black uppercase tracking-[0.15em] ${hasHighImpact ? 'text-red-400' : 'text-cyan-400'}`}>
+                          {hasHighImpact ? 'HIGH IMPACT NEWS DETECTED' : 'NEWS IMPACT MONITOR'}
+                        </span>
+                        {hasHighImpact && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse ml-1" />}
+                      </div>
+                      <div className="flex gap-1.5 p-2">
+                        {newsEvents.map((n, i) => (
+                          <div key={i} className={`flex-1 rounded-lg px-2 py-1.5 border text-center transition-all ${n.active ? '' : 'opacity-40'}`}
+                            style={{ background: n.active ? 'rgba(239,68,68,0.06)' : 'rgba(6,182,212,0.03)', borderColor: n.active ? 'rgba(239,68,68,0.15)' : 'rgba(6,182,212,0.1)' }}>
+                            <span className={`block text-[9px] font-black ${n.active ? 'text-red-400' : 'text-cyan-400'}`}>{n.name}</span>
+                            <span className={`block text-[6px] font-bold ${n.active ? 'text-red-400/60' : 'text-cyan-400/40'}`}>{n.impact} IMPACT</span>
+                            <span className="block text-[6px] font-bold text-[var(--zv-muted)]">{n.time}</span>
+                            {n.active && <span className="block text-[5px] font-black text-red-400 animate-pulse mt-0.5">⚠ ACTIVE</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ── Signal History ── */}
+                    <div className="rounded-xl border overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.03) 0%, rgba(15,23,42,0.95) 100%)', borderColor: 'rgba(6,182,212,0.15)' }}>
+                      <div className="px-3 py-1.5 border-b flex items-center gap-1.5" style={{ borderColor: 'rgba(6,182,212,0.1)' }}>
+                        <History className="w-3 h-3 text-cyan-400" />
+                        <span className="text-[7px] font-black text-cyan-400 uppercase tracking-[0.15em]">Signal History</span>
+                        <div className="flex-1" />
+                        <span className="text-[6px] font-bold text-[var(--zv-muted)]">{signalHistoryEntries.length} entries</span>
+                      </div>
+                      {signalHistoryEntries.length > 0 ? (
+                      <div className="max-h-32 overflow-y-auto custom-scrollbar" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(6,182,212,0.3) transparent' }}>
+                        {signalHistoryEntries.map((h, i) => {
+                          const resultCfg = h.result === 'WIN'
+                            ? { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)', text: 'text-green-400' }
+                            : h.result === 'LOSS'
+                              ? { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', text: 'text-red-400' }
+                              : { bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', text: 'text-cyan-400' }
+                          return (
+                            <div key={i} className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: 'rgba(6,182,212,0.05)' }}>
+                              <div className="flex items-center gap-2">
+                                <span className={`h-4 px-1.5 rounded text-[6px] font-black flex items-center ${resultCfg.text}`} style={{ background: resultCfg.bg, border: `1px solid ${resultCfg.border}` }}>
+                                  {h.result === 'RUNNING' && <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse mr-0.5" />}
+                                  {h.result}
+                                </span>
+                                <div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[8px] font-black text-[var(--zv-text)]">{h.pair}</span>
+                                    <span className={`text-[7px] font-bold ${h.signal === 'BUY' ? 'text-green-400' : 'text-red-400'}`}>{h.signal}</span>
+                                  </div>
+                                  <span className="text-[6px] text-[var(--zv-muted)]">{h.timestamp}</span>
+                                </div>
+                              </div>
+                              <span className={`text-[9px] font-black tabular-nums ${h.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {h.profit >= 0 ? '+' : ''}{formatRupiah(h.profit)}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      ) : (
+                      <div className="px-3 py-4 text-center">
+                        <History className="w-5 h-5 text-[var(--zv-muted)]/30 mx-auto mb-1.5" />
+                        <span className="block text-[8px] font-bold text-[var(--zv-muted)]">No signals yet</span>
+                        <span className="block text-[6px] text-[var(--zv-muted)]/60 mt-0.5">Trade history will appear here</span>
+                      </div>
+                      )}
+                    </div>
+                  </motion.div>
+                  )}
+                </div>
+                )
+              })()}
 
               {/* ── BOTTOM PANEL — Tuca-style margin trading ── */}
               <div className="mt-2 space-y-2.5">
