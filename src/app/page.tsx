@@ -858,9 +858,7 @@ function Dashboard() {
   const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number; shownAt?: number}[]>([])
   // Track remaining time per position
   const [sinyalTimers, setSinyalTimers] = useState<Record<string, number>>({})
-  const [aiSignalExpanded, setAiSignalExpanded] = useState(true)
-  const [sinyalView, setSinyalView] = useState<'trading' | 'ai-pro'>('trading')
-  const [aiProUnlocked, setAiProUnlocked] = useState(false)
+
 
   // Sinyal Pro live candlestick chart
   const [sinyalCandles, setSinyalCandles] = useState<CandleData[]>([])
@@ -1329,6 +1327,169 @@ function Dashboard() {
           </text>
         )}
       </svg>
+    )
+  }, [])
+
+  // ============ REAL LOGO HELPER ============
+  const getRealLogo = useCallback((code: string, size: number = 36) => {
+    // Stock domain mapping for Google Favicon API
+    const stockDomains: Record<string, string> = {
+      'AAPL': 'apple.com', 'NVDA': 'nvidia.com', 'MSFT': 'microsoft.com',
+      'GOOGL': 'google.com', 'META': 'meta.com', 'AMZN': 'amazon.com',
+      'TSLA': 'tesla.com', 'AMD': 'amd.com', 'JPM': 'jpmorgan.com',
+      'V': 'visa.com', 'MA': 'mastercard.com', 'GS': 'goldmansachs.com',
+      'BAC': 'bankofamerica.com', 'UNH': 'unitedhealthgroup.com',
+      'JNJ': 'jnj.com', 'PFE': 'pfizer.com', 'LLY': 'lilly.com',
+      'ABBV': 'abbvie.com', 'MRK': 'merck.com', 'WMT': 'walmart.com',
+      'COST': 'costco.com', 'NKE': 'nike.com', 'MCD': 'mcdonalds.com',
+      'KO': 'coca-cola.com', 'SBUX': 'starbucks.com', 'PEP': 'pepsico.com',
+      'XOM': 'exxonmobil.com', 'CVX': 'chevron.com', 'COP': 'conocophillips.com',
+      'CAT': 'caterpillar.com', 'BA': 'boeing.com', 'GE': 'ge.com',
+      'HON': 'honeywell.com', 'DE': 'deere.com', 'DIS': 'disney.com',
+      'NFLX': 'netflix.com', 'CMCSA': 'comcast.com', 'COIN': 'coinbase.com',
+      'SQ': 'block.xyz', 'PYPL': 'paypal.com', 'AVGO': 'broadcom.com',
+      'INTC': 'intel.com', 'TSM': 'tsmc.com', 'CRM': 'salesforce.com',
+      'ORCL': 'oracle.com', 'ADBE': 'adobe.com', 'IBM': 'ibm.com',
+      'NOW': 'servicenow.com', 'UBER': 'uber.com', 'PG': 'pg.com',
+      'CL': 'colgatepalmolive.com', 'EL': 'estee.com', 'PM': 'pmi.com',
+      'MO': 'altria.com', 'ABT': 'abbott.com', 'TMO': 'thermofisher.com',
+      'DHR': 'danaher.com', 'ISRG': 'intuitivesurgical.com', 'SYK': 'stryker.com',
+      'BSX': 'bsci.com', 'EW': 'edwards.com', 'GILD': 'gilead.com',
+      'AMGN': 'amgen.com', 'BIIB': 'biogen.com', 'REGN': 'regeneron.com',
+      'MRNA': 'modernatx.com', 'VRTX': 'vertexpharma.com', 'CVS': 'cvshealth.com',
+      'CI': 'cigna.com', 'HUM': 'humana.com', 'CNC': 'centene.com',
+      'SLB': 'slb.com', 'FANG': 'diamondbackenergy.com', 'MPC': 'marathonpetroleum.com',
+      'PSX': 'phillips66.com', 'OXY': 'oxy.com', 'EOG': 'eogresources.com',
+      'LMT': 'lockheedmartin.com', 'NOC': 'northropgrumman.com', 'RTX': 'rtx.com',
+      'GD': 'gd.com', 'PGR': 'progressive.com', 'SCHW': 'schwab.com',
+      'BLK': 'blackrock.com', 'AXP': 'americanexpress.com', 'C': 'citigroup.com',
+      'WFC': 'wellsfargo.com', 'MS': 'morganstanley.com',
+      'SPG': 'simon.com', 'PLD': 'prologis.com', 'AMT': 'americantower.com',
+      'EQIX': 'equinix.com', 'O': 'realtvstock.com', 'PSA': 'publicstorage.com',
+      'CCI': 'crowncastle.com', 'DLR': 'digitalrealty.com', 'VICI': 'vicivp.com',
+      'WBD': 'warnerbrosdiscovery.com', 'PARA': 'paramount.com', 'FOX': 'fox.com',
+      'T': 'att.com', 'VZ': 'verizon.com', 'TMUS': 't-mobile.com',
+      'TGT': 'target.com', 'LOW': 'lowes.com', 'HD': 'homedepot.com',
+      'DLTR': 'dollartree.com', 'TJX': 'tjx.com',
+      'UPS': 'ups.com', 'FDX': 'fedex.com', 'DAL': 'delta.com',
+      'BRK.B': 'berkshirehathaway.com',
+      'SNAP': 'snap.com', 'PINS': 'pinterest.com', 'RIVN': 'rivian.com',
+      'LCID': 'lucidmotors.com', 'NIO': 'nio.com', 'PLTR': 'palantir.com',
+      'DKNG': 'draftkings.com', 'RBLX': 'roblox.com', 'SHOP': 'shopify.com',
+      'SE': 'seagroup.com', 'GRAB': 'grab.com', 'HOOD': 'robinhood.com',
+      'ROKU': 'roku.com', 'ZM': 'zoom.us', 'TEAM': 'atlassian.com',
+      'CRWD': 'crowdstrike.com', 'PANW': 'paloaltonetworks.com',
+      'MNDY': 'monday.com', 'DDOG': 'datadoghq.com', 'NET': 'cloudflare.com',
+      'MDB': 'mongodb.com', 'HUBS': 'hubspot.com', 'TWLO': 'twilio.com',
+      'OKTA': 'okta.com', 'ZS': 'zscaler.com', 'PATH': 'uipath.com',
+      'AI': 'c3.ai', 'SOUN': 'soundhound.com',
+    }
+
+    // Crypto code mapping for CoinCap
+    const cryptoMap: Record<string, string> = {
+      'BTC': 'bitcoin', 'ETH': 'ethereum', 'XRP': 'xrp', 'SOL': 'solana',
+      'DOGE': 'dogecoin', 'ADA': 'cardano', 'AVAX': 'avalanche', 'DOT': 'polkadot',
+      'LINK': 'chainlink', 'MATIC': 'polygon', 'BCH': 'bitcoin-cash', 'LTC': 'litecoin',
+      'XLM': 'stellar', 'UNI': 'uniswap', 'AAVE': 'aave', 'SHIB': 'shiba-inu',
+      'ATOM': 'cosmos', 'FIL': 'filecoin', 'NEAR': 'near-protocol', 'ALGO': 'algorand',
+      'VET': 'vechain', 'SAND': 'the-sandbox', 'MANA': 'decentraland', 'AXS': 'axie-infinity',
+      'THETA': 'theta', 'APT': 'aptos', 'ARB': 'arbitrum', 'OP': 'optimism',
+      'IMX': 'immutable-x', 'INJ': 'injective', 'TIA': 'celestia', 'SEI': 'sei',
+      'SUI': 'sui', 'PEPE': 'pepe', 'FTM': 'fantom', 'GRT': 'the-graph',
+      'ENS': 'ethereum-name-service', 'LDO': 'lido-dao', 'RPL': 'rocket-pool',
+      'STX': 'stacks',
+    }
+
+    // Forex flag mapping
+    const forexFlags: Record<string, [string, string]> = {
+      'EURUSD': ['eu', 'us'], 'GBPUSD': ['gb', 'us'], 'USDJPY': ['us', 'jp'],
+      'AUDUSD': ['au', 'us'], 'USDCAD': ['us', 'ca'], 'NZDUSD': ['nz', 'us'],
+      'USDCHF': ['us', 'ch'], 'EURGBP': ['eu', 'gb'], 'EURJPY': ['eu', 'jp'],
+      'GBPJPY': ['gb', 'jp'], 'AUDJPY': ['au', 'jp'], 'EURAUD': ['eu', 'au'],
+      'GBPAUD': ['gb', 'au'], 'EURNZD': ['eu', 'nz'], 'GBPCAD': ['gb', 'ca'],
+      'USDSGD': ['us', 'sg'], 'USDHKD': ['us', 'hk'], 'USDSEK': ['us', 'se'],
+      'USDNOK': ['us', 'no'], 'USDDKK': ['us', 'dk'], 'USDZAR': ['us', 'za'],
+      'USDTRY': ['us', 'tr'], 'USDMXN': ['us', 'mx'], 'USDPLN': ['us', 'pl'],
+      'EURCHF': ['eu', 'ch'],
+    }
+
+    // Commodity icons
+    const commodityIcons: Record<string, { emoji: string; bg: string }> = {
+      'GOLD': { emoji: '🥇', bg: '#fbbf24' },
+      'SILVER': { emoji: '🥈', bg: '#9ca3af' },
+      'OIL': { emoji: '🛢️', bg: '#1f2937' },
+      'NATGAS': { emoji: '🔥', bg: '#ef4444' },
+      'COPPER': { emoji: '🔶', bg: '#b45309' },
+      'PLATINUM': { emoji: '💍', bg: '#e5e7eb' },
+      'PALLADIUM': { emoji: '💎', bg: '#a78bfa' },
+      'WHEAT': { emoji: '🌾', bg: '#d97706' },
+      'CORN': { emoji: '🌽', bg: '#eab308' },
+      'SOYBEANS': { emoji: '🫘', bg: '#65a30d' },
+      'SUGAR': { emoji: '🍬', bg: '#f9a8d4' },
+      'COFFEE': { emoji: '☕', bg: '#78350f' },
+      'COTTON': { emoji: '🧵', bg: '#f5f5f4' },
+      'LUMBER': { emoji: '🪵', bg: '#a16207' },
+      'RICE': { emoji: '🍚', bg: '#fef3c7' },
+      'CACAO': { emoji: '🍫', bg: '#5c3317' },
+      'RUBBER': { emoji: '⚫', bg: '#1f2937' },
+      'IRON': { emoji: '🔩', bg: '#6b7280' },
+    }
+
+    // 1. Check crypto
+    if (cryptoMap[code]) {
+      return (
+        <img
+          src={`https://assets.coincap.io/assets/icons/${code.toLowerCase()}@2x.png`}
+          alt={code}
+          width={size}
+          height={size}
+          className="rounded-full object-contain"
+          style={{ minWidth: size, minHeight: size }}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      )
+    }
+
+    // 2. Check forex
+    if (forexFlags[code]) {
+      const [flag1, flag2] = forexFlags[code]
+      return (
+        <div className="flex items-center relative" style={{ width: size, height: size, minWidth: size, minHeight: size }}>
+          <img src={`https://flagcdn.com/w40/${flag1}.png`} alt={flag1} width={size * 0.65} height={size * 0.65} className="rounded-sm object-cover absolute left-0 top-0 border border-white/20" />
+          <img src={`https://flagcdn.com/w40/${flag2}.png`} alt={flag2} width={size * 0.65} height={size * 0.65} className="rounded-sm object-cover absolute right-0 bottom-0 border border-white/20" />
+        </div>
+      )
+    }
+
+    // 3. Check commodity
+    if (commodityIcons[code]) {
+      const ci = commodityIcons[code]
+      return (
+        <div className="flex items-center justify-center rounded-full" style={{ width: size, height: size, minWidth: size, minHeight: size, background: ci.bg + '33', border: `1px solid ${ci.bg}55` }}>
+          <span style={{ fontSize: size * 0.45 }}>{ci.emoji}</span>
+        </div>
+      )
+    }
+
+    // 4. Check stock
+    if (stockDomains[code]) {
+      return (
+        <img
+          src={`https://www.google.com/s2/favicons?domain=${stockDomains[code]}&sz=64`}
+          alt={code}
+          width={size}
+          height={size}
+          className="rounded-lg object-contain bg-white/90 p-0.5"
+          style={{ minWidth: size, minHeight: size }}
+        />
+      )
+    }
+
+    // 5. Fallback: first letters
+    return (
+      <div className="flex items-center justify-center rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/30" style={{ width: size, height: size, minWidth: size, minHeight: size }}>
+        <span className="text-[10px] font-black text-[#3b82f6]">{code.slice(0, 2)}</span>
+      </div>
     )
   }, [])
 
@@ -2956,7 +3117,7 @@ function Dashboard() {
                 <div className="grid grid-cols-4 gap-2.5">
                   {[
                     { icon: <Target className="w-5 h-5" />, label: 'Sinyal Pro', desc: 'Trading', action: () => setActiveTab('sinyal'), iconBg: 'bg-blue-500/15', iconColor: 'text-blue-400', glow: 'rgba(59,130,246,0.08)' },
-                    { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Saham', action: () => setActiveTab('market'), iconBg: 'bg-cyan-500/15', iconColor: 'text-cyan-400', glow: 'rgba(6,182,212,0.08)' },
+                    { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Global', action: () => setActiveTab('market'), iconBg: 'bg-cyan-500/15', iconColor: 'text-cyan-400', glow: 'rgba(6,182,212,0.08)' },
                     { icon: <DollarSign className="w-5 h-5" />, label: 'Investasi', desc: 'Profit 7%', action: () => setActiveTab('investasi'), iconBg: 'bg-amber-500/15', iconColor: 'text-amber-400', glow: 'rgba(245,158,11,0.08)' },
                     { icon: <UserPlus className="w-5 h-5" />, label: 'Undang', desc: 'Bonus', action: () => setActiveTab('undang'), iconBg: 'bg-violet-500/15', iconColor: 'text-violet-400', glow: 'rgba(139,92,246,0.08)' },
                   ].map((a, i) => (
@@ -3096,8 +3257,8 @@ function Dashboard() {
                         {topGainers.slice(0, 3).map(s => (
                           <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1.5 transition-colors">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center border border-[var(--zv-border)]">
-                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#22c55e]">{s.code.slice(0, 2)}</span>}
+                              <div className="flex-shrink-0">
+                                {getRealLogo(s.code, 28)}
                               </div>
                               <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
                             </div>
@@ -3116,8 +3277,8 @@ function Dashboard() {
                         {topLosers.slice(0, 3).map(s => (
                           <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1.5 transition-colors">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--zv-panel)] flex items-center justify-center border border-[var(--zv-border)]">
-                                {s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className="text-[7px] font-black text-[#ef5350]">{s.code.slice(0, 2)}</span>}
+                              <div className="flex-shrink-0">
+                                {getRealLogo(s.code, 28)}
                               </div>
                               <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
                             </div>
@@ -3298,7 +3459,7 @@ function Dashboard() {
               {/* Header - Dark Trading App Style */}
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-[16px] font-black text-[var(--zv-text)]">Pasar Saham</h2>
+                  <h2 className="text-[16px] font-black text-[var(--zv-text)]">Pasar Global</h2>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                       <Wallet className="w-3.5 h-3.5 text-[#f59e0b]" />
@@ -3335,10 +3496,10 @@ function Dashboard() {
                     stocks.forEach(s => { const c = getMarketCategory(s); if (counts[c] !== undefined) counts[c]++ })
                     return [
                       { key: 'semua', label: 'Semua' },
-                      { key: 'crypto', label: '🪙 Kripto' },
-                      { key: 'forex', label: '💱 Forex' },
-                      { key: 'komoditas', label: '🛢️ Komoditas' },
-                      { key: 'saham', label: '📊 Saham' },
+                      { key: 'crypto', label: 'Kripto' },
+                      { key: 'forex', label: 'Forex' },
+                      { key: 'komoditas', label: 'Komoditas' },
+                      { key: 'saham', label: 'Saham' },
                     ].map(cat => (
                       <button key={cat.key} onClick={() => setMarketFavFilter(cat.key)}
                         className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${
@@ -3427,61 +3588,89 @@ function Dashboard() {
 
                         return (
                           <div key={s.id}
-                            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:bg-[var(--zv-hover)] transition-all active:scale-[0.99] cursor-pointer group"
+                            className="w-full p-2.5 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:bg-[var(--zv-hover)] transition-all active:scale-[0.99] cursor-pointer group"
                             onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }}>
                             
-                            {/* Logo */}
-                            <div className="flex-shrink-0" onClick={(e) => { e.stopPropagation() }}>
-                              {getInstrumentLogo(s.code, 36)}
-                            </div>
+                            {/* Row 1: Logo + Name + Price + Star */}
+                            <div className="flex items-center gap-2.5">
+                              {/* Logo */}
+                              <div className="flex-shrink-0" onClick={(e) => { e.stopPropagation() }}>
+                                {getRealLogo(s.code, 36)}
+                              </div>
 
-                            {/* Name + Description */}
-                            <div className="flex-1 min-w-0 text-left">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[12px] font-black text-[var(--zv-text)]">{s.code}</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${
-                                  mcat === 'crypto' ? 'bg-orange-500/10 text-orange-400' :
-                                  mcat === 'forex' ? 'bg-blue-500/10 text-blue-400' :
-                                  mcat === 'komoditas' ? 'bg-amber-500/10 text-amber-400' :
-                                  'bg-emerald-500/10 text-emerald-400'
-                                }`}>
-                                  {mcat === 'crypto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'}
+                              {/* Name + Category */}
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[12px] font-black text-[var(--zv-text)]">{s.code}</span>
+                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${
+                                    mcat === 'crypto' ? 'bg-orange-500/10 text-orange-400' :
+                                    mcat === 'forex' ? 'bg-blue-500/10 text-blue-400' :
+                                    mcat === 'komoditas' ? 'bg-amber-500/10 text-amber-400' :
+                                    'bg-emerald-500/10 text-emerald-400'
+                                  }`}>
+                                    {mcat === 'crypto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'}
+                                  </span>
+                                </div>
+                                <span className="block text-[9px] text-[var(--zv-muted)] truncate">{s.name}</span>
+                              </div>
+
+                              {/* Price + Change */}
+                              <div className="flex-shrink-0 text-right">
+                                <span className="block text-[12px] font-black text-[var(--zv-text)] tabular-nums">{formatPrice(s)}</span>
+                                <span className={`flex items-center justify-end gap-0.5 text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                                  {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                  {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
                                 </span>
                               </div>
-                              <span className="block text-[9px] text-[var(--zv-muted)] truncate">{s.name}</span>
+
+                              {/* Favorite star */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleFavorite(s.code) }}
+                                className="flex-shrink-0 w-7 h-7 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] transition-colors"
+                              >
+                                <Star className={`w-3.5 h-3.5 transition-colors ${isFav ? 'fill-[#f59e0b] text-[#f59e0b]' : 'text-[var(--zv-muted)] group-hover:text-[#f59e0b]'}`} />
+                              </button>
                             </div>
 
-                            {/* Mini Sparkline */}
-                            <div className="flex-shrink-0 w-16 h-8 hidden sm:block">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={sparkData.slice(-15)} margin={{ top: 1, right: 0, bottom: 1, left: 0 }}>
-                                  <defs>
-                                    <linearGradient id={`ml-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                      <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
-                                      <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
-                                    </linearGradient>
-                                  </defs>
-                                  <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#ml-${s.id})`} strokeWidth={1.5} dot={false} />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </div>
+                            {/* Row 2: Sparkline + Stats */}
+                            <div className="flex items-center gap-2 mt-1.5 pl-[44px]">
+                              {/* Mini Sparkline - visible on all screens */}
+                              <div className="flex-shrink-0 w-20 h-7">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={sparkData.slice(-15)} margin={{ top: 1, right: 0, bottom: 1, left: 0 }}>
+                                    <defs>
+                                      <linearGradient id={`ml-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
+                                        <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
+                                      </linearGradient>
+                                    </defs>
+                                    <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#ml-${s.id})`} strokeWidth={1.5} dot={false} />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
 
-                            {/* Price + Change */}
-                            <div className="flex-shrink-0 text-right">
-                              <span className="block text-[12px] font-black text-[var(--zv-text)] tabular-nums">{formatPrice(s)}</span>
-                              <span className={`flex items-center justify-end gap-0.5 text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                                {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
-                              </span>
+                              {/* Stats */}
+                              <div className="flex-1 flex items-center gap-3 text-[8px]">
+                                <div>
+                                  <span className="text-[var(--zv-muted)]">H </span>
+                                  <span className="font-bold text-[#22c55e]">{mcat === 'forex' ? s.high.toFixed(4) : mcat === 'crypto' && s.price < 1000000 ? '$' + s.high.toLocaleString() : formatRupiah(s.high)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[var(--zv-muted)]">L </span>
+                                  <span className="font-bold text-[#ef5350]">{mcat === 'forex' ? s.low.toFixed(4) : mcat === 'crypto' && s.price < 1000000 ? '$' + s.low.toLocaleString() : formatRupiah(s.low)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[var(--zv-muted)]">Vol </span>
+                                  <span className="font-bold text-[var(--zv-text)]">{formatMarketCap(s.volume)}</span>
+                                </div>
+                                {s.marketCap > 0 && mcat === 'saham' && (
+                                  <div className="hidden sm:block">
+                                    <span className="text-[var(--zv-muted)]">MCap </span>
+                                    <span className="font-bold text-[var(--zv-text)]">${formatMarketCap(s.marketCap)}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-
-                            {/* Favorite star */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); toggleFavorite(s.code) }}
-                              className="flex-shrink-0 w-7 h-7 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] transition-colors"
-                            >
-                              <Star className={`w-3.5 h-3.5 transition-colors ${isFav ? 'fill-[#f59e0b] text-[#f59e0b]' : 'text-[var(--zv-muted)] group-hover:text-[#f59e0b]'}`} />
-                            </button>
                           </div>
                         )
                       })}
@@ -3800,7 +3989,7 @@ function Dashboard() {
                       <div className="p-3 md:p-4">
                         <div className="flex items-center justify-between mb-2.5">
                           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => openStockDetail(s)}>
-                            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl overflow-hidden flex items-center justify-center border ${isUp ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>{s.logo ? <img src={s.logo} alt={s.code} className="w-full h-full object-cover" /> : <span className={`text-[10px] md:text-[11px] font-black ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{s.code.slice(0, 2)}</span>}</div>
+                            <div className="flex-shrink-0">{getRealLogo(s.code, 40)}</div>
                             <div>
                               <span className="block text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
                               <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
@@ -3899,44 +4088,17 @@ function Dashboard() {
 
               {/* ── STOCKITY-STYLE LAYOUT ── */}
 
-              {/* Top Bar: View Toggle + Category Tabs + Balance */}
+              {/* Top Bar: Category Tabs + Balance — Compact MT5 Style */}
               <div className="mb-1.5">
-                {/* View Toggle: Trading / AI Pro */}
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <div className="flex h-8 rounded-xl overflow-hidden border border-[var(--zv-border)]" style={{ background: 'var(--zv-surface)' }}>
-                    <button onClick={() => setSinyalView('trading')}
-                      className={`h-full px-3.5 flex items-center gap-1.5 text-[9px] font-bold transition-all ${
-                        sinyalView === 'trading'
-                          ? 'bg-gradient-to-r from-[#1e3a5f] to-[#1d4ed8] text-white shadow-lg shadow-blue-500/20'
-                          : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'
-                      }`}>
-                      <BarChart3 className="w-3.5 h-3.5" />
-                      Trading
-                    </button>
-                    <button onClick={() => setSinyalView('ai-pro')}
-                      className={`h-full px-3.5 flex items-center gap-1.5 text-[9px] font-bold transition-all relative ${
-                        sinyalView === 'ai-pro'
-                          ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20'
-                          : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'
-                      }`}>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      AI Pro
-                      {!aiProUnlocked && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 flex items-center justify-center">
-                          <Lock className="w-2 h-2 text-white" />
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                  <div className="flex-1" />
-                  <div className="flex items-center gap-1.5 flex-shrink-0 h-8 px-2.5 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                {/* Row 1: Balance */}
+                <div className="flex items-center justify-end mb-1.5">
+                  <div className="flex items-center gap-1.5 flex-shrink-0 h-7 px-2.5 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                     <Wallet className="w-3.5 h-3.5 text-[#f59e0b]" />
                     <span className="text-[9px] font-black text-[#f59e0b]">{formatRupiah(user?.balance || 0)}</span>
                   </div>
                 </div>
 
-                {/* Category Tabs - only in trading view */}
-                {sinyalView === 'trading' && (
+                {/* Row 2: Category Tabs */}
                 <div className="flex gap-1 mb-1.5">
                   {[
                     { key: 'popular', label: 'Popular' },
@@ -3954,9 +4116,8 @@ function Dashboard() {
                     </button>
                   ))}
                 </div>
-                )}
-                {/* Stock pills for selected category - trading view only */}
-                {sinyalView === 'trading' && (
+                {/* Row 3: Stock pills for selected category */}
+                {(
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
                   {stocks.filter(s => {
                     const cat = s.category?.toLowerCase() || ''
@@ -3986,7 +4147,7 @@ function Dashboard() {
               </div>
 
               {/* ====== TRADING VIEW: Chart + Buy/Sell ====== */}
-              {sinyalView === 'trading' && (<>
+              <>
 
               {/* ── MAIN CHART AREA — Premium dark style ── */}
               {selectedSinyalStock && (
@@ -4863,435 +5024,7 @@ function Dashboard() {
 
                 {/* Trade history moved to Riwayat tab */}
               </div>
-              </>)}
-
-              {/* ====== AI SIGNAL PRO DASHBOARD ====== */}
-              {sinyalView === 'ai-pro' && (() => {
-                if (!selectedSinyalStock) return null
-                // === COMPUTE AI SIGNAL DATA FROM LIVE CHART ===
-                const allCandles = [...sinyalCandles]
-                const sim = sinyalChartSimRef.current
-                if (sim?.currentCandle && sim.currentCandle.tickCount > 0) {
-                  allCandles.push({
-                    idx: allCandles.length,
-                    open: sim.currentCandle.open,
-                    high: sim.currentCandle.high,
-                    low: sim.currentCandle.low,
-                    close: sim.currentCandle.close,
-                    volume: sim.currentCandle.volume,
-                    time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
-                  })
-                }
-
-                // Signal strength from recent candles
-                const recentCandles = allCandles.slice(-10)
-                let bullCount = 0
-                let totalChange = 0
-                for (const c of recentCandles) {
-                  if (c.close > c.open) bullCount++
-                  totalChange += (c.close - c.open) / (c.open || 1)
-                }
-                const bearCount = recentCandles.length - bullCount
-                const avgChange = recentCandles.length > 0 ? totalChange / recentCandles.length : 0
-
-                let signalType: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL'
-                if (avgChange > 0.003 && bullCount >= 7) signalType = 'STRONG_BUY'
-                else if (avgChange > 0.001 && bullCount >= 6) signalType = 'BUY'
-                else if (avgChange < -0.003 && bearCount >= 7) signalType = 'STRONG_SELL'
-                else if (avgChange < -0.001 && bearCount >= 6) signalType = 'SELL'
-                else signalType = 'HOLD'
-
-                const signalConfig: Record<string, { label: string; color: string; bg: string; border: string; glow: string }> = {
-                  STRONG_BUY: { label: 'STRONG BUY', color: '#00ff88', bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.25)', glow: '0 0 20px rgba(0,255,136,0.25)' },
-                  BUY: { label: 'BUY', color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', glow: '0 0 15px rgba(34,197,94,0.2)' },
-                  HOLD: { label: 'HOLD', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', glow: '0 0 15px rgba(245,158,11,0.2)' },
-                  SELL: { label: 'SELL', color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', glow: '0 0 15px rgba(239,68,68,0.2)' },
-                  STRONG_SELL: { label: 'STRONG SELL', color: '#ff3333', bg: 'rgba(255,51,51,0.08)', border: 'rgba(255,51,51,0.25)', glow: '0 0 20px rgba(255,51,51,0.25)' },
-                }
-                const cfg = signalConfig[signalType]
-                const curPrice = sinyalCurrentPrice || selectedSinyalStock.price
-                const stockSeed = selectedSinyalStock.code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-
-                // AI Metrics
-                const aiConfidence = Math.min(98, 75 + (bullCount * 2) + (stockSeed % 10))
-                const aiAccuracy = Math.min(96, 82 + (stockSeed % 9))
-                const winCount = sinyalPositions.filter(p => p.status === 'won').length
-                const loseCount = sinyalPositions.filter(p => p.status === 'lost').length
-                const aiWinrate = (winCount + loseCount) > 0 ? Math.round((winCount / (winCount + loseCount)) * 100) : (84 + (stockSeed % 7))
-                const momentumLabel = signalType === 'STRONG_BUY' ? 'Strong Bullish' : signalType === 'BUY' ? 'Bullish' : signalType === 'HOLD' ? 'Neutral' : signalType === 'SELL' ? 'Bearish' : 'Strong Bearish'
-                const momentumColor = signalType.includes('BUY') ? '#22c55e' : signalType.includes('SELL') ? '#ef4444' : '#f59e0b'
-                const probabilityUp = signalType === 'STRONG_BUY' ? 92 : signalType === 'BUY' ? 78 : signalType === 'HOLD' ? 52 : signalType === 'SELL' ? 28 : 12
-
-                // AI Analysis
-                const smcStatus = signalType.includes('BUY') ? 'Accumulation' : signalType.includes('SELL') ? 'Distribution' : 'Consolidation'
-                const smcColor = signalType.includes('BUY') ? 'text-green-400' : signalType.includes('SELL') ? 'text-red-400' : 'text-amber-400'
-                const liquidityZone = curPrice * (1 + (signalType.includes('BUY') ? 0.02 : -0.02))
-                const fakeBreakout = (stockSeed % 5 === 0) ? 'Caution' : 'Clear'
-                const fakeBreakoutColor = fakeBreakout === 'Caution' ? 'text-amber-400' : 'text-green-400'
-                const whaleActivity = (signalType === 'STRONG_BUY' || signalType === 'STRONG_SELL') ? 'High' : signalType === 'HOLD' ? 'Low' : 'Medium'
-                const whaleColor = whaleActivity === 'High' ? 'text-red-400' : whaleActivity === 'Medium' ? 'text-amber-400' : 'text-green-400'
-                const trendStrength = (signalType === 'STRONG_BUY' || signalType === 'STRONG_SELL') ? 'Strong' : signalType === 'HOLD' ? 'Weak' : 'Moderate'
-                const trendColor = trendStrength === 'Strong' ? 'text-cyan-400' : trendStrength === 'Moderate' ? 'text-amber-400' : 'text-[var(--zv-muted)]'
-                const volatility = (stockSeed % 3 === 0) ? 'High' : (stockSeed % 3 === 1) ? 'Medium' : 'Low'
-                const volColor = volatility === 'High' ? 'text-red-400' : volatility === 'Medium' ? 'text-amber-400' : 'text-green-400'
-
-                // Signal Details
-                const isBuySignal = signalType.includes('BUY')
-                const entryPrice = curPrice
-                const stopLoss = isBuySignal ? curPrice * 0.98 : curPrice * 1.02
-                const takeProfit1 = isBuySignal ? curPrice * 1.03 : curPrice * 0.97
-                const takeProfit2 = isBuySignal ? curPrice * 1.05 : curPrice * 0.95
-                const estimatedProfit = sinyalAmount && parseInt(sinyalAmount) >= 100000 ? Math.round(parseInt(sinyalAmount) * 0.9 * (sinyalLeverage / 100) * 0.03) : 0
-
-                // News Impact
-                const newsEvents = [
-                  { name: 'CPI', impact: 'HIGH', time: '14:30 WIB', active: stockSeed % 3 === 0 },
-                  { name: 'FOMC', impact: 'HIGH', time: '21:00 WIB', active: stockSeed % 4 === 0 },
-                  { name: 'NFP', impact: 'HIGH', time: '14:30 WIB', active: stockSeed % 5 === 0 },
-                ]
-                const hasHighImpact = newsEvents.some(n => n.active)
-
-                // Signal History from positions
-                const signalHistoryEntries = [
-                  ...sinyalPositions.filter(p => p.status !== 'active').slice(-5).reverse().map(p => ({
-                    pair: p.stockCode,
-                    signal: p.direction === 'NAIK' ? 'BUY' : 'SELL',
-                    result: p.status === 'won' ? 'WIN' : 'LOSS' as string,
-                    profit: p.closedPL !== undefined ? p.closedPL : (p.status === 'won' ? Math.round((p.workingCapital || Math.round(p.amount * 0.9)) * p.profitPercent / 100) : -(p.workingCapital || Math.round(p.amount * 0.9))),
-                    timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-                  })),
-                ]
-                if (sinyalPositions.some(p => p.status === 'active')) {
-                  const activePos = sinyalPositions.find(p => p.status === 'active')!
-                  signalHistoryEntries.unshift({
-                    pair: activePos.stockCode,
-                    signal: activePos.direction === 'NAIK' ? 'BUY' : 'SELL',
-                    result: 'RUNNING',
-                    profit: getPositionLivePL(activePos),
-                    timestamp: 'now',
-                  })
-                }
-
-                return (
-                <div className="space-y-3 relative">
-                  {/* Premium Lock Overlay — shown when not unlocked */}
-                  {!aiProUnlocked && (
-                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl" style={{ background: 'rgba(2,6,23,0.85)', backdropFilter: 'blur(12px)' }}>
-                      {/* Hologram lock animation */}
-                      <div className="relative mb-4">
-                        <div className="w-20 h-20 rounded-full flex items-center justify-center animate-ai-pulse-glow" style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, rgba(15,23,42,0.9) 70%)', border: '2px solid rgba(6,182,212,0.3)', boxShadow: '0 0 30px rgba(6,182,212,0.2), 0 0 60px rgba(6,182,212,0.1)' }}>
-                          <Lock className="w-8 h-8 text-cyan-400" />
-                        </div>
-                        <div className="absolute inset-0 rounded-full animate-radar-ping" style={{ border: '2px solid rgba(6,182,212,0.4)' }} />
-                      </div>
-                      <div className="text-center px-6">
-                        <div className="flex items-center justify-center gap-1.5 mb-2">
-                          <Sparkles className="w-4 h-4 text-cyan-400" />
-                          <span className="text-[14px] font-black text-cyan-400 uppercase tracking-[0.15em]">AI Signal Pro</span>
-                          <Sparkles className="w-4 h-4 text-cyan-400" />
-                        </div>
-                        <p className="text-[10px] text-cyan-400/60 font-bold mb-4 leading-relaxed max-w-[260px]">
-                          Analisis AI real-time, smart money detection, whale tracking, dan sinyal trading profesional.
-                        </p>
-                        <div className="rounded-xl px-6 py-3 mb-4 border border-amber-500/30" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(15,23,42,0.9) 100%)' }}>
-                          <span className="block text-[7px] font-black text-amber-400/60 uppercase tracking-widest mb-1">Harga Premium</span>
-                          <span className="block text-[22px] font-black text-amber-400">Rp 3.700.000</span>
-                          <span className="block text-[7px] font-bold text-amber-400/40 mt-0.5">Sekali bayar • Akses selamanya</span>
-                        </div>
-                        <button onClick={() => setAiProUnlocked(true)}
-                          className="w-full h-12 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                          style={{ background: 'linear-gradient(135deg, #0891b2 0%, #1d4ed8 50%, #7c3aed 100%)', boxShadow: '0 4px 20px rgba(6,182,212,0.3), 0 0 40px rgba(59,130,246,0.15)' }}>
-                          <Gem className="w-4 h-4" />
-                          Aktifkan AI Signal Pro
-                        </button>
-                        <span className="block text-[7px] text-cyan-400/30 mt-2 font-bold">Preview dashboard di bawah (blurred)</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dashboard Content — blurred when locked */}
-                  <div className={aiProUnlocked ? '' : 'blur-sm pointer-events-none select-none'}>
-
-                  {/* ── Stock selector for AI Pro ── */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                    {stocks.filter(s => {
-                      const cat = s.category?.toLowerCase() || ''
-                      if (sinyalCategory === 'popular') return true
-                      if (sinyalCategory === 'crypto') return cat.includes('crypto') || cat.includes('kripto') || ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'LINK', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE'].includes(s.code)
-                      if (sinyalCategory === 'komoditas') return cat.includes('commodity') || cat.includes('komoditas') || ['XOM', 'CVX', 'COP', 'GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER'].includes(s.code)
-                      if (sinyalCategory === 'forex') return cat.includes('forex') || ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF'].includes(s.code)
-                      return true
-                    }).slice(0, 20).map(s => {
-                      const isSelected = selectedSinyalStock?.id === s.id
-                      return (
-                        <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
-                          className={`flex-shrink-0 h-7 px-2.5 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-all border ${
-                            isSelected
-                              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-500/50 shadow-lg shadow-cyan-500/20'
-                              : 'bg-[var(--zv-surface)] text-[var(--zv-text)] border-[var(--zv-border)] hover:border-cyan-500/50 hover:bg-[var(--zv-hover)]'
-                          }`}>
-                          <span>{s.code}</span>
-                          <span className={`text-[7px] font-black ${isSelected ? 'text-cyan-300' : 'text-[var(--zv-muted)]'}`}>{formatRupiah(s.price).replace('Rp', '').trim()}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* ── AI Pro Premium Header ── */}
-                  <div className="rounded-xl overflow-hidden animate-ai-pulse-glow animate-border-glow-cycle border"
-                    style={{ background: `linear-gradient(135deg, ${cfg.bg} 0%, rgba(6,182,212,0.06) 25%, rgba(15,23,42,0.97) 50%, ${cfg.bg} 100%)`, borderColor: cfg.border }}>
-                    {/* Hologram scan line */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
-                      <div className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-hologram-line" />
-                      <div className="absolute inset-0 opacity-[0.03]" style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.1) 2px, rgba(6,182,212,0.1) 4px)' }} />
-                    </div>
-
-                    <div className="relative z-10 px-4 py-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          {/* Radar scanner */}
-                          <div className="relative flex-shrink-0">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `radial-gradient(circle, ${cfg.bg} 0%, transparent 70%)` }}>
-                              <svg width="40" height="40" viewBox="0 0 40 40" className="animate-radar-scan">
-                                <circle cx="20" cy="20" r="18" fill="none" stroke={cfg.color} strokeWidth="0.5" opacity="0.3" />
-                                <circle cx="20" cy="20" r="13" fill="none" stroke={cfg.color} strokeWidth="0.5" opacity="0.2" />
-                                <circle cx="20" cy="20" r="8" fill="none" stroke={cfg.color} strokeWidth="0.5" opacity="0.15" />
-                                <line x1="20" y1="20" x2="20" y2="2" stroke={cfg.color} strokeWidth="1.5" opacity="0.8" strokeLinecap="round" />
-                                <circle cx="20" cy="20" r="3" fill={cfg.color} opacity="0.9" />
-                              </svg>
-                            </div>
-                            <div className="absolute inset-0 rounded-full animate-radar-ping" style={{ border: `1px solid ${cfg.color}`, opacity: 0.3 }} />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                              <span className="text-[8px] font-black text-cyan-400 uppercase tracking-[0.2em]">AI Signal Pro</span>
-                              {aiProUnlocked && (
-                                <span className="h-4 px-1.5 rounded-full bg-green-500/15 border border-green-500/30 text-[6px] font-black text-green-400 flex items-center gap-0.5">
-                                  <CheckCircle className="w-2.5 h-2.5" /> ACTIVE
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[20px] font-black animate-signal-pulse leading-tight" style={{ color: cfg.color }}>{cfg.label}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-[7px] text-cyan-400/60 font-black uppercase tracking-widest block">Confidence</span>
-                            <span className="text-[20px] font-black text-cyan-400">{aiConfidence}%</span>
-                          </div>
-                          <div className="relative w-14 h-14 flex-shrink-0">
-                            <svg viewBox="0 0 56 56" className="w-full h-full -rotate-90">
-                              <circle cx="28" cy="28" r="22" fill="none" stroke="var(--zv-border)" strokeWidth="4" />
-                              <circle cx="28" cy="28" r="22" fill="none" stroke={cfg.color} strokeWidth="4"
-                                strokeDasharray={`${(aiConfidence / 100) * 138.2} ${138.2 - (aiConfidence / 100) * 138.2}`}
-                                strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${cfg.color})`, transition: 'stroke-dasharray 1s ease' }} />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <Sparkles className="w-4 h-4 text-cyan-400" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Stock info */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-black text-[var(--zv-text)]">{selectedSinyalStock.code}</span>
-                          <span className="text-[10px] font-black" style={{ color: cfg.color }}>{formatRupiah(curPrice)}</span>
-                          <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
-                        </div>
-                        <span className="text-[7px] font-bold text-cyan-400/40 uppercase tracking-widest">AI Analysis Active</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── AI Metrics Row ── */}
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {[
-                      { label: 'Accuracy', value: `${aiAccuracy}%`, color: '#22c55e' },
-                      { label: 'Winrate', value: `${aiWinrate}%`, color: '#06b6d4' },
-                      { label: 'Momentum', value: momentumLabel.split(' ')[0], color: momentumColor },
-                      { label: 'Prob ↑', value: `${probabilityUp}%`, color: probabilityUp > 60 ? '#22c55e' : probabilityUp > 40 ? '#f59e0b' : '#ef4444' },
-                      { label: 'Volatility', value: volatility, color: volatility === 'High' ? '#ef4444' : volatility === 'Medium' ? '#f59e0b' : '#22c55e' },
-                    ].map((m, i) => (
-                      <div key={i} className="relative rounded-xl p-2.5 border overflow-hidden"
-                        style={{ background: `linear-gradient(135deg, rgba(6,182,212,0.06) 0%, rgba(15,23,42,0.95) 100%)`, borderColor: `${m.color}25` }}>
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--zv-border)]/30">
-                          <div className="h-full animate-ai-metric-bar" style={{ background: m.color, '--metric-width': `${parseInt(m.value) || 50}%` } as React.CSSProperties} />
-                        </div>
-                        <span className="block text-[7px] text-[var(--zv-muted)] font-black uppercase tracking-wider">{m.label}</span>
-                        <span className="block text-[13px] font-black mt-0.5" style={{ color: m.color }}>{m.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* ── AI Analysis Panel ── */}
-                  <div className="rounded-xl border overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.04) 0%, rgba(15,23,42,0.97) 100%)', borderColor: 'rgba(6,182,212,0.2)' }}>
-                    <div className="px-3 py-2 border-b flex items-center gap-1.5" style={{ borderColor: 'rgba(6,182,212,0.12)' }}>
-                      <Eye className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="text-[8px] font-black text-cyan-400 uppercase tracking-[0.15em]">AI Deep Analysis</span>
-                      <div className="flex-1" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                      <span className="text-[7px] font-bold text-cyan-400/60">SCANNING</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-px" style={{ background: 'rgba(6,182,212,0.08)' }}>
-                      {[
-                        { icon: '◈', label: 'Smart Money', value: smcStatus, color: smcColor },
-                        { icon: '◇', label: 'Liquidity Zone', value: `Rp${formatNumber(Math.round(liquidityZone))}`, color: 'text-cyan-400' },
-                        { icon: '⟐', label: 'Fake Breakout', value: fakeBreakout, color: fakeBreakoutColor },
-                        { icon: '🐋', label: 'Whale Activity', value: whaleActivity, color: whaleColor },
-                        { icon: '◈', label: 'Trend Strength', value: trendStrength, color: trendColor },
-                        { icon: '◎', label: 'Vol Scanner', value: volatility, color: volColor },
-                      ].map((item, i) => (
-                        <div key={i} className="px-3 py-2.5" style={{ background: 'rgba(15,23,42,0.97)' }}>
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <span className="text-[9px]" style={{ color: 'rgba(6,182,212,0.5)' }}>{item.icon}</span>
-                            <span className="text-[7px] text-[var(--zv-muted)] font-bold uppercase tracking-wider">{item.label}</span>
-                          </div>
-                          <span className={`text-[10px] font-black ${item.color}`}>{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ── Signal Details ── */}
-                  <div className="rounded-xl border overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.04) 0%, rgba(15,23,42,0.97) 100%)', borderColor: 'rgba(6,182,212,0.2)' }}>
-                    <div className="px-3 py-2 border-b flex items-center gap-1.5" style={{ borderColor: 'rgba(6,182,212,0.12)' }}>
-                      <Target className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="text-[8px] font-black text-cyan-400 uppercase tracking-[0.15em]">Signal Details</span>
-                      <div className="flex-1" />
-                      <span className="h-5 px-2 rounded-md text-[7px] font-black flex items-center gap-1" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: cfg.color }} />
-                        LIVE
-                      </span>
-                    </div>
-                    <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-2">
-                      {[
-                        { label: 'Entry Price', value: formatRupiah(Math.round(entryPrice)), color: 'text-[var(--zv-text)]' },
-                        { label: 'Stop Loss', value: formatRupiah(Math.round(stopLoss)), color: 'text-red-400' },
-                        { label: 'Take Profit 1', value: formatRupiah(Math.round(takeProfit1)), color: 'text-green-400' },
-                        { label: 'Take Profit 2', value: formatRupiah(Math.round(takeProfit2)), color: 'text-green-400' },
-                        { label: 'Risk:Reward', value: '1:2.5', color: 'text-cyan-400' },
-                        { label: 'Est. Profit', value: estimatedProfit > 0 ? `+${formatRupiah(estimatedProfit)}` : '—', color: 'text-green-400' },
-                      ].map((d, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <span className="text-[8px] text-[var(--zv-muted)] font-bold uppercase">{d.label}</span>
-                          <span className={`text-[10px] font-black tabular-nums ${d.color}`}>{d.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {/* Prediction line SVG */}
-                    <div className="px-3 pb-3">
-                      <div className="h-10 rounded-lg overflow-hidden" style={{ background: 'rgba(6,182,212,0.04)', border: '1px solid rgba(6,182,212,0.1)' }}>
-                        <svg className="w-full h-full" viewBox="0 0 300 40" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id={`predGrad2-${signalType}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor={cfg.color} stopOpacity="0.2" />
-                              <stop offset="100%" stopColor={cfg.color} stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          {isBuySignal ? (
-                            <>
-                              <path d="M0,32 L40,28 L80,22 L120,18 L160,14 L200,10 L240,7 L280,4 L300,3 L300,40 L0,40Z" fill={`url(#predGrad2-${signalType})`} />
-                              <path d="M0,32 L40,28 L80,22 L120,18 L160,14 L200,10 L240,7 L280,4 L300,3" fill="none" stroke={cfg.color} strokeWidth="2" className="animate-prediction-draw" style={{ filter: `drop-shadow(0 0 4px ${cfg.color})` }} />
-                            </>
-                          ) : signalType === 'HOLD' ? (
-                            <>
-                              <path d="M0,20 L40,19 L80,21 L120,20 L160,18 L200,20 L240,19 L280,21 L300,20 L300,40 L0,40Z" fill={`url(#predGrad2-${signalType})`} />
-                              <path d="M0,20 L40,19 L80,21 L120,20 L160,18 L200,20 L240,19 L280,21 L300,20" fill="none" stroke={cfg.color} strokeWidth="2" className="animate-prediction-draw" style={{ filter: `drop-shadow(0 0 4px ${cfg.color})` }} />
-                            </>
-                          ) : (
-                            <>
-                              <path d="M0,8 L40,12 L80,18 L120,24 L160,28 L200,32 L240,35 L280,37 L300,38 L300,40 L0,40Z" fill={`url(#predGrad2-${signalType})`} />
-                              <path d="M0,8 L40,12 L80,18 L120,24 L160,28 L200,32 L240,35 L280,37 L300,38" fill="none" stroke={cfg.color} strokeWidth="2" className="animate-prediction-draw" style={{ filter: `drop-shadow(0 0 4px ${cfg.color})` }} />
-                            </>
-                          )}
-                          <circle cx="0" cy={isBuySignal ? 32 : signalType === 'HOLD' ? 20 : 8} r="3" fill={cfg.color}>
-                            <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
-                          </circle>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── News Impact ── */}
-                  <div className={`rounded-xl border overflow-hidden ${hasHighImpact ? 'animate-flash-warning' : ''}`}
-                    style={{ background: `linear-gradient(135deg, ${hasHighImpact ? 'rgba(239,68,68,0.1)' : 'rgba(6,182,212,0.04)'} 0%, rgba(15,23,42,0.97) 100%)`, borderColor: hasHighImpact ? 'rgba(239,68,68,0.35)' : 'rgba(6,182,212,0.2)' }}>
-                    <div className="px-3 py-2 border-b flex items-center gap-1.5" style={{ borderColor: hasHighImpact ? 'rgba(239,68,68,0.2)' : 'rgba(6,182,212,0.12)' }}>
-                      <AlertCircle className={`w-3.5 h-3.5 ${hasHighImpact ? 'text-red-400' : 'text-cyan-400'}`} />
-                      <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${hasHighImpact ? 'text-red-400' : 'text-cyan-400'}`}>
-                        {hasHighImpact ? 'HIGH IMPACT NEWS DETECTED' : 'NEWS IMPACT MONITOR'}
-                      </span>
-                      {hasHighImpact && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse ml-1" />}
-                    </div>
-                    <div className="flex gap-2 p-3">
-                      {newsEvents.map((n, i) => (
-                        <div key={i} className={`flex-1 rounded-lg px-2.5 py-2 border text-center transition-all ${n.active ? '' : 'opacity-40'}`}
-                          style={{ background: n.active ? 'rgba(239,68,68,0.08)' : 'rgba(6,182,212,0.04)', borderColor: n.active ? 'rgba(239,68,68,0.2)' : 'rgba(6,182,212,0.12)' }}>
-                          <span className={`block text-[10px] font-black ${n.active ? 'text-red-400' : 'text-cyan-400'}`}>{n.name}</span>
-                          <span className={`block text-[7px] font-bold ${n.active ? 'text-red-400/60' : 'text-cyan-400/40'}`}>{n.impact} IMPACT</span>
-                          <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{n.time}</span>
-                          {n.active && <span className="block text-[6px] font-black text-red-400 animate-pulse mt-0.5">⚠ ACTIVE</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ── Signal History ── */}
-                  <div className="rounded-xl border overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.04) 0%, rgba(15,23,42,0.97) 100%)', borderColor: 'rgba(6,182,212,0.2)' }}>
-                    <div className="px-3 py-2 border-b flex items-center gap-1.5" style={{ borderColor: 'rgba(6,182,212,0.12)' }}>
-                      <History className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="text-[8px] font-black text-cyan-400 uppercase tracking-[0.15em]">Signal History</span>
-                      <div className="flex-1" />
-                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">{signalHistoryEntries.length} entries</span>
-                    </div>
-                    {signalHistoryEntries.length > 0 ? (
-                    <div className="max-h-40 overflow-y-auto custom-scrollbar" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(6,182,212,0.3) transparent' }}>
-                      {signalHistoryEntries.map((h, i) => {
-                        const resultCfg = h.result === 'WIN'
-                          ? { bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.25)', text: 'text-green-400' }
-                          : h.result === 'LOSS'
-                            ? { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)', text: 'text-red-400' }
-                            : { bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.25)', text: 'text-cyan-400' }
-                        return (
-                          <div key={i} className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'rgba(6,182,212,0.06)' }}>
-                            <div className="flex items-center gap-2.5">
-                              <span className={`h-5 px-2 rounded text-[7px] font-black flex items-center gap-0.5 ${resultCfg.text}`} style={{ background: resultCfg.bg, border: `1px solid ${resultCfg.border}` }}>
-                                {h.result === 'RUNNING' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse mr-0.5" />}
-                                {h.result}
-                              </span>
-                              <div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-black text-[var(--zv-text)]">{h.pair}</span>
-                                  <span className={`text-[8px] font-bold ${h.signal === 'BUY' ? 'text-green-400' : 'text-red-400'}`}>{h.signal}</span>
-                                </div>
-                                <span className="text-[7px] text-[var(--zv-muted)]">{h.timestamp}</span>
-                              </div>
-                            </div>
-                            <span className={`text-[10px] font-black tabular-nums ${h.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {h.profit >= 0 ? '+' : ''}{formatRupiah(h.profit)}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    ) : (
-                    <div className="px-3 py-6 text-center">
-                      <History className="w-6 h-6 text-[var(--zv-muted)]/30 mx-auto mb-2" />
-                      <span className="block text-[9px] font-bold text-[var(--zv-muted)]">No signals yet</span>
-                      <span className="block text-[7px] text-[var(--zv-muted)]/60 mt-0.5">Trade history will appear here</span>
-                    </div>
-                    )}
-                  </div>
-
-                  </div>{/* end blur wrapper */}
-                </div>
-                )
-              })()}
+              </>
 
             </motion.div>
           )}
@@ -7131,7 +6864,7 @@ function Dashboard() {
         <div className="max-w-7xl mx-auto flex">
           {[
             { key: 'home', label: 'Beranda', icon: HomeIcon },
-            { key: 'market', label: 'Pasar Saham', icon: BarChart3 },
+            { key: 'market', label: 'Pasar Global', icon: BarChart3 },
             { key: 'sinyal', label: 'Sinyal', icon: Target },
             { key: 'investasi', label: 'Investasi', icon: DollarSign },
             { key: 'profil', label: 'Profil', icon: User },
@@ -7222,7 +6955,7 @@ function Dashboard() {
               <div className="p-3">
                 {[
                   { icon: <HomeIcon className="w-4 h-4" />, label: 'Beranda', key: 'home' },
-                  { icon: <BarChart3 className="w-4 h-4" />, label: 'Pasar Saham', key: 'market' },
+                  { icon: <BarChart3 className="w-4 h-4" />, label: 'Pasar Global', key: 'market' },
                   { icon: <Target className="w-4 h-4" />, label: 'Sinyal Pro', key: 'sinyal' },
                   { icon: <DollarSign className="w-4 h-4" />, label: 'Investasi', key: 'investasi' },
                   { icon: <Briefcase className="w-4 h-4" />, label: 'Portofolio', key: 'portfolio' },
