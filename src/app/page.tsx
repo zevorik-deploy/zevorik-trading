@@ -4069,7 +4069,7 @@ function Dashboard() {
             </motion.div>
           )}
 
-          {/* ====== TRADING TAB - MT5 MULTI-PANEL STYLE ====== */}
+          {/* ====== TRADING TAB - MT5 EXACT LAYOUT ====== */}
           {activeTab === 'sinyal' && (() => {
             // ── Computed values for MT5 terminal ──
             const activePos = sinyalPositions.filter(p => p.status === 'active')
@@ -4093,12 +4093,12 @@ function Dashboard() {
 
             return (
             <motion.div key="sinyal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
-              className="flex flex-col" style={{ minHeight: 'calc(100vh - 140px)' }}>
+              className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 140px)' }}>
 
-              {/* ══ TOP BAR: Category Tabs + Stock Selector — MT5 Clean Style ══ */}
-              <div className="mb-1">
-                {/* Category Tabs — MT5 style, no emojis, text only */}
-                <div className="flex gap-0.5 mb-1 rounded-lg overflow-hidden border border-[var(--zv-border)]" style={{ background: 'var(--zv-surface)' }}>
+              {/* ══ 1. COMPACT INSTRUMENT SELECTOR — Category + Stock Pills ══ */}
+              <div className="flex-shrink-0" style={{ background: 'var(--zv-surface)', borderBottom: '1px solid var(--zv-border)' }}>
+                {/* Category tabs — single compact row */}
+                <div className="flex items-center gap-0 px-1 pt-1" style={{ scrollbarWidth: 'none' }}>
                   {[
                     { key: 'popular', label: 'Popular' },
                     { key: 'saham', label: 'Saham' },
@@ -4107,7 +4107,7 @@ function Dashboard() {
                     { key: 'forex', label: 'Forex' },
                   ].map(cat => (
                     <button key={cat.key} onClick={() => setSinyalCategory(cat.key)}
-                      className={`flex-1 h-7 text-[8px] font-bold transition-all ${
+                      className={`h-5 px-2 rounded-sm text-[8px] font-bold transition-all flex-shrink-0 ${
                         sinyalCategory === cat.key
                           ? 'bg-[#1d4ed8] text-white'
                           : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/5'
@@ -4116,8 +4116,8 @@ function Dashboard() {
                     </button>
                   ))}
                 </div>
-                {/* Stock pills — MT5 clean style, code only */}
-                <div className="flex items-center gap-0.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                {/* Stock pills — horizontal scroll */}
+                <div className="flex items-center gap-0.5 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
                   {stocks.filter(s => {
                     const cat = s.category?.toLowerCase() || ''
                     if (sinyalCategory === 'popular') return true
@@ -4131,13 +4131,13 @@ function Dashboard() {
                     const isUp = s.change >= 0
                     return (
                       <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalLots('0.01'); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
-                        className={`flex-shrink-0 h-6 px-2 rounded text-[7px] font-bold flex items-center gap-1 transition-all ${
+                        className={`flex-shrink-0 h-5 px-1.5 rounded-sm text-[7px] font-bold flex items-center gap-0.5 transition-all ${
                           isSelected
                             ? 'bg-[#1d4ed8] text-white'
                             : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/5'
                         }`}>
                         <span>{s.code}</span>
-                        <span className={`text-[6px] font-bold ${isSelected ? 'text-blue-200' : isUp ? 'text-green-400/60' : 'text-red-400/60'}`}>
+                        <span className={`text-[5px] font-bold ${isSelected ? 'text-blue-200' : isUp ? 'text-green-400/60' : 'text-red-400/60'}`}>
                           {isUp ? '▲' : '▼'}{Math.abs(s.changePercent).toFixed(1)}%
                         </span>
                       </button>
@@ -4146,22 +4146,16 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══ MT5 STYLE: SELL | LOT | BUY — Professional Trading Bar ══ */}
+              {/* ══ 2. SELL | LOT | BUY BAR — MT5 Prominent Trading Bar ══ */}
               {selectedSinyalStock && (() => {
                 const buyPL = activePos.filter(p => p.direction === 'NAIK').reduce((s, p) => s + getPositionLivePL(p), 0)
                 const sellPL = activePos.filter(p => p.direction === 'TURUN').reduce((s, p) => s + getPositionLivePL(p), 0)
                 const hasBuyPos = activePos.some(p => p.direction === 'NAIK')
                 const hasSellPos = activePos.some(p => p.direction === 'TURUN')
-                // Dynamic color: if there's an open position, buttons follow chart P/L
-                const isChartUp = (() => {
-                  const sim = sinyalChartSimRef.current
-                  if (!sim) return true
-                  return sim.price >= sim.basePrice
-                })()
                 return (
-              <div className="mb-1">
+              <div className="flex-shrink-0 px-1 py-0.5" style={{ background: 'var(--zv-surface)', borderBottom: '1px solid var(--zv-border)' }}>
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-1">
-                  {/* ════ SELL — MT5 Style RED ════ */}
+                  {/* ════ SELL — MT5 Red ════ */}
                   <button
                     onClick={() => {
                       if (sinyalAmountFromLots < 1000) {
@@ -4173,50 +4167,44 @@ function Dashboard() {
                       setConfirmTradeDir('TURUN')
                       setShowConfirmTrade(true)
                     }}
-                    className="relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[56px] group"
+                    className="relative rounded flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[52px]"
                     style={(() => {
-                      // MT5-style: SELL button color follows chart when there's an active SELL position
                       let bg: string
                       if (hasSellPos) {
                         if (sellPL > 0) {
-                          // SELL position in profit = bright red (chart going down = SELL profits)
                           bg = 'linear-gradient(180deg, #f87171 0%, #ef5350 40%, #dc2626 100%)'
                         } else {
-                          // SELL position in loss = dimmer red
                           bg = 'linear-gradient(180deg, #b91c1c 0%, #991b1b 40%, #7f1d1d 100%)'
                         }
                       } else {
-                        // No SELL position = standard MT5 red
                         bg = 'linear-gradient(180deg, #ef5350 0%, #dc2626 40%, #b91c1c 100%)'
                       }
-                      return { background: bg, boxShadow: '0 2px 12px rgba(239,83,80,0.35)' }
+                      return { background: bg, boxShadow: '0 2px 8px rgba(239,83,80,0.3)' }
                     })()}>
-                    <span className="relative text-[17px] font-black tracking-[0.2em] text-white">SELL</span>
-                    <span className="relative text-[9px] font-bold tabular-nums text-white/80 mt-0.5">{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
+                    <span className="text-[15px] font-black tracking-[0.15em] text-white">SELL</span>
+                    <span className="text-[8px] font-bold tabular-nums text-white/80 mt-0.5">{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
                   </button>
 
-                  {/* ════ LOT SELECTOR — MT5 Compact Style ════ */}
-                  <div className="flex flex-col items-center justify-center px-1.5 py-1 rounded-lg min-w-[80px] md:min-w-[100px]" style={{ background: 'var(--zv-surface)', border: '1px solid var(--zv-border)' }}>
-                    {/* Lot value with arrows */}
+                  {/* ════ LOT SELECTOR — Compact ════ */}
+                  <div className="flex flex-col items-center justify-center px-1 py-0.5 rounded min-w-[72px]" style={{ background: 'var(--zv-hover)', border: '1px solid var(--zv-border)' }}>
                     <div className="flex items-center gap-0.5">
                       <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                        className="h-5 w-5 rounded flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/10 transition-all active:scale-[0.9]">
-                        <ChevronDown className="w-3.5 h-3.5" />
+                        className="h-4 w-4 rounded flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/10 transition-all active:scale-[0.9]">
+                        <ChevronDown className="w-3 h-3" />
                       </button>
-                      <div className="flex flex-col items-center min-w-[38px]">
-                        <span className="text-[13px] font-black text-[var(--zv-text)] tabular-nums leading-none">{sinyalLots}</span>
-                        <span className="text-[6px] font-bold text-[var(--zv-muted)] mt-0.5">LOT</span>
+                      <div className="flex flex-col items-center min-w-[34px]">
+                        <span className="text-[12px] font-black text-[var(--zv-text)] tabular-nums leading-none">{sinyalLots}</span>
+                        <span className="text-[5px] font-bold text-[var(--zv-muted)]">LOT</span>
                       </div>
                       <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = cur + 0.01; setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                        className="h-5 w-5 rounded flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/10 transition-all active:scale-[0.9]">
-                        <ChevronUp className="w-3.5 h-3.5" />
+                        className="h-4 w-4 rounded flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/10 transition-all active:scale-[0.9]">
+                        <ChevronUp className="w-3 h-3" />
                       </button>
                     </div>
-                    {/* Quick lot buttons */}
-                    <div className="flex gap-0.5 mt-1 justify-center">
-                      {['0.01', '0.05', '0.10', '0.25', '0.50', '1.00'].map(lot => (
+                    <div className="flex gap-0.5 mt-0.5 justify-center flex-wrap">
+                      {['0.01', '0.05', '0.10', '0.50', '1.00'].map(lot => (
                         <button key={lot} onClick={() => { setSinyalLots(lot); setSinyalAmount(String(Math.round(parseFloat(lot) * LOT_SIZE))) }}
-                          className={`h-4 px-1 rounded text-[5px] font-bold transition-all ${sinyalLots === lot
+                          className={`h-3.5 px-0.5 rounded-sm text-[5px] font-bold transition-all ${sinyalLots === lot
                             ? 'bg-[#1d4ed8] text-white'
                             : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:bg-white/5'
                           }`}>
@@ -4224,11 +4212,10 @@ function Dashboard() {
                         </button>
                       ))}
                     </div>
-                    {/* Leverage row */}
                     <div className="flex gap-0.5 mt-0.5">
                       {[300, 500, 800, 1000].map(lev => (
                         <button key={lev} onClick={() => setSinyalLeverage(lev)}
-                          className={`h-4 px-1 rounded text-[5px] font-black transition-all ${
+                          className={`h-3.5 px-0.5 rounded-sm text-[5px] font-black transition-all ${
                             sinyalLeverage === lev
                               ? 'bg-amber-500 text-slate-900'
                               : 'text-[var(--zv-muted)] hover:text-amber-400'
@@ -4237,13 +4224,9 @@ function Dashboard() {
                         </button>
                       ))}
                     </div>
-                    {/* Value summary */}
-                    <div className="mt-0.5 text-center">
-                      <span className="text-[6px] text-[var(--zv-muted)]">{sinyalLots} Lot = {formatRupiah(sinyalAmountFromLots)}</span>
-                    </div>
                   </div>
 
-                  {/* ════ BUY — MT5 Style GREEN ════ */}
+                  {/* ════ BUY — MT5 Green ════ */}
                   <button
                     onClick={() => {
                       if (sinyalAmountFromLots < 1000) {
@@ -4255,44 +4238,40 @@ function Dashboard() {
                       setConfirmTradeDir('NAIK')
                       setShowConfirmTrade(true)
                     }}
-                    className="relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[56px] group"
+                    className="relative rounded flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[52px]"
                     style={(() => {
-                      // MT5-style: BUY button color follows chart when there's an active BUY position
                       let bg: string
                       if (hasBuyPos) {
                         if (buyPL > 0) {
-                          // BUY position in profit = bright green (chart going up = BUY profits)
                           bg = 'linear-gradient(180deg, #4ade80 0%, #22c55e 40%, #16a34a 100%)'
                         } else {
-                          // BUY position in loss = dimmer green
                           bg = 'linear-gradient(180deg, #166534 0%, #14532d 40%, #052e16 100%)'
                         }
                       } else {
-                        // No BUY position = standard MT5 green
                         bg = 'linear-gradient(180deg, #22c55e 0%, #16a34a 40%, #15803d 100%)'
                       }
-                      return { background: bg, boxShadow: '0 2px 12px rgba(34,197,94,0.35)' }
+                      return { background: bg, boxShadow: '0 2px 8px rgba(34,197,94,0.3)' }
                     })()}>
-                    <span className="relative text-[17px] font-black tracking-[0.2em] text-white">BUY</span>
-                    <span className="relative text-[9px] font-bold tabular-nums text-white/80 mt-0.5">{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
+                    <span className="text-[15px] font-black tracking-[0.15em] text-white">BUY</span>
+                    <span className="text-[8px] font-bold tabular-nums text-white/80 mt-0.5">{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
                   </button>
                 </div>
               </div>
                 )
               })()}
 
-              {/* ══ CHART AREA — MT5 Professional Chart ══ */}
-              <div className="flex-1 flex flex-col min-w-0 min-h-0">
+              {/* ══ 3. CHART AREA — MT5 Professional Chart (flex-1 fills remaining space) ══ */}
+              <div className="flex-1 min-h-0 flex flex-col">
                   {selectedSinyalStock && (
-                    <div className="relative rounded-lg overflow-hidden border border-[var(--zv-chart-border)] flex-1 flex flex-col" style={{ background: 'var(--zv-chart-bg)', minHeight: '280px' }}>
-                      {/* Chart Header — Clean MT5 style */}
-                      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2.5 pt-1.5 pb-1" style={{ background: 'linear-gradient(to bottom, var(--zv-chart-bg) 60%, transparent)' }}>
-                        <div className="flex items-center gap-1.5">
+                    <div className="relative flex-1 min-h-0 overflow-hidden" style={{ background: '#0a0e17' }}>
+                      {/* Chart Header Overlay — symbol + price, transparent gradient */}
+                      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2 pt-1 pb-0.5" style={{ background: 'linear-gradient(to bottom, rgba(10,14,23,0.95) 60%, transparent)' }}>
+                        <div className="flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                          <span className="text-[9px] font-black text-[var(--zv-text)]">{selectedSinyalStock.code}</span>
-                          <span className="text-[7px] font-bold text-[var(--zv-muted)]">• {selectedSinyalStock.name?.slice(0, 20)}</span>
+                          <span className="text-[9px] font-black text-white/90">{selectedSinyalStock.code}</span>
+                          <span className="text-[6px] font-bold text-white/40 hidden sm:inline">• {selectedSinyalStock.name?.slice(0, 16)}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           {(() => {
                             const sim = sinyalChartSimRef.current
                             const openPrice = sim?.currentCandle.open || selectedSinyalStock.price
@@ -4305,7 +4284,7 @@ function Dashboard() {
                                 <span className="text-[11px] font-black tabular-nums" style={{ color: isPriceUp ? '#22c55e' : '#ef5350' }}>
                                   {formatRupiah(curPrice)}
                                 </span>
-                                <span className={`text-[7px] font-bold ${isPriceUp ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className={`text-[6px] font-bold ${isPriceUp ? 'text-green-400' : 'text-red-400'}`}>
                                   {isPriceUp ? '▲' : '▼'} {isPriceUp ? '+' : ''}{changePercent.toFixed(2)}%
                                 </span>
                               </>
@@ -4314,15 +4293,15 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Timeframe selector — MT5 compact style */}
-                      <div className="absolute top-7 left-0 right-0 z-10 flex items-center justify-between px-2.5 py-0.5">
-                        <div className="flex items-center gap-0.5 rounded p-0.5" style={{ background: 'var(--zv-chart-panel)' }}>
+                      {/* Timeframe selector — compact, overlays chart */}
+                      <div className="absolute top-5 left-0 right-0 z-10 flex items-center justify-between px-2 py-0.5">
+                        <div className="flex items-center gap-0.5 rounded p-0.5" style={{ background: 'rgba(10,14,23,0.85)' }}>
                           {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
                             <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
-                              className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
+                              className={`h-4 px-1 rounded text-[6px] font-bold transition-all ${
                                 sinyalTimeframe === tf
                                   ? 'bg-[#1d4ed8] text-white'
-                                  : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'
+                                  : 'text-white/40 hover:text-white/70'
                               }`}>
                               {tf}
                             </button>
@@ -4343,69 +4322,63 @@ function Dashboard() {
                           const totalSecsRem = totalSecs % 60
                           const now = new Date()
                           const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0') + ':' + now.getSeconds().toString().padStart(2, '0')
-                          const radius = 16
+                          const radius = 14
                           const circumference = 2 * Math.PI * radius
                           const strokeDash = circumference * progress
                           const isLow = remaining <= 5 && remaining > 0
                           return (
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1.5">
-                                <svg width="38" height="38" className="flex-shrink-0">
-                                  <circle cx="19" cy="19" r={radius} fill="none" stroke="var(--zv-chart-grid)" strokeWidth="2.5" opacity="0.5" />
-                                  <circle cx="19" cy="19" r={radius} fill="none" stroke={isLow ? '#f59e0b' : '#3b82f6'} strokeWidth="2.5"
-                                    strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
-                                    strokeLinecap="round" transform="rotate(-90 19 19)"
-                                    style={{ transition: 'stroke-dasharray 0.8s linear' }} />
-                                  <text x="19" y="17" textAnchor="middle" fontSize="7" fontWeight="900" fill={isLow ? '#f59e0b' : 'var(--zv-text)'} fontFamily="monospace">
-                                    {remaining > 60 ? `${Math.ceil(remaining/60)}m` : `${remaining}`}
-                                  </text>
-                                  <text x="19" y="24" textAnchor="middle" fontSize="5" fill="var(--zv-muted)" fontFamily="monospace">left</text>
-                                </svg>
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-black tabular-nums text-[var(--zv-text)]">
-                                    {elapsedMins > 0 ? `${elapsedMins}:${elapsedSecs.toString().padStart(2, '0')}` : `0:${elapsedSecs.toString().padStart(2, '0')}`} / {totalMins > 0 ? `${totalMins}:${totalSecsRem.toString().padStart(2, '0')}` : `0:${totalSecsRem.toString().padStart(2, '0')}`}
-                                  </span>
-                                  <span className="text-[7px] font-bold text-[var(--zv-muted)] tabular-nums">{timeStr} WIB</span>
-                                </div>
+                            <div className="flex items-center gap-1.5">
+                              <svg width="32" height="32" className="flex-shrink-0">
+                                <circle cx="16" cy="16" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
+                                <circle cx="16" cy="16" r={radius} fill="none" stroke={isLow ? '#f59e0b' : '#3b82f6'} strokeWidth="2"
+                                  strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
+                                  strokeLinecap="round" transform="rotate(-90 16 16)"
+                                  style={{ transition: 'stroke-dasharray 0.8s linear' }} />
+                                <text x="16" y="14" textAnchor="middle" fontSize="6" fontWeight="900" fill={isLow ? '#f59e0b' : 'rgba(255,255,255,0.8)'} fontFamily="monospace">
+                                  {remaining > 60 ? `${Math.ceil(remaining/60)}m` : `${remaining}`}
+                                </text>
+                                <text x="16" y="20" textAnchor="middle" fontSize="4" fill="rgba(255,255,255,0.4)" fontFamily="monospace">left</text>
+                              </svg>
+                              <div className="flex flex-col">
+                                <span className="text-[7px] font-black tabular-nums text-white/80">
+                                  {elapsedMins > 0 ? `${elapsedMins}:${elapsedSecs.toString().padStart(2, '0')}` : `0:${elapsedSecs.toString().padStart(2, '0')}`} / {totalMins > 0 ? `${totalMins}:${totalSecsRem.toString().padStart(2, '0')}` : `0:${totalSecsRem.toString().padStart(2, '0')}`}
+                                </span>
+                                <span className="text-[5px] font-bold text-white/40 tabular-nums">{timeStr} WIB</span>
                               </div>
                             </div>
                           )
                         })()}
                       </div>
 
-                      {/* Active Trades Overlay — MT5 clean style */}
+                      {/* Active Trades Overlay — compact badges */}
                       {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                        <div className="absolute top-14 left-2 z-10 flex flex-col gap-1 max-w-[170px]">
+                        <div className="absolute top-11 left-1.5 z-10 flex flex-col gap-0.5 max-w-[140px]">
                           {sinyalPositions.filter(p => p.status === 'active').map(ap => {
                             const isUp = ap.direction === 'NAIK'
                             const livePL = getPositionLivePL(ap)
-                            const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || ap.startPrice
                             return (
                               <div key={ap.id}
-                                className="flex items-center gap-1.5 px-2 py-1 rounded-lg border"
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded"
                                 style={{
-                                  backdropFilter: 'blur(8px)',
-                                  borderColor: isUp ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)',
-                                  background: isUp ? 'rgba(34,197,94,0.06)' : 'rgba(239,83,80,0.06)'
+                                  backdropFilter: 'blur(6px)',
+                                  background: isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,83,80,0.08)',
+                                  border: `1px solid ${isUp ? 'rgba(34,197,94,0.15)' : 'rgba(239,83,80,0.15)'}`
                                 }}>
-                                <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full"
+                                <div className="flex-shrink-0 flex items-center justify-center w-4 h-4 rounded-full"
                                   style={{ background: isUp ? '#22c55e' : '#ef5350' }}>
-                                  <span className="text-[5px] font-black text-white">{isUp ? 'B' : 'S'}</span>
+                                  <span className="text-[4px] font-black text-white">{isUp ? 'B' : 'S'}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1">
-                                    <span className={`text-[7px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{isUp ? 'BUY' : 'SELL'}</span>
-                                    <span className="text-[6px] text-[var(--zv-muted)] font-bold">{ap.stockCode}</span>
-                                  </div>
-                                  <div className={`text-[8px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  <span className={`text-[6px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{isUp ? 'BUY' : 'SELL'}</span>
+                                  <span className={`text-[6px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'} ml-1`}>
                                     {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
-                                  </div>
+                                  </span>
                                 </div>
                                 <button onClick={() => closeSinyalPosition(ap.id)}
-                                  className="w-5 h-5 rounded flex items-center justify-center transition-all flex-shrink-0"
-                                  style={{ background: '#ef5350' }}
+                                  className="w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0"
+                                  style={{ background: 'rgba(239,83,80,0.6)' }}
                                   title="Tutup posisi">
-                                  <X className="w-2.5 h-2.5 text-white" />
+                                  <X className="w-2 h-2 text-white" />
                                 </button>
                               </div>
                             )
@@ -4414,7 +4387,7 @@ function Dashboard() {
                       )}
 
                       {/* ── CANDLESTICK CHART SVG ── */}
-                      <div className="w-full flex-1 pt-14"
+                      <div className="w-full h-full"
                         onMouseMove={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect()
                           setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top, w: rect.width, h: rect.height })
@@ -4485,7 +4458,7 @@ function Dashboard() {
                               })
                             }
                           }
-                          if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[9px] text-[var(--zv-muted)]">Memuat grafik...</div>
+                          if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[8px] text-white/30">Memuat grafik...</div>
 
                           const allHighs = allCandles.map(c => c.high)
                           const allLows = allCandles.map(c => c.low)
@@ -4522,7 +4495,7 @@ function Dashboard() {
                           const startIdx = Math.max(0, endIdx - maxVisible)
                           const visibleCandles = allCandles.slice(startIdx, endIdx)
                           const candleCount = visibleCandles.length
-                          if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[9px] text-[var(--zv-muted)]">Geser kembali...</div>
+                          if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[8px] text-white/30">Geser kembali...</div>
                           const candleSpacing = chartW / candleCount
                           const candleBodyW = Math.max(2, Math.min(candleSpacing * 0.72, 16))
 
@@ -4536,7 +4509,6 @@ function Dashboard() {
 
                           const activePositions = sinyalPositions.filter(p => p.status === 'active')
 
-                          // Generate 7 evenly-spaced price levels
                           const gridLevels = 7
                           const gridPriceStep = paddedRange / gridLevels
 
@@ -4552,7 +4524,7 @@ function Dashboard() {
                               {/* Chart background */}
                               <rect x={padL} y={padT} width={chartW} height={priceAreaH} fill="transparent" />
 
-                              {/* ═══ Horizontal grid lines — MT5 thin dashed ═══ */}
+                              {/* Horizontal grid lines */}
                               {Array.from({ length: gridLevels + 1 }).map((_, gi) => {
                                 const gy = padT + (gi / gridLevels) * priceAreaH
                                 const priceLabel = paddedMax - gridPriceStep * gi
@@ -4560,12 +4532,12 @@ function Dashboard() {
                                   <g key={`hg-${gi}`}>
                                     <line x1={padL} y1={gy} x2={padL + chartW} y2={gy}
                                       stroke="#ffffff" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.08" />
-                                    <text x={padL + chartW + 4} y={gy + 3.5} fontSize="7" fill="var(--zv-chart-text)" fontFamily="monospace" fontWeight="700">{compactPrice(priceLabel)}</text>
+                                    <text x={padL + chartW + 4} y={gy + 3.5} fontSize="7" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="700">{compactPrice(priceLabel)}</text>
                                   </g>
                                 )
                               })}
 
-                              {/* ═══ Vertical grid lines — MT5 thin dashed with time labels ═══ */}
+                              {/* Vertical grid lines with time labels */}
                               {(() => {
                                 const step = Math.max(1, Math.floor(candleCount / 6))
                                 const items: JSX.Element[] = []
@@ -4576,28 +4548,28 @@ function Dashboard() {
                                     <g key={`vg-${i}`}>
                                       <line x1={vx} y1={padT} x2={vx} y2={padT + priceAreaH}
                                         stroke="#ffffff" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.06" />
-                                      <text x={vx} y={chartH + volH + 12} fontSize="6" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="700">{c.time}</text>
+                                      <text x={vx} y={chartH + volH + 12} fontSize="6" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="monospace" fontWeight="700">{c.time}</text>
                                     </g>
                                   )
                                 })
                                 return items
                               })()}
 
-                              {/* Separator line between price and volume */}
-                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="var(--zv-chart-grid)" strokeWidth="0.4" opacity="0.35" />
+                              {/* Separator between price and volume */}
+                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="rgba(255,255,255,0.1)" strokeWidth="0.4" />
 
-                              {/* ═══ Volume bars — semi-transparent ═══ */}
+                              {/* Volume bars */}
                               {visibleCandles.map((c, i) => {
                                 const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.65) / 2
                                 const volBarH = (c.volume / maxVol) * (volH - 8)
                                 const isBull = c.close >= c.open
                                 return (
                                   <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 3} width={candleBodyW * 0.65} height={Math.max(0.5, volBarH)}
-                                    fill={isBull ? 'var(--zv-chart-vol-up)' : 'var(--zv-chart-vol-down)'} rx="0.5" />
+                                    fill={isBull ? 'rgba(34,197,94,0.25)' : 'rgba(239,83,80,0.25)'} rx="0.5" />
                                 )
                               })}
 
-                              {/* ═══ Candlesticks — MT5 professional style ═══ */}
+                              {/* Candlesticks */}
                               {visibleCandles.map((c, i) => {
                                 const cx = padL + (i + 0.5) * candleSpacing
                                 const isBull = c.close >= c.open
@@ -4617,7 +4589,7 @@ function Dashboard() {
                                 )
                               })}
 
-                              {/* ═══ MA5 line — yellow ═══ */}
+                              {/* MA5 line — yellow */}
                               {(() => {
                                 const ma5 = computeMA(visibleCandles, 5)
                                 const pts: { x: number; y: number }[] = []
@@ -4628,7 +4600,7 @@ function Dashboard() {
                                 const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
                                 return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="1" opacity="0.6" strokeLinejoin="round" />
                               })()}
-                              {/* ═══ MA20 line — cyan ═══ */}
+                              {/* MA20 line — cyan */}
                               {(() => {
                                 const ma20 = computeMA(visibleCandles, 20)
                                 const pts: { x: number; y: number }[] = []
@@ -4640,16 +4612,16 @@ function Dashboard() {
                                 return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="1" opacity="0.45" strokeLinejoin="round" />
                               })()}
 
-                              {/* ═══ MA Legend — top left ═══ */}
+                              {/* MA Legend */}
                               <g>
-                                <rect x={padL + 2} y={padT + 1} width={56} height={10} rx="2" fill="var(--zv-chart-ma-legend-bg)" opacity="0.85" />
+                                <rect x={padL + 2} y={padT + 1} width={56} height={10} rx="2" fill="rgba(10,14,23,0.8)" />
                                 <line x1={padL + 5} y1={padT + 6} x2={padL + 15} y2={padT + 6} stroke="#eab308" strokeWidth="1.2" opacity="0.8" />
                                 <text x={padL + 17} y={padT + 8.5} fontSize="6" fill="#eab308" fontFamily="monospace" fontWeight="700">MA5</text>
                                 <line x1={padL + 32} y1={padT + 6} x2={padL + 42} y2={padT + 6} stroke="#06b6d4" strokeWidth="1.2" opacity="0.6" />
                                 <text x={padL + 44} y={padT + 8.5} fontSize="6" fill="#06b6d4" fontFamily="monospace" fontWeight="700">MA20</text>
                               </g>
 
-                              {/* ═══ Position entry lines — MT5 dashed with label ═══ */}
+                              {/* Position entry lines */}
                               {activePositions.map(pos => {
                                 const entryY = yScale(pos.startPrice)
                                 const isPosUp = pos.direction === 'NAIK'
@@ -4666,21 +4638,21 @@ function Dashboard() {
                                 )
                               })}
 
-                              {/* ═══ Current price line — MT5 thin dashed ═══ */}
+                              {/* Current price line */}
                               <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
                                 stroke={priceColor} strokeWidth="0.6" strokeDasharray="4,3" opacity="0.4" />
 
-                              {/* ═══ Animated pulse dot at right edge ═══ */}
+                              {/* Animated pulse dot */}
                               <circle cx={padL + chartW} cy={yLast} r="3" fill={priceColor} filter="url(#candleGlow)">
                                 <animate attributeName="r" values="2.5;4.5;2.5" dur="1.5s" repeatCount="indefinite" />
                                 <animate attributeName="opacity" values="1;0.35;1" dur="1.5s" repeatCount="indefinite" />
                               </circle>
 
-                              {/* ═══ Current price badge on right axis ═══ */}
+                              {/* Current price badge */}
                               <rect x={padL + chartW + 2} y={yLast - 7} width={padR - 4} height="14" rx="2" fill={priceColor} />
                               <text x={padL + chartW + padR / 2 + 1} y={yLast + 3.5} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{compactPrice(lastPrice)}</text>
 
-                              {/* ═══ Crosshair ═══ */}
+                              {/* Crosshair */}
                               {sinyalCrosshair && (() => {
                                 const svgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
                                 const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
@@ -4691,8 +4663,8 @@ function Dashboard() {
                                     <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2,2" />
                                     {svgY > padT && svgY < padT + priceAreaH && (
                                       <>
-                                        <rect x={padL + chartW + 2} y={svgY - 7} width={padR - 4} height="14" rx="2" fill="var(--zv-chart-grid)" />
-                                        <text x={padL + chartW + padR / 2 + 1} y={svgY + 3.5} fontSize="6.5" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="700">{compactPrice(crossPrice)}</text>
+                                        <rect x={padL + chartW + 2} y={svgY - 7} width={padR - 4} height="14" rx="2" fill="rgba(30,40,60,0.9)" />
+                                        <text x={padL + chartW + padR / 2 + 1} y={svgY + 3.5} fontSize="6.5" fill="rgba(255,255,255,0.7)" textAnchor="middle" fontFamily="monospace" fontWeight="700">{compactPrice(crossPrice)}</text>
                                       </>
                                     )}
                                   </g>
@@ -4707,25 +4679,26 @@ function Dashboard() {
                       {sinyalChartOffset > 0 && (
                         <button
                           onClick={() => setSinyalChartOffset(0)}
-                          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-6 px-3 rounded-full bg-[#1d4ed8]/80 text-white text-[7px] font-bold flex items-center gap-1 hover:bg-[#1d4ed8] transition-colors backdrop-blur-sm">
-                          <ChevronRight className="w-2.5 h-2.5 rotate-180" />
+                          className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 h-5 px-2 rounded-full text-white text-[6px] font-bold flex items-center gap-0.5 hover:bg-[#1d4ed8] transition-colors"
+                          style={{ background: 'rgba(29,78,216,0.7)', backdropFilter: 'blur(4px)' }}>
+                          <ChevronRight className="w-2 h-2 rotate-180" />
                           Terbaru
                         </button>
                       )}
 
-                      {/* Zoom Controls — MT5 minimal style */}
-                      <div className="absolute bottom-3 right-2 z-20 flex flex-col gap-0.5">
+                      {/* Zoom Controls — minimal */}
+                      <div className="absolute bottom-2 right-1.5 z-20 flex flex-col gap-0.5">
                         <button
                           onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                          className="h-6 w-6 rounded border flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/40 transition-all text-[12px] font-bold" style={{ background: 'var(--zv-surface)', borderColor: 'var(--zv-border)' }}
+                          className="h-5 w-5 rounded flex items-center justify-center text-white/40 hover:text-white/80 transition-all text-[11px] font-bold" style={{ background: 'rgba(10,14,23,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}
                         >+</button>
                         <button
                           onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                          className="h-6 w-6 rounded border flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/40 transition-all text-[12px] font-bold" style={{ background: 'var(--zv-surface)', borderColor: 'var(--zv-border)' }}
+                          className="h-5 w-5 rounded flex items-center justify-center text-white/40 hover:text-white/80 transition-all text-[11px] font-bold" style={{ background: 'rgba(10,14,23,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}
                         >−</button>
                         <button
                           onClick={() => { setSinyalChartZoom(40); setSinyalChartOffset(0) }}
-                          className="h-6 w-6 rounded border flex items-center justify-center text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/40 transition-all" style={{ background: 'var(--zv-surface)', borderColor: 'var(--zv-border)' }}
+                          className="h-5 w-5 rounded flex items-center justify-center text-white/40 hover:text-white/80 transition-all" style={{ background: 'rgba(10,14,23,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}
                         >
                           <RotateCcw className="w-2.5 h-2.5" />
                         </button>
@@ -4738,10 +4711,10 @@ function Dashboard() {
                         const won = latest.won
                         return (
                           <motion.div key={latest.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                            className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                            <div className={'flex items-center gap-1.5 px-3 py-1 rounded-full border ' + (won ? 'border-green-500/25 bg-green-500/10' : 'border-red-500/25 bg-red-500/10')} style={{ backdropFilter: 'blur(10px)' }}>
-                              <span className={'text-[9px] font-black ' + (won ? 'text-green-400' : 'text-red-400')}>{won ? 'BENAR' : 'SALAH'}</span>
-                              <span className={'text-[8px] font-bold ' + (won ? 'text-green-300' : 'text-red-300')}>{won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
+                            className="absolute top-11 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                            <div className={'flex items-center gap-1 px-2 py-0.5 rounded-full ' + (won ? 'border border-green-500/20 bg-green-500/10' : 'border border-red-500/20 bg-red-500/10')} style={{ backdropFilter: 'blur(8px)' }}>
+                              <span className={'text-[7px] font-black ' + (won ? 'text-green-400' : 'text-red-400')}>{won ? 'BENAR' : 'SALAH'}</span>
+                              <span className={'text-[6px] font-bold ' + (won ? 'text-green-300' : 'text-red-300')}>{won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
                             </div>
                           </motion.div>
                         )
@@ -4749,37 +4722,37 @@ function Dashboard() {
                     </div>
                   )}
                   {!selectedSinyalStock && (
-                    <div className="flex-1 flex items-center justify-center rounded-lg border border-[var(--zv-border)]" style={{ background: 'var(--zv-surface)', minHeight: '300px' }}>
+                    <div className="flex-1 flex items-center justify-center" style={{ background: '#0a0e17' }}>
                       <div className="text-center">
-                        <BarChart3 className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                        <p className="text-[10px] font-bold text-[var(--zv-muted)]">Pilih instrumen untuk mulai trading</p>
+                        <BarChart3 className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                        <p className="text-[8px] font-bold text-white/30">Pilih instrumen untuk mulai trading</p>
                       </div>
                     </div>
                   )}
                 </div>
 
-              {/* ══ TERMINAL BAR — MT5 Clean Style ══ */}
-              <div className="mt-1 rounded-lg overflow-hidden border border-[var(--zv-border)]" style={{ background: 'var(--zv-surface)' }}>
-                <div className="flex items-stretch px-1.5 py-1 gap-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {/* ══ 4. TERMINAL BAR — MT5 Compact Strip ══ */}
+              <div className="flex-shrink-0" style={{ background: 'var(--zv-surface)', borderTop: '1px solid var(--zv-border)', borderBottom: '1px solid var(--zv-border)' }}>
+                <div className="flex items-stretch px-1 py-0.5 gap-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   {[
-                    { label: 'Balance', value: formatRupiah(totalBalance), color: 'text-[var(--zv-text)]', icon: null },
-                    { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? 'text-green-400' : 'text-red-400', icon: null },
-                    { label: 'Margin', value: formatRupiah(usedMargin), color: 'text-amber-400', icon: null },
-                    { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400', icon: null },
-                    { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? 'text-green-400' : 'text-red-400', icon: null },
+                    { label: 'Balance', value: formatRupiah(totalBalance), color: 'text-[var(--zv-text)]' },
+                    { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? 'text-green-400' : 'text-red-400' },
+                    { label: 'Margin', value: formatRupiah(usedMargin), color: 'text-amber-400' },
+                    { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400' },
+                    { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? 'text-green-400' : 'text-red-400' },
                   ].map((item, idx, arr) => (
-                    <div key={item.label} className={`flex flex-col items-center justify-center px-2.5 py-0.5 flex-shrink-0 ${idx < arr.length - 1 ? 'border-r border-[var(--zv-border)]' : ''}`}>
-                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">{item.label}</span>
-                      <span className={`text-[8px] font-black tabular-nums ${item.color}`}>{item.value}</span>
+                    <div key={item.label} className={`flex flex-col items-center justify-center px-2 py-0.5 flex-shrink-0 ${idx < arr.length - 1 ? 'border-r border-[var(--zv-border)]' : ''}`}>
+                      <span className="text-[5px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">{item.label}</span>
+                      <span className={`text-[7px] font-black tabular-nums ${item.color}`}>{item.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* ══ POSITIONS TABLE — MT5 Clean Style ══ */}
+              {/* ══ 5. POSITIONS TABLE — MT5 Compact ══ */}
               {activePos.length > 0 && (
-                <div className="mt-1 rounded-lg overflow-hidden border border-[var(--zv-border)]" style={{ background: 'var(--zv-surface)' }}>
-                  <div className="grid grid-cols-12 gap-0 px-2 py-1.5 border-b border-[var(--zv-border)] text-[6px] font-black text-[var(--zv-muted)] uppercase tracking-wider">
+                <div className="flex-shrink-0" style={{ background: 'var(--zv-surface)' }}>
+                  <div className="grid grid-cols-12 gap-0 px-2 py-1 border-b border-[var(--zv-border)] text-[5px] font-black text-[var(--zv-muted)] uppercase tracking-wider">
                     <div className="col-span-2">Symbol</div>
                     <div className="col-span-1">Type</div>
                     <div className="col-span-1">Vol</div>
@@ -4788,16 +4761,16 @@ function Dashboard() {
                     <div className="col-span-3">P&L</div>
                     <div className="col-span-1"></div>
                   </div>
-                  <div className="max-h-40 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                  <div className="max-h-28 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
                     {activePos.map((pos, idx) => {
                       const livePL = getPositionLivePL(pos)
                       const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
                       const isUp = pos.direction === 'NAIK'
                       return (
-                        <div key={pos.id} className={`grid grid-cols-12 gap-0 px-2 py-1.5 items-center text-[7px] font-bold ${idx % 2 === 0 ? 'bg-[var(--zv-hover)]' : ''} hover:bg-[var(--zv-hover)] transition-colors`}>
+                        <div key={pos.id} className={`grid grid-cols-12 gap-0 px-2 py-1 items-center text-[6px] font-bold ${idx % 2 === 0 ? 'bg-[var(--zv-hover)]' : ''} hover:bg-[var(--zv-hover)] transition-colors`}>
                           <div className="col-span-2 text-[var(--zv-text)] font-black">{pos.stockCode}</div>
                           <div className="col-span-1">
-                            <span className="px-1 py-0.5 rounded text-[6px] font-black text-white"
+                            <span className="px-0.5 py-0.5 rounded text-[5px] font-black text-white"
                               style={isUp
                                 ? { background: 'linear-gradient(180deg, #4ade80, #22c55e)' }
                                 : { background: 'linear-gradient(180deg, #f87171, #ef5350)' }}>
@@ -4812,21 +4785,21 @@ function Dashboard() {
                           </div>
                           <div className="col-span-1 flex justify-end">
                             <button onClick={() => closeSinyalPosition(pos.id)}
-                              className="h-5 w-5 rounded-md flex items-center justify-center transition-all"
-                              style={{ background: 'linear-gradient(180deg, #f87171, #ef5350)', boxShadow: '0 1px 3px rgba(239,83,80,0.25)' }}
+                              className="h-4 w-4 rounded flex items-center justify-center transition-all"
+                              style={{ background: 'linear-gradient(180deg, #f87171, #ef5350)' }}
                               title="Tutup posisi">
-                              <X className="w-2.5 h-2.5 text-white" />
+                              <X className="w-2 h-2 text-white" />
                             </button>
                           </div>
                         </div>
                       )
                     })}
                   </div>
-                  <div className="flex items-center justify-between px-2 py-1.5 border-t border-[var(--zv-border)]">
-                    <span className="text-[7px] font-bold text-[var(--zv-muted)]">{activePos.length} posisi aktif</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">Total P&L:</span>
-                      <span className={`text-[8px] font-black tabular-nums ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className="flex items-center justify-between px-2 py-1 border-t border-[var(--zv-border)]">
+                    <span className="text-[6px] font-bold text-[var(--zv-muted)]">{activePos.length} posisi aktif</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[6px] font-bold text-[var(--zv-muted)]">Total P&L:</span>
+                      <span className={`text-[7px] font-black tabular-nums ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                         {totalLivePL >= 0 ? '+' : ''}{formatRupiah(totalLivePL)}
                       </span>
                     </div>

@@ -111,3 +111,103 @@ Stage Summary:
 - Terminal bar is cleaner with data-driven rendering
 - All lint checks pass
 - Server running correctly on port 3000
+
+---
+Task ID: 3
+Agent: MT5 Layout Agent
+Task: Completely rewrite the Sinyal (Trading) tab layout to match MT5 EXACTLY
+
+Work Log:
+
+### 1. Complete Layout Restructure (lines 4072-4811)
+Replaced the entire `{activeTab === 'sinyal' && (() => { ... })()}` block (768 lines → 741 lines).
+
+**Outer Container**:
+- Changed from `minHeight: 'calc(100vh - 140px)'` to `height: 'calc(100vh - 140px)'` with `overflow-hidden`
+- This enables `flex-1` children to properly fill remaining space (critical for chart sizing)
+
+**Section 1 — Compact Instrument Selector**:
+- Category tabs: Changed from full-width segmented control to compact pill-style buttons (h-5 px-2)
+- Stock pills: Smaller pills (h-5 px-1.5), smaller change indicators (text-[5px])
+- Added solid border bottom to separate from trading bar
+- Total height reduced from ~60px to ~38px
+
+**Section 2 — SELL | LOT | BUY Bar**:
+- Button height: Reduced from h-[56px] to h-[52px] for compactness
+- Text sizing: SELL/BUY text from text-[17px] to text-[15px], tracking from 0.2em to 0.15em
+- Bid/Ask price text: Reduced from text-[9px] to text-[8px]
+- Lot selector: Removed value summary text, reduced quick lot buttons from 6 to 5 (0.25 removed)
+- Reduced overall padding and spacing
+- Added background and border to visually separate from chart
+
+**Section 3 — Chart Area** (MAJOR CHANGE):
+- Chart container: Uses `flex-1 min-h-0` to fill ALL remaining space
+- Removed `rounded-lg`, `border`, `minHeight: '280px'` from chart container
+- Changed background from `var(--zv-chart-bg)` to hardcoded `#0a0e17` (MT5 dark)
+- Chart header overlay: Uses `rgba(10,14,23,0.95)` gradient instead of `var(--zv-chart-bg)`
+- Timeframe buttons: Uses `rgba(10,14,23,0.85)` background, `text-white/40` for inactive
+- Candle countdown: Smaller SVG (32x32 vs 38x38), smaller radius (14 vs 16)
+- Active trades overlay: More compact badges, smaller close buttons
+- SVG wrapper: Changed from `w-full flex-1 pt-14` to `w-full h-full` (chart fills entire space)
+- SVG text colors: Changed from `var(--zv-chart-text)` to `rgba(255,255,255,0.5)` for dark bg compatibility
+- Grid lines: Same styling but text uses `rgba(255,255,255,0.4)` instead of `var(--zv-chart-text)`
+- Volume bars: Changed from `var(--zv-chart-vol-up/down)` to `rgba(34,197,94,0.25)` / `rgba(239,83,80,0.25)`
+- MA legend: Changed background from `var(--zv-chart-ma-legend-bg)` to `rgba(10,14,23,0.8)`
+- Crosshair price label: Changed from `var(--zv-chart-grid)` bg to `rgba(30,40,60,0.9)`
+- Scroll to latest button: Smaller (h-5 px-2), semi-transparent blue
+- Zoom controls: Smaller (h-5 w-5), dark transparent backgrounds with white/40 text
+- Result flash: More compact (py-0.5, text-[7px]/text-[6px])
+- No-stock-selected view: Uses `#0a0e17` background with white/20 icons
+
+**Section 4 — Terminal Bar**:
+- Reduced to flex-shrink-0 (doesn't grow, stays compact)
+- Font sizes: Labels from text-[6px] to text-[5px], values from text-[8px] to text-[7px]
+- Reduced padding (py-0.5 instead of py-1)
+
+**Section 5 — Positions Table**:
+- Reduced to flex-shrink-0 (doesn't grow, scrollable)
+- Max height reduced from max-h-40 to max-h-28
+- Font sizes: Headers from text-[6px] to text-[5px], rows from text-[7px] to text-[6px]
+- Close buttons: Smaller (h-4 w-4 instead of h-5 w-5)
+- Total P&L text: Reduced from text-[7px]/text-[8px] to text-[6px]/text-[7px]
+
+### No Changes To:
+- Trading logic (positions, P/L calculation, lot system)
+- State variables or callbacks
+- SVG chart rendering math (viewBox, yScale, candlestick computation, MA computation, etc.)
+- Interaction handlers (crosshair, zoom, pan, pinch, scroll)
+- Any code outside the Sinyal tab section
+
+Stage Summary:
+- Chart now uses `flex-1 min-h-0` with fixed height container → takes ~65-70% of visible area
+- Chart background is always dark (#0a0e17) like real MT5
+- All sections are more compact, saving ~80px of vertical space
+- SVG text colors use rgba() instead of CSS variables for dark chart compatibility
+- All lint checks pass
+- Server running correctly on port 3000
+---
+Task ID: 3
+Agent: main
+Task: Rewrite Sinyal/Trading tab to match MT5 layout exactly - chart, SELL/BUY bar, terminal, positions table
+
+Work Log:
+- Analyzed MT5 screenshot uploaded by user using VLM to understand exact layout
+- Identified that previous attempts didn't match MT5's clean professional look
+- Delegated chart SVG improvements to subagent (viewBox, candlesticks, grid, price axis)
+- Delegated complete Sinyal tab layout rewrite to subagent for MT5-style layout
+- Verified with Agent Browser that the Trading tab now renders correctly:
+  - Candlestick chart visible with green/red candles
+  - SELL (red) and BUY (green) buttons prominent
+  - Category tabs (Popular, Saham, Kripto, Komoditas, Forex)
+  - Stock pills selector
+  - Timeframe buttons (1m, 2m, 5m, etc.)
+  - Terminal bar showing Balance, Equity, Margin, Free Margin, P&L
+  - Chart background is dark (#0a0e17) like real MT5
+- Confirmed Balance shows Rp 100,000,000 even with no positions open (initial deposit)
+
+Stage Summary:
+- Trading tab now shows MT5-style layout: header → SELL|LOT|BUY → chart (65-70%) → terminal bar
+- Chart renders with professional candlesticks, grid lines, MA5/MA20 lines
+- SELL/BUY buttons are prominent with prices
+- Terminal bar shows all MT5-style metrics
+- Balance correctly shows initial deposit when no positions are open
