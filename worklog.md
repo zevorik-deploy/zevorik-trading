@@ -301,3 +301,28 @@ Stage Summary:
 - CSS animations added for button glow effects
 - Lint passes with no errors
 - Server compiles and serves pages correctly (SSR works, client-side can cause OOM due to large file size)
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Make saldo numbers follow the chart in real-time like MT5
+
+Work Log:
+- Read and analyzed the current page.tsx (~8000+ lines)
+- Identified root cause: chart simulation stops when user leaves Sinyal tab (useEffect condition `activeTab !== 'sinyal'`)
+- Added background price ticker effect that keeps `sinyalCurrentPrice` updating when on any non-sinyal tab with active positions
+- Added `liveEquity` variable: Balance + Floating P/L (follows chart in real-time)
+- Updated home tab main balance display to use `liveEquity` instead of static `liveBalance`
+- Updated home tab "Dompet Utama" to use `liveEquity` instead of `liveBalance`
+- When no positions: liveEquity = Balance (shows initial deposit, not 0)
+- When positions open: liveEquity = Balance + Floating P/L (follows chart)
+- Ran lint check - no errors
+- Verified dev server is running without errors
+
+Stage Summary:
+- Background price ticker effect added (runs when not on sinyal tab + has active positions)
+- liveEquity = Balance + Floating P/L (MT5-style Equity that follows chart)
+- Home tab now shows Equity that follows the chart in real-time
+- Saldo tab Equity/FreeMargin/MarginLevel all depend on floating P/L which now updates in real-time
+- Balance always shows correctly (Rp100M for demo accounts) even without positions
+- Buy=GREEN, Sell=RED already implemented in existing code

@@ -1932,6 +1932,18 @@ function Dashboard() {
     return user?.balance || 0
   })()
 
+  // ============ LIVE EQUITY (MT5-style) ============
+  // Equity = Balance + Floating P/L — this is what FOLLOWS the chart in real-time
+  // When no positions: Equity = Balance (static, shows initial deposit)
+  // When positions open: Equity moves with the market price — exactly like MT5 Terminal
+  const liveEquity = (() => {
+    const baseBalance = user?.balance || 0
+    const activePos = sinyalPositions.filter(p => p.status === 'active')
+    if (activePos.length === 0) return baseBalance
+    const totalFloatingPL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
+    return baseBalance + totalFloatingPL
+  })()
+
   // ============ LIVE MODAL (MT5 Margin + Floating P/L) ============
   // In MT5: Margin = collateral held by broker
   // Modal Live = sum of all working capital + their floating P/L
@@ -2124,6 +2136,45 @@ function Dashboard() {
 
     return () => clearInterval(interval)
   }, [sinyalPositions])
+
+  // ════════ BACKGROUND PRICE TICKER ════════
+  // Keeps sinyalCurrentPrice updating when user is NOT on the sinyal tab
+  // This makes saldo/margin/equity numbers follow the chart in real-time — exactly like MT5
+  useEffect(() => {
+    if (activeTab === 'sinyal' || !selectedSinyalStock) return
+    const activePositions = sinyalPositionsRef.current.filter(p => p.status === 'active')
+    if (activePositions.length === 0) return
+
+    const tickIntervalMs = 1000
+    const interval = setInterval(() => {
+      if (sinyalChartSimRef.current) {
+        // Continue the existing simulation's price movement (same algorithm as chart)
+        const sim = sinyalChartSimRef.current
+        const prevPrice = sim.price
+        // Same price simulation logic as the chart tick
+        sim.momentum += (Math.random() - 0.5) * sim.vol * 0.002
+        sim.momentum *= 0.95
+        sim.trend = Math.sin(sim.phase / sim.phaseLen * Math.PI * 2) * 0.4
+        sim.phase += 0.02
+        sim.price += sim.momentum + sim.trend * sim.vol * 0.0003 + (Math.random() - 0.5) * sim.vol * 0.0008
+        // Keep price within reasonable bounds
+        if (sim.price < sim.basePrice * 0.7) sim.price = sim.basePrice * 0.7 + Math.random() * sim.vol * 0.5
+        if (sim.price > sim.basePrice * 1.5) sim.price = sim.basePrice * 1.5 - Math.random() * sim.vol * 0.5
+        setSinyalCurrentPrice(sim.price)
+      } else if (selectedSinyalStock) {
+        // Simple random walk if no simulation exists yet
+        setSinyalCurrentPrice(prev => {
+          const basePrice = selectedSinyalStock.price
+          const currentPrice = prev || basePrice
+          const vol = basePrice * 0.0005
+          const change = (Math.random() - 0.5) * vol * 2
+          return currentPrice + change
+        })
+      }
+    }, tickIntervalMs)
+
+    return () => clearInterval(interval)
+  }, [activeTab, selectedSinyalStock, sinyalPositions])
 
   // ============ FETCH FUNCTIONS ============
   const fetchStocks = useCallback(async () => {
@@ -2963,7 +3014,7 @@ function Dashboard() {
                             return totalPL > 0 ? 'text-green-400' : totalPL < 0 ? 'text-red-400' : ''
                           })()
                         : ''
-                    }`}>{showBalance ? formatRupiah(liveBalance + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
+                    }`}>{showBalance ? formatRupiah(liveEquity + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
                     {sinyalPositions.filter(p => p.status === 'active').length > 0 && (() => {
                       const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
                       const totalFee = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.fee || Math.round(p.amount * 0.1)), 0)
@@ -2994,7 +3045,7 @@ function Dashboard() {
                       <b className={`block text-[14px] font-black ${sinyalPositions.filter(p => p.status === 'active').length > 0 ? (() => {
                         const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
                         return totalPL < 0 ? 'text-red-400' : totalPL > 0 ? 'text-green-400' : ''
-                      })() : ''}`}>{showBalance ? formatRupiah(liveBalance) : '••••••'}</b>
+                      })() : ''}`}>{showBalance ? formatRupiah(liveEquity) : '••••••'}</b>
                       <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Deposit & trading{sinyalPositions.filter(p => p.status === 'active').length > 0 ? ' (ikut grafik)' : ''}</span>
                     </div>
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
