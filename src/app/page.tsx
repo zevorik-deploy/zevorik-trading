@@ -1820,7 +1820,10 @@ function Dashboard() {
     if (!selectedSinyalStock) return
     const amount = sinyalAmountFromLots || parseInt(sinyalAmount) || 0
     if (amount < 10000) { toast({ title: 'Minimum Rp 10.000', variant: 'destructive' }); return }
-    if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
+    // MT5-style: Check if amount exceeds available balance (simplified margin check)
+    // In MT5, Free Margin = Equity - Used Margin. We check against total balance for simplicity.
+    const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
+    if (amount > totalBalance) { toast({ title: 'Saldo tidak cukup', description: `Saldo: ${formatRupiah(totalBalance)}`, variant: 'destructive' }); return }
     const dir = overrideDirection || sinyalDirection
     // 10% fee deducted immediately, working capital = 90%
     const fee = Math.round(amount * 0.10)
@@ -1845,8 +1848,10 @@ function Dashboard() {
     }
     setSinyalPositions(prev => [...prev, newPosition])
     setSinyalTimers(prev => ({ ...prev, [posId]: 0 }))
-    // Deduct full amount (including 10% fee) from balance immediately
-    updateBalance((user?.balance || 0) - amount)
+    // MT5-style: Only deduct fee from balance, NOT full amount
+    // In MT5, Balance doesn't change when you open a position — only fee is deducted
+    // Working capital (margin) is reserved from Free Margin but not deducted from Balance
+    updateBalance((user?.balance || 0) - fee)
     const lotsLabel = sinyalLots || (amount / LOT_SIZE).toFixed(2)
     toast({ title: 'Posisi Dibuka! 🎯', description: `${dir === 'NAIK' ? 'Beli' : 'Jual'} ${selectedSinyalStock.code} • ${lotsLabel} Lot (${formatRupiah(amount)}) • Fee ${formatRupiah(fee)} • Tutup manual` })
   }, [selectedSinyalStock, sinyalAmount, sinyalAmountFromLots, sinyalDirection, user, sinyalCurrentPrice, updateBalance, sinyalLeverage, sinyalLots])
@@ -1870,8 +1875,7 @@ function Dashboard() {
     // Cap: max loss = working capital (stop out), fee already gone
     const cappedPL = Math.max(-wc, plAmount)
     const isProfit = cappedPL >= 0
-    // Return working capital + P&L (fee is already gone, never returned)
-    const returnAmount = wc + cappedPL
+    const feeLost = pos.fee || Math.round(pos.amount * 0.1)
 
     setSinyalPositions(prev => prev.map(p =>
       p.id === posId ? {...p, status: isProfit ? 'won' : 'lost', closedPL: cappedPL} : p
@@ -1883,16 +1887,16 @@ function Dashboard() {
     }])
     setTimeout(() => setSinyalResults(prev => prev.filter(r => r.id !== posId)), 1200)
 
-    // Track the net P&L offset (returnAmount - original amount deducted)
-    // This ensures portfolio fetch doesn't overwrite the trade result
-    // Net P&L = returnAmount - pos.amount (e.g., returned 27K from 100K invested = -73K)
-    tradingPLOffsetRef.current += (returnAmount - pos.amount)
+    // MT5-style: Track net realized P&L for portfolio reconciliation
+    // Net = realized P/L - fee (fee was already deducted at open)
+    tradingPLOffsetRef.current += (cappedPL - feeLost)
 
-    // Return working capital + P&L to balance
-    updateBalance((user?.balance || 0) + returnAmount)
+    // MT5-style: Only add realized P/L to balance
+    // Balance already had fee deducted at open, working capital was never deducted from Balance
+    // So we only add the realized P/L (positive = profit, negative = loss)
+    updateBalance((user?.balance || 0) + cappedPL)
 
     const plLabel = cappedPL >= 0 ? `+${formatRupiah(cappedPL)}` : formatRupiah(cappedPL)
-    const feeLost = pos.fee || Math.round(pos.amount * 0.1)
     toast({ title: isProfit ? 'Posisi Ditutup — Untung! 🎉' : 'Posisi Ditutup — Rugi 📉', description: `${pos.direction === 'NAIK' ? 'Beli' : 'Jual'} ${pos.stockCode} • P&L ${plLabel} • Fee ${formatRupiah(feeLost)} • 1:${lev}` })
   }, [sinyalCurrentPrice, user, updateBalance])
 
@@ -1920,28 +1924,18 @@ function Dashboard() {
     return Math.max(-wc, plAmount)
   }, [sinyalCurrentPrice])
 
-  // ============ LIVE BALANCE (MT5 Equity) ============
-  // In MT5: Equity = Balance + Unrealized P&L
-  // This is the "saldo ikut alur batang" — follows the candle in real-time
-  // When position goes against you, your equity drops tick by tick
+  // ============ LIVE BALANCE (MT5-style) ============
+  // In MT5: Balance does NOT change when you open positions
+  // Only fee is deducted at open. Balance only changes when positions close (realized P&L).
+  // Equity = Balance + Floating P/L — this follows the chart in real-time
   const liveBalance = (() => {
-    const baseBalance = user?.balance || 0
-    const activePos = sinyalPositions.filter(p => p.status === 'active')
-    if (activePos.length === 0) return baseBalance
-    // MT5 Equity = balance + unrealized P&L
-    // balance already had full amount deducted when position opened
-    // We add back working capital + P&L to show live equity
-    const totalWorkingCapital = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
-    const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
-    return baseBalance + totalWorkingCapital + totalLivePL
+    return user?.balance || 0
   })()
 
-  // ============ LIVE MODAL (MT5 Margin) ============
-  // This is the working capital that FOLLOWS THE CHART in real-time
-  // Modal Live = Working Capital + P&L
-  // When you open 100K: Modal = 90K
-  // If chart goes against you: Modal drops to 85K, 80K, 70K... until stop out
-  // If chart goes in your favor: Modal rises to 95K, 100K, 110K...
+  // ============ LIVE MODAL (MT5 Margin + Floating P/L) ============
+  // In MT5: Margin = collateral held by broker
+  // Modal Live = sum of all working capital + their floating P/L
+  // This represents the live value of all open positions
   const liveModal = (() => {
     const activePos = sinyalPositions.filter(p => p.status === 'active')
     if (activePos.length === 0) return 0
@@ -2137,7 +2131,7 @@ function Dashboard() {
   }, [])
   const fetchPortfolio = useCallback(async () => {
     if (!user) return
-    try { const r = await fetch(`/api/portfolio?userId=${user.id}`); const d = await r.json(); if (d.portfolio) { setPortfolio(d.portfolio); setPortfolioSummary(d.summary); /* Apply trading P&L offset + active trade deductions on top of server balance Server doesn't know about client-side trades, so we must adjust: - tradingPLOffsetRef: cumulative net P&L from closed trades - activeTradeDeductions: total amount locked in active positions (already deducted locally) */ const activeTradeDeductions = sinyalPositionsRef.current.filter(p => p.status === 'active').reduce((sum, p) => sum + p.amount, 0); const adjustedBalance = d.summary.cashBalance + tradingPLOffsetRef.current - activeTradeDeductions; updateBalance(adjustedBalance) } } catch {}
+    try { const r = await fetch(`/api/portfolio?userId=${user.id}`); const d = await r.json(); if (d.portfolio) { setPortfolio(d.portfolio); setPortfolioSummary(d.summary); /* MT5-style portfolio reconciliation: Server doesn't know about client-side trades, so we must adjust: - tradingPLOffsetRef: cumulative (realized P/L - fee) from closed trades - activeFeeDeductions: total fees of active positions (only fee was deducted, not full amount) */ const activeFeeDeductions = sinyalPositionsRef.current.filter(p => p.status === 'active').reduce((sum, p) => sum + (p.fee || Math.round(p.amount * 0.1)), 0); const adjustedBalance = d.summary.cashBalance + tradingPLOffsetRef.current - activeFeeDeductions; updateBalance(adjustedBalance) } } catch {}
   }, [user, updateBalance])
   const fetchTransactions = useCallback(async () => {
     if (!user) return
@@ -4048,11 +4042,12 @@ function Dashboard() {
             // ── Computed values for MT5 terminal ──
             const activePos = sinyalPositions.filter(p => p.status === 'active')
             const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
-            const equity = liveBalance + (user?.withdrawalBalance || 0)
+            const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
+            // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
+            const equity = totalBalance + totalLivePL
             const usedMargin = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
             const freeMargin = equity - usedMargin
             const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0
-            const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
 
             // ── Bid/Ask spread ──
             const spreadPercent = selectedSinyalStock ? (
@@ -4744,8 +4739,8 @@ function Dashboard() {
                             if (sinyalAmountFromLots < 10000) {
                               toast({ title: 'Minimum Rp 10.000', variant: 'destructive' }); return
                             }
-                            if (sinyalAmountFromLots > (user?.balance || 0)) {
-                              toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return
+                            if (sinyalAmountFromLots > freeMargin) {
+                              toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
                             }
                             setConfirmTradeDir('TURUN')
                             setShowConfirmTrade(true)
@@ -4774,8 +4769,8 @@ function Dashboard() {
                             if (sinyalAmountFromLots < 10000) {
                               toast({ title: 'Minimum Rp 10.000', variant: 'destructive' }); return
                             }
-                            if (sinyalAmountFromLots > (user?.balance || 0)) {
-                              toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return
+                            if (sinyalAmountFromLots > freeMargin) {
+                              toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
                             }
                             setConfirmTradeDir('NAIK')
                             setShowConfirmTrade(true)
@@ -4932,7 +4927,8 @@ function Dashboard() {
                 const closedPos = sinyalPositions.filter(p => p.status === 'won' || p.status === 'lost')
                 const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
                 const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
-                const equity = liveBalance + (user?.withdrawalBalance || 0)
+                // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
+                const equity = totalBalance + totalLivePL
                 const usedMargin = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
                 const freeMargin = equity - usedMargin
                 const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0
@@ -4947,7 +4943,7 @@ function Dashboard() {
                 const todayPL = closedPos.filter(p => p.startTime >= todayStart.getTime()).reduce((s, p) => s + (p.closedPL || 0), 0)
                 const marginLevelColor = marginLevel > 200 ? '#22c55e' : marginLevel > 100 ? '#f59e0b' : marginLevel > 50 ? '#ef5350' : '#dc2626'
                 const marginLevelBg = marginLevel > 200 ? 'bg-green-500' : marginLevel > 100 ? 'bg-amber-500' : 'bg-red-500'
-                const freeMarginColor = freeMargin >= 0 ? (freeMargin > totalBalance * 0.3 ? 'text-green-400' : 'text-white') : 'text-red-400'
+                const freeMarginColor = freeMargin >= 0 ? (freeMargin > totalBalance * 0.3 ? 'text-green-400' : 'text-cyan-400') : 'text-red-400'
 
                 return (
                   <>
@@ -4988,35 +4984,39 @@ function Dashboard() {
                       <DollarSign className="w-3 h-3 text-blue-300/50" />
                       <span className="text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">Balance</span>
                     </div>
-                    <b className={`block text-[26px] font-black transition-colors duration-500 leading-tight ${totalLivePL > 0 ? 'text-green-400' : totalLivePL < 0 ? 'text-red-400' : 'text-white'}`}
-                      style={{ textShadow: totalLivePL !== 0 ? `0 0 20px ${totalLivePL > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,83,80,0.3)'}` : 'none' }}>
+                    <b className={`block text-[26px] font-black transition-colors duration-500 leading-tight text-white`}
+                      style={{ textShadow: totalLivePL !== 0 ? `0 0 20px ${totalLivePL > 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)'}` : 'none' }}>
                       {formatRupiah(totalBalance)}
                     </b>
                   </div>
 
-                  {/* Equity + Floating P&L */}
+                  {/* Equity + Floating P&L — Always show Equity (MT5: Equity = Balance when no positions) */}
                   <div className="flex items-end justify-between">
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <BarChart3 className="w-3 h-3 text-blue-300/50" />
                         <span className="text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">Equity</span>
+                        {activePos.length > 0 && (
+                          <span className="flex items-center gap-0.5 ml-1">
+                            <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
+                            <span className="text-[6px] font-black text-green-400">LIVE</span>
+                          </span>
+                        )}
                       </div>
                       <div className={`text-[18px] font-black transition-colors duration-500 ${totalLivePL > 0 ? 'text-green-400' : totalLivePL < 0 ? 'text-red-400' : 'text-blue-100'}`}>
                         {formatRupiah(equity)}
                       </div>
                     </div>
-                    {activePos.length > 0 && (
-                      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${totalLivePL >= 0 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
-                        {totalLivePL >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-green-400" /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
-                        <div>
-                          <div className="text-[7px] font-bold text-blue-300/50 uppercase">Floating P&L</div>
-                          <div className={`text-[13px] font-black ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {totalLivePL >= 0 ? '+' : ''}{formatRupiah(totalLivePL)}
-                          </div>
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${totalLivePL >= 0 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                      {totalLivePL >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-green-400" /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+                      <div>
+                        <div className="text-[7px] font-bold text-blue-300/50 uppercase">Floating P&L</div>
+                        <div className={`text-[13px] font-black ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {activePos.length > 0 ? `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}` : 'Rp0'}
                         </div>
-                      </motion.div>
-                    )}
+                      </div>
+                    </motion.div>
                   </div>
                 </div>
 
@@ -5044,7 +5044,7 @@ function Dashboard() {
                       <Shield className="w-2.5 h-2.5 text-amber-400/50" />
                       <span className="text-[6px] font-bold text-amber-300/40 uppercase tracking-wider">Margin</span>
                     </div>
-                    <div className="text-[11px] font-black text-amber-400">{usedMargin > 0 ? formatRupiah(usedMargin) : '—'}</div>
+                    <div className="text-[11px] font-black text-amber-400">{usedMargin > 0 ? formatRupiah(usedMargin) : 'Rp0'}</div>
                   </div>
                   {/* Free Margin */}
                   <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
@@ -5052,7 +5052,7 @@ function Dashboard() {
                       <CreditCard className="w-2.5 h-2.5 text-blue-400/50" />
                       <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Mrg Bebas</span>
                     </div>
-                    <div className={`text-[11px] font-black ${freeMarginColor}`}>{activePos.length > 0 ? formatRupiah(freeMargin) : '—'}</div>
+                    <div className={`text-[11px] font-black ${freeMarginColor}`}>{formatRupiah(freeMargin)}</div>
                   </div>
                   {/* Margin Level */}
                   <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
@@ -5061,9 +5061,9 @@ function Dashboard() {
                       <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Level Mrg</span>
                     </div>
                     <div className={`text-[11px] font-black`} style={{ color: activePos.length > 0 ? marginLevelColor : 'rgba(255,255,255,0.5)' }}>
-                      {activePos.length > 0 ? `${formatNumber(Math.round(marginLevel * 100) / 100)}%` : '—'}
+                      {usedMargin > 0 ? `${formatNumber(Math.round(marginLevel * 100) / 100)}%` : '—'}
                     </div>
-                    {activePos.length > 0 && (
+                    {usedMargin > 0 && (
                       <div className="w-full h-1 rounded-full bg-white/10 mt-1">
                         <div className={`h-full rounded-full transition-all duration-700 ${marginLevelBg}`} style={{ width: `${Math.min(100, Math.max(0, marginLevel))}%` }} />
                       </div>

@@ -135,7 +135,36 @@ Stage Summary:
 - Server OOM issues with agent-browser due to 580KB file size, but preview panel works
 - All API endpoints responding correctly (verified through dev log)
 
-## Task 1: Redesign ZEVORIX Saldo Dashboard & Sinyal Tab - Super Beautiful MT5 Real Trading Look
+---
+Task ID: 5
+Agent: Main
+Task: Fix MT5-style balance system: Balance shows properly without positions, Equity follows chart
+
+Work Log:
+- Identified core issue: old system deducted FULL amount from balance when opening position, making balance appear 0
+- Redesigned to MT5-style: only deduct fee (10%) when opening, working capital is "reserved" from Free Margin
+- Changed `openSinyalPosition`: `updateBalance(user.balance - fee)` instead of `updateBalance(user.balance - amount)`
+- Changed `closeSinyalPosition`: `updateBalance(user.balance + cappedPL)` instead of `updateBalance(user.balance + returnAmount)`
+- Changed `tradingPLOffsetRef` tracking: `+= (cappedPL - feeLost)` for proper reconciliation
+- Changed `liveBalance`: simplified to just return `user?.balance || 0` (no adding back working capital)
+- Changed equity calculations in Sinyal and Saldo tabs: `equity = totalBalance + totalLivePL`
+- Changed `fetchPortfolio`: uses `activeFeeDeductions` instead of `activeTradeDeductions`
+- Fixed Saldo dashboard: Free Margin always shows value, Margin Level shows "—" only when no margin used
+- Fixed Balance display color: stays white (doesn't change based on P/L since Balance is stable in MT5)
+- Added LIVE indicator badge next to Equity when positions are active
+- Floating P&L always visible (shows "Rp0" when no positions)
+- Fixed circular dependency error: `getPositionLivePL` referenced before initialization in `openSinyalPosition`
+- Changed position opening check to use totalBalance instead of freeMargin (avoids circular dependency)
+- Updated buy/sell button checks: uses `freeMargin` from sinyal tab scope
+
+Stage Summary:
+- MT5-style balance system: Balance stays stable when positions open (only fee deducted)
+- Equity = Balance + Floating P/L (follows chart in real-time)
+- Balance: Rp 99,999,000 after opening 0.10 lot position (only Rp 1,000 fee deducted)
+- Equity: Rp 100,002,937 (Balance + Floating P/L, changes with chart)
+- Free Margin, Margin, Margin Level all display correctly
+- BUY=GREEN, SELL=RED consistently throughout all components
+- All browser tests pass, no runtime errors
 
 ### Date: 2025-03-04
 
