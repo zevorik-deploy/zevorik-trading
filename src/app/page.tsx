@@ -866,7 +866,7 @@ function Dashboard() {
     direction: 'NAIK' | 'TURUN'; amount: number; duration: number;
     startPrice: number; startTime: number; profitPercent: number;
     status: 'active' | 'won' | 'lost'; leverage: number; closedPL?: number;
-    fee: number; workingCapital: number;
+    fee?: number; workingCapital?: number;
   }[]>([])
   const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
   const [sinyalAmount, setSinyalAmount] = useState('')
@@ -1819,15 +1819,13 @@ function Dashboard() {
   const openSinyalPosition = useCallback((overrideDirection?: 'NAIK' | 'TURUN') => {
     if (!selectedSinyalStock) return
     const amount = sinyalAmountFromLots || parseInt(sinyalAmount) || 0
-    if (amount < 10000) { toast({ title: 'Minimum Rp 10.000', variant: 'destructive' }); return }
+    if (amount < 1000) { toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return }
     // MT5-style: Check if amount exceeds available balance (simplified margin check)
     // In MT5, Free Margin = Equity - Used Margin. We check against total balance for simplicity.
     const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
     if (amount > totalBalance) { toast({ title: 'Saldo tidak cukup', description: `Saldo: ${formatRupiah(totalBalance)}`, variant: 'destructive' }); return }
     const dir = overrideDirection || sinyalDirection
-    // 10% fee deducted immediately, working capital = 90%
-    const fee = Math.round(amount * 0.10)
-    const workingCapital = amount - fee
+    // MT5-style: No fee deducted on open. Balance stays the same.
     // No duration — position stays open until user manually closes it (like real MT5)
     const posId = `sinyal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     const newPosition = {
@@ -1843,39 +1841,32 @@ function Dashboard() {
       profitPercent: 0,
       status: 'active' as const,
       leverage: sinyalLeverage,
-      fee,
-      workingCapital,
     }
     setSinyalPositions(prev => [...prev, newPosition])
     setSinyalTimers(prev => ({ ...prev, [posId]: 0 }))
-    // MT5-style: Only deduct fee from balance, NOT full amount
-    // In MT5, Balance doesn't change when you open a position — only fee is deducted
-    // Working capital (margin) is reserved from Free Margin but not deducted from Balance
-    updateBalance((user?.balance || 0) - fee)
+    // MT5-style: Balance does NOT change when opening a position
+    // Only realized P/L is added/deducted when position closes
     const lotsLabel = sinyalLots || (amount / LOT_SIZE).toFixed(2)
-    toast({ title: 'Posisi Dibuka! 🎯', description: `${dir === 'NAIK' ? 'Beli' : 'Jual'} ${selectedSinyalStock.code} • ${lotsLabel} Lot (${formatRupiah(amount)}) • Fee ${formatRupiah(fee)} • Tutup manual` })
+    toast({ title: 'Posisi Dibuka! 🎯', description: `${dir === 'NAIK' ? 'Buy' : 'Sell'} ${selectedSinyalStock.code} • ${lotsLabel} Lot (${formatRupiah(amount)}) • Tutup manual` })
   }, [selectedSinyalStock, sinyalAmount, sinyalAmountFromLots, sinyalDirection, user, sinyalCurrentPrice, updateBalance, sinyalLeverage, sinyalLots])
 
   // MT5-style: Close position early — proportional P&L based on real price movement × leverage
-  // Fee (10%) is already deducted and NEVER returned. Only working capital + P&L returned.
   const closeSinyalPosition = useCallback((posId: string) => {
     const pos = sinyalPositionsRef.current.find(p => p.id === posId)
     if (!pos || pos.status !== 'active') return
 
     const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
     const lev = pos.leverage || 1000
-    const wc = pos.workingCapital || Math.round(pos.amount * 0.9)
 
     // MT5-style P&L = effective position value × (price change / entry price) × direction
-    const effectivePositionValue = wc * (lev / 100)
+    const effectivePositionValue = pos.amount * (lev / 100)
     const priceDiff = currentPrice - pos.startPrice
     const directionMultiplier = pos.direction === 'NAIK' ? 1 : -1
     const plAmount = Math.round(effectivePositionValue * (priceDiff / pos.startPrice) * directionMultiplier)
 
-    // Cap: max loss = working capital (stop out), fee already gone
-    const cappedPL = Math.max(-wc, plAmount)
+    // Cap: max loss = position amount (stop out)
+    const cappedPL = Math.max(-pos.amount, plAmount)
     const isProfit = cappedPL >= 0
-    const feeLost = pos.fee || Math.round(pos.amount * 0.1)
 
     setSinyalPositions(prev => prev.map(p =>
       p.id === posId ? {...p, status: isProfit ? 'won' : 'lost', closedPL: cappedPL} : p
@@ -1887,46 +1878,40 @@ function Dashboard() {
     }])
     setTimeout(() => setSinyalResults(prev => prev.filter(r => r.id !== posId)), 1200)
 
-    // MT5-style: Track net realized P&L for portfolio reconciliation
-    // Net = realized P/L - fee (fee was already deducted at open)
-    tradingPLOffsetRef.current += (cappedPL - feeLost)
+    // MT5-style: Track realized P&L for portfolio reconciliation
+    tradingPLOffsetRef.current += cappedPL
 
-    // MT5-style: Only add realized P/L to balance
-    // Balance already had fee deducted at open, working capital was never deducted from Balance
-    // So we only add the realized P/L (positive = profit, negative = loss)
+    // MT5-style: Add realized P/L to balance (positive = profit, negative = loss)
     updateBalance((user?.balance || 0) + cappedPL)
 
     const plLabel = cappedPL >= 0 ? `+${formatRupiah(cappedPL)}` : formatRupiah(cappedPL)
-    toast({ title: isProfit ? 'Posisi Ditutup — Untung! 🎉' : 'Posisi Ditutup — Rugi 📉', description: `${pos.direction === 'NAIK' ? 'Beli' : 'Jual'} ${pos.stockCode} • P&L ${plLabel} • Fee ${formatRupiah(feeLost)} • 1:${lev}` })
+    toast({ title: isProfit ? 'Posisi Ditutup — Untung! 🎉' : 'Posisi Ditutup — Rugi 📉', description: `${pos.direction === 'NAIK' ? 'Buy' : 'Sell'} ${pos.stockCode} • P&L ${plLabel} • 1:${lev}` })
   }, [sinyalCurrentPrice, user, updateBalance])
 
   // MT5-style: Calculate live P&L based on REAL price movement
   // In MT5: P&L = Position Value × (Price Change / Entry Price) × Direction
-  // Effective Position Value = Working Capital × (Leverage / 100)
-  // This gives calibrated P&L: ~1K-2K per tick for 100K investment with 1:1000 leverage
-  // Working Capital = Investment - Fee (10%)
+  // Effective Position Value = Amount × (Leverage / 100)
   // This makes the balance follow the candlestick in real-time — exactly like MT5
   const getPositionLivePL = useCallback((pos: typeof sinyalPositions[0]) => {
     if (pos.status !== 'active') return 0
     const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
     const lev = pos.leverage || 1000
-    const wc = pos.workingCapital || Math.round(pos.amount * 0.9)
-    // Effective position value = working capital × (leverage / 100)
-    // 1:1000 → 90K × 10 = 900K position | 1:500 → 90K × 5 = 450K position
-    const effectivePositionValue = wc * (lev / 100)
+    // Effective position value = amount × (leverage / 100)
+    // 1:1000 → 100K × 10 = 1M position | 1:500 → 100K × 5 = 500K position
+    const effectivePositionValue = pos.amount * (lev / 100)
     // Price change from entry
     const priceDiff = currentPrice - pos.startPrice
-    // Direction: NAIK/BELI profits when price up, TURUN/JUAL profits when price down
+    // Direction: NAIK/BUY profits when price up, TURUN/SELL profits when price down
     const directionMultiplier = pos.direction === 'NAIK' ? 1 : -1
     // P&L = effective position value × (price change %) × direction
     const plAmount = Math.round(effectivePositionValue * (priceDiff / pos.startPrice) * directionMultiplier)
-    // Max loss capped at working capital (fee already gone, can't lose more than what's at risk)
-    return Math.max(-wc, plAmount)
+    // Max loss capped at position amount (stop out)
+    return Math.max(-pos.amount, plAmount)
   }, [sinyalCurrentPrice])
 
   // ============ LIVE BALANCE (MT5-style) ============
   // In MT5: Balance does NOT change when you open positions
-  // Only fee is deducted at open. Balance only changes when positions close (realized P&L).
+  // Balance only changes when positions close (realized P&L)
   // Equity = Balance + Floating P/L — this follows the chart in real-time
   const liveBalance = (() => {
     return user?.balance || 0
@@ -1946,14 +1931,14 @@ function Dashboard() {
 
   // ============ LIVE MODAL (MT5 Margin + Floating P/L) ============
   // In MT5: Margin = collateral held by broker
-  // Modal Live = sum of all working capital + their floating P/L
+  // Modal Live = sum of all position amounts + their floating P/L
   // This represents the live value of all open positions
   const liveModal = (() => {
     const activePos = sinyalPositions.filter(p => p.status === 'active')
     if (activePos.length === 0) return 0
-    const totalWorkingCapital = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
+    const totalMargin = activePos.reduce((s, p) => s + p.amount, 0)
     const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
-    return totalWorkingCapital + totalLivePL
+    return totalMargin + totalLivePL
   })()
 
   // Sinyal Pro live candlestick chart — initialize historical candles + real-time intrabar updates
@@ -2182,7 +2167,7 @@ function Dashboard() {
   }, [])
   const fetchPortfolio = useCallback(async () => {
     if (!user) return
-    try { const r = await fetch(`/api/portfolio?userId=${user.id}`); const d = await r.json(); if (d.portfolio) { setPortfolio(d.portfolio); setPortfolioSummary(d.summary); /* MT5-style portfolio reconciliation: Server doesn't know about client-side trades, so we must adjust: - tradingPLOffsetRef: cumulative (realized P/L - fee) from closed trades - activeFeeDeductions: total fees of active positions (only fee was deducted, not full amount) */ const activeFeeDeductions = sinyalPositionsRef.current.filter(p => p.status === 'active').reduce((sum, p) => sum + (p.fee || Math.round(p.amount * 0.1)), 0); const adjustedBalance = d.summary.cashBalance + tradingPLOffsetRef.current - activeFeeDeductions; updateBalance(adjustedBalance) } } catch {}
+    try { const r = await fetch(`/api/portfolio?userId=${user.id}`); const d = await r.json(); if (d.portfolio) { setPortfolio(d.portfolio); setPortfolioSummary(d.summary); /* MT5-style portfolio reconciliation: Server doesn't know about client-side trades, so we must adjust: - tradingPLOffsetRef: cumulative realized P/L from closed trades */ const adjustedBalance = d.summary.cashBalance + tradingPLOffsetRef.current; updateBalance(adjustedBalance) } } catch {}
   }, [user, updateBalance])
   const fetchTransactions = useCallback(async () => {
     if (!user) return
@@ -3017,14 +3002,10 @@ function Dashboard() {
                     }`}>{showBalance ? formatRupiah(liveEquity + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
                     {sinyalPositions.filter(p => p.status === 'active').length > 0 && (() => {
                       const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
-                      const totalFee = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + (p.fee || Math.round(p.amount * 0.1)), 0)
                       return (
                         <div className="flex items-center gap-3 mt-0.5">
                           <span className={`text-[8px] font-bold ${totalPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             P&L: {totalPL >= 0 ? '+' : ''}{formatRupiah(totalPL)}
-                          </span>
-                          <span className="text-[8px] font-bold text-red-400/60">
-                            Fee: -{formatRupiah(totalFee)}
                           </span>
                         </div>
                       )
@@ -3395,7 +3376,7 @@ function Dashboard() {
                             {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#3b82f6]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
                           </div>
                           <div>
-                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock.code}</span>
+                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{tx.type === 'BUY' ? 'Buy' : 'Sell'} {tx.stock.code}</span>
                             <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
                           </div>
                         </div>
@@ -4096,7 +4077,7 @@ function Dashboard() {
             const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
             // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
             const equity = totalBalance + totalLivePL
-            const usedMargin = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
+            const usedMargin = activePos.reduce((s, p) => s + p.amount, 0)
             const freeMargin = equity - usedMargin
             const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0
 
@@ -4290,7 +4271,7 @@ function Dashboard() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1">
-                                    <span className={`text-[8px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{ap.direction === 'NAIK' ? 'Beli' : 'Jual'}</span>
+                                    <span className={`text-[8px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{ap.direction === 'NAIK' ? 'Buy' : 'Sell'}</span>
                                     <span className="text-[7px] text-[var(--zv-muted)] font-bold">{ap.stockCode}</span>
                                     <span className="text-[6px] text-amber-400 font-bold">1:{ap.leverage || 1000}</span>
                                   </div>
@@ -4298,7 +4279,7 @@ function Dashboard() {
                                     {formatNumber(ap.startPrice)} → <span className="text-[var(--zv-text)] font-bold">{formatNumber(currentPrice)}</span>
                                   </div>
                                   <div className={`text-[9px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    Modal: {formatRupiah((ap.workingCapital || Math.round(ap.amount * 0.9)) + livePL)}
+                                    Modal: {formatRupiah(ap.amount + livePL)}
                                   </div>
                                 </div>
                                 <button onClick={() => closeSinyalPosition(ap.id)}
@@ -4648,12 +4629,12 @@ function Dashboard() {
                         <div className="mt-2 grid grid-cols-2 gap-2">
                           <div className="relative px-2.5 py-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(239,83,80,0.12) 0%, rgba(239,83,80,0.06) 100%)', border: '1px solid rgba(239,83,80,0.25)' }}>
                             <div className="absolute top-0 left-0 w-1 h-full" style={{ background: 'linear-gradient(180deg, #ef5350, #dc2626)' }} />
-                            <div className="text-[7px] font-black text-red-400/80 uppercase tracking-wider ml-1">BID / JUAL</div>
+                            <div className="text-[7px] font-black text-red-400/80 uppercase tracking-wider ml-1">BID / SELL</div>
                             <div className="text-[12px] font-black text-red-400 tabular-nums ml-1">{formatRupiah(bidPrice)}</div>
                           </div>
                           <div className="relative px-2.5 py-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.06) 100%)', border: '1px solid rgba(34,197,94,0.25)' }}>
                             <div className="absolute top-0 left-0 w-1 h-full" style={{ background: 'linear-gradient(180deg, #22c55e, #16a34a)' }} />
-                            <div className="text-[7px] font-black text-green-400/80 uppercase tracking-wider ml-1">ASK / BELI</div>
+                            <div className="text-[7px] font-black text-green-400/80 uppercase tracking-wider ml-1">ASK / BUY</div>
                             <div className="text-[12px] font-black text-green-400 tabular-nums ml-1">{formatRupiah(askPrice)}</div>
                           </div>
                         </div>
@@ -4732,36 +4713,34 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Fee Breakdown */}
-                      {sinyalAmountFromLots >= 10000 && (
+                      {/* Position Breakdown */}
+                      {sinyalAmountFromLots >= 1000 && (
                         <div className="rounded-lg overflow-hidden border border-blue-500/15" style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.06), rgba(139,92,246,0.06))' }}>
                           <div className="px-2.5 py-2">
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[7px] font-bold text-red-400 uppercase flex items-center gap-0.5"><Minus className="w-2 h-2" /> Fee 10%</span>
-                                <span className="text-[9px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * 0.10))}</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[7px] font-bold text-blue-400 uppercase flex items-center gap-0.5"><Target className="w-2 h-2" /> Modal Kerja</span>
-                                <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round(sinyalAmountFromLots * 0.90))}</span>
-                              </div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[7px] font-bold text-blue-400 uppercase flex items-center gap-0.5"><Package className="w-2 h-2" /> Lot Amount</span>
+                              <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots)}</span>
+                            </div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[7px] font-bold text-amber-400 uppercase flex items-center gap-0.5"><Zap className="w-2 h-2" /> Leverage</span>
+                              <span className="text-[10px] font-black text-amber-400">1:{sinyalLeverage}</span>
                             </div>
                             <div className="h-px bg-[var(--zv-border)] my-1.5" />
                             <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase">Posisi Efektif</span>
-                              <span className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round(sinyalAmountFromLots * 0.90) * (sinyalLeverage / 100))}</span>
+                              <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase">Effective Position</span>
+                              <span className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots * (sinyalLeverage / 100))}</span>
                             </div>
                             <div className="text-[6px] text-[var(--zv-muted)] mb-1.5">
-                              {formatRupiah(Math.round(sinyalAmountFromLots * 0.90))} × {sinyalLeverage / 100}×
+                              {formatRupiah(sinyalAmountFromLots)} × {sinyalLeverage / 100}×
                             </div>
                             <div className="grid grid-cols-2 gap-1.5">
                               <div className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.06) 100%)', border: '1px solid rgba(34,197,94,0.2)' }}>
                                 <span className="text-[7px] font-black text-green-400 flex items-center gap-0.5"><TrendingUp className="w-2 h-2" />+1%</span>
-                                <span className="text-[9px] font-black text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
+                                <span className="text-[9px] font-black text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
                               </div>
                               <div className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(239,83,80,0.15) 0%, rgba(239,83,80,0.06) 100%)', border: '1px solid rgba(239,83,80,0.2)' }}>
                                 <span className="text-[7px] font-black text-red-400 flex items-center gap-0.5"><TrendingDown className="w-2 h-2" />-1%</span>
-                                <span className="text-[9px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
+                                <span className="text-[9px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
                               </div>
                             </div>
                           </div>
@@ -4781,14 +4760,18 @@ function Dashboard() {
                       </div>
                     </div>
 
-                    {/* ══ BELI / JUAL — Super Vibrant Green/Red matching Chart Candles ══ */}
+                    {/* ══ BUY / SELL — Dynamic Vibrant Green/Red matching Chart Candles ══ */}
                     <div className="px-2 pb-2 pt-1.5 border-t border-[var(--zv-chart-border)]">
+                      {(() => {
+                        // Determine chart direction from last candle for dynamic button colors
+                        const isPriceUp = sinyalCandles.length > 0 ? sinyalCandles[sinyalCandles.length - 1].close >= sinyalCandles[sinyalCandles.length - 1].open : true
+                        return (
                       <div className="grid grid-cols-2 gap-2">
-                        {/* ════ JUAL / SELL — Vibrant RED matching chart down-candles (#ef5350) ════ */}
+                        {/* ════ SELL — Vibrant RED matching chart down-candles (#ef5350) ════ */}
                         <button
                           onClick={() => {
-                            if (sinyalAmountFromLots < 10000) {
-                              toast({ title: 'Minimum Rp 10.000', variant: 'destructive' }); return
+                            if (sinyalAmountFromLots < 1000) {
+                              toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
                             }
                             if (sinyalAmountFromLots > freeMargin) {
                               toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
@@ -4797,28 +4780,30 @@ function Dashboard() {
                             setShowConfirmTrade(true)
                           }}
                           className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[58px] group"
-                          style={{ background: 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)', boxShadow: '0 6px 28px rgba(239,83,80,0.45), 0 2px 8px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }}>
+                          style={isPriceUp
+                            ? { background: 'linear-gradient(180deg, #7f1d1d 0%, #5c1010 30%, #450a0a 70%, #2d0505 100%)', boxShadow: '0 2px 8px rgba(239,83,80,0.15), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.1)' }
+                            : { background: 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)', boxShadow: '0 6px 28px rgba(239,83,80,0.55), 0 2px 8px rgba(239,83,80,0.4), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }}>
                           {/* Shimmer overlay */}
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
                           {/* Top highlight */}
-                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' }} />
-                          {/* Pulse glow ring */}
-                          <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-red 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(239,83,80,0.3)' }} />
+                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: isPriceUp ? 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)' : 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' }} />
+                          {/* Pulse glow ring - only when price down */}
+                          {!isPriceUp && <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-red 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(239,83,80,0.3)' }} />}
                           <div className="relative flex items-center gap-2">
                             <TrendingDown className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
-                            <span className="text-[16px] font-black tracking-[0.15em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">JUAL</span>
+                            <span className={`text-[16px] font-black tracking-[0.15em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isPriceUp ? 'text-red-300/80' : 'text-white'}`}>SELL</span>
                           </div>
                           <div className="relative flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-white/60" />
-                            <span className="text-[9px] font-bold text-white/90 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
+                            <span className={`text-[9px] font-bold tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] ${isPriceUp ? 'text-red-200/70' : 'text-white/90'}`}>{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
                           </div>
                         </button>
 
-                        {/* ════ BELI / BUY — Vibrant GREEN matching chart up-candles (#22c55e) ════ */}
+                        {/* ════ BUY — Vibrant GREEN matching chart up-candles (#22c55e) ════ */}
                         <button
                           onClick={() => {
-                            if (sinyalAmountFromLots < 10000) {
-                              toast({ title: 'Minimum Rp 10.000', variant: 'destructive' }); return
+                            if (sinyalAmountFromLots < 1000) {
+                              toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
                             }
                             if (sinyalAmountFromLots > freeMargin) {
                               toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
@@ -4827,23 +4812,26 @@ function Dashboard() {
                             setShowConfirmTrade(true)
                           }}
                           className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[58px] group"
-                          style={{ background: 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)', boxShadow: '0 6px 28px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }}>
+                          style={isPriceUp
+                            ? { background: 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)', boxShadow: '0 6px 28px rgba(34,197,94,0.55), 0 2px 8px rgba(34,197,94,0.4), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }
+                            : { background: 'linear-gradient(180deg, #14532d 0%, #0f4024 30%, #0a2e19 70%, #051f10 100%)', boxShadow: '0 2px 8px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.1)' }}>
                           {/* Shimmer overlay */}
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
                           {/* Top highlight */}
-                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' }} />
-                          {/* Pulse glow ring */}
-                          <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-green 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(34,197,94,0.3)' }} />
+                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: isPriceUp ? 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' : 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)' }} />
+                          {/* Pulse glow ring - only when price up */}
+                          {isPriceUp && <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-green 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(34,197,94,0.3)' }} />}
                           <div className="relative flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
-                            <span className="text-[16px] font-black tracking-[0.15em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">BELI</span>
+                            <span className={`text-[16px] font-black tracking-[0.15em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isPriceUp ? 'text-white' : 'text-green-300/80'}`}>BUY</span>
                           </div>
                           <div className="relative flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-white/60" />
-                            <span className="text-[9px] font-bold text-white/90 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
+                            <span className={`text-[9px] font-bold tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] ${isPriceUp ? 'text-white/90' : 'text-green-200/70'}`}>{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
                           </div>
                         </button>
                       </div>
+                      )})()}
                       {sinyalAmountFromLots > 0 && (
                         <div className="mt-1.5 flex items-center justify-center gap-1.5">
                           <Package className="w-2.5 h-2.5 text-blue-400" />
@@ -4980,7 +4968,7 @@ function Dashboard() {
                 const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
                 // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
                 const equity = totalBalance + totalLivePL
-                const usedMargin = activePos.reduce((s, p) => s + (p.workingCapital || Math.round(p.amount * 0.9)), 0)
+                const usedMargin = activePos.reduce((s, p) => s + p.amount, 0)
                 const freeMargin = equity - usedMargin
                 const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0
                 const wonCount = closedPos.filter(p => p.status === 'won').length
@@ -5276,7 +5264,7 @@ function Dashboard() {
                         const mins = Math.floor(elapsed / 60)
                         const secs = elapsed % 60
                         const elapsedLabel = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
-                        const modalLive = (ap.workingCapital || Math.round(ap.amount * 0.9)) + livePL
+                        const modalLive = ap.amount + livePL
                         return (
                           <motion.div key={ap.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                             className="rounded-xl overflow-hidden border"
@@ -5293,7 +5281,7 @@ function Dashboard() {
                                       ? { background: 'linear-gradient(180deg, #4ade80, #22c55e)', boxShadow: '0 2px 6px rgba(34,197,94,0.3)' }
                                       : { background: 'linear-gradient(180deg, #f87171, #ef5350)', boxShadow: '0 2px 6px rgba(239,83,80,0.3)' }}>
                                     {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-                                    {isUp ? 'BELI' : 'JUAL'}
+                                    {isUp ? 'BUY' : 'SELL'}
                                   </span>
                                   <span className="text-[8px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/15">1:{ap.leverage || 1000}</span>
                                 </div>
@@ -5319,7 +5307,7 @@ function Dashboard() {
                                 </div>
                                 <div>
                                   <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Modal Live</div>
-                                  <div className={`text-[10px] font-black ${modalLive >= (ap.workingCapital || Math.round(ap.amount * 0.9)) ? 'text-green-400' : 'text-red-400'}`}>{formatRupiah(modalLive)}</div>
+                                  <div className={`text-[10px] font-black ${modalLive >= ap.amount ? 'text-green-400' : 'text-red-400'}`}>{formatRupiah(modalLive)}</div>
                                 </div>
                               </div>
                               {/* Row 3: P&L + Elapsed Time */}
@@ -5391,10 +5379,8 @@ function Dashboard() {
                         }).map(cp => {
                           const isWon = cp.status === 'won'
                           const isUp = cp.direction === 'NAIK'
-                          const plAmt = cp.closedPL !== undefined ? cp.closedPL : (isWon ? Math.round((cp.workingCapital || Math.round(cp.amount * 0.9)) * cp.profitPercent / 100) : -(cp.workingCapital || Math.round(cp.amount * 0.9)))
+                          const plAmt = cp.closedPL !== undefined ? cp.closedPL : (isWon ? Math.round(cp.amount * cp.profitPercent / 100) : -cp.amount)
                           const lots = (cp.amount / LOT_SIZE).toFixed(2)
-                          const feeAmt = cp.fee || Math.round(cp.amount * 0.1)
-                          const netAmt = plAmt - feeAmt
                           const tradeDate = new Date(cp.startTime)
                           const dateStr = `${tradeDate.getDate()}/${tradeDate.getMonth() + 1} ${tradeDate.getHours().toString().padStart(2, '0')}:${tradeDate.getMinutes().toString().padStart(2, '0')}`
                           return (
@@ -5405,7 +5391,7 @@ function Dashboard() {
                                   <div className="flex items-center gap-2">
                                     {isWon ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
                                     <span className="text-[11px] font-black text-[var(--zv-text)]">{cp.stockCode}</span>
-                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${isUp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{isUp ? 'Beli' : 'Jual'}</span>
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${isUp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{isUp ? 'Buy' : 'Sell'}</span>
                                     <span className="text-[7px] font-bold text-amber-400">{lots} lot</span>
                                     <span className="text-[7px] font-bold text-[var(--zv-muted)]">1:{cp.leverage || 1000}</span>
                                   </div>
@@ -5413,15 +5399,12 @@ function Dashboard() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <div className="text-[7px] text-[var(--zv-muted)]">
-                                    Vol {formatRupiah(cp.amount)} • Fee <span className="text-red-400">-{formatRupiah(feeAmt)}</span>
+                                    Vol {formatRupiah(cp.amount)}
                                   </div>
                                   <div className="flex items-center gap-3">
                                     <div className="text-right">
                                       <div className={`text-[11px] font-black ${isWon ? 'text-green-400' : 'text-red-400'}`}>
                                         {isWon ? '+' : ''}{formatRupiah(plAmt)}
-                                      </div>
-                                      <div className={`text-[7px] font-bold ${netAmt >= 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>
-                                        Net: {netAmt >= 0 ? '+' : ''}{formatRupiah(netAmt)}
                                       </div>
                                     </div>
                                   </div>
@@ -5945,8 +5928,7 @@ function Dashboard() {
                   <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar">
                     {sinyalPositions.filter(p => p.status !== 'active').slice().reverse().map(pos => {
                       const isWon = pos.status === 'won'
-                      const plAmt = pos.closedPL !== undefined ? pos.closedPL : (isWon ? Math.round((pos.workingCapital || Math.round(pos.amount * 0.9)) * pos.profitPercent / 100) : -(pos.workingCapital || Math.round(pos.amount * 0.9)))
-                      const feeLost = pos.fee || Math.round(pos.amount * 0.1)
+                      const plAmt = pos.closedPL !== undefined ? pos.closedPL : (isWon ? Math.round(pos.amount * pos.profitPercent / 100) : -pos.amount)
                       return (
                         <div key={pos.id} className={`rounded-xl p-2.5 border ${isWon ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
                           <div className="flex items-center justify-between">
@@ -5957,16 +5939,15 @@ function Dashboard() {
                               <div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] font-black text-[var(--zv-text)]">{pos.stockCode}</span>
-                                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${pos.direction === 'NAIK' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{pos.direction}</span>
+                                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${pos.direction === 'NAIK' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{pos.direction === 'NAIK' ? 'Buy' : 'Sell'}</span>
                                 </div>
-                                <span className="text-[7px] text-[var(--zv-muted)]">{formatRupiah(pos.amount)} • Fee {formatRupiah(feeLost)} • Entry {formatNumber(pos.startPrice)}</span>
+                                <span className="text-[7px] text-[var(--zv-muted)]">{formatRupiah(pos.amount)} • Entry {formatNumber(pos.startPrice)}</span>
                               </div>
                             </div>
                             <div className="text-right">
                               <span className={`block text-[11px] font-black ${isWon ? 'text-green-400' : 'text-red-400'}`}>
                                 {isWon ? '+' : ''}{formatRupiah(plAmt)}
                               </span>
-                              <span className="text-[7px] text-red-400">Total: {isWon ? '+' : ''}{formatRupiah(plAmt - feeLost)}</span>
                             </div>
                           </div>
                         </div>
@@ -5987,7 +5968,7 @@ function Dashboard() {
 
                 {/* Filter */}
                 <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3">
-                  {[{ key: 'all', label: 'Semua' }, { key: 'BUY', label: 'Beli' }, { key: 'SELL', label: 'Jual' }, { key: 'DEPOSIT', label: 'Deposit' }, { key: 'WITHDRAW', label: 'Withdraw' }].map(f => (
+                  {[{ key: 'all', label: 'Semua' }, { key: 'BUY', label: 'Buy' }, { key: 'SELL', label: 'Sell' }, { key: 'DEPOSIT', label: 'Deposit' }, { key: 'WITHDRAW', label: 'Withdraw' }].map(f => (
                     <button key={f.key} onClick={() => setTxFilter(f.key)}
                       className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${txFilter === f.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                       {f.label}
@@ -6006,7 +5987,7 @@ function Dashboard() {
                           </div>
                           <div>
                             <span className="block text-[10px] font-black text-[var(--zv-text)]">
-                              {tx.type === 'BUY' ? 'Beli' : 'Jual'} {tx.stock?.code || 'N/A'}
+                              {tx.type === 'BUY' ? 'Buy' : 'Sell'} {tx.stock?.code || 'N/A'}
                             </span>
                             <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(tx.total)} {tx.orderType ? `(${tx.orderType})` : ''}</span>
                           </div>
@@ -7210,7 +7191,7 @@ function Dashboard() {
                   </div>
                   <div>
                     <span className={`text-[10px] font-black ${confirmTradeDir === 'NAIK' ? 'text-green-500' : 'text-red-500'}`}>
-                      {confirmTradeDir === 'NAIK' ? 'BELI' : 'JUAL'} {selectedSinyalStock?.code}
+                      {confirmTradeDir === 'NAIK' ? 'BUY' : 'SELL'} {selectedSinyalStock?.code}
                     </span>
                     <span className="block text-[8px] text-[var(--zv-muted)]">
                       {confirmTradeDir === 'NAIK' ? 'Memprediksi kenaikan harga' : 'Memprediksi penurunan harga'}
@@ -7224,37 +7205,29 @@ function Dashboard() {
                     <span className="text-[10px] font-black text-[#3b82f6]">{sinyalLots} Lot ({formatRupiah(sinyalAmountFromLots)})</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
-                    <span className="text-[10px] text-red-400 font-bold">Fee 10% (Potong Langsung)</span>
-                    <span className="text-[10px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * 0.10))}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
-                    <span className="text-[10px] text-blue-400 font-bold">Modal Kerja (Ikut Grafik)</span>
-                    <span className="text-[10px] font-black text-blue-400">{formatRupiah(Math.round(sinyalAmountFromLots * 0.90))}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
                     <span className="text-[10px] text-[var(--zv-muted)] font-bold">Leverage</span>
                     <span className="text-[10px] font-black text-amber-400">1:{sinyalLeverage}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
-                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Posisi Efektif</span>
-                    <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(Math.round(sinyalAmountFromLots * 0.90) * (sinyalLeverage / 100))}</span>
+                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Effective Position</span>
+                    <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots * (sinyalLeverage / 100))}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
                     <span className="text-[10px] text-[var(--zv-muted)] font-bold">Profit/Loss per 1%</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
+                      <span className="text-[9px] font-bold text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
                       <span className="text-[9px] text-[var(--zv-muted)]">/</span>
-                      <span className="text-[9px] font-bold text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * 0.90 * (sinyalLeverage / 100) * 0.01))}</span>
+                      <span className="text-[9px] font-bold text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
                     </div>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
                     <span className="text-[10px] text-[var(--zv-muted)] font-bold">Tutup Posisi</span>
                     <span className="text-[10px] font-black text-green-400">Manual (Anda tentukan)</span>
                   </div>
-                  <div className="rounded-lg p-2 bg-red-500/8 border border-red-500/15">
+                  <div className="rounded-lg p-2 bg-blue-500/8 border border-blue-500/15">
                     <div className="flex items-center gap-1.5">
-                      <AlertCircle className="w-3 h-3 text-red-400" />
-                      <span className="text-[8px] font-bold text-red-400">Fee 10% langsung dipotong & TIDAK dikembalikan. Posisi terbuka sampai Anda tutup manual. Saldo ikut pergerakan grafik real-time!</span>
+                      <Info className="w-3 h-3 text-blue-400" />
+                      <span className="text-[8px] font-bold text-blue-400">Posisi terbuka sampai Anda tutup manual. Saldo ikut pergerakan grafik real-time seperti MT5!</span>
                     </div>
                   </div>
                 </div>
@@ -7270,7 +7243,7 @@ function Dashboard() {
                   }>
                   <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)' }} />
                   {confirmTradeDir === 'NAIK' ? <TrendingUp className="w-5 h-5 relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" /> : <TrendingDown className="w-5 h-5 relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />}
-                  <span className="relative drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">KONFIRMASI {confirmTradeDir === 'NAIK' ? 'BELI' : 'JUAL'}</span>
+                  <span className="relative drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">CONFIRM {confirmTradeDir === 'NAIK' ? 'BUY' : 'SELL'}</span>
                 </button>
                 <button onClick={() => setShowConfirmTrade(false)} className="w-full h-10 mt-2 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[10px] font-bold text-[var(--zv-muted)] hover:text-[var(--zv-text)] transition-all">
                   Batal
@@ -7635,7 +7608,7 @@ function Dashboard() {
 
                 {/* Contract Button */}
                 <button onClick={() => { setContractModal(true); setShowStockDetail(false) }} className="w-full h-12 rounded-xl bg-[#3b82f6] text-white text-[12px] font-bold hover:bg-[#2e9e93] transition-colors flex items-center justify-center gap-2">
-                  <Package className="w-5 h-5" />Beli Kontrak {selectedStock.code}
+                  <Package className="w-5 h-5" />Buy Contract {selectedStock.code}
                 </button>
               </div>
             </motion.div>
@@ -7656,7 +7629,7 @@ function Dashboard() {
                       {getRealLogo(selectedStock.code, 36)}
                     </div>
                     <div>
-                      <h3 className="text-[14px] font-black text-[#3b82f6]">Beli Kontrak {selectedStock.code}</h3>
+                      <h3 className="text-[14px] font-black text-[#3b82f6]">Buy Contract {selectedStock.code}</h3>
                       <span className="text-[8px] text-[var(--zv-muted)]">{selectedStock.name} • {formatRupiah(selectedStock.price)}</span>
                     </div>
                   </div>
@@ -7785,7 +7758,7 @@ function Dashboard() {
                   {contractLoading ? (
                     <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
                   ) : (
-                    <><Package className="w-4 h-4" />Beli Kontrak {selectedStock.code}</>
+                    <><Package className="w-4 h-4" />Buy Contract {selectedStock.code}</>
                   )}
                 </button>
               </div>
@@ -8809,7 +8782,7 @@ function Dashboard() {
                     { q: 'Bagaimana cara deposit?', a: 'Klik menu Dompet → Isi Saldo → Pilih metode pembayaran → Masukkan jumlah → Konfirmasi pembayaran.' },
                     { q: 'Berapa minimal deposit?', a: 'Minimal deposit adalah Rp 50.000 untuk semua metode pembayaran.' },
                     { q: 'Bagaimana cara menarik dana?', a: 'Klik menu Dompet → Tarik Saldo → Masukkan jumlah dan rekening tujuan → Konfirmasi penarikan. Proses 1-3 hari kerja.' },
-                    { q: 'Apa itu Trading?', a: 'Trading adalah fitur dimana Anda membuka posisi Beli/Jual dengan Lot & Leverage. Posisi terbuka sampai Anda tutup manual, saldo ikut pergerakan grafik real-time seperti MT5.' },
+                    { q: 'Apa itu Trading?', a: 'Trading adalah fitur dimana Anda membuka posisi Buy/Sell dengan Lot & Leverage. Posisi terbuka sampai Anda tutup manual, saldo ikut pergerakan grafik real-time seperti MT5.' },
                     { q: 'Bagaimana sistem komisi referral?', a: 'Anda mendapat komisi 10% dari Level 1, 3% dari Level 2, dan 1% dari Level 3. Komisi bisa diklaim kapan saja.' },
                     { q: 'Apakah ZEVORIX aman?', a: 'ZEVORIX terdaftar dan diawasi oleh OJK. Semua dana nasabah dijamin oleh LPS. Kami menggunakan enkripsi SSL 256-bit.' },
                   ].map((faq, i) => (

@@ -326,3 +326,98 @@ Stage Summary:
 - Saldo tab Equity/FreeMargin/MarginLevel all depend on floating P/L which now updates in real-time
 - Balance always shows correctly (Rp100M for demo accounts) even without positions
 - Buy=GREEN, Sell=RED already implemented in existing code
+
+---
+Task ID: 1
+Agent: Full-stack Developer (Subagent)
+Task: Remove 10% fee system, rename JUAL/BELI to SELL/BUY, dynamic button colors
+
+Work Log:
+1. **Removed 10% Fee System Entirely:**
+   - `openSinyalPosition`: Removed `fee` and `workingCapital` calculation. Balance no longer deducted on open.
+   - `closeSinyalPosition`: Uses `pos.amount` directly for P/L. Removed `feeLost`. `tradingPLOffsetRef.current += cappedPL` (no fee offset).
+   - `getPositionLivePL`: Uses `pos.amount * (lev / 100)` for effective position value. Cap at `-pos.amount`.
+   - `liveModal`: Changed to `totalMargin = activePos.reduce((s, p) => s + p.amount, 0)`.
+   - `fetchPortfolio`: Removed `activeFeeDeductions`. `adjustedBalance = d.summary.cashBalance + tradingPLOffsetRef.current`.
+   - Type definition: `fee` and `workingCapital` now optional (`fee?: number; workingCapital?: number;`).
+   - All `workingCapital` references replaced with `pos.amount` or `ap.amount` throughout.
+   - All `usedMargin` calculations now use `p.amount` instead of `p.workingCapital || Math.round(p.amount * 0.9)`.
+   - Home page balance display: Removed `totalFee` calculation and fee display.
+   - Saldo position card: `modalLive = ap.amount + livePL` (not workingCapital + livePL).
+   - Closed position display: Removed `feeAmt`, `netAmt`. Shows P/L directly.
+   - Trade history in profil tab: Removed `feeLost`. Shows P/L directly.
+
+2. **Replaced Fee Breakdown with Position Breakdown:**
+   - Removed "Fee 10%", "Modal Kerja" rows.
+   - Now shows: "Lot Amount" + "Leverage" = "Effective Position".
+   - P/L per 1% uses `sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01` (no 0.90 factor).
+
+3. **Updated Confirm Trade Modal:**
+   - Removed "Fee 10% (Potong Langsung)" row.
+   - Removed "Modal Kerja (Ikut Grafik)" row.
+   - "Effective Position" uses `sinyalAmountFromLots * (sinyalLeverage / 100)` directly.
+   - P/L per 1% uses full amount (no 0.90 factor).
+   - Replaced red warning about fee with blue info box.
+   - "CONFIRM BUY" / "CONFIRM SELL" instead of "KONFIRMASI BELI/JUAL".
+
+4. **Changed JUAL → SELL, BELI → BUY Throughout:**
+   - All button text: JUAL → SELL, BELI → BUY
+   - BID / JUAL → BID / SELL, ASK / BELI → ASK / BUY
+   - KONFIRMASI BELI/JUAL → CONFIRM BUY/SELL
+   - Toast messages: Beli → Buy, Jual → Sell
+   - Position badges: BELI → BUY, JUAL → SELL, Beli → Buy, Jual → Sell
+   - Transaction labels: Beli → Buy, Jual → Sell
+   - Buy Contract instead of Beli Kontrak
+   - FAQ updated
+
+5. **Dynamic BUY/SELL Button Colors:**
+   - Determined chart direction from last candle: `sinyalCandles[sinyalCandles.length - 1]`
+   - `isPriceUp = lastCandle.close >= lastCandle.open`
+   - BUY button: Vibrant green when priceUp, dim green when !priceUp
+   - SELL button: Vibrant red when !priceUp, dim red when priceUp
+   - Pulse glow animation only on the "active" direction button
+   - Text opacity changes: full white when active, faded when dim
+   - Box shadow intensity changes: strong glow when active, subtle when dim
+
+6. **Verification:**
+   - `bun run lint` passes with no errors
+   - Dev server running without errors
+   - All APIs returning 200 status
+
+Stage Summary:
+- 10% fee system completely removed — MT5-style where Balance only changes on position close
+- JUAL/BELI renamed to SELL/BUY throughout entire app
+- BUY/SELL buttons dynamically glow based on chart candle direction
+- Confirm modal simplified (no fee rows, blue info box instead of red warning)
+- Position breakdown shows Lot Amount + Leverage = Effective Position
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Fix minimum lot from Rp10,000 to Rp1,000 (0.01 lot) and verify all changes
+
+Work Log:
+- Changed minimum amount check from `amount < 10000` to `amount < 1000` in openSinyalPosition
+- Changed minimum amount checks in BUY/SELL button onClick handlers from `< 10000` to `< 1000`
+- Changed position breakdown display threshold from `>= 10000` to `>= 1000`
+- Updated error messages to "Minimum 0.01 Lot (Rp 1.000)"
+- Verified with Agent Browser:
+  - Trading tab shows SELL and BUY buttons (not JUAL/BELI) ✅
+  - Lot input with quick buttons (0.01, 0.05, 0.10, 0.25, 0.50, 1.00) ✅
+  - Leverage selector (1:300, 1:500, 1:800, 1:1000) ✅
+  - Opened BUY position with 0.10 lot on AAPL ✅
+  - Confirm modal shows "CONFIRM BUY" with Lot, Leverage, Effective Position, P/L per 1% ✅
+  - Position card shows BUY badge, leverage, Entry/Current price, Modal Live, P/L ✅
+  - Saldo tab: Balance = Rp 100,000,000, Equity = Rp 100,003,788 (follows chart) ✅
+  - Terminal bar: Balance, Equity (live), Margin, Free Margin, Margin Level all correct ✅
+  - Dynamic button colors: BUY glows when price up, SELL glows when price down ✅
+
+Stage Summary:
+- Minimum lot = 0.01 (Rp 1,000) — matches user's requirement
+- All MT5-style trading features verified working:
+  - Balance stays at initial deposit when positions open
+  - Equity follows chart in real-time (Balance + Floating P/L)
+  - BUY/SELL buttons with dynamic colors
+  - No fee deduction on open (true MT5-style)
+  - Manual close only
+  - Full terminal bar with Balance, Equity, Margin, Free Margin, Margin Level
