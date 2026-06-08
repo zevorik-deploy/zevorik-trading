@@ -211,3 +211,109 @@ Stage Summary:
 - SELL/BUY buttons are prominent with prices
 - Terminal bar shows all MT5-style metrics
 - Balance correctly shows initial deposit when no positions are open
+
+---
+Task ID: 4
+Agent: full-stack-developer
+Task: Rewrite Trading/Sinyal tab to match MT5 layout exactly
+
+Work Log:
+
+### 1. MT5 Top Header Bar (NEW - replaced compact instrument selector)
+- Dark background (#1a1a2e) with compact icon row
+- Left: Menu hamburger icon + Zoom +/- buttons (moved from chart overlay)
+- Center: Timeframe selector (1m, 2m, 5m, 10m, 15m, 30m, 1h) in header
+- Right: Refresh + Settings icons
+- Below: Pair name "CODE • TF" + current price with change% + candle countdown timer
+- Below: Category pills + Stock pills in single compact row
+
+### 2. SELL | SPREAD | BUY Bar (REDESIGNED)
+- Lot selector moved to compact row above SELL/BUY (with +/- buttons, quick lot buttons, leverage)
+- SELL button: Red gradient, 48px height, "SELL" + bid price (formatted with fmtPrice5)
+- Center: SPREAD indicator with up/down arrows, spread value, label
+- BUY button: Green gradient, 48px height, "BUY" + ask price (formatted with fmtPrice5)
+- Dark background (#1a1a2e) matching header
+
+### 3. Chart SVG (MAJOR REWRITE)
+- Layout constants: padR=58, padL=2, padT=8, volH=30, timeAxisH=14, priceAreaH=332
+- Removed duplicate chart header overlay (moved to header bar)
+- Removed duplicate timeframe selector (moved to header bar)
+- Grid lines: strokeDasharray="3,4" (was "2,3"), opacity 0.07 (was 0.08), strokeWidth 0.3 (was 0.4)
+- Price axis: Uses fmtChartPrice() function with proper formatting
+- Time axis: fontSize 5.5 (was 6), opacity 0.35 (was 0.4)
+- Candlesticks: body width 0.70 of spacing (was 0.72), min body height 1 (was 1.2), rx=0.4 (was 0.6)
+- Volume bars: width 0.6 (was 0.65), opacity 0.18 (was 0.25)
+- MA lines: strokeWidth 0.8 (was 1), MA5 opacity 0.55 (was 0.6), MA20 opacity 0.4 (was 0.45)
+- MA Legend: Compact (48x8 vs 56x10), smaller fonts (5 vs 6)
+- Position entry lines: Blue (#3b82f6) for BUY (was green #22c55e), Red for SELL, label shows "BUY 0.01, +Rp 200" format (was just "BUY price"), label positioned at LEFT side of chart (was right)
+- Current price line: strokeWidth 0.5 (was 0.6), opacity 0.35 (was 0.4)
+- Current price badge: TEAL (#14b8a6) background (was priceColor), smaller (13px height vs 14px)
+- Crosshair: Lighter styling with rgba colors, smaller fonts, subtle border on price box
+- Price padding: 0.08 (was 0.1) for tighter fit
+
+### 4. Bottom Trade Status Bar (NEW)
+- Appears when active positions exist
+- Horizontal scrollable bar showing up to 3 position cards
+- Each card shows: stock code, BUY/SELL badge, lot size, P/L, close button
+- Dark background (#1a1a2e) matching header
+- "+N lagi" indicator if more than 3 positions
+
+### 5. Terminal Bar (REDESIGNED)
+- Dark background (#1a1a2e) replacing theme variable
+- Smaller fonts: label 4.5px (was 5px), value 6.5px (was 7px)
+- Border color uses rgba instead of CSS variable
+- Balance text color: white/80 (was var(--zv-text))
+
+### 6. Positions Table (REDESIGNED)
+- Dark background (#12122a) replacing theme variable
+- Smaller fonts: header 4.5px (was 5px), rows 5.5px (was 6px)
+- Max height 24 (was 28)
+- Close button: h-3.5 w-3.5 (was h-4 w-4)
+- All colors use rgba/white opacity instead of CSS variables
+- Borders use rgba(255,255,255,0.04) instead of var(--zv-border)
+
+### 7. Removed Components
+- Removed duplicate chart header overlay (symbol + price was shown both in header and on chart)
+- Removed duplicate timeframe selector from chart overlay
+- Removed zoom controls from chart (moved to header bar)
+- Removed candle countdown from chart overlay (moved to header bar)
+
+### No Changes To:
+- Trading logic (positions, P/L calculation, lot system)
+- State variables or callbacks
+- Interaction handlers (crosshair, zoom, pan, pinch, scroll)
+- Confirm trade dialog
+- Any other tab (home, market, portfolio, investasi, profil)
+- Bottom navigation
+
+Stage Summary:
+- Trading tab now has MT5-style dark header with hamburger, zoom, timeframe, refresh, settings
+- SELL|SPREAD|BUY bar with lot selector above (MT5 exact layout)
+- Professional candlestick chart with teal current price badge, blue BUY order lines
+- Bottom trade status bar shows active positions inline
+- Terminal bar and positions table use dark theme (#1a1a2e/#12122a)
+- All lint checks pass
+- Server running correctly on port 3000
+
+---
+Task ID: 5
+Agent: main
+Task: Polish MT5 trading interface - improve terminal bar visibility, SELL/BUY buttons, chart axis labels
+
+Work Log:
+- Analyzed video frames from user's uploaded MT5 reference video using VLM
+- Identified key MT5 features: dark header, SELL|SPREAD|BUY bar, professional chart, terminal section, bottom nav
+- Verified Trading tab renders correctly on both mobile (8/10 MT5 rating) and desktop (7/10)
+- Improved Terminal Bar: larger fonts (6px→8px values, 4.5px→6px labels), added emoji icons, min-width per item, better border visibility
+- Improved SELL/BUY buttons: taller (48px→56px), bigger text (14px→16px), better shadow, rounded-lg corners
+- Improved chart price axis: larger font (6.5→7), higher opacity (0.45→0.55)
+- Improved chart time axis: larger font (5.5→6), higher opacity (0.35→0.45)
+- All lint checks pass
+- Server running correctly on port 3000
+
+Stage Summary:
+- Terminal bar now clearly shows Balance, Equity, Margin, Free Margin, P&L with visible labels
+- SELL/BUY buttons are more prominent and MT5-like
+- Chart axes are more readable
+- Mobile view rated 8/10 for MT5 similarity
+- Desktop view rated 7/10 for MT5 similarity
