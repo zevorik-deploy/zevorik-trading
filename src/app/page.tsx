@@ -4284,7 +4284,7 @@ function Dashboard() {
               {/* ══ CHART AREA — MT5 Professional Chart ══ */}
               <div className="flex-1 flex flex-col min-w-0 min-h-0">
                   {selectedSinyalStock && (
-                    <div className="relative rounded-lg overflow-hidden border border-[var(--zv-chart-border)] flex-1" style={{ background: 'var(--zv-chart-bg)', minHeight: '300px' }}>
+                    <div className="relative rounded-lg overflow-hidden border border-[var(--zv-chart-border)] flex-1 flex flex-col" style={{ background: 'var(--zv-chart-bg)', minHeight: '280px' }}>
                       {/* Chart Header — Clean MT5 style */}
                       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2.5 pt-1.5 pb-1" style={{ background: 'linear-gradient(to bottom, var(--zv-chart-bg) 60%, transparent)' }}>
                         <div className="flex items-center gap-1.5">
@@ -4414,7 +4414,7 @@ function Dashboard() {
                       )}
 
                       {/* ── CANDLESTICK CHART SVG ── */}
-                      <div className="w-full h-full pt-14"
+                      <div className="w-full flex-1 pt-14"
                         onMouseMove={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect()
                           setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top, w: rect.width, h: rect.height })
@@ -4497,22 +4497,24 @@ function Dashboard() {
                           const paddedRange = paddedMax - paddedMin
 
                           const W = 600
-                          const chartH = 200
-                          const volH = 35
-                          const H = chartH + volH
-                          const padR = 48
-                          const padL = 2
-                          const padB = 12
+                          const chartH = 320
+                          const volH = 45
+                          const timeAxisH = 16
+                          const H = chartH + volH + timeAxisH
+                          const padR = 56
+                          const padL = 4
+                          const padT = 18
+                          const padB = 0
                           const chartW = W - padR - padL
-                          const priceAreaH = chartH - padB
+                          const priceAreaH = chartH - padT - padB
 
                           const compactPrice = (p: number) => {
-                            if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
+                            if (p >= 1e6) return `${(p / 1e6).toFixed(2)}M`
                             if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K`
-                            return p.toFixed(0)
+                            return p.toFixed(2)
                           }
 
-                          const yScale = (price: number) => ((paddedMax - price) / paddedRange) * priceAreaH
+                          const yScale = (price: number) => padT + ((paddedMax - price) / paddedRange) * priceAreaH
 
                           const maxVisible = sinyalChartZoom
                           const totalCandles = allCandles.length
@@ -4522,7 +4524,7 @@ function Dashboard() {
                           const candleCount = visibleCandles.length
                           if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[9px] text-[var(--zv-muted)]">Geser kembali...</div>
                           const candleSpacing = chartW / candleCount
-                          const candleBodyW = Math.max(1.5, Math.min(candleSpacing * 0.65, 14))
+                          const candleBodyW = Math.max(2, Math.min(candleSpacing * 0.72, 16))
 
                           const maxVol = Math.max(...visibleCandles.map(c => c.volume), 1)
 
@@ -4534,148 +4536,163 @@ function Dashboard() {
 
                           const activePositions = sinyalPositions.filter(p => p.status === 'active')
 
+                          // Generate 7 evenly-spaced price levels
+                          const gridLevels = 7
+                          const gridPriceStep = paddedRange / gridLevels
+
                           return (
-                            <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }}>
+                            <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ fontFamily: 'monospace' }}>
                               <defs>
-                                <filter id="candleGlow" x="-20%" y="-20%" width="140%" height="140%">
-                                  <feGaussianBlur stdDeviation="1.5" result="blur" />
+                                <filter id="candleGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                  <feGaussianBlur stdDeviation="2" result="blur" />
                                   <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                                 </filter>
                               </defs>
 
-                              <rect x={padL} y={0} width={chartW} height={chartH} fill="transparent" />
+                              {/* Chart background */}
+                              <rect x={padL} y={padT} width={chartW} height={priceAreaH} fill="transparent" />
 
-                              {/* Horizontal grid lines — MT5 style thin dashed */}
-                              {[0, 1, 2, 3, 4, 5].map(gi => {
-                                const gy = (gi / 5) * priceAreaH
-                                const priceLabel = paddedMax - (paddedRange / 5) * gi
+                              {/* ═══ Horizontal grid lines — MT5 thin dashed ═══ */}
+                              {Array.from({ length: gridLevels + 1 }).map((_, gi) => {
+                                const gy = padT + (gi / gridLevels) * priceAreaH
+                                const priceLabel = paddedMax - gridPriceStep * gi
                                 return (
                                   <g key={`hg-${gi}`}>
-                                    <line x1={padL} y1={gy} x2={padL + chartW} y2={gy} stroke="var(--zv-chart-grid)" strokeWidth="0.3" strokeDasharray="3,4" opacity="0.6" />
-                                    <text x={padL + chartW + 3} y={gy + 3} fontSize="5.5" fill="var(--zv-chart-text)" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(priceLabel))}</text>
+                                    <line x1={padL} y1={gy} x2={padL + chartW} y2={gy}
+                                      stroke="#ffffff" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.08" />
+                                    <text x={padL + chartW + 4} y={gy + 3.5} fontSize="7" fill="var(--zv-chart-text)" fontFamily="monospace" fontWeight="700">{compactPrice(priceLabel)}</text>
                                   </g>
                                 )
                               })}
 
-                              {/* Vertical grid lines — time labels */}
-                              {visibleCandles.filter((_, i) => i % Math.max(1, Math.floor(candleCount / 6)) === 0).map((c, i) => {
-                                const idx = visibleCandles.indexOf(c)
-                                const vx = padL + (idx + 0.5) * candleSpacing
-                                return (
-                                  <g key={`vg-${i}`}>
-                                    <line x1={vx} y1={0} x2={vx} y2={priceAreaH} stroke="var(--zv-chart-grid)" strokeWidth="0.3" strokeDasharray="3,4" opacity="0.4" />
-                                    <text x={vx} y={priceAreaH + 9} fontSize="5" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{c.time}</text>
-                                  </g>
-                                )
-                              })}
+                              {/* ═══ Vertical grid lines — MT5 thin dashed with time labels ═══ */}
+                              {(() => {
+                                const step = Math.max(1, Math.floor(candleCount / 6))
+                                const items: JSX.Element[] = []
+                                visibleCandles.forEach((c, i) => {
+                                  if (i % step !== 0 && i !== candleCount - 1) return
+                                  const vx = padL + (i + 0.5) * candleSpacing
+                                  items.push(
+                                    <g key={`vg-${i}`}>
+                                      <line x1={vx} y1={padT} x2={vx} y2={padT + priceAreaH}
+                                        stroke="#ffffff" strokeWidth="0.4" strokeDasharray="2,3" opacity="0.06" />
+                                      <text x={vx} y={chartH + volH + 12} fontSize="6" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="700">{c.time}</text>
+                                    </g>
+                                  )
+                                })
+                                return items
+                              })()}
 
-                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="var(--zv-chart-grid)" strokeWidth="0.3" opacity="0.5" />
+                              {/* Separator line between price and volume */}
+                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="var(--zv-chart-grid)" strokeWidth="0.4" opacity="0.35" />
 
-                              {/* Volume bars — MT5 bottom section */}
+                              {/* ═══ Volume bars — semi-transparent ═══ */}
                               {visibleCandles.map((c, i) => {
-                                const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.7) / 2
-                                const volBarH = (c.volume / maxVol) * (volH - 6)
+                                const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.65) / 2
+                                const volBarH = (c.volume / maxVol) * (volH - 8)
                                 const isBull = c.close >= c.open
                                 return (
-                                  <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 2} width={candleBodyW * 0.7} height={Math.max(0.5, volBarH)}
-                                    fill={isBull ? 'rgba(34,197,94,0.25)' : 'rgba(239,83,80,0.25)'} />
+                                  <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 3} width={candleBodyW * 0.65} height={Math.max(0.5, volBarH)}
+                                    fill={isBull ? 'var(--zv-chart-vol-up)' : 'var(--zv-chart-vol-down)'} rx="0.5" />
                                 )
                               })}
 
-                              {/* Candlesticks — MT5 professional style */}
+                              {/* ═══ Candlesticks — MT5 professional style ═══ */}
                               {visibleCandles.map((c, i) => {
                                 const cx = padL + (i + 0.5) * candleSpacing
                                 const isBull = c.close >= c.open
                                 const bodyTop = yScale(Math.max(c.open, c.close))
                                 const bodyBot = yScale(Math.min(c.open, c.close))
-                                const bodyH = Math.max(1, bodyBot - bodyTop)
+                                const bodyH = Math.max(1.2, bodyBot - bodyTop)
                                 const wickTop = yScale(c.high)
                                 const wickBot = yScale(c.low)
-                                // MT5: Bull = green filled, Bear = red filled (not hollow)
                                 const fillColor = isBull ? '#22c55e' : '#ef5350'
                                 return (
                                   <g key={`candle-${i}`}>
-                                    {/* Upper wick */}
-                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth="0.8" />
-                                    {/* Lower wick */}
-                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth="0.8" />
-                                    {/* Body */}
+                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth="1" />
+                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth="1" />
                                     <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
-                                      fill={fillColor} stroke={fillColor} strokeWidth="0.3" rx="0.3" />
+                                      fill={fillColor} stroke={fillColor} strokeWidth="0.4" rx="0.6" />
                                   </g>
                                 )
                               })}
 
-                              {/* MA5 line — subtle */}
+                              {/* ═══ MA5 line — yellow ═══ */}
                               {(() => {
                                 const ma5 = computeMA(visibleCandles, 5)
-                                const points = ma5.filter(v => v !== null).map((v, i) => {
-                                  const origIdx = ma5.findIndex((val, j) => val === v && j >= i)
-                                  return { x: padL + (origIdx + 0.5) * candleSpacing, y: yScale(v!) }
-                                }).filter((_, i) => i > 0)
-                                if (points.length < 2) return null
-                                const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-                                return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="0.6" opacity="0.5" />
+                                const pts: { x: number; y: number }[] = []
+                                ma5.forEach((v, i) => {
+                                  if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) })
+                                })
+                                if (pts.length < 2) return null
+                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                                return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="1" opacity="0.6" strokeLinejoin="round" />
                               })()}
-                              {/* MA20 line — subtle */}
+                              {/* ═══ MA20 line — cyan ═══ */}
                               {(() => {
                                 const ma20 = computeMA(visibleCandles, 20)
-                                const points = ma20.filter(v => v !== null).map((v, i) => ({
-                                  x: padL + (i + 0.5) * candleSpacing, y: yScale(v!)
-                                }))
-                                if (points.length < 2) return null
-                                const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-                                return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="0.6" opacity="0.35" />
+                                const pts: { x: number; y: number }[] = []
+                                ma20.forEach((v, i) => {
+                                  if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) })
+                                })
+                                if (pts.length < 2) return null
+                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                                return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="1" opacity="0.45" strokeLinejoin="round" />
                               })()}
-                              {/* MA Legend */}
+
+                              {/* ═══ MA Legend — top left ═══ */}
                               <g>
-                                <line x1={padL + 4} y1={7} x2={padL + 14} y2={7} stroke="#eab308" strokeWidth="0.8" opacity="0.7" />
-                                <text x={padL + 16} y={9} fontSize="4.5" fill="#eab308" fontFamily="monospace" fontWeight="bold">MA5</text>
-                                <line x1={padL + 32} y1={7} x2={padL + 42} y2={7} stroke="#06b6d4" strokeWidth="0.8" opacity="0.5" />
-                                <text x={padL + 44} y={9} fontSize="4.5" fill="#06b6d4" fontFamily="monospace" fontWeight="bold">MA20</text>
+                                <rect x={padL + 2} y={padT + 1} width={56} height={10} rx="2" fill="var(--zv-chart-ma-legend-bg)" opacity="0.85" />
+                                <line x1={padL + 5} y1={padT + 6} x2={padL + 15} y2={padT + 6} stroke="#eab308" strokeWidth="1.2" opacity="0.8" />
+                                <text x={padL + 17} y={padT + 8.5} fontSize="6" fill="#eab308" fontFamily="monospace" fontWeight="700">MA5</text>
+                                <line x1={padL + 32} y1={padT + 6} x2={padL + 42} y2={padT + 6} stroke="#06b6d4" strokeWidth="1.2" opacity="0.6" />
+                                <text x={padL + 44} y={padT + 8.5} fontSize="6" fill="#06b6d4" fontFamily="monospace" fontWeight="700">MA20</text>
                               </g>
 
-                              {/* Position entry lines — MT5 style dashed */}
+                              {/* ═══ Position entry lines — MT5 dashed with label ═══ */}
                               {activePositions.map(pos => {
                                 const entryY = yScale(pos.startPrice)
                                 const isPosUp = pos.direction === 'NAIK'
                                 const lineColor = isPosUp ? '#22c55e' : '#ef5350'
+                                const labelText = `${isPosUp ? 'BUY' : 'SELL'} ${compactPrice(pos.startPrice)}`
+                                const labelW = labelText.length * 4.2 + 6
                                 return (
                                   <g key={`pos-line-${pos.id}`}>
                                     <line x1={padL} y1={entryY} x2={padL + chartW} y2={entryY}
-                                      stroke={lineColor} strokeWidth="0.6" strokeDasharray="4,3" opacity="0.5" />
-                                    <rect x={padL + chartW - 26} y={entryY - 5} width={26} height="10" rx="2" fill={lineColor} opacity="0.85" />
-                                    <text x={padL + chartW - 13} y={entryY + 3} fontSize="5" fill="white" textAnchor="middle" fontWeight="bold">{isPosUp ? 'BUY' : 'SELL'}</text>
+                                      stroke={lineColor} strokeWidth="0.8" strokeDasharray="5,3" opacity="0.45" />
+                                    <rect x={padL + chartW - labelW - 2} y={entryY - 5.5} width={labelW} height="11" rx="2" fill={lineColor} opacity="0.9" />
+                                    <text x={padL + chartW - 2 - labelW / 2} y={entryY + 3} fontSize="5.5" fill="white" textAnchor="middle" fontWeight="bold" fontFamily="monospace">{labelText}</text>
                                   </g>
                                 )
                               })}
 
-                              {/* Current price line — MT5 style */}
+                              {/* ═══ Current price line — MT5 thin dashed ═══ */}
                               <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
-                                stroke={priceColor} strokeWidth="0.4" strokeDasharray="3,3" opacity="0.5" />
+                                stroke={priceColor} strokeWidth="0.6" strokeDasharray="4,3" opacity="0.4" />
 
-                              {/* Price dot — animated pulse */}
-                              <circle cx={padL + chartW} cy={yLast} r="2" fill={priceColor} filter="url(#candleGlow)">
-                                <animate attributeName="r" values="2;3.5;2" dur="1.5s" repeatCount="indefinite" />
-                                <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
+                              {/* ═══ Animated pulse dot at right edge ═══ */}
+                              <circle cx={padL + chartW} cy={yLast} r="3" fill={priceColor} filter="url(#candleGlow)">
+                                <animate attributeName="r" values="2.5;4.5;2.5" dur="1.5s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="1;0.35;1" dur="1.5s" repeatCount="indefinite" />
                               </circle>
 
-                              {/* Price badge on right axis */}
-                              <rect x={padL + chartW + 1} y={yLast - 5} width={padR - 3} height="10" rx="1.5" fill={priceColor} />
-                              <text x={padL + chartW + padR / 2} y={yLast + 3} fontSize="5" fill="white" textAnchor="middle" fontWeight="bold" fontFamily="monospace">{compactPrice(lastPrice)}</text>
+                              {/* ═══ Current price badge on right axis ═══ */}
+                              <rect x={padL + chartW + 2} y={yLast - 7} width={padR - 4} height="14" rx="2" fill={priceColor} />
+                              <text x={padL + chartW + padR / 2 + 1} y={yLast + 3.5} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{compactPrice(lastPrice)}</text>
 
+                              {/* ═══ Crosshair ═══ */}
                               {sinyalCrosshair && (() => {
                                 const svgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
                                 const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
-                                const crossPrice = paddedMax - (svgY / priceAreaH) * paddedRange
+                                const crossPrice = paddedMax - ((svgY - padT) / priceAreaH) * paddedRange
                                 return (
-                                  <g opacity="0.7">
-                                    <line x1={svgX} y1={0} x2={svgX} y2={priceAreaH} stroke="#64748b" strokeWidth="0.4" strokeDasharray="2,2" />
-                                    <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke="#64748b" strokeWidth="0.4" strokeDasharray="2,2" />
-                                    {svgY > 0 && svgY < priceAreaH && (
+                                  <g opacity="0.65">
+                                    <line x1={svgX} y1={padT} x2={svgX} y2={padT + priceAreaH} stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2,2" />
+                                    <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="2,2" />
+                                    {svgY > padT && svgY < padT + priceAreaH && (
                                       <>
-                                        <rect x={padL + chartW + 1} y={svgY - 6} width={padR - 3} height="12" rx="2" fill="var(--zv-chart-grid)" />
-                                        <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="5.5" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{compactPrice(Math.round(crossPrice))}</text>
+                                        <rect x={padL + chartW + 2} y={svgY - 7} width={padR - 4} height="14" rx="2" fill="var(--zv-chart-grid)" />
+                                        <text x={padL + chartW + padR / 2 + 1} y={svgY + 3.5} fontSize="6.5" fill="var(--zv-chart-text)" textAnchor="middle" fontFamily="monospace" fontWeight="700">{compactPrice(crossPrice)}</text>
                                       </>
                                     )}
                                   </g>
@@ -4743,42 +4760,19 @@ function Dashboard() {
 
               {/* ══ TERMINAL BAR — MT5 Clean Style ══ */}
               <div className="mt-1 rounded-lg overflow-hidden border border-[var(--zv-border)]" style={{ background: 'var(--zv-surface)' }}>
-                <div className="flex items-center px-2 py-1.5 gap-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                  <div className="flex items-center gap-1.5 px-2 py-1 border-r border-[var(--zv-border)] flex-shrink-0">
-                    <Wallet className="w-3 h-3 text-blue-400" />
-                    <div className="flex flex-col">
-                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Balance</span>
-                      <span className="text-[8px] font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(totalBalance)}</span>
+                <div className="flex items-stretch px-1.5 py-1 gap-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  {[
+                    { label: 'Balance', value: formatRupiah(totalBalance), color: 'text-[var(--zv-text)]', icon: null },
+                    { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? 'text-green-400' : 'text-red-400', icon: null },
+                    { label: 'Margin', value: formatRupiah(usedMargin), color: 'text-amber-400', icon: null },
+                    { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400', icon: null },
+                    { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? 'text-green-400' : 'text-red-400', icon: null },
+                  ].map((item, idx, arr) => (
+                    <div key={item.label} className={`flex flex-col items-center justify-center px-2.5 py-0.5 flex-shrink-0 ${idx < arr.length - 1 ? 'border-r border-[var(--zv-border)]' : ''}`}>
+                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">{item.label}</span>
+                      <span className={`text-[8px] font-black tabular-nums ${item.color}`}>{item.value}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 border-r border-[var(--zv-border)] flex-shrink-0">
-                    <DollarSign className="w-3 h-3 text-green-400" />
-                    <div className="flex flex-col">
-                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Equity</span>
-                      <span className={`text-[8px] font-black tabular-nums ${equity >= totalBalance ? 'text-green-400' : 'text-red-400'}`}>{formatRupiah(equity)}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 border-r border-[var(--zv-border)] flex-shrink-0">
-                    <Target className="w-3 h-3 text-amber-400" />
-                    <div className="flex flex-col">
-                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Margin</span>
-                      <span className="text-[8px] font-black text-amber-400 tabular-nums">{formatRupiah(usedMargin)}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 border-r border-[var(--zv-border)] flex-shrink-0">
-                    <CreditCard className="w-3 h-3 text-cyan-400" />
-                    <div className="flex flex-col">
-                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Free Mrg</span>
-                      <span className={`text-[8px] font-black tabular-nums ${freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{formatRupiah(freeMargin)}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 flex-shrink-0">
-                    {totalLivePL >= 0 ? <TrendingUp className="w-3 h-3 text-green-400" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
-                    <div className="flex flex-col">
-                      <span className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">P&L</span>
-                      <span className={`text-[8px] font-black tabular-nums ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>{totalLivePL >= 0 ? '+' : ''}{formatRupiah(totalLivePL)}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
