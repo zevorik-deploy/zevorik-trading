@@ -421,3 +421,28 @@ Stage Summary:
   - No fee deduction on open (true MT5-style)
   - Manual close only
   - Full terminal bar with Balance, Equity, Margin, Free Margin, Margin Level
+---
+Task ID: 1
+Agent: main
+Task: Redesign ZEVORIX Trading tab to match MT5 mobile layout (SELL|LOT|BUY at top of chart, dynamic button colors, fix balance bug)
+
+Work Log:
+- Analyzed user's video reference using VLM (3 frames extracted and analyzed)
+- MT5 video shows: SELL (red) on left, LOT selector in center, BUY (green) on right at top of chart
+- Read current page.tsx (~8500 lines) to understand existing layout
+- Identified key issues: sidebar trade panel layout, balance=0 bug, static button colors
+- Delegated to fullstack developer subagent for major restructuring
+- Restructured sinyal tab from side-by-side (chart+panel) to full-width chart with SELL|LOT|BUY top bar
+- Fixed liveEquity calculation to include withdrawalBalance (was only using user?.balance)
+- Fixed double-counting of withdrawalBalance in Beranda balance display
+- Implemented dynamic button glow: winning BUY positions → bright green glow, winning SELL → bright red glow, losing → dimmer
+- Preserved all chart rendering code, timeframe selectors, position overlays, terminal bar, positions table
+- Verified with Agent Browser on mobile viewport: SELL=red, BUY=green, lot selector works, chart renders, terminal bar shows correct balance
+
+Stage Summary:
+- Trading tab now matches MT5 mobile layout with SELL|LOT|BUY at top of chart
+- Balance correctly shows Rp 100,000,000 even with no positions open
+- Equity follows chart in real-time when positions are active
+- Dynamic button colors: glow green when winning, dim when losing
+- All chart interactions (zoom, pan, pinch, crosshair) preserved
+- Terminal bar shows Balance, Equity, Margin, Free Margin, Margin Level, P&L

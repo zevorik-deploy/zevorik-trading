@@ -1922,7 +1922,7 @@ function Dashboard() {
   // When no positions: Equity = Balance (static, shows initial deposit)
   // When positions open: Equity moves with the market price — exactly like MT5 Terminal
   const liveEquity = (() => {
-    const baseBalance = user?.balance || 0
+    const baseBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
     const activePos = sinyalPositions.filter(p => p.status === 'active')
     if (activePos.length === 0) return baseBalance
     const totalFloatingPL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
@@ -2999,7 +2999,7 @@ function Dashboard() {
                             return totalPL > 0 ? 'text-green-400' : totalPL < 0 ? 'text-red-400' : ''
                           })()
                         : ''
-                    }`}>{showBalance ? formatRupiah(liveEquity + (user?.withdrawalBalance || 0)) : '••••••••••'}</b>
+                    }`}>{showBalance ? formatRupiah(liveEquity) : '••••••••••'}</b>
                     {sinyalPositions.filter(p => p.status === 'active').length > 0 && (() => {
                       const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
                       return (
@@ -4145,11 +4145,140 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══ MAIN CONTENT: Chart + Trade Panel (Desktop side-by-side, mobile stacked) ══ */}
-              <div className="flex-1 flex flex-col md:flex-row gap-1.5 min-h-0">
+              {/* ══ MT5 STYLE: SELL | LOT | BUY TOP BAR ══ */}
+              {selectedSinyalStock && (() => {
+                const buyPL = activePos.filter(p => p.direction === 'NAIK').reduce((s, p) => s + getPositionLivePL(p), 0)
+                const sellPL = activePos.filter(p => p.direction === 'TURUN').reduce((s, p) => s + getPositionLivePL(p), 0)
+                const hasBuyPos = activePos.some(p => p.direction === 'NAIK')
+                const hasSellPos = activePos.some(p => p.direction === 'TURUN')
+                return (
+              <div className="mb-1.5">
+                <div className="grid grid-cols-[1fr_auto_1fr] gap-1">
+                  {/* ════ SELL — Vibrant RED (#ef5350) ════ */}
+                  <button
+                    onClick={() => {
+                      if (sinyalAmountFromLots < 1000) {
+                        toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
+                      }
+                      if (sinyalAmountFromLots > freeMargin) {
+                        toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
+                      }
+                      setConfirmTradeDir('TURUN')
+                      setShowConfirmTrade(true)
+                    }}
+                    className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[52px] group"
+                    style={(() => {
+                      let bg: string, shadow: string
+                      if (hasSellPos && sellPL > 0) {
+                        bg = 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)'
+                        shadow = '0 6px 32px rgba(239,83,80,0.7), 0 2px 8px rgba(239,83,80,0.5), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)'
+                      } else if (hasSellPos && sellPL < 0) {
+                        bg = 'linear-gradient(180deg, #7f1d1d 0%, #5c1010 30%, #450a0a 70%, #2d0505 100%)'
+                        shadow = '0 2px 8px rgba(239,83,80,0.15), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.1)'
+                      } else {
+                        bg = 'linear-gradient(180deg, #ef5350 0%, #dc2626 60%, #991b1b 100%)'
+                        shadow = '0 4px 20px rgba(239,83,80,0.45), 0 2px 8px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.12)'
+                      }
+                      return { background: bg, boxShadow: shadow }
+                    })()}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
+                    <span className="relative text-[15px] font-black tracking-[0.15em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">SELL</span>
+                    <span className="relative text-[9px] font-bold tabular-nums text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
+                    {hasSellPos && sellPL > 0 && <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-red 2s ease-in-out infinite', boxShadow: 'inset 0 0 25px rgba(239,83,80,0.4)' }} />}
+                  </button>
 
-                {/* ── LEFT: CHART AREA ── */}
-                <div className="flex-1 flex flex-col min-w-0">
+                  {/* ════ LOT SELECTOR ════ */}
+                  <div className="flex flex-col items-center justify-center px-2 py-1.5 rounded-xl border border-[var(--zv-chart-border)] min-w-[88px] md:min-w-[110px]" style={{ background: 'var(--zv-chart-bg)' }}>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+                        className="h-5 w-5 rounded-md bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-text)] hover:border-blue-500/40 hover:text-blue-400 transition-all active:scale-[0.9]">
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                      <div className="flex flex-col items-center min-w-[40px]">
+                        <span className="text-[11px] font-black text-[var(--zv-text)] tabular-nums">{sinyalLots}</span>
+                        <span className="text-[6px] font-bold text-[var(--zv-muted)]">LOT</span>
+                      </div>
+                      <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = cur + 0.01; setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+                        className="h-5 w-5 rounded-md bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[var(--zv-text)] hover:border-blue-500/40 hover:text-blue-400 transition-all active:scale-[0.9]">
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {/* Quick lot pills */}
+                    <div className="flex flex-wrap gap-0.5 mt-1 justify-center">
+                      {['0.01', '0.05', '0.10', '0.25', '0.50', '1.00'].map(lot => (
+                        <button key={lot} onClick={() => { setSinyalLots(lot); setSinyalAmount(String(Math.round(parseFloat(lot) * LOT_SIZE))) }}
+                          className={`h-4 px-1 rounded text-[5px] font-bold transition-all ${sinyalLots === lot
+                            ? 'bg-gradient-to-r from-[#1e3a5f] to-[#1d4ed8] text-blue-300 border border-blue-500/50'
+                            : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] border border-[var(--zv-border)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/30'
+                          }`}>
+                          {lot}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Leverage selector — compact row */}
+                    <div className="flex gap-0.5 mt-1">
+                      {[300, 500, 800, 1000].map(lev => (
+                        <button key={lev} onClick={() => setSinyalLeverage(lev)}
+                          className={`h-4 px-1 rounded text-[5px] font-black transition-all ${
+                            sinyalLeverage === lev
+                              ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-slate-900'
+                              : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-amber-400'
+                          }`}>
+                          1:{lev}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ════ BUY — Vibrant GREEN (#22c55e) ════ */}
+                  <button
+                    onClick={() => {
+                      if (sinyalAmountFromLots < 1000) {
+                        toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
+                      }
+                      if (sinyalAmountFromLots > freeMargin) {
+                        toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
+                      }
+                      setConfirmTradeDir('NAIK')
+                      setShowConfirmTrade(true)
+                    }}
+                    className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[52px] group"
+                    style={(() => {
+                      let bg: string, shadow: string
+                      if (hasBuyPos && buyPL > 0) {
+                        bg = 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)'
+                        shadow = '0 6px 32px rgba(34,197,94,0.7), 0 2px 8px rgba(34,197,94,0.5), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)'
+                      } else if (hasBuyPos && buyPL < 0) {
+                        bg = 'linear-gradient(180deg, #14532d 0%, #0f4024 30%, #0a2e19 70%, #051f10 100%)'
+                        shadow = '0 2px 8px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.1)'
+                      } else {
+                        bg = 'linear-gradient(180deg, #22c55e 0%, #16a34a 60%, #166534 100%)'
+                        shadow = '0 4px 20px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.12)'
+                      }
+                      return { background: bg, boxShadow: shadow }
+                    })()}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
+                    <span className="relative text-[15px] font-black tracking-[0.15em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">BUY</span>
+                    <span className="relative text-[9px] font-bold tabular-nums text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
+                    {hasBuyPos && buyPL > 0 && <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-green 2s ease-in-out infinite', boxShadow: 'inset 0 0 25px rgba(34,197,94,0.4)' }} />}
+                  </button>
+                </div>
+                {/* Lot + Leverage summary */}
+                {sinyalAmountFromLots > 0 && (
+                  <div className="mt-1 flex items-center justify-center gap-1.5">
+                    <Package className="w-2.5 h-2.5 text-blue-400" />
+                    <span className="text-[7px] font-bold text-blue-300">{sinyalLots} Lot = {formatRupiah(sinyalAmountFromLots)}</span>
+                    <span className="text-[7px] text-[var(--zv-muted)]">•</span>
+                    <Zap className="w-2.5 h-2.5 text-amber-400" />
+                    <span className="text-[7px] font-bold text-amber-400">1:{sinyalLeverage}</span>
+                  </div>
+                )}
+              </div>
+                )
+              })()}
+
+              {/* ══ CHART AREA — Full Width MT5 Style ══ */}
+              <div className="flex-1 flex flex-col min-w-0 min-h-0">
                   {selectedSinyalStock && (
                     <div className="relative rounded-xl overflow-hidden border border-[var(--zv-chart-border)] flex-1" style={{ background: 'linear-gradient(180deg, var(--zv-chart-bg) 0%, var(--zv-chart-bg2) 100%)', minHeight: '320px', boxShadow: theme === 'dark' ? '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(59,130,246,0.08)' : '0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(59,130,246,0.06)' }}>
                       {/* Chart Header — MT5 info bar with BID/ASK */}
@@ -4609,241 +4738,6 @@ function Dashboard() {
                     </div>
                   )}
                 </div>
-
-                {/* ── RIGHT: TRADE PANEL (Desktop sidebar, mobile stacked below) ── */}
-                <div className="md:w-[300px] lg:w-[340px] flex-shrink-0">
-                  <div className="rounded-xl overflow-hidden border border-[var(--zv-chart-border)] h-full flex flex-col" style={{ background: 'linear-gradient(180deg, var(--zv-chart-bg) 0%, var(--zv-chart-bg2) 100%)', boxShadow: theme === 'dark' ? '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(59,130,246,0.08)' : '0 4px 24px rgba(0,0,0,0.08)' }}>
-                    {/* Panel Header with BID/ASK */}
-                    <div className="px-3 pt-2.5 pb-2 border-b border-[var(--zv-chart-border)]">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Briefcase className="w-3.5 h-3.5 text-blue-400" />
-                          <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Trade Panel</span>
-                        </div>
-                        {selectedSinyalStock && (
-                          <span className="text-[8px] font-bold text-[var(--zv-muted)]">{selectedSinyalStock.code}</span>
-                        )}
-                      </div>
-                      {/* BID/ASK display — Vibrant matching chart colors */}
-                      {selectedSinyalStock && sinyalCurrentPrice > 0 && (
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                          <div className="relative px-2.5 py-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(239,83,80,0.12) 0%, rgba(239,83,80,0.06) 100%)', border: '1px solid rgba(239,83,80,0.25)' }}>
-                            <div className="absolute top-0 left-0 w-1 h-full" style={{ background: 'linear-gradient(180deg, #ef5350, #dc2626)' }} />
-                            <div className="text-[7px] font-black text-red-400/80 uppercase tracking-wider ml-1">BID / SELL</div>
-                            <div className="text-[12px] font-black text-red-400 tabular-nums ml-1">{formatRupiah(bidPrice)}</div>
-                          </div>
-                          <div className="relative px-2.5 py-2 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.06) 100%)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                            <div className="absolute top-0 left-0 w-1 h-full" style={{ background: 'linear-gradient(180deg, #22c55e, #16a34a)' }} />
-                            <div className="text-[7px] font-black text-green-400/80 uppercase tracking-wider ml-1">ASK / BUY</div>
-                            <div className="text-[12px] font-black text-green-400 tabular-nums ml-1">{formatRupiah(askPrice)}</div>
-                          </div>
-                        </div>
-                      )}
-                      {selectedSinyalStock && sinyalCurrentPrice > 0 && (
-                        <div className="mt-1 flex items-center justify-center gap-1">
-                          <span className="text-[7px] font-bold text-[var(--zv-muted)]">Spread:</span>
-                          <span className="text-[7px] font-black text-amber-400">{formatRupiah(spreadValue)} ({spreadPercent.toFixed(2)}%)</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Scrollable trade controls */}
-                    <div className="flex-1 overflow-y-auto px-2.5 py-2 space-y-2" style={{ scrollbarWidth: 'thin' }}>
-                      {/* LOT Size Input */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1">
-                            <Package className="w-3 h-3 text-blue-400" />
-                            <span className="text-[8px] font-black text-blue-400 uppercase tracking-wider">Lot</span>
-                          </div>
-                          <span className="text-[6px] font-bold text-[var(--zv-muted)]">1 Lot = {formatRupiah(LOT_SIZE)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                            className="h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[14px] font-black text-[var(--zv-text)] hover:border-blue-500/40 hover:text-blue-400 transition-all active:scale-[0.93] flex-shrink-0">
-                            −
-                          </button>
-                          <div className="relative flex-1">
-                            <input type="number" step="any" value={sinyalLots} onChange={(e) => { const v = e.target.value; setSinyalLots(v); const parsed = parseFloat(v || '0'); setSinyalAmount(String(Math.round(parsed * LOT_SIZE))) }} placeholder="0.10"
-                              className="w-full h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] px-2 text-[13px] font-black text-[var(--zv-text)] text-center outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-[var(--zv-muted)]" />
-                          </div>
-                          <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = cur + 0.01; setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                            className="h-9 w-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center text-[14px] font-black text-[var(--zv-text)] hover:border-blue-500/40 hover:text-blue-400 transition-all active:scale-[0.93] flex-shrink-0">
-                            +
-                          </button>
-                        </div>
-                        {/* Quick Lot Buttons */}
-                        <div className="flex gap-0.5 mt-1">
-                          {['0.01', '0.05', '0.10', '0.25', '0.50', '1.00'].map(lot => (
-                            <button key={lot} onClick={() => { setSinyalLots(lot); setSinyalAmount(String(Math.round(parseFloat(lot) * LOT_SIZE))) }}
-                              className={`flex-1 h-6 rounded-md text-[7px] font-bold transition-all ${sinyalLots === lot
-                                ? 'bg-gradient-to-r from-[#1e3a5f] to-[#1d4ed8] border border-blue-500/50 text-blue-300'
-                                : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/30'
-                              }`}>
-                              {lot}
-                            </button>
-                          ))}
-                        </div>
-                        {sinyalAmountFromLots > 0 && (
-                          <div className="mt-1 flex items-center justify-between px-2 py-1 rounded-md bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">{sinyalLots} Lot =</span>
-                            <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots)}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Leverage Selector */}
-                      <div>
-                        <div className="flex items-center gap-1 mb-1">
-                          <Zap className="w-3 h-3 text-amber-400" />
-                          <span className="text-[8px] font-black text-amber-400 uppercase tracking-wider">Leverage</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-1">
-                          {[300, 500, 800, 1000].map(lev => (
-                            <button key={lev} onClick={() => setSinyalLeverage(lev)}
-                              className={`relative h-8 rounded-lg text-[10px] font-black transition-all border overflow-hidden ${
-                                sinyalLeverage === lev
-                                  ? 'bg-gradient-to-b from-amber-500 to-amber-600 border-amber-400/50 text-slate-900 shadow-lg shadow-amber-500/25'
-                                  : 'bg-[var(--zv-surface)] border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-amber-500/30 hover:text-amber-400'
-                              }`}>
-                              <span className="relative z-10">1:{lev}</span>
-                              {sinyalLeverage === lev && <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent" />}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Position Breakdown */}
-                      {sinyalAmountFromLots >= 1000 && (
-                        <div className="rounded-lg overflow-hidden border border-blue-500/15" style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.06), rgba(139,92,246,0.06))' }}>
-                          <div className="px-2.5 py-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[7px] font-bold text-blue-400 uppercase flex items-center gap-0.5"><Package className="w-2 h-2" /> Lot Amount</span>
-                              <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots)}</span>
-                            </div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[7px] font-bold text-amber-400 uppercase flex items-center gap-0.5"><Zap className="w-2 h-2" /> Leverage</span>
-                              <span className="text-[10px] font-black text-amber-400">1:{sinyalLeverage}</span>
-                            </div>
-                            <div className="h-px bg-[var(--zv-border)] my-1.5" />
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase">Effective Position</span>
-                              <span className="text-[11px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots * (sinyalLeverage / 100))}</span>
-                            </div>
-                            <div className="text-[6px] text-[var(--zv-muted)] mb-1.5">
-                              {formatRupiah(sinyalAmountFromLots)} × {sinyalLeverage / 100}×
-                            </div>
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.06) 100%)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                                <span className="text-[7px] font-black text-green-400 flex items-center gap-0.5"><TrendingUp className="w-2 h-2" />+1%</span>
-                                <span className="text-[9px] font-black text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
-                              </div>
-                              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(239,83,80,0.15) 0%, rgba(239,83,80,0.06) 100%)', border: '1px solid rgba(239,83,80,0.2)' }}>
-                                <span className="text-[7px] font-black text-red-400 flex items-center gap-0.5"><TrendingDown className="w-2 h-2" />-1%</span>
-                                <span className="text-[9px] font-black text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Manual close reminder */}
-                      <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-[#3b82f6]" />
-                          <span className="text-[7px] font-bold text-[var(--zv-muted)]">Tutup Manual</span>
-                        </div>
-                        <span className="text-[7px] font-bold text-green-400 flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
-                          Posisi terbuka
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* ══ BUY / SELL — Dynamic Vibrant Green/Red matching Chart Candles ══ */}
-                    <div className="px-2 pb-2 pt-1.5 border-t border-[var(--zv-chart-border)]">
-                      {(() => {
-                        // Determine chart direction from last candle for dynamic button colors
-                        const isPriceUp = sinyalCandles.length > 0 ? sinyalCandles[sinyalCandles.length - 1].close >= sinyalCandles[sinyalCandles.length - 1].open : true
-                        return (
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* ════ SELL — Vibrant RED matching chart down-candles (#ef5350) ════ */}
-                        <button
-                          onClick={() => {
-                            if (sinyalAmountFromLots < 1000) {
-                              toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
-                            }
-                            if (sinyalAmountFromLots > freeMargin) {
-                              toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
-                            }
-                            setConfirmTradeDir('TURUN')
-                            setShowConfirmTrade(true)
-                          }}
-                          className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[58px] group"
-                          style={isPriceUp
-                            ? { background: 'linear-gradient(180deg, #7f1d1d 0%, #5c1010 30%, #450a0a 70%, #2d0505 100%)', boxShadow: '0 2px 8px rgba(239,83,80,0.15), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.1)' }
-                            : { background: 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)', boxShadow: '0 6px 28px rgba(239,83,80,0.55), 0 2px 8px rgba(239,83,80,0.4), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }}>
-                          {/* Shimmer overlay */}
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
-                          {/* Top highlight */}
-                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: isPriceUp ? 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)' : 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' }} />
-                          {/* Pulse glow ring - only when price down */}
-                          {!isPriceUp && <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-red 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(239,83,80,0.3)' }} />}
-                          <div className="relative flex items-center gap-2">
-                            <TrendingDown className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
-                            <span className={`text-[16px] font-black tracking-[0.15em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isPriceUp ? 'text-red-300/80' : 'text-white'}`}>SELL</span>
-                          </div>
-                          <div className="relative flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-white/60" />
-                            <span className={`text-[9px] font-bold tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] ${isPriceUp ? 'text-red-200/70' : 'text-white/90'}`}>{sinyalCurrentPrice > 0 ? formatRupiah(bidPrice) : '—'}</span>
-                          </div>
-                        </button>
-
-                        {/* ════ BUY — Vibrant GREEN matching chart up-candles (#22c55e) ════ */}
-                        <button
-                          onClick={() => {
-                            if (sinyalAmountFromLots < 1000) {
-                              toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
-                            }
-                            if (sinyalAmountFromLots > freeMargin) {
-                              toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
-                            }
-                            setConfirmTradeDir('NAIK')
-                            setShowConfirmTrade(true)
-                          }}
-                          className="relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all overflow-hidden active:scale-[0.95] h-[58px] group"
-                          style={isPriceUp
-                            ? { background: 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)', boxShadow: '0 6px 28px rgba(34,197,94,0.55), 0 2px 8px rgba(34,197,94,0.4), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.15)' }
-                            : { background: 'linear-gradient(180deg, #14532d 0%, #0f4024 30%, #0a2e19 70%, #051f10 100%)', boxShadow: '0 2px 8px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.1)' }}>
-                          {/* Shimmer overlay */}
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 65%)' }} />
-                          {/* Top highlight */}
-                          <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: isPriceUp ? 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)' : 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)' }} />
-                          {/* Pulse glow ring - only when price up */}
-                          {isPriceUp && <div className="absolute inset-0 rounded-xl" style={{ animation: 'pulse-green 2s ease-in-out infinite', boxShadow: 'inset 0 0 20px rgba(34,197,94,0.3)' }} />}
-                          <div className="relative flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
-                            <span className={`text-[16px] font-black tracking-[0.15em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isPriceUp ? 'text-white' : 'text-green-300/80'}`}>BUY</span>
-                          </div>
-                          <div className="relative flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-white/60" />
-                            <span className={`text-[9px] font-bold tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] ${isPriceUp ? 'text-white/90' : 'text-green-200/70'}`}>{sinyalCurrentPrice > 0 ? formatRupiah(askPrice) : '—'}</span>
-                          </div>
-                        </button>
-                      </div>
-                      )})()}
-                      {sinyalAmountFromLots > 0 && (
-                        <div className="mt-1.5 flex items-center justify-center gap-1.5">
-                          <Package className="w-2.5 h-2.5 text-blue-400" />
-                          <span className="text-[8px] font-bold text-blue-300">{sinyalLots} Lot</span>
-                          <span className="text-[8px] text-[var(--zv-muted)]">•</span>
-                          <span className="text-[8px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* ══ TERMINAL BAR — MT5 style ══ */}
               <div className="mt-1.5 rounded-lg overflow-hidden border border-[var(--zv-chart-border)]" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #0c1425 100%)' }}>
