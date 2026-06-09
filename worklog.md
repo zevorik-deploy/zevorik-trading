@@ -317,3 +317,32 @@ Stage Summary:
 - Chart axes are more readable
 - Mobile view rated 8/10 for MT5 similarity
 - Desktop view rated 7/10 for MT5 similarity
+---
+Task ID: 1
+Agent: Main Agent
+Task: Redesign Trading tab to match MT5 style - reposition timeframe, clean up leverage, improve chart
+
+Work Log:
+- Added `showTimeframeMenu` and `showLeverageMenu` useState hooks for dropdown toggles
+- Moved timeframe selector from trading bar to header bar as a compact dropdown button (MT5 style: "1M ▾")
+- Removed the entire TF/Lev row from the trading bar area (was a separate row above SELL|LOT|BUY)
+- Added compact leverage dropdown selector below the LOT stepper (tiny "1:1000 ▾" button)
+- Redesigned LOT stepper + leverage as a vertical stack (LOT on top, leverage below)
+- Improved SVG chart rendering:
+  - Changed preserveAspectRatio from "xMidYMid meet" to "none" for better fill
+  - Added gradient for price badge
+  - Added glow filter for current price dot (pulsing animation)
+  - Improved grid lines (dotted style like MT5)
+  - Better candlestick rendering with adaptive wick width and round linecaps
+  - Cleaner volume bars (MT5 style thin)
+  - Better position entry line labels (compact)
+  - Moved MA legend to above the chart area
+  - Subtler crosshair styling
+- Lint passes, dev server compiles without errors
+- Browser verification confirms all features work: timeframe dropdown, leverage dropdown, candlestick chart, trading bar, terminal bar
+
+Stage Summary:
+- Timeframe selector now in header as MT5-style dropdown (user requested "jangan di situ" for old position)
+- Leverage selector now compact dropdown below LOT stepper
+- Chart uses professional MT5 rendering with glowing price dot, dotted grid, adaptive candles
+- All features verified working in browser
