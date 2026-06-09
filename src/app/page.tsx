@@ -4206,26 +4206,29 @@ function Dashboard() {
                     <span className="text-[9px] font-bold text-white/20">Pilih instrumen untuk mulai trading</span>
                   </div>
                 )}
-                {/* Category + Stock pills — Single Clean Row */}
-                <div className="flex items-center gap-1 px-2 pb-1.5" style={{ scrollbarWidth: 'none' }}>
-                  {[
-                    { key: 'popular', label: 'Popular' },
-                    { key: 'saham', label: 'Saham' },
-                    { key: 'crypto', label: 'Kripto' },
-                    { key: 'komoditas', label: 'Komoditas' },
-                    { key: 'forex', label: 'Forex' },
-                  ].map(cat => (
-                    <button key={cat.key} onClick={() => setSinyalCategory(cat.key)}
-                      className={`h-5 px-2 rounded text-[7px] font-bold transition-all flex-shrink-0 ${
-                        sinyalCategory === cat.key
-                          ? 'bg-white/10 text-white'
-                          : 'text-white/20 hover:text-white/40'
-                      }`}>
-                      {cat.label}
-                    </button>
-                  ))}
-                  <div className="w-px h-3.5 mx-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                  <div className="flex items-center gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+                {/* ══ Market Selector — Scrollable MT5 Style ══ */}
+                <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  {/* Category tabs — clean horizontal */}
+                  <div className="flex items-center px-2 pt-1.5 gap-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                    {[
+                      { key: 'popular', label: '🔥 Popular' },
+                      { key: 'saham', label: '📈 Saham' },
+                      { key: 'crypto', label: '₿ Kripto' },
+                      { key: 'komoditas', label: '🛢 Komoditas' },
+                      { key: 'forex', label: '💱 Forex' },
+                    ].map(cat => (
+                      <button key={cat.key} onClick={() => setSinyalCategory(cat.key)}
+                        className={`flex-shrink-0 h-6 px-2.5 rounded-md text-[7px] font-bold transition-all ${
+                          sinyalCategory === cat.key
+                            ? 'bg-[#1d4ed8]/20 text-blue-400 border border-blue-500/20'
+                            : 'text-white/25 hover:text-white/50 border border-transparent'
+                        }`}>
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Stock pills — scrollable row with smooth scroll */}
+                  <div className="flex items-center gap-1 px-2 pb-1.5 pt-1 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
                     {stocks.filter(s => {
                       const cat = s.category?.toLowerCase() || ''
                       if (sinyalCategory === 'popular') return true
@@ -4239,15 +4242,15 @@ function Dashboard() {
                       const isUp = s.change >= 0
                       return (
                         <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalLots('0.01'); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
-                          className={`flex-shrink-0 h-5 px-2 rounded text-[7px] font-bold flex items-center gap-1 transition-all ${
+                          className={`flex-shrink-0 h-6 px-2.5 rounded-md text-[7px] font-bold flex items-center gap-1 transition-all ${
                             isSelected
-                              ? 'bg-[#1d4ed8] text-white'
+                              ? 'bg-[#1d4ed8] text-white shadow-sm shadow-blue-500/20'
                               : isUp
-                                ? 'text-green-400/40 hover:text-green-400/70'
-                                : 'text-red-400/40 hover:text-red-400/70'
+                                ? 'text-green-400/50 hover:text-green-400/80 hover:bg-green-500/5 border border-white/[0.03]'
+                                : 'text-red-400/50 hover:text-red-400/80 hover:bg-red-500/5 border border-white/[0.03]'
                           }`}>
                           <span>{s.code}</span>
-                          <span className="text-[5px]">{isUp ? '▲' : '▼'}</span>
+                          <span className={`text-[5px] ${isSelected ? 'text-white/60' : ''}`}>{isUp ? '▲' : '▼'}</span>
                         </button>
                       )
                     })}
