@@ -4109,7 +4109,7 @@ function Dashboard() {
               className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 140px)' }}>
 
               {/* ══ 1. MT5 TOP HEADER BAR — Dark, compact with icons ══ */}
-              <div className="flex-shrink-0" style={{ background: '#1a1a2e', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 {/* Top icon row */}
                 <div className="flex items-center justify-between px-2 py-1">
                   <div className="flex items-center gap-1.5">
@@ -4246,53 +4246,40 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══ 2. SELL | SPREAD | BUY BAR — MT5 Exact Style ══ */}
+              {/* ══ 2. SELL | LOT STEPPER | BUY — MT5 Professional Trading Bar ══ */}
               {selectedSinyalStock && (() => {
                 const buyPL = activePos.filter(p => p.direction === 'NAIK').reduce((s, p) => s + getPositionLivePL(p), 0)
                 const sellPL = activePos.filter(p => p.direction === 'TURUN').reduce((s, p) => s + getPositionLivePL(p), 0)
                 const hasBuyPos = activePos.some(p => p.direction === 'NAIK')
                 const hasSellPos = activePos.some(p => p.direction === 'TURUN')
                 return (
-              <div className="flex-shrink-0" style={{ background: '#1a1a2e', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {/* Lot + Leverage compact row */}
-                <div className="flex items-center justify-center gap-1 px-2 py-0.5">
-                  <div className="flex items-center gap-0.5">
-                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                      className="h-4 w-4 rounded flex items-center justify-center text-white/40 hover:text-white/80 transition-all" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <Minus className="w-2.5 h-2.5" />
-                    </button>
-                    <span className="text-[10px] font-black text-white/90 tabular-nums min-w-[36px] text-center">{sinyalLots}</span>
-                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = cur + 0.01; setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                      className="h-4 w-4 rounded flex items-center justify-center text-white/40 hover:text-white/80 transition-all" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <Plus className="w-2.5 h-2.5" />
-                    </button>
+              <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                {/* Top row: Leverage selector */}
+                <div className="flex items-center justify-between px-3 pt-1 pb-0.5">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[6px] font-bold text-white/20 uppercase tracking-widest">Leverage</span>
+                    {[300, 500, 1000].map(lev => (
+                      <button key={lev} onClick={() => setSinyalLeverage(lev)}
+                        className={`h-4 px-2 rounded-sm text-[7px] font-black transition-all active:scale-90 ${
+                          sinyalLeverage === lev
+                            ? 'text-amber-400 bg-amber-500/10 border border-amber-500/25'
+                            : 'text-white/20 hover:text-white/40 bg-white/[0.02] border border-transparent'
+                        }`}>
+                        1:{lev}
+                      </button>
+                    ))}
                   </div>
-                  <span className="text-[6px] font-bold text-white/25">LOT</span>
-                  <div className="w-px h-3 bg-white/10" />
-                  {['0.01', '0.05', '0.10', '0.50', '1.00'].map(lot => (
-                    <button key={lot} onClick={() => { setSinyalLots(lot); setSinyalAmount(String(Math.round(parseFloat(lot) * LOT_SIZE))) }}
-                      className={`h-3.5 px-1 rounded text-[5px] font-bold transition-all ${sinyalLots === lot
-                        ? 'bg-[#1d4ed8] text-white'
-                        : 'text-white/25 hover:text-white/50'
-                      }`}>
-                      {lot}
-                    </button>
-                  ))}
-                  <div className="w-px h-3 bg-white/10" />
-                  {[300, 500, 1000].map(lev => (
-                    <button key={lev} onClick={() => setSinyalLeverage(lev)}
-                      className={`h-3.5 px-1 rounded text-[5px] font-black transition-all ${
-                        sinyalLeverage === lev
-                          ? 'bg-amber-500 text-slate-900'
-                          : 'text-white/20 hover:text-amber-400'
-                      }`}>
-                      1:{lev}
-                    </button>
-                  ))}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[6px] font-bold text-white/15 tabular-nums">{formatRupiah(sinyalAmountFromLots)}</span>
+                    <span className="text-[6px] font-bold text-white/10">|</span>
+                    <span className="text-[6px] font-bold text-white/25">Spread</span>
+                    <span className="text-[7px] font-black tabular-nums text-white/40">{spreadValue > 0 ? spreadValue.toFixed(2) : '—'}</span>
+                  </div>
                 </div>
-                {/* SELL | SPREAD | BUY — MT5 prominent buttons */}
-                <div className="grid grid-cols-[1fr_auto_1fr] gap-1 px-1 pb-1">
-                  {/* ════ SELL — MT5 Red ════ */}
+
+                {/* ══ Main Trading Row: SELL [−] LOT [+] BUY ══ */}
+                <div className="flex items-stretch gap-0 px-1.5 pb-1.5">
+                  {/* ════ SELL — MT5 Red Premium ════ */}
                   <button
                     onClick={() => {
                       if (sinyalAmountFromLots < 1000) {
@@ -4304,35 +4291,58 @@ function Dashboard() {
                       setConfirmTradeDir('TURUN')
                       setShowConfirmTrade(true)
                     }}
-                    className="relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[56px]"
+                    className="flex-1 relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[60px]"
                     style={(() => {
                       let bg: string
                       if (hasSellPos) {
                         if (sellPL > 0) {
-                          bg = 'linear-gradient(180deg, #f87171 0%, #ef5350 50%, #dc2626 100%)'
+                          bg = 'linear-gradient(180deg, #f87171 0%, #ef5350 40%, #dc2626 100%)'
                         } else {
-                          bg = 'linear-gradient(180deg, #b91c1c 0%, #991b1b 50%, #7f1d1d 100%)'
+                          bg = 'linear-gradient(180deg, #b91c1c 0%, #991b1b 40%, #7f1d1d 100%)'
                         }
                       } else {
-                        bg = 'linear-gradient(180deg, #ef5350 0%, #dc2626 50%, #b91c1c 100%)'
+                        bg = 'linear-gradient(180deg, #ef5350 0%, #dc2626 40%, #b91c1c 100%)'
                       }
-                      return { background: bg, boxShadow: '0 3px 12px rgba(239,83,80,0.35)' }
+                      return { background: bg, boxShadow: '0 4px 16px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' }
                     })()}>
-                    <span className="text-[16px] font-black tracking-[0.15em] text-white drop-shadow-sm">SELL</span>
-                    <span className="text-[8px] font-bold tabular-nums text-white/80 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
+                    <span className="text-[17px] font-black tracking-[0.2em] text-white drop-shadow-sm">SELL</span>
+                    <span className="text-[8px] font-bold tabular-nums text-white/70 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
                   </button>
 
-                  {/* ════ SPREAD — Center indicator ════ */}
-                  <div className="flex flex-col items-center justify-center px-2 min-w-[44px]">
-                    <div className="flex items-center gap-0.5">
-                      <ArrowUpRight className="w-2 h-2 text-green-400/50" />
-                      <ArrowDownRight className="w-2 h-2 text-red-400/50" />
+                  {/* ════ LOT STEPPER — Center Panel ════ */}
+                  <div className="flex flex-col items-center justify-center mx-1.5 min-w-[80px] gap-0.5">
+                    {/* Minus button */}
+                    <button
+                      onClick={() => {
+                        const cur = parseFloat(sinyalLots || '0')
+                        const next = Math.max(0.01, cur - 0.01)
+                        setSinyalLots(next.toFixed(2))
+                        setSinyalAmount(String(Math.round(next * LOT_SIZE)))
+                      }}
+                      className="w-full h-[18px] rounded-t-md flex items-center justify-center transition-all active:scale-95 hover:bg-red-500/20"
+                      style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <Minus className="w-3 h-3 text-white/50" strokeWidth={2.5} />
+                    </button>
+                    {/* Lot value display */}
+                    <div className="w-full py-1 flex flex-col items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                      <span className="text-[16px] font-black text-white/95 tabular-nums leading-none">{sinyalLots}</span>
+                      <span className="text-[5px] font-black text-white/25 uppercase tracking-[0.2em] mt-0.5">LOT</span>
                     </div>
-                    <span className="text-[8px] font-black tabular-nums text-white/50">{spreadValue > 0 ? spreadValue.toFixed(2) : '—'}</span>
-                    <span className="text-[4px] font-bold text-white/25">SPREAD</span>
+                    {/* Plus button */}
+                    <button
+                      onClick={() => {
+                        const cur = parseFloat(sinyalLots || '0')
+                        const next = cur + 0.01
+                        setSinyalLots(next.toFixed(2))
+                        setSinyalAmount(String(Math.round(next * LOT_SIZE)))
+                      }}
+                      className="w-full h-[18px] rounded-b-md flex items-center justify-center transition-all active:scale-95 hover:bg-green-500/20"
+                      style={{ background: 'rgba(255,255,255,0.06)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      <Plus className="w-3 h-3 text-white/50" strokeWidth={2.5} />
+                    </button>
                   </div>
 
-                  {/* ════ BUY — MT5 Green ════ */}
+                  {/* ════ BUY — MT5 Green Premium ════ */}
                   <button
                     onClick={() => {
                       if (sinyalAmountFromLots < 1000) {
@@ -4344,22 +4354,22 @@ function Dashboard() {
                       setConfirmTradeDir('NAIK')
                       setShowConfirmTrade(true)
                     }}
-                    className="relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[56px]"
+                    className="flex-1 relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[60px]"
                     style={(() => {
                       let bg: string
                       if (hasBuyPos) {
                         if (buyPL > 0) {
-                          bg = 'linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)'
+                          bg = 'linear-gradient(180deg, #4ade80 0%, #22c55e 40%, #16a34a 100%)'
                         } else {
-                          bg = 'linear-gradient(180deg, #166534 0%, #14532d 50%, #052e16 100%)'
+                          bg = 'linear-gradient(180deg, #166534 0%, #14532d 40%, #052e16 100%)'
                         }
                       } else {
-                        bg = 'linear-gradient(180deg, #22c55e 0%, #16a34a 50%, #15803d 100%)'
+                        bg = 'linear-gradient(180deg, #22c55e 0%, #16a34a 40%, #15803d 100%)'
                       }
-                      return { background: bg, boxShadow: '0 3px 12px rgba(34,197,94,0.35)' }
+                      return { background: bg, boxShadow: '0 4px 16px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' }
                     })()}>
-                    <span className="text-[16px] font-black tracking-[0.15em] text-white drop-shadow-sm">BUY</span>
-                    <span className="text-[8px] font-bold tabular-nums text-white/80 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
+                    <span className="text-[17px] font-black tracking-[0.2em] text-white drop-shadow-sm">BUY</span>
+                    <span className="text-[8px] font-bold tabular-nums text-white/70 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
                   </button>
                 </div>
               </div>
@@ -4729,7 +4739,7 @@ function Dashboard() {
 
               {/* ══ 4. BOTTOM TRADE STATUS BAR — When positions are active ══ */}
               {activePos.length > 0 && (
-                <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 overflow-x-auto" style={{ background: '#1a1a2e', borderTop: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
+                <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 overflow-x-auto" style={{ background: '#131722', borderTop: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
                   {activePos.slice(0, 3).map(pos => {
                     const livePL = getPositionLivePL(pos)
                     const isUp = pos.direction === 'NAIK'
@@ -4752,18 +4762,18 @@ function Dashboard() {
               )}
 
               {/* ══ 5. TERMINAL BAR — MT5 Dark Compact Strip ══ */}
-              <div className="flex-shrink-0" style={{ background: '#1a1a2e', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="flex items-stretch px-1 py-1 gap-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              <div className="flex-shrink-0" style={{ background: '#131722', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center px-1.5 py-1 gap-px overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   {[
-                    { label: 'Balance', value: formatRupiah(totalBalance), color: 'text-white/90', icon: '💰' },
-                    { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? 'text-green-400' : 'text-red-400', icon: '📊' },
-                    { label: 'Margin', value: formatRupiah(usedMargin), color: 'text-amber-400', icon: '🔒' },
-                    { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400', icon: '✨' },
-                    { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? 'text-green-400' : 'text-red-400', icon: totalLivePL >= 0 ? '📈' : '📉' },
-                  ].map((item, idx, arr) => (
-                    <div key={item.label} className={`flex flex-col items-center justify-center px-2 py-1 flex-shrink-0 rounded-sm ${idx < arr.length - 1 ? 'border-r border-white/[0.06]' : ''}`} style={{ minWidth: '60px' }}>
-                      <span className="text-[6px] font-bold text-white/40 uppercase tracking-wider">{item.icon} {item.label}</span>
-                      <span className={`text-[8px] font-black tabular-nums mt-0.5 ${item.color}`}>{item.value}</span>
+                    { label: 'Balance', value: formatRupiah(totalBalance), color: 'text-white/90' },
+                    { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? 'text-green-400' : 'text-red-400' },
+                    { label: 'Margin', value: formatRupiah(usedMargin), color: 'text-amber-400' },
+                    { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400' },
+                    { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? 'text-green-400' : 'text-red-400' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex flex-col items-center justify-center px-2 py-0.5 flex-shrink-0 rounded-sm" style={{ background: 'rgba(255,255,255,0.02)', minWidth: '58px' }}>
+                      <span className="text-[5px] font-bold text-white/30 uppercase tracking-widest">{item.label}</span>
+                      <span className={`text-[7px] font-black tabular-nums mt-0.5 ${item.color}`}>{item.value}</span>
                     </div>
                   ))}
                 </div>
