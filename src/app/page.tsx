@@ -4108,97 +4108,82 @@ function Dashboard() {
             <motion.div key="sinyal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
               className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 140px)' }}>
 
-              {/* ══ 1. MT5 TOP HEADER BAR — Dark, compact with icons ══ */}
-              <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {/* Top icon row */}
-                <div className="flex items-center justify-between px-2 py-1">
-                  <div className="flex items-center gap-1.5">
-                    <Menu className="w-3.5 h-3.5 text-white/50" />
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                        className="h-5 w-5 rounded flex items-center justify-center text-white/40 hover:text-white/80 text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.06)' }}>−</button>
-                      <button onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
-                        className="h-5 w-5 rounded flex items-center justify-center text-white/40 hover:text-white/80 text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.06)' }}>+</button>
+              {/* ══ 1. HEADER — Super Clean Single Row ══ */}
+              <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                {selectedSinyalStock ? (
+                  <div className="flex items-center justify-between px-3 py-2">
+                    {/* Left: Symbol + Price */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-black text-white">{selectedSinyalStock.code}</span>
+                        <span className="text-[7px] font-bold text-white/20">/</span>
+                        <span className="text-[7px] font-bold text-white/30">{selectedSinyalStock.name?.slice(0, 16)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {(() => {
+                          const sim = sinyalChartSimRef.current
+                          const openPrice = sim?.currentCandle.open || selectedSinyalStock.price
+                          const curPrice = sinyalCurrentPrice || selectedSinyalStock.price
+                          const priceChange = curPrice - openPrice
+                          const changePercent = openPrice > 0 ? (priceChange / openPrice) * 100 : 0
+                          const isPriceUp = priceChange >= 0
+                          return (
+                            <>
+                              <span className="text-[14px] font-black tabular-nums" style={{ color: isPriceUp ? '#22c55e' : '#ef5350' }}>{formatRupiah(curPrice)}</span>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${isPriceUp ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
+                                {isPriceUp ? '▲' : '▼'} {isPriceUp ? '+' : ''}{changePercent.toFixed(2)}%
+                              </span>
+                            </>
+                          )
+                        })()}
+                        {/* Candle countdown */}
+                        {(() => {
+                          const sim = sinyalChartSimRef.current
+                          if (!sim) return null
+                          const cc = sim.currentCandle
+                          const totalSecs = cc.maxTicks
+                          const elapsed = cc.tickCount
+                          const remaining = totalSecs - elapsed
+                          const progress = totalSecs > 0 ? elapsed / totalSecs : 0
+                          const isLow = remaining <= 5 && remaining > 0
+                          const radius = 9
+                          const circumference = 2 * Math.PI * radius
+                          const strokeDash = circumference * progress
+                          return (
+                            <div className="flex items-center gap-0.5 ml-1">
+                              <svg width="20" height="20" className="flex-shrink-0">
+                                <circle cx="10" cy="10" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                                <circle cx="10" cy="10" r={radius} fill="none" stroke={isLow ? '#f59e0b' : '#3b82f6'} strokeWidth="1.5"
+                                  strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
+                                  strokeLinecap="round" transform="rotate(-90 10 10)"
+                                  style={{ transition: 'stroke-dasharray 0.8s linear' }} />
+                                <text x="10" y="12" textAnchor="middle" fontSize="5" fontWeight="900" fill={isLow ? '#f59e0b' : 'rgba(255,255,255,0.5)'} fontFamily="monospace">
+                                  {remaining > 60 ? `${Math.ceil(remaining/60)}m` : `${remaining}`}
+                                </text>
+                              </svg>
+                            </div>
+                          )
+                        })()}
+                      </div>
                     </div>
-                  </div>
-                  {/* Timeframe selector in header */}
-                  <div className="flex items-center gap-0.5 rounded p-0.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                    {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
-                      <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
-                        className={`h-4 px-1 rounded text-[6px] font-bold transition-all ${
-                          sinyalTimeframe === tf
-                            ? 'bg-[#1d4ed8] text-white'
-                            : 'text-white/35 hover:text-white/60'
-                        }`}>
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <RefreshCw className="w-3 h-3 text-white/40" />
-                    <Settings className="w-3 h-3 text-white/40" />
-                  </div>
-                </div>
-                {/* Pair name + price info row */}
-                {selectedSinyalStock && (
-                  <div className="flex items-center justify-between px-2 pb-1">
+                    {/* Right: Zoom + Settings */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-black text-white/90">{selectedSinyalStock.code}</span>
-                      <span className="text-[7px] font-bold text-white/30">• {sinyalTimeframe}</span>
-                      <span className="text-[6px] font-bold text-white/20 hidden sm:inline">| {selectedSinyalStock.name?.slice(0, 20)}</span>
+                      <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <button onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
+                          className="h-5 w-6 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 text-[11px] font-bold transition-colors">−</button>
+                        <button onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
+                          className="h-5 w-6 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 text-[11px] font-bold transition-colors">+</button>
+                      </div>
+                      <Settings className="w-3.5 h-3.5 text-white/20" />
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      {(() => {
-                        const sim = sinyalChartSimRef.current
-                        const openPrice = sim?.currentCandle.open || selectedSinyalStock.price
-                        const curPrice = sinyalCurrentPrice || selectedSinyalStock.price
-                        const priceChange = curPrice - openPrice
-                        const changePercent = openPrice > 0 ? (priceChange / openPrice) * 100 : 0
-                        const isPriceUp = priceChange >= 0
-                        return (
-                          <>
-                            <span className="text-[11px] font-black tabular-nums" style={{ color: isPriceUp ? '#22c55e' : '#ef5350' }}>
-                              {formatRupiah(curPrice)}
-                            </span>
-                            <span className={`text-[7px] font-bold ${isPriceUp ? 'text-green-400' : 'text-red-400'}`}>
-                              {isPriceUp ? '▲' : '▼'} {isPriceUp ? '+' : ''}{changePercent.toFixed(2)}%
-                            </span>
-                          </>
-                        )
-                      })()}
-                      {/* Candle countdown */}
-                      {(() => {
-                        const sim = sinyalChartSimRef.current
-                        if (!sim) return null
-                        const cc = sim.currentCandle
-                        const totalSecs = cc.maxTicks
-                        const elapsed = cc.tickCount
-                        const remaining = totalSecs - elapsed
-                        const progress = totalSecs > 0 ? elapsed / totalSecs : 0
-                        const isLow = remaining <= 5 && remaining > 0
-                        const radius = 10
-                        const circumference = 2 * Math.PI * radius
-                        const strokeDash = circumference * progress
-                        return (
-                          <div className="flex items-center gap-1">
-                            <svg width="22" height="22" className="flex-shrink-0">
-                              <circle cx="11" cy="11" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" />
-                              <circle cx="11" cy="11" r={radius} fill="none" stroke={isLow ? '#f59e0b' : '#3b82f6'} strokeWidth="1.5"
-                                strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
-                                strokeLinecap="round" transform="rotate(-90 11 11)"
-                                style={{ transition: 'stroke-dasharray 0.8s linear' }} />
-                              <text x="11" y="13" textAnchor="middle" fontSize="5" fontWeight="900" fill={isLow ? '#f59e0b' : 'rgba(255,255,255,0.7)'} fontFamily="monospace">
-                                {remaining > 60 ? `${Math.ceil(remaining/60)}m` : `${remaining}`}
-                              </text>
-                            </svg>
-                          </div>
-                        )
-                      })()}
-                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center px-3 py-2">
+                    <span className="text-[9px] font-bold text-white/20">Pilih instrumen untuk mulai trading</span>
                   </div>
                 )}
-                {/* Category + Stock pills — compact row */}
-                <div className="flex items-center gap-0 px-1 pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                {/* Category + Stock pills — Single Clean Row */}
+                <div className="flex items-center gap-1 px-2 pb-1.5" style={{ scrollbarWidth: 'none' }}>
                   {[
                     { key: 'popular', label: 'Popular' },
                     { key: 'saham', label: 'Saham' },
@@ -4207,16 +4192,16 @@ function Dashboard() {
                     { key: 'forex', label: 'Forex' },
                   ].map(cat => (
                     <button key={cat.key} onClick={() => setSinyalCategory(cat.key)}
-                      className={`h-4 px-1.5 rounded-sm text-[6px] font-bold transition-all flex-shrink-0 ${
+                      className={`h-5 px-2 rounded text-[7px] font-bold transition-all flex-shrink-0 ${
                         sinyalCategory === cat.key
-                          ? 'bg-[#1d4ed8] text-white'
-                          : 'text-white/30 hover:text-white/60'
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/20 hover:text-white/40'
                       }`}>
                       {cat.label}
                     </button>
                   ))}
-                  <div className="w-px h-3 bg-white/10 mx-0.5" />
-                  <div className="flex items-center gap-0.5 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+                  <div className="w-px h-3.5 mx-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  <div className="flex items-center gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
                     {stocks.filter(s => {
                       const cat = s.category?.toLowerCase() || ''
                       if (sinyalCategory === 'popular') return true
@@ -4230,15 +4215,15 @@ function Dashboard() {
                       const isUp = s.change >= 0
                       return (
                         <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalLots('0.01'); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
-                          className={`flex-shrink-0 h-4 px-1 rounded-sm text-[6px] font-bold flex items-center gap-0.5 transition-all ${
+                          className={`flex-shrink-0 h-5 px-2 rounded text-[7px] font-bold flex items-center gap-1 transition-all ${
                             isSelected
                               ? 'bg-[#1d4ed8] text-white'
-                              : 'text-white/25 hover:text-white/50'
+                              : isUp
+                                ? 'text-green-400/40 hover:text-green-400/70'
+                                : 'text-red-400/40 hover:text-red-400/70'
                           }`}>
                           <span>{s.code}</span>
-                          <span className={`text-[4px] font-bold ${isSelected ? 'text-blue-200' : isUp ? 'text-green-400/40' : 'text-red-400/40'}`}>
-                            {isUp ? '▲' : '▼'}
-                          </span>
+                          <span className="text-[5px]">{isUp ? '▲' : '▼'}</span>
                         </button>
                       )
                     })}
@@ -4246,40 +4231,48 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══ 2. SELL | LOT STEPPER | BUY — MT5 Professional Trading Bar ══ */}
+              {/* ══ 2. TRADING BAR — Clean SELL | LOT | BUY with TF + LEV ══ */}
               {selectedSinyalStock && (() => {
                 const buyPL = activePos.filter(p => p.direction === 'NAIK').reduce((s, p) => s + getPositionLivePL(p), 0)
                 const sellPL = activePos.filter(p => p.direction === 'TURUN').reduce((s, p) => s + getPositionLivePL(p), 0)
                 const hasBuyPos = activePos.some(p => p.direction === 'NAIK')
                 const hasSellPos = activePos.some(p => p.direction === 'TURUN')
                 return (
-              <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {/* Top row: Leverage selector */}
-                <div className="flex items-center justify-between px-3 pt-1 pb-0.5">
+              <div className="flex-shrink-0" style={{ background: '#131722', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                {/* Top: Timeframe | Leverage | Spread */}
+                <div className="flex items-center justify-between px-2 py-1">
+                  {/* Timeframe pills */}
+                  <div className="flex items-center gap-0.5">
+                    {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
+                      <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0) }}
+                        className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
+                          sinyalTimeframe === tf
+                            ? 'bg-[#1d4ed8] text-white'
+                            : 'text-white/25 hover:text-white/50'
+                        }`}>
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Leverage pills */}
                   <div className="flex items-center gap-1">
-                    <span className="text-[6px] font-bold text-white/20 uppercase tracking-widest">Leverage</span>
                     {[300, 500, 1000].map(lev => (
                       <button key={lev} onClick={() => setSinyalLeverage(lev)}
-                        className={`h-4 px-2 rounded-sm text-[7px] font-black transition-all active:scale-90 ${
+                        className={`h-5 px-1.5 rounded text-[7px] font-bold transition-all ${
                           sinyalLeverage === lev
-                            ? 'text-amber-400 bg-amber-500/10 border border-amber-500/25'
-                            : 'text-white/20 hover:text-white/40 bg-white/[0.02] border border-transparent'
+                            ? 'text-amber-300 bg-amber-500/12 border border-amber-400/20'
+                            : 'text-white/20 hover:text-white/40'
                         }`}>
                         1:{lev}
                       </button>
                     ))}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[6px] font-bold text-white/15 tabular-nums">{formatRupiah(sinyalAmountFromLots)}</span>
-                    <span className="text-[6px] font-bold text-white/10">|</span>
-                    <span className="text-[6px] font-bold text-white/25">Spread</span>
-                    <span className="text-[7px] font-black tabular-nums text-white/40">{spreadValue > 0 ? spreadValue.toFixed(2) : '—'}</span>
+                    <span className="text-[6px] font-bold text-white/15 ml-1">Spd {spreadValue > 0 ? spreadValue.toFixed(2) : '—'}</span>
                   </div>
                 </div>
 
-                {/* ══ Main Trading Row: SELL [−] LOT [+] BUY ══ */}
-                <div className="flex items-stretch gap-0 px-1.5 pb-1.5">
-                  {/* ════ SELL — MT5 Red Premium ════ */}
+                {/* Main Row: SELL | [— LOT +] | BUY */}
+                <div className="flex items-center gap-1.5 px-2 pb-1.5">
+                  {/* SELL */}
                   <button
                     onClick={() => {
                       if (sinyalAmountFromLots < 1000) {
@@ -4291,27 +4284,24 @@ function Dashboard() {
                       setConfirmTradeDir('TURUN')
                       setShowConfirmTrade(true)
                     }}
-                    className="flex-1 relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[60px]"
+                    className="flex-1 relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[48px]"
                     style={(() => {
                       let bg: string
                       if (hasSellPos) {
-                        if (sellPL > 0) {
-                          bg = 'linear-gradient(180deg, #f87171 0%, #ef5350 40%, #dc2626 100%)'
-                        } else {
-                          bg = 'linear-gradient(180deg, #b91c1c 0%, #991b1b 40%, #7f1d1d 100%)'
-                        }
+                        bg = sellPL > 0
+                          ? 'linear-gradient(135deg, #f87171, #ef4444, #dc2626)'
+                          : 'linear-gradient(135deg, #b91c1c, #991b1b)'
                       } else {
-                        bg = 'linear-gradient(180deg, #ef5350 0%, #dc2626 40%, #b91c1c 100%)'
+                        bg = 'linear-gradient(135deg, #ef5350, #dc2626, #b91c1c)'
                       }
-                      return { background: bg, boxShadow: '0 4px 16px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' }
+                      return { background: bg, boxShadow: '0 2px 12px rgba(239,68,68,0.3)' }
                     })()}>
-                    <span className="text-[17px] font-black tracking-[0.2em] text-white drop-shadow-sm">SELL</span>
-                    <span className="text-[8px] font-bold tabular-nums text-white/70 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
+                    <span className="text-[16px] font-black tracking-[0.2em] text-white">SELL</span>
+                    <span className="text-[7px] font-bold tabular-nums text-white/60 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
                   </button>
 
-                  {/* ════ LOT STEPPER — Center Panel ════ */}
-                  <div className="flex flex-col items-center justify-center mx-1.5 min-w-[80px] gap-0.5">
-                    {/* Minus button */}
+                  {/* LOT STEPPER — Compact Glass */}
+                  <div className="flex items-center rounded-lg overflow-hidden h-[48px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <button
                       onClick={() => {
                         const cur = parseFloat(sinyalLots || '0')
@@ -4319,16 +4309,13 @@ function Dashboard() {
                         setSinyalLots(next.toFixed(2))
                         setSinyalAmount(String(Math.round(next * LOT_SIZE)))
                       }}
-                      className="w-full h-[18px] rounded-t-md flex items-center justify-center transition-all active:scale-95 hover:bg-red-500/20"
-                      style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <Minus className="w-3 h-3 text-white/50" strokeWidth={2.5} />
+                      className="h-full w-8 flex items-center justify-center active:scale-90 hover:bg-red-500/15 transition-all">
+                      <Minus className="w-3.5 h-3.5 text-red-400/70" strokeWidth={2.5} />
                     </button>
-                    {/* Lot value display */}
-                    <div className="w-full py-1 flex flex-col items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                      <span className="text-[16px] font-black text-white/95 tabular-nums leading-none">{sinyalLots}</span>
-                      <span className="text-[5px] font-black text-white/25 uppercase tracking-[0.2em] mt-0.5">LOT</span>
+                    <div className="flex flex-col items-center justify-center px-2 min-w-[50px]" style={{ borderLeft: '1px solid rgba(255,255,255,0.04)', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span className="text-[15px] font-black text-white tabular-nums leading-none">{sinyalLots}</span>
+                      <span className="text-[5px] font-bold text-white/25 uppercase tracking-[0.2em] mt-0.5">LOT</span>
                     </div>
-                    {/* Plus button */}
                     <button
                       onClick={() => {
                         const cur = parseFloat(sinyalLots || '0')
@@ -4336,13 +4323,12 @@ function Dashboard() {
                         setSinyalLots(next.toFixed(2))
                         setSinyalAmount(String(Math.round(next * LOT_SIZE)))
                       }}
-                      className="w-full h-[18px] rounded-b-md flex items-center justify-center transition-all active:scale-95 hover:bg-green-500/20"
-                      style={{ background: 'rgba(255,255,255,0.06)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                      <Plus className="w-3 h-3 text-white/50" strokeWidth={2.5} />
+                      className="h-full w-8 flex items-center justify-center active:scale-90 hover:bg-green-500/15 transition-all">
+                      <Plus className="w-3.5 h-3.5 text-green-400/70" strokeWidth={2.5} />
                     </button>
                   </div>
 
-                  {/* ════ BUY — MT5 Green Premium ════ */}
+                  {/* BUY */}
                   <button
                     onClick={() => {
                       if (sinyalAmountFromLots < 1000) {
@@ -4354,22 +4340,20 @@ function Dashboard() {
                       setConfirmTradeDir('NAIK')
                       setShowConfirmTrade(true)
                     }}
-                    className="flex-1 relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[60px]"
+                    className="flex-1 relative rounded-lg flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[48px]"
                     style={(() => {
                       let bg: string
                       if (hasBuyPos) {
-                        if (buyPL > 0) {
-                          bg = 'linear-gradient(180deg, #4ade80 0%, #22c55e 40%, #16a34a 100%)'
-                        } else {
-                          bg = 'linear-gradient(180deg, #166534 0%, #14532d 40%, #052e16 100%)'
-                        }
+                        bg = buyPL > 0
+                          ? 'linear-gradient(135deg, #4ade80, #22c55e, #16a34a)'
+                          : 'linear-gradient(135deg, #166534, #14532d)'
                       } else {
-                        bg = 'linear-gradient(180deg, #22c55e 0%, #16a34a 40%, #15803d 100%)'
+                        bg = 'linear-gradient(135deg, #22c55e, #16a34a, #15803d)'
                       }
-                      return { background: bg, boxShadow: '0 4px 16px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' }
+                      return { background: bg, boxShadow: '0 2px 12px rgba(34,197,94,0.3)' }
                     })()}>
-                    <span className="text-[17px] font-black tracking-[0.2em] text-white drop-shadow-sm">BUY</span>
-                    <span className="text-[8px] font-bold tabular-nums text-white/70 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
+                    <span className="text-[16px] font-black tracking-[0.2em] text-white">BUY</span>
+                    <span className="text-[7px] font-bold tabular-nums text-white/60 mt-0.5">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
                   </button>
                 </div>
               </div>
@@ -4380,35 +4364,36 @@ function Dashboard() {
               <div className="flex-1 min-h-0 flex flex-col">
                   {selectedSinyalStock && (
                     <div className="relative flex-1 min-h-0 overflow-hidden" style={{ background: '#0a0e17' }}>
-                      {/* Active Trades Overlay — compact badges on chart */}
+                      {/* Active Trades Overlay — Premium Glass Badges */}
                       {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
-                        <div className="absolute top-1 left-1 z-10 flex flex-col gap-0.5 max-w-[130px]">
+                        <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1 max-w-[140px]">
                           {sinyalPositions.filter(p => p.status === 'active').map(ap => {
                             const isUp = ap.direction === 'NAIK'
                             const livePL = getPositionLivePL(ap)
                             return (
                               <div key={ap.id}
-                                className="flex items-center gap-1 px-1 py-0.5 rounded"
+                                className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg"
                                 style={{
-                                  backdropFilter: 'blur(6px)',
-                                  background: isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,83,80,0.08)',
-                                  border: `1px solid ${isUp ? 'rgba(34,197,94,0.15)' : 'rgba(239,83,80,0.15)'}`
+                                  backdropFilter: 'blur(12px)',
+                                  background: isUp ? 'rgba(34,197,94,0.06)' : 'rgba(239,83,80,0.06)',
+                                  border: `1px solid ${isUp ? 'rgba(34,197,94,0.12)' : 'rgba(239,83,80,0.12)'}`,
+                                  boxShadow: `0 2px 8px ${isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,83,80,0.08)'}`
                                 }}>
-                                <div className="flex-shrink-0 flex items-center justify-center w-3.5 h-3.5 rounded-full"
-                                  style={{ background: isUp ? '#22c55e' : '#ef5350' }}>
-                                  <span className="text-[3.5px] font-black text-white">{isUp ? 'B' : 'S'}</span>
+                                <div className="flex-shrink-0 flex items-center justify-center w-4 h-4 rounded-md"
+                                  style={{ background: isUp ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'linear-gradient(135deg, #f87171, #ef5350)' }}>
+                                  <span className="text-[4px] font-black text-white">{isUp ? 'B' : 'S'}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <span className={`text-[5px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{isUp ? 'BUY' : 'SELL'}</span>
-                                  <span className={`text-[5px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'} ml-0.5`}>
+                                  <span className={`text-[6px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{isUp ? 'BUY' : 'SELL'}</span>
+                                  <span className={`text-[6px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'} ml-0.5`}>
                                     {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
                                   </span>
                                 </div>
                                 <button onClick={() => closeSinyalPosition(ap.id)}
-                                  className="w-3 h-3 rounded flex items-center justify-center flex-shrink-0"
-                                  style={{ background: 'rgba(239,83,80,0.5)' }}
+                                  className="w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0 hover:scale-110 transition-transform"
+                                  style={{ background: 'rgba(239,83,80,0.3)' }}
                                   title="Tutup posisi">
-                                  <X className="w-1.5 h-1.5 text-white" />
+                                  <X className="w-2 h-2 text-white" />
                                 </button>
                               </div>
                             )
@@ -4529,7 +4514,7 @@ function Dashboard() {
                           const lastPrice = lastCandle.close
                           const yLast = yScale(lastPrice)
                           const isUp = lastCandle.close >= lastCandle.open
-                          const priceColor = isUp ? '#22c55e' : '#ef5350'
+                          const priceColor = isUp ? '#26a69a' : '#ef5350'
 
                           const activePositions = sinyalPositions.filter(p => p.status === 'active')
 
@@ -4545,15 +4530,15 @@ function Dashboard() {
                                 </filter>
                               </defs>
 
-                              {/* ── Horizontal grid lines (subtle dashed) ── */}
+                              {/* ── Horizontal grid lines (clean solid) ── */}
                               {Array.from({ length: gridLevels + 1 }).map((_, gi) => {
                                 const gy = padT + (gi / gridLevels) * priceAreaH
                                 const priceLabel = paddedMax - gridPriceStep * gi
                                 return (
                                   <g key={`hg-${gi}`}>
                                     <line x1={padL} y1={gy} x2={padL + chartW} y2={gy}
-                                      stroke="#ffffff" strokeWidth="0.3" strokeDasharray="3,4" opacity="0.07" />
-                                    <text x={padL + chartW + 3} y={gy + 3} fontSize="7" fill="rgba(255,255,255,0.55)" fontFamily="monospace" fontWeight="700" textAnchor="start">{fmtChartPrice(priceLabel)}</text>
+                                      stroke="#ffffff" strokeWidth="0.25" opacity="0.04" />
+                                    <text x={padL + chartW + 4} y={gy + 3} fontSize="6" fill="rgba(255,255,255,0.35)" fontFamily="monospace" fontWeight="600" textAnchor="start">{fmtChartPrice(priceLabel)}</text>
                                   </g>
                                 )
                               })}
@@ -4568,8 +4553,8 @@ function Dashboard() {
                                   items.push(
                                     <g key={`vg-${i}`}>
                                       <line x1={vx} y1={padT} x2={vx} y2={padT + priceAreaH}
-                                        stroke="#ffffff" strokeWidth="0.3" strokeDasharray="3,4" opacity="0.05" />
-                                      <text x={vx} y={chartH + volH + 10} fontSize="6" fill="rgba(255,255,255,0.45)" textAnchor="middle" fontFamily="monospace" fontWeight="600">{c.time}</text>
+                                        stroke="#ffffff" strokeWidth="0.25" opacity="0.03" />
+                                      <text x={vx} y={chartH + volH + 10} fontSize="5" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace" fontWeight="600">{c.time}</text>
                                     </g>
                                   )
                                 })
@@ -4577,35 +4562,39 @@ function Dashboard() {
                               })()}
 
                               {/* ── Price/Volume separator ── */}
-                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="rgba(255,255,255,0.06)" strokeWidth="0.3" />
+                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke="rgba(255,255,255,0.04)" strokeWidth="0.25" />
 
-                              {/* Volume bars (subtle) */}
+                              {/* Volume bars (subtle clean) */}
                               {visibleCandles.map((c, i) => {
-                                const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.6) / 2
+                                const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.5) / 2
                                 const volBarH = (c.volume / maxVol) * (volH - 6)
                                 const isBull = c.close >= c.open
                                 return (
-                                  <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 2} width={candleBodyW * 0.6} height={Math.max(0.5, volBarH)}
-                                    fill={isBull ? 'rgba(34,197,94,0.18)' : 'rgba(239,83,80,0.18)'} rx="0.3" />
+                                  <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 2} width={candleBodyW * 0.5} height={Math.max(0.5, volBarH)}
+                                    fill={isBull ? 'rgba(34,197,94,0.12)' : 'rgba(239,83,80,0.12)'} />
                                 )
                               })}
 
-                              {/* Candlesticks — MT5 Professional */}
+                              {/* Candlesticks — Clean MT5 Style */}
                               {visibleCandles.map((c, i) => {
                                 const cx = padL + (i + 0.5) * candleSpacing
                                 const isBull = c.close >= c.open
                                 const bodyTop = yScale(Math.max(c.open, c.close))
                                 const bodyBot = yScale(Math.min(c.open, c.close))
-                                const bodyH = Math.max(1, bodyBot - bodyTop)
+                                const bodyH = Math.max(0.8, bodyBot - bodyTop)
                                 const wickTop = yScale(c.high)
                                 const wickBot = yScale(c.low)
-                                const fillColor = isBull ? '#22c55e' : '#ef5350'
                                 return (
                                   <g key={`candle-${i}`}>
-                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth="1" />
-                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth="1" />
-                                    <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
-                                      fill={fillColor} stroke={fillColor} strokeWidth="0.3" rx="0.4" />
+                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={isBull ? '#26a69a' : '#ef5350'} strokeWidth="0.8" />
+                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={isBull ? '#26a69a' : '#ef5350'} strokeWidth="0.8" />
+                                    {isBull ? (
+                                      <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
+                                        fill="#131722" stroke="#26a69a" strokeWidth="0.8" />
+                                    ) : (
+                                      <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
+                                        fill="#ef5350" stroke="#ef5350" strokeWidth="0.5" />
+                                    )}
                                   </g>
                                 )
                               })}
@@ -4619,7 +4608,7 @@ function Dashboard() {
                                 })
                                 if (pts.length < 2) return null
                                 const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-                                return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="0.8" opacity="0.55" strokeLinejoin="round" />
+                                return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="0.6" opacity="0.5" strokeLinejoin="round" />
                               })()}
                               {/* MA20 line — cool cyan */}
                               {(() => {
@@ -4630,16 +4619,15 @@ function Dashboard() {
                                 })
                                 if (pts.length < 2) return null
                                 const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-                                return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="0.8" opacity="0.4" strokeLinejoin="round" />
+                                return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="0.6" opacity="0.35" strokeLinejoin="round" />
                               })()}
 
-                              {/* MA Legend */}
-                              <g>
-                                <rect x={padL + 2} y={padT + 1} width={48} height={8} rx="1.5" fill="rgba(10,14,23,0.7)" />
-                                <line x1={padL + 4} y1={padT + 5} x2={padL + 12} y2={padT + 5} stroke="#eab308" strokeWidth="1" opacity="0.7" />
-                                <text x={padL + 14} y={padT + 7} fontSize="5" fill="#eab308" fontFamily="monospace" fontWeight="700">MA5</text>
-                                <line x1={padL + 28} y1={padT + 5} x2={padL + 36} y2={padT + 5} stroke="#06b6d4" strokeWidth="1" opacity="0.5" />
-                                <text x={padL + 38} y={padT + 7} fontSize="5" fill="#06b6d4" fontFamily="monospace" fontWeight="700">MA20</text>
+                              {/* MA Legend — minimal */}
+                              <g opacity="0.6">
+                                <line x1={padL + 3} y1={padT + 5} x2={padL + 11} y2={padT + 5} stroke="#eab308" strokeWidth="0.8" />
+                                <text x={padL + 13} y={padT + 7} fontSize="4.5" fill="#eab308" fontFamily="monospace" fontWeight="700">MA5</text>
+                                <line x1={padL + 30} y1={padT + 5} x2={padL + 38} y2={padT + 5} stroke="#06b6d4" strokeWidth="0.8" />
+                                <text x={padL + 40} y={padT + 7} fontSize="4.5" fill="#06b6d4" fontFamily="monospace" fontWeight="700">MA20</text>
                               </g>
 
                               {/* Position entry lines (MT5 order lines) */}
@@ -4662,19 +4650,18 @@ function Dashboard() {
                                 )
                               })}
 
-                              {/* Current price line (horizontal dashed) */}
+                              {/* Current price line (thin solid) */}
                               <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
-                                stroke={priceColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.35" />
+                                stroke={priceColor} strokeWidth="0.4" strokeDasharray="3,2" opacity="0.4" />
 
-                              {/* Current price pulse dot */}
-                              <circle cx={padL + chartW} cy={yLast} r="2.5" fill={priceColor} filter="url(#candleGlow)">
-                                <animate attributeName="r" values="2;3.5;2" dur="1.5s" repeatCount="indefinite" />
-                                <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+                              {/* Current price dot */}
+                              <circle cx={padL + chartW} cy={yLast} r="2" fill={priceColor}>
+                                <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
                               </circle>
 
-                              {/* Current price badge (teal box on right edge) */}
-                              <rect x={padL + chartW + 1} y={yLast - 6.5} width={padR - 2} height="13" rx="2" fill="#14b8a6" />
-                              <text x={padL + chartW + padR / 2} y={yLast + 3} fontSize="6" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{fmtChartPrice(lastPrice)}</text>
+                              {/* Current price badge (right edge) */}
+                              <rect x={padL + chartW + 1} y={yLast - 5.5} width={padR - 2} height="11" rx="1.5" fill={priceColor} />
+                              <text x={padL + chartW + padR / 2} y={yLast + 2.5} fontSize="5.5" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{fmtChartPrice(lastPrice)}</text>
 
                               {/* Crosshair */}
                               {sinyalCrosshair && (() => {
@@ -4737,33 +4724,33 @@ function Dashboard() {
                   )}
                 </div>
 
-              {/* ══ 4. BOTTOM TRADE STATUS BAR — When positions are active ══ */}
+              {/* ══ 4. BOTTOM TRADE STATUS BAR — Premium Glass Badges ══ */}
               {activePos.length > 0 && (
-                <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 overflow-x-auto" style={{ background: '#131722', borderTop: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
+                <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 overflow-x-auto" style={{ background: 'linear-gradient(180deg, #0d1017 0%, #0f1219 100%)', borderTop: '1px solid rgba(255,255,255,0.04)', scrollbarWidth: 'none' }}>
                   {activePos.slice(0, 3).map(pos => {
                     const livePL = getPositionLivePL(pos)
                     const isUp = pos.direction === 'NAIK'
                     return (
-                      <div key={pos.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div key={pos.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg flex-shrink-0" style={{ background: isUp ? 'rgba(34,197,94,0.04)' : 'rgba(239,83,80,0.04)', border: `1px solid ${isUp ? 'rgba(34,197,94,0.10)' : 'rgba(239,83,80,0.10)'}` }}>
                         <span className="text-[6px] font-black text-white/70">{pos.stockCode}</span>
-                        <span className={`px-0.5 py-px rounded text-[5px] font-black text-white ${isUp ? 'bg-green-600' : 'bg-red-600'}`}>{isUp ? 'BUY' : 'SELL'}</span>
+                        <span className={`px-1 py-0.5 rounded text-[5px] font-black text-white ${isUp ? 'bg-green-600/80' : 'bg-red-600/80'}`}>{isUp ? 'BUY' : 'SELL'}</span>
                         <span className="text-[5px] font-bold text-white/40 tabular-nums">{(pos.amount / LOT_SIZE).toFixed(2)}</span>
                         <span className={`text-[6px] font-black tabular-nums ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>{livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}</span>
-                        <button onClick={() => closeSinyalPosition(pos.id)} className="w-3 h-3 rounded flex items-center justify-center" style={{ background: 'rgba(239,83,80,0.4)' }}>
+                        <button onClick={() => closeSinyalPosition(pos.id)} className="w-3.5 h-3.5 rounded flex items-center justify-center hover:scale-110 transition-transform" style={{ background: 'rgba(239,83,80,0.35)' }}>
                           <X className="w-1.5 h-1.5 text-white" />
                         </button>
                       </div>
                     )
                   })}
                   {activePos.length > 3 && (
-                    <span className="text-[5px] font-bold text-white/30 flex-shrink-0">+{activePos.length - 3} lagi</span>
+                    <span className="text-[5px] font-bold text-white/25 flex-shrink-0">+{activePos.length - 3} lagi</span>
                   )}
                 </div>
               )}
 
-              {/* ══ 5. TERMINAL BAR — MT5 Dark Compact Strip ══ */}
-              <div className="flex-shrink-0" style={{ background: '#131722', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center px-1.5 py-1 gap-px overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {/* ══ 5. TERMINAL BAR — Premium MT5 Strip ══ */}
+              <div className="flex-shrink-0" style={{ background: 'linear-gradient(180deg, #0f1219 0%, #131722 100%)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                <div className="flex items-center px-2 py-1.5 gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   {[
                     { label: 'Balance', value: formatRupiah(totalBalance), color: 'text-white/90' },
                     { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? 'text-green-400' : 'text-red-400' },
@@ -4771,18 +4758,18 @@ function Dashboard() {
                     { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400' },
                     { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? 'text-green-400' : 'text-red-400' },
                   ].map((item) => (
-                    <div key={item.label} className="flex flex-col items-center justify-center px-2 py-0.5 flex-shrink-0 rounded-sm" style={{ background: 'rgba(255,255,255,0.02)', minWidth: '58px' }}>
-                      <span className="text-[5px] font-bold text-white/30 uppercase tracking-widest">{item.label}</span>
+                    <div key={item.label} className="flex flex-col items-center justify-center px-3 py-1 flex-shrink-0 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', minWidth: '62px' }}>
+                      <span className="text-[5px] font-bold text-white/25 uppercase tracking-[0.15em]">{item.label}</span>
                       <span className={`text-[7px] font-black tabular-nums mt-0.5 ${item.color}`}>{item.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* ══ 6. POSITIONS TABLE — MT5 Compact Dark ══ */}
+              {/* ══ 6. POSITIONS TABLE — Premium MT5 Dark ══ */}
               {activePos.length > 0 && (
-                <div className="flex-shrink-0" style={{ background: '#12122a' }}>
-                  <div className="grid grid-cols-12 gap-0 px-2 py-0.5 text-[4.5px] font-black text-white/25 uppercase tracking-wider" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div className="flex-shrink-0" style={{ background: 'linear-gradient(180deg, #0c0f18 0%, #0e1120 100%)' }}>
+                  <div className="grid grid-cols-12 gap-0 px-3 py-1 text-[5px] font-black text-white/20 uppercase tracking-[0.15em]" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     <div className="col-span-2">Symbol</div>
                     <div className="col-span-1">Type</div>
                     <div className="col-span-1">Vol</div>
@@ -4797,13 +4784,13 @@ function Dashboard() {
                       const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
                       const isUp = pos.direction === 'NAIK'
                       return (
-                        <div key={pos.id} className={`grid grid-cols-12 gap-0 px-2 py-0.5 items-center text-[5.5px] font-bold ${idx % 2 === 0 ? 'bg-white/[0.02]' : ''} hover:bg-white/[0.04] transition-colors`}>
-                          <div className="col-span-2 text-white/70 font-black">{pos.stockCode}</div>
+                        <div key={pos.id} className={`grid grid-cols-12 gap-0 px-3 py-1 items-center text-[5.5px] font-bold ${idx % 2 === 0 ? 'bg-white/[0.015]' : ''} hover:bg-white/[0.04] transition-colors`}>
+                          <div className="col-span-2 text-white/80 font-black">{pos.stockCode}</div>
                           <div className="col-span-1">
-                            <span className="px-0.5 py-px rounded text-[4px] font-black text-white"
+                            <span className="px-1 py-0.5 rounded text-[4px] font-black text-white"
                               style={isUp
-                                ? { background: 'linear-gradient(180deg, #4ade80, #22c55e)' }
-                                : { background: 'linear-gradient(180deg, #f87171, #ef5350)' }}>
+                                ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)' }
+                                : { background: 'linear-gradient(135deg, #f87171, #ef5350)' }}>
                               {isUp ? 'BUY' : 'SELL'}
                             </span>
                           </div>
@@ -4815,10 +4802,10 @@ function Dashboard() {
                           </div>
                           <div className="col-span-1 flex justify-end">
                             <button onClick={() => closeSinyalPosition(pos.id)}
-                              className="h-3.5 w-3.5 rounded flex items-center justify-center transition-all"
-                              style={{ background: 'linear-gradient(180deg, #f87171, #ef5350)' }}
+                              className="h-4 w-4 rounded flex items-center justify-center transition-all hover:scale-110 active:scale-90"
+                              style={{ background: 'linear-gradient(135deg, #f87171, #ef5350)', boxShadow: '0 1px 4px rgba(239,83,80,0.3)' }}
                               title="Tutup posisi">
-                              <X className="w-1.5 h-1.5 text-white" />
+                              <X className="w-2 h-2 text-white" />
                             </button>
                           </div>
                         </div>
