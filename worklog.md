@@ -380,3 +380,116 @@ Stage Summary:
 - RSI and MACD render as sub-charts below the main chart
 - Chart type switching between Candlestick, Line, and Bar works instantly
 - All features browser-verified and working
+---
+Task ID: 6
+Agent: Main Agent
+Task: Add dark/light theme support to Trading tab and increase font sizes for readability
+
+Work Log:
+
+### 1. Added trTheme Object (after fmtPrice5 function, ~line 4174)
+- Created `isTrDark` boolean based on existing `theme` state variable
+- Created comprehensive `trTheme` object with 20+ color tokens that switch between dark/light:
+  - `bg`: Dark #131722 → Light #f0f2f5
+  - `bgDeep`: Dark #0a0e17 → Light #ffffff
+  - `bgPanel`: Dark #1e222d → Light #ffffff
+  - `bgCard`: Dark #0c0f18 → Light #e8eaed
+  - `border`, `borderSubtle`: White/alpha → Black/alpha
+  - `text`, `textSecondary`, `textMuted`, `textFaint`: White/alpha → Black/alpha
+  - `gridLine`, `gridText`: White/alpha → Black/alpha
+  - `chartBg`: Dark #0a0e17 → Light #ffffff
+  - `inputBg`, `inputBorder`: White/alpha → Black/alpha
+  - `btnBg`, `btnBorder`, `btnText`, `btnTextMuted`: White/alpha → Black/alpha
+  - `pillInactive`, `pillActiveBg`, `pillActiveBorder`: White/alpha → Black/alpha
+  - `green`, `red`: Keep same (#26a69a, #ef5350)
+
+### 2. Added Theme Toggle Button (header right section)
+- Sun/Moon icon button that calls `toggleTheme()` function
+- Uses existing `Sun` and `Moon` icons from lucide-react (already imported)
+- Styled with trTheme colors for consistent look
+- Placed before timeframe dropdown in header
+
+### 3. Replaced Hardcoded Colors with trTheme References
+All sections of the trading tab now use `trTheme.*` instead of hardcoded dark colors:
+- **Header**: `background: trTheme.bg`, `borderBottom: trTheme.border`
+- **Market Selector**: `background: trTheme.bg`, `borderBottom: trTheme.border`
+- **Trading Bar**: `background: trTheme.bg`, `borderBottom: trTheme.border`
+- **LOT Stepper**: `background: trTheme.inputBg`, `border: trTheme.inputBorder`
+- **Chart Toolbar**: `background: trTheme.bgDeep`, `borderBottom: trTheme.borderSubtle`
+- **Chart Area**: `background: trTheme.chartBg`
+- **SVG Chart**: `fill={trTheme.chartBg}`, `stroke={trTheme.gridLine}`, `fill={trTheme.gridText}`
+- **Bottom Trade Status**: `background: trTheme.bgCard`, `borderTop: trTheme.borderSubtle`
+- **Terminal Bar**: `background: trTheme.bg`, `borderTop: trTheme.borderSubtle`
+- **Positions Table**: `background: trTheme.bgCard`, `borderBottom: trTheme.borderSubtle`
+- **Timeframe/Leverage Dropdowns**: `background: trTheme.bgPanel`, `border: trTheme.border`
+- **Indicator Menu**: `background: trTheme.bgPanel`, `border: trTheme.border`
+- **Crosshair price box**: Uses `isTrDark` for light/dark background
+- **Bull candle fill**: `fill={trTheme.chartBg}` (was hardcoded #0a0e17)
+- **RSI 50 line**: `stroke={trTheme.gridLine}`
+- **MACD zero line**: `stroke={trTheme.border}`
+- **No-stock-selected view**: `background: trTheme.chartBg`
+
+### 4. Increased Font Sizes Throughout Trading Tab
+Mapping applied:
+- text-[4px] → text-[6px] or text-[7px]
+- text-[5px] → text-[7px] or text-[8px]
+- text-[5.5px] → text-[8px]
+- text-[6px] → text-[8px] or text-[9px]
+- text-[7px] → text-[9px] or text-[10px]
+- text-[8px] → text-[10px]
+- text-[9px] → text-[10px]
+
+Specific changes:
+- **Header**: Symbol 13→14px, name 7→9px, price 14→15px, change 8→10px
+- **Category tabs**: 7→9px, height h-6→h-7
+- **Stock pills**: 7→9px, arrow 5→7px, height h-6→h-7
+- **SELL/BUY price text**: 7→9px
+- **LOT label**: 4→7px, LOT value: 14→15px
+- **Leverage**: 6→8px, height 13→16px
+- **Timeframe dropdown**: 9→10px, height h-6→h-7
+- **Zoom buttons**: h-5→h-6, text-[10px]→text-[11px]
+- **Chart toolbar buttons**: h-5→h-6, w-6→w-7
+- **Indicator count text**: 6→8px
+- **Indicator menu items**: 7→9px, desc 5→7px
+- **Indicator pills**: h-4→h-5, text-[5px]→text-[7px]
+- **SVG grid text**: 5→7px, time axis 4→5.5px
+- **SVG price badge**: 4.5→6px
+- **SVG position labels**: 4→5px
+- **SVG indicator legend**: 4→5.5px
+- **RSI labels**: 3.5→4.5px
+- **MACD label**: 3.5→4.5px
+- **Crosshair price text**: 4.5→6px
+- **Scroll-to-latest button**: h-5→h-7, text-[6px]→text-[8px]
+- **Result flash**: BENAR 6→8px, amount 5→7px
+- **No-stock-selected**: 8→10px, icon w-8→w-10
+- **Bottom trade status**: stockCode 6→8px, BUY/SELL 5→7px, lot 5→7px, P/L 6→8px, close btn w-3.5→w-5
+- **Terminal bar labels**: 5→7px, values 7→9px, min-width 62→68px
+- **Positions table headers**: 5→7px, rows 5.5→8px, BUY/SELL badge 4→6px, close btn h-4→h-5
+- **Positions footer**: 5→7px, Total P&L label 5→7px, value 6→8px
+- **Active trades overlay**: B/S badge 4→6px, BUY/SELL 6→8px, close btn w-4→w-5
+- **Candle countdown SVG**: width/height 20→22, font 5→6
+
+### 5. Terminal Bar Color Improvements
+- Changed from Tailwind classes to inline styles using `trTheme.text` for Balance
+- Equity, Margin, Free Margin, P&L use hex colors (#4ade80, #f87171, #fbbf24, #22d3ee) that work in both modes
+- Labels use `trTheme.textMuted`, backgrounds use `trTheme.inputBg`
+
+### No Changes To:
+- Trading logic (positions, P/L calculation, lot system)
+- State variables or callbacks
+- Interaction handlers (crosshair, zoom, pan, pinch, scroll)
+- Confirm trade dialog
+- Any other tab (home, market, portfolio, investasi, profil)
+- Bottom navigation
+- SELL/BUY button gradient colors (these are always red/green)
+- Candle green/red colors (#26a69a, #ef5350)
+- Volume bar colors
+- Green/red P/L colors
+
+Stage Summary:
+- Trading tab now supports both dark and light themes via existing `theme` state
+- Theme toggle button (Sun/Moon) added in header next to timeframe dropdown
+- All hardcoded dark colors replaced with trTheme references (28+ color replacements)
+- Font sizes increased significantly across all trading tab sections for readability
+- Chart SVG uses theme-aware colors for background, grid lines, text, and crosshair
+- No lint errors, server compiles successfully
