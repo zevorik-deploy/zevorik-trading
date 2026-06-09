@@ -607,3 +607,28 @@ Stage Summary:
 - Maximum 3 sub-charts visible simultaneously
 - All sub-charts properly scaled with reference lines
 - No lint errors, server compiles and runs correctly
+---
+Task ID: 1
+Agent: Main
+Task: Implement ZEVORIX UI redesign - rename tabs, fix candles, improve crosshair, move trading to Trade tab
+
+Work Log:
+- Renamed bottom nav tabs: Trading→Chart, Saldo→Trade, Pasar→Quote
+- Renamed desktop sidebar tabs to match
+- Updated "Pasar Global" header to "Quote"
+- Changed candle rendering: filled green (#26a69a) for bull candles instead of hollow/outlined
+- Added continuous price line (close-to-close connection) on candlestick chart
+- Enhanced crosshair: increased opacity to 0.85, thicker dashed lines, colored price label badge, time label on axis, center dot
+- Replaced full trading bar in Chart tab with compact BUY/SELL buttons + lot/leverage indicator
+- Added full Order form in Trade tab with: instrument selector, lot stepper, leverage dropdown, Stop Loss input, Take Profit input, spread info, BUY/SELL buttons
+- Added saldoSubTab 'order' option and stopLossPrice/takeProfitPrice state variables
+- Enhanced chart background with subtle gradient
+- Increased volume bar opacity for better visibility
+- Verified all changes in browser via agent-browser
+
+Stage Summary:
+- Tab renames working (Chart, Trade, Quote)
+- Candle colors now filled (green/red) instead of hollow
+- Crosshair much more visible with colored price badge
+- Chart tab has compact BUY/SELL, Trade tab has full order form with SL/TP
+- No compilation errors
