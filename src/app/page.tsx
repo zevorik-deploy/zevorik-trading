@@ -703,6 +703,49 @@ function LoginPage() {
 }
 
 // ============================================
+// ── MT5 Indicator Definitions ──
+const ALL_INDICATORS = [
+  // TREND
+  { key: 'adx', label: 'ADX', color: '#f97316', group: 'Trend', desc: 'Directional Movement' },
+  { key: 'bollinger', label: 'Bollinger Bands', color: '#8b5cf6', group: 'Trend', desc: 'BB (20,2)' },
+  { key: 'envelopes', label: 'Envelopes', color: '#14b8a6', group: 'Trend', desc: 'Env (20,5%)' },
+  { key: 'ichimoku', label: 'Ichimoku', color: '#eab308', group: 'Trend', desc: 'Kinko Hyo' },
+  { key: 'ma5', label: 'MA 5', color: '#eab308', group: 'Trend', desc: 'Moving Average 5' },
+  { key: 'ma20', label: 'MA 20', color: '#06b6d4', group: 'Trend', desc: 'Moving Average 20' },
+  { key: 'sar', label: 'Parabolic SAR', color: '#22c55e', group: 'Trend', desc: 'Stop & Reverse' },
+  { key: 'stddev', label: 'Std Deviation', color: '#ec4899', group: 'Trend', desc: 'Volatility' },
+  { key: 'zigzag', label: 'ZigZag', color: '#a855f7', group: 'Trend', desc: 'Pattern Filter' },
+  // OSCILLATOR
+  { key: 'atr', label: 'ATR', color: '#f97316', group: 'Oscillator', desc: 'Avg True Range' },
+  { key: 'bears', label: 'Bears Power', color: '#ef4444', group: 'Oscillator', desc: 'Seller Strength' },
+  { key: 'bulls', label: 'Bulls Power', color: '#22c55e', group: 'Oscillator', desc: 'Buyer Strength' },
+  { key: 'cci', label: 'CCI', color: '#06b6d4', group: 'Oscillator', desc: 'Commodity Channel' },
+  { key: 'demarker', label: 'DeMarker', color: '#8b5cf6', group: 'Oscillator', desc: 'Reversal Risk' },
+  { key: 'force', label: 'Force Index', color: '#3b82f6', group: 'Oscillator', desc: 'Price × Volume' },
+  { key: 'macd', label: 'MACD', color: '#3b82f6', group: 'Oscillator', desc: 'MACD (12,26,9)' },
+  { key: 'momentum', label: 'Momentum', color: '#f59e0b', group: 'Oscillator', desc: 'Rate of Change' },
+  { key: 'osma', label: 'OsMA', color: '#6366f1', group: 'Oscillator', desc: 'MA of Oscillator' },
+  { key: 'rsi', label: 'RSI', color: '#f59e0b', group: 'Oscillator', desc: 'Relative Strength' },
+  { key: 'rvi', label: 'RVI', color: '#14b8a6', group: 'Oscillator', desc: 'Relative Vigor' },
+  { key: 'stochastic', label: 'Stochastic', color: '#ec4899', group: 'Oscillator', desc: 'Stoch (5,3)' },
+  { key: 'williamsr', label: "Williams'%R", color: '#a855f7', group: 'Oscillator', desc: 'Percent Range' },
+  // VOLUME
+  { key: 'ad', label: 'A/D', color: '#3b82f6', group: 'Volume', desc: 'Accumulation/Dist' },
+  { key: 'mfi', label: 'MFI', color: '#8b5cf6', group: 'Volume', desc: 'Money Flow Index' },
+  { key: 'obv', label: 'OBV', color: '#f59e0b', group: 'Volume', desc: 'On Balance Volume' },
+  { key: 'volumes', label: 'Volumes', color: '#06b6d4', group: 'Volume', desc: 'Trade Volume' },
+  // BILL WILLIAMS
+  { key: 'ac', label: 'Accelerator', color: '#ef4444', group: 'Bill Williams', desc: 'AC Oscillator' },
+  { key: 'alligator', label: 'Alligator', color: '#22c55e', group: 'Bill Williams', desc: 'Jaw/Teeth/Lips' },
+  { key: 'ao', label: 'Awesome AO', color: '#3b82f6', group: 'Bill Williams', desc: 'AO Oscillator' },
+  { key: 'fractals', label: 'Fractals', color: '#f59e0b', group: 'Bill Williams', desc: 'Peak/Valley' },
+  { key: 'gator', label: 'Gator', color: '#14b8a6', group: 'Bill Williams', desc: 'Gator Oscillator' },
+  { key: 'bwMFI', label: 'BW MFI', color: '#ec4899', group: 'Bill Williams', desc: 'Mkt Facilitation' },
+]
+
+const OVERLAY_KEYS = ['ma5', 'ma20', 'bollinger', 'envelopes', 'ichimoku', 'sar', 'zigzag', 'alligator', 'fractals']
+const SUBCHART_KEYS = ['adx', 'atr', 'bears', 'bulls', 'cci', 'demarker', 'force', 'macd', 'momentum', 'osma', 'rsi', 'rvi', 'stochastic', 'williamsr', 'ad', 'mfi', 'obv', 'volumes', 'ac', 'ao', 'gator', 'bwMFI', 'stddev']
+
 // MAIN DASHBOARD
 // ============================================
 function Dashboard() {
@@ -1084,6 +1127,378 @@ function Dashboard() {
     const signal: (number | null)[] = macdLine.map((_, i) => i >= 25 ? (signalLine[i - 25] ?? null) : null)
     const histogram: (number | null)[] = macd.map((v, i) => v !== null && signal[i] !== null ? v - signal[i]! : null)
     return { macd, signal, histogram }
+  }, [])
+
+  // ── TREND INDICATORS ──
+
+  // ADX (Average Directional Movement Index) - period 14
+  const computeADX = useCallback((data: CandleData[], period = 14) => {
+    if (data.length < period * 2) return { adx: data.map(() => null) as (number | null)[], plusDI: data.map(() => null) as (number | null)[], minusDI: data.map(() => null) as (number | null)[] }
+    const plusDM: number[] = [], minusDM: number[] = [], tr: number[] = []
+    for (let i = 1; i < data.length; i++) {
+      const highDiff = data[i].high - data[i-1].high
+      const lowDiff = data[i-1].low - data[i].low
+      plusDM.push(highDiff > lowDiff && highDiff > 0 ? highDiff : 0)
+      minusDM.push(lowDiff > highDiff && lowDiff > 0 ? lowDiff : 0)
+      tr.push(Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close)))
+    }
+    const smooth = (arr: number[], p: number) => {
+      const res: number[] = [arr.slice(0, p).reduce((a,b) => a+b, 0)]
+      for (let i = p; i < arr.length; i++) res.push(res[i-p] - res[i-p]/p + arr[i])
+      return res
+    }
+    const smoothTR = smooth(tr, period), smoothPDM = smooth(plusDM, period), smoothMDM = smooth(minusDM, period)
+    const plusDI = smoothPDM.map((v, i) => smoothTR[i] > 0 ? (v / smoothTR[i]) * 100 : 0)
+    const minusDI = smoothMDM.map((v, i) => smoothTR[i] > 0 ? (v / smoothTR[i]) * 100 : 0)
+    const dx = plusDI.map((v, i) => v + minusDI[i] > 0 ? Math.abs(v - minusDI[i]) / (v + minusDI[i]) * 100 : 0)
+    const adx: (number | null)[] = [null]
+    let adxVal = dx.slice(0, period).reduce((a,b) => a+b, 0) / period
+    adx.push(adxVal)
+    for (let i = period; i < dx.length; i++) {
+      adxVal = (adxVal * (period - 1) + dx[i]) / period
+      adx.push(adxVal)
+    }
+    while (adx.length < data.length) adx.unshift(null)
+    while (plusDI.length < data.length) plusDI.unshift(0)
+    while (minusDI.length < data.length) minusDI.unshift(0)
+    return { adx, plusDI: plusDI.map(v => v as number | null), minusDI: minusDI.map(v => v as number | null) }
+  }, [])
+
+  // Envelopes (20, 0.05)
+  const computeEnvelopes = useCallback((data: CandleData[], period = 20, pct = 0.05) => {
+    const ma = computeMA(data, period)
+    return {
+      upper: ma.map(v => v !== null ? v * (1 + pct) : null),
+      middle: ma,
+      lower: ma.map(v => v !== null ? v * (1 - pct) : null),
+    }
+  }, [computeMA])
+
+  // Ichimoku Kinko Hyo (9, 26, 52)
+  const computeIchimoku = useCallback((data: CandleData[]) => {
+    const periodHigh = (d: CandleData[], start: number, len: number) => {
+      let h = -Infinity
+      for (let i = Math.max(0, start); i <= Math.min(d.length-1, start+len-1); i++) h = Math.max(h, d[i].high)
+      return h
+    }
+    const periodLow = (d: CandleData[], start: number, len: number) => {
+      let l = Infinity
+      for (let i = Math.max(0, start); i <= Math.min(d.length-1, start+len-1); i++) l = Math.min(l, d[i].low)
+      return l
+    }
+    const tenkan = data.map((_, i) => i < 8 ? null : (periodHigh(data, i-8, 9) + periodLow(data, i-8, 9)) / 2)
+    const kijun = data.map((_, i) => i < 25 ? null : (periodHigh(data, i-25, 26) + periodLow(data, i-25, 26)) / 2)
+    const senkouA = data.map((_, i) => i < 25 ? null : (tenkan[i] !== null && kijun[i] !== null ? (tenkan[i]! + kijun[i]!) / 2 : null))
+    const senkouB = data.map((_, i) => i < 51 ? null : (periodHigh(data, i-51, 52) + periodLow(data, i-51, 52)) / 2)
+    const chikou = data.map((_, i) => i + 26 < data.length ? data[i+26].close : null)
+    return { tenkan, kijun, senkouA, senkouB, chikou }
+  }, [])
+
+  // Parabolic SAR
+  const computeSAR = useCallback((data: CandleData[], step = 0.02, max = 0.2) => {
+    if (data.length < 2) return data.map(() => null)
+    const result: (number | null)[] = [null]
+    let isLong = data[1].close > data[0].close
+    let af = step
+    let ep = isLong ? data[0].high : data[0].low
+    let sar = isLong ? data[0].low : data[0].high
+    for (let i = 1; i < data.length; i++) {
+      sar = sar + af * (ep - sar)
+      if (isLong) {
+        if (i >= 2) sar = Math.min(sar, data[i-1].low, data[i-2].low)
+        if (data[i].low < sar) { isLong = false; sar = ep; ep = data[i].low; af = step }
+        else { if (data[i].high > ep) { ep = data[i].high; af = Math.min(af + step, max) } }
+      } else {
+        if (i >= 2) sar = Math.max(sar, data[i-1].high, data[i-2].high)
+        if (data[i].high > sar) { isLong = true; sar = ep; ep = data[i].high; af = step }
+        else { if (data[i].low < ep) { ep = data[i].low; af = Math.min(af + step, max) } }
+      }
+      result.push(sar)
+    }
+    return result
+  }, [])
+
+  // Standard Deviation
+  const computeStdDev = useCallback((data: CandleData[], period = 20) => {
+    const ma = computeMA(data, period)
+    return data.map((_, i) => {
+      if (ma[i] === null) return null
+      let sumSq = 0
+      for (let j = i - period + 1; j <= i; j++) sumSq += (data[j].close - ma[i]!) ** 2
+      return Math.sqrt(sumSq / period)
+    })
+  }, [computeMA])
+
+  // ZigZag (deviation 5%)
+  const computeZigZag = useCallback((data: CandleData[], deviation = 5) => {
+    if (data.length < 3) return data.map(() => null)
+    const points: { idx: number; price: number; isHigh: boolean }[] = []
+    let lastHigh = { idx: 0, price: data[0].high }, lastLow = { idx: 0, price: data[0].low }
+    let isUp = true
+    for (let i = 1; i < data.length; i++) {
+      const changeFromHigh = ((data[i].high - lastHigh.price) / lastHigh.price) * 100
+      const changeFromLow = ((data[i].low - lastLow.price) / lastLow.price) * 100
+      if (isUp) {
+        if (changeFromHigh > 0) lastHigh = { idx: i, price: data[i].high }
+        if (changeFromLow < -deviation) {
+          points.push({ idx: lastHigh.idx, price: lastHigh.price, isHigh: true })
+          lastLow = { idx: i, price: data[i].low }
+          isUp = false
+        }
+      } else {
+        if (changeFromLow < 0) lastLow = { idx: i, price: data[i].low }
+        if (changeFromHigh > deviation) {
+          points.push({ idx: lastLow.idx, price: lastLow.price, isHigh: false })
+          lastHigh = { idx: i, price: data[i].high }
+          isUp = true
+        }
+      }
+    }
+    const result: (number | null)[] = data.map(() => null)
+    points.forEach(p => { result[p.idx] = p.price })
+    return result
+  }, [])
+
+  // ── OSCILLATOR INDICATORS ──
+
+  // ATR (Average True Range) - period 14
+  const computeATR = useCallback((data: CandleData[], period = 14) => {
+    if (data.length < 2) return data.map(() => null)
+    const tr: number[] = [data[0].high - data[0].low]
+    for (let i = 1; i < data.length; i++) {
+      tr.push(Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close)))
+    }
+    const result: (number | null)[] = []
+    for (let i = 0; i < period - 1; i++) result.push(null)
+    let atr = tr.slice(0, period).reduce((a,b) => a+b, 0) / period
+    result.push(atr)
+    for (let i = period; i < tr.length; i++) {
+      atr = (atr * (period - 1) + tr[i]) / period
+      result.push(atr)
+    }
+    return result
+  }, [])
+
+  // Bears Power
+  const computeBearsPower = useCallback((data: CandleData[], period = 13) => {
+    const ma = computeMA(data, period)
+    return data.map((d, i) => ma[i] !== null ? d.low - ma[i]! : null)
+  }, [computeMA])
+
+  // Bulls Power
+  const computeBullsPower = useCallback((data: CandleData[], period = 13) => {
+    const ma = computeMA(data, period)
+    return data.map((d, i) => ma[i] !== null ? d.high - ma[i]! : null)
+  }, [computeMA])
+
+  // CCI (Commodity Channel Index) - period 14
+  const computeCCI = useCallback((data: CandleData[], period = 14) => {
+    const tp = data.map(d => (d.high + d.low + d.close) / 3)
+    const result: (number | null)[] = []
+    for (let i = 0; i < period - 1; i++) result.push(null)
+    for (let i = period - 1; i < data.length; i++) {
+      let sum = 0
+      for (let j = i - period + 1; j <= i; j++) sum += tp[j]
+      const mean = sum / period
+      let meanDev = 0
+      for (let j = i - period + 1; j <= i; j++) meanDev += Math.abs(tp[j] - mean)
+      meanDev /= period
+      result.push(meanDev > 0 ? (tp[i] - mean) / (0.015 * meanDev) : 0)
+    }
+    return result
+  }, [])
+
+  // DeMarker
+  const computeDeMarker = useCallback((data: CandleData[], period = 14) => {
+    if (data.length < 2) return data.map(() => null)
+    const dMax: number[] = [0], dMin: number[] = [0]
+    for (let i = 1; i < data.length; i++) {
+      dMax.push(data[i].high > data[i-1].high ? data[i].high - data[i-1].high : 0)
+      dMin.push(data[i].low < data[i-1].low ? data[i-1].low - data[i].low : 0)
+    }
+    const result: (number | null)[] = []
+    for (let i = 0; i < period; i++) result.push(null)
+    for (let i = period; i < data.length; i++) {
+      const maxSum = dMax.slice(i-period+1, i+1).reduce((a,b) => a+b, 0)
+      const minSum = dMin.slice(i-period+1, i+1).reduce((a,b) => a+b, 0)
+      result.push(maxSum + minSum > 0 ? maxSum / (maxSum + minSum) : 0.5)
+    }
+    return result
+  }, [])
+
+  // Force Index
+  const computeForceIndex = useCallback((data: CandleData[], period = 13) => {
+    const fi: number[] = [0]
+    for (let i = 1; i < data.length; i++) fi.push((data[i].close - data[i-1].close) * data[i].volume)
+    const result: (number | null)[] = []
+    for (let i = 0; i < period - 1; i++) result.push(null)
+    for (let i = period - 1; i < fi.length; i++) {
+      let sum = 0
+      for (let j = i - period + 1; j <= i; j++) sum += fi[j]
+      result.push(sum / period)
+    }
+    return result
+  }, [])
+
+  // Momentum
+  const computeMomentum = useCallback((data: CandleData[], period = 14) => {
+    return data.map((_, i) => i < period ? null : data[i].close - data[i-period].close)
+  }, [])
+
+  // OsMA (Moving Average of Oscillator)
+  const computeOsMA = useCallback((data: CandleData[]) => {
+    const macdData = computeMACD(data)
+    return macdData.histogram
+  }, [computeMACD])
+
+  // Relative Vigor Index
+  const computeRVI = useCallback((data: CandleData[], period = 10) => {
+    if (data.length < period + 3) return { rvi: data.map(() => null) as (number | null)[], signal: data.map(() => null) as (number | null)[] }
+    const co: number[] = data.map(d => d.close - d.open)
+    const hl: number[] = data.map(d => d.high - d.low)
+    const rvi: (number | null)[] = data.map(() => null)
+    const signal: (number | null)[] = data.map(() => null)
+    for (let i = period + 3; i < data.length; i++) {
+      let numSum = 0, denSum = 0
+      for (let j = i - period + 1; j <= i; j++) {
+        if (j >= 1 && j < co.length - 1) {
+          numSum += (co[j-1] + 2*co[j] + co[Math.min(j+1, co.length-1)]) / 4
+          denSum += (hl[j-1] + 2*hl[j] + hl[Math.min(j+1, hl.length-1)]) / 4
+        }
+      }
+      rvi[i] = denSum > 0 ? numSum / denSum : 0
+    }
+    for (let i = period + 6; i < data.length; i++) {
+      if (rvi[i-3] !== null && rvi[i-2] !== null && rvi[i-1] !== null && rvi[i] !== null) {
+        signal[i] = (rvi[i-3]! + 2*rvi[i-2]! + 2*rvi[i-1]! + rvi[i]!) / 6
+      }
+    }
+    return { rvi, signal }
+  }, [])
+
+  // Stochastic Oscillator (5,3,3)
+  const computeStochastic = useCallback((data: CandleData[], kPeriod = 5, dPeriod = 3) => {
+    const k: (number | null)[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < kPeriod - 1) { k.push(null); continue }
+      let highest = -Infinity, lowest = Infinity
+      for (let j = i - kPeriod + 1; j <= i; j++) { highest = Math.max(highest, data[j].high); lowest = Math.min(lowest, data[j].low) }
+      k.push(highest - lowest > 0 ? ((data[i].close - lowest) / (highest - lowest)) * 100 : 50)
+    }
+    const d: (number | null)[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < kPeriod + dPeriod - 2 || k[i] === null) { d.push(null); continue }
+      let sum = 0, count = 0
+      for (let j = i - dPeriod + 1; j <= i; j++) { if (k[j] !== null) { sum += k[j]!; count++ } }
+      d.push(count > 0 ? sum / count : null)
+    }
+    return { k, d }
+  }, [])
+
+  // Williams' Percent Range (14)
+  const computeWilliamsR = useCallback((data: CandleData[], period = 14) => {
+    return data.map((_, i) => {
+      if (i < period - 1) return null
+      let highest = -Infinity, lowest = Infinity
+      for (let j = i - period + 1; j <= i; j++) { highest = Math.max(highest, data[j].high); lowest = Math.min(lowest, data[j].low) }
+      return highest - lowest > 0 ? ((highest - data[i].close) / (highest - lowest)) * -100 : -50
+    })
+  }, [])
+
+  // ── VOLUME INDICATORS ──
+
+  // Accumulation/Distribution
+  const computeAD = useCallback((data: CandleData[]) => {
+    const result: number[] = [0]
+    for (let i = 1; i < data.length; i++) {
+      const clv = data[i].high - data[i].low > 0 ? ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low) : 0
+      result.push(result[i-1] + clv * data[i].volume)
+    }
+    return result
+  }, [])
+
+  // Money Flow Index (14)
+  const computeMFI = useCallback((data: CandleData[], period = 14) => {
+    const tp = data.map(d => (d.high + d.low + d.close) / 3)
+    const mf = tp.map((v, i) => v * data[i].volume)
+    const result: (number | null)[] = data.map(() => null)
+    for (let i = period; i < data.length; i++) {
+      let posFlow = 0, negFlow = 0
+      for (let j = i - period + 1; j <= i; j++) {
+        if (tp[j] > tp[j-1]) posFlow += mf[j]; else negFlow += mf[j]
+      }
+      result[i] = negFlow > 0 ? 100 - 100 / (1 + posFlow / negFlow) : 100
+    }
+    return result
+  }, [])
+
+  // On Balance Volume
+  const computeOBV = useCallback((data: CandleData[]) => {
+    const result: number[] = [0]
+    for (let i = 1; i < data.length; i++) {
+      if (data[i].close > data[i-1].close) result.push(result[i-1] + data[i].volume)
+      else if (data[i].close < data[i-1].close) result.push(result[i-1] - data[i].volume)
+      else result.push(result[i-1])
+    }
+    return result
+  }, [])
+
+  // ── BILL WILLIAMS INDICATORS ──
+
+  // Awesome Oscillator
+  const computeAO = useCallback((data: CandleData[]) => {
+    const midpoint = data.map(d => (d.high + d.low) / 2)
+    const sma5: (number | null)[] = [], sma34: (number | null)[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < 4) { sma5.push(null) } else { let s = 0; for (let j = i-4; j <= i; j++) s += midpoint[j]; sma5.push(s/5) }
+      if (i < 33) { sma34.push(null) } else { let s = 0; for (let j = i-33; j <= i; j++) s += midpoint[j]; sma34.push(s/34) }
+    }
+    return sma5.map((v, i) => v !== null && sma34[i] !== null ? v! - sma34[i]! : null)
+  }, [])
+
+  // Accelerator Oscillator
+  const computeAC = useCallback((data: CandleData[]) => {
+    const ao = computeAO(data)
+    const result: (number | null)[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < 4 || ao[i] === null) { result.push(null); continue }
+      let sum = 0, count = 0
+      for (let j = i - 4; j <= i; j++) { if (ao[j] !== null) { sum += ao[j]!; count++ } }
+      result.push(count > 0 ? ao[i]! - sum / count : null)
+    }
+    return result
+  }, [computeAO])
+
+  // Alligator (Jaw 13, Teeth 8, Lips 5)
+  const computeAlligator = useCallback((data: CandleData[]) => {
+    const jaw = computeMA(data, 13).map((v, i) => i < 8 ? null : v)
+    const teeth = computeMA(data, 8).map((v, i) => i < 5 ? null : v)
+    const lips = computeMA(data, 5).map((v, i) => i < 3 ? null : v)
+    return { jaw, teeth, lips }
+  }, [computeMA])
+
+  // Fractals
+  const computeFractals = useCallback((data: CandleData[]) => {
+    const up: (boolean | null)[] = data.map(() => null)
+    const down: (boolean | null)[] = data.map(() => null)
+    for (let i = 2; i < data.length - 2; i++) {
+      if (data[i].high > data[i-1].high && data[i].high > data[i-2].high && data[i].high > data[i+1].high && data[i].high > data[i+2].high) up[i] = true
+      if (data[i].low < data[i-1].low && data[i].low < data[i-2].low && data[i].low < data[i+1].low && data[i].low < data[i+2].low) down[i] = true
+    }
+    return { up, down }
+  }, [])
+
+  // Gator Oscillator
+  const computeGator = useCallback((data: CandleData[]) => {
+    const { jaw, teeth, lips } = computeAlligator(data)
+    const upper: (number | null)[] = jaw.map((v, i) => v !== null && teeth[i] !== null ? Math.abs(v! - teeth[i]!) : null)
+    const lower: (number | null)[] = teeth.map((v, i) => v !== null && lips[i] !== null ? -Math.abs(v! - lips[i]!) : null)
+    return { upper, lower }
+  }, [computeAlligator])
+
+  // Market Facilitation Index
+  const computeBWIMFI = useCallback((data: CandleData[]) => {
+    return data.map(d => d.high - d.low > 0 ? (d.high - d.low) / d.volume : 0)
   }, [])
 
   // Initialize investment candle chart data when products load
@@ -4527,32 +4942,36 @@ function Dashboard() {
                   </button>
                   {showIndicatorMenu && (
                     <div className="absolute left-0 top-8 z-50 rounded-lg overflow-hidden py-1"
-                      style={{ background: trTheme.bgPanel, border: '1px solid ' + trTheme.border, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minWidth: '150px' }}>
-                      <div className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest" style={{ color: trTheme.textMuted }}>Indicators</div>
-                      {([
-                        { key: 'ma5', label: 'MA 5', color: '#eab308', desc: 'Moving Average 5' },
-                        { key: 'ma20', label: 'MA 20', color: '#06b6d4', desc: 'Moving Average 20' },
-                        { key: 'bollinger', label: 'Bollinger Bands', color: '#8b5cf6', desc: 'BB (20,2)' },
-                        { key: 'rsi', label: 'RSI 14', color: '#f59e0b', desc: 'Relative Strength' },
-                        { key: 'macd', label: 'MACD', color: '#3b82f6', desc: 'MACD (12,26,9)' },
-                      ]).map(ind => {
-                        const isActive = activeIndicators.some(a => a.key === ind.key)
+                      style={{ background: trTheme.bgPanel, border: '1px solid ' + trTheme.border, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minWidth: '190px', maxHeight: '320px', overflowY: 'auto' }}>
+                      {['Trend', 'Oscillator', 'Volume', 'Bill Williams'].map(group => {
+                        const groupIndicators = ALL_INDICATORS.filter(ind => ind.group === group)
                         return (
-                          <button key={ind.key} onClick={() => {
-                            setActiveIndicators(prev => {
-                              if (isActive) return prev.filter(a => a.key !== ind.key)
-                              return [...prev, { key: ind.key, label: ind.label, color: ind.color }]
-                            })
-                          }}
-                            className={`w-full px-2 py-1.5 text-[9px] font-bold text-left flex items-center gap-1.5 transition-colors ${
-                              isActive ? 'bg-black/5' : 'hover:bg-black/5'
-                            }`}
-                            style={{ color: isActive ? trTheme.text : trTheme.textSecondary }}>
-                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: isActive ? ind.color : trTheme.inputBg, border: `1px solid ${isActive ? ind.color : trTheme.inputBorder}` }} />
-                            <span className="flex-1">{ind.label}</span>
-                            <span className="text-[7px]" style={{ color: trTheme.textFaint }}>{ind.desc}</span>
-                            {isActive && <Check className="w-2.5 h-2.5 text-green-400" />}
-                          </button>
+                          <div key={group}>
+                            <div className="px-2 py-0.5 text-[7px] font-bold uppercase tracking-widest flex items-center gap-1" style={{ color: trTheme.textFaint, borderTop: group === 'Trend' ? 'none' : `1px solid ${trTheme.borderSubtle}`, marginTop: group === 'Trend' ? 0 : 2, paddingTop: group === 'Trend' ? undefined : 4 }}>
+                              <span>{group === 'Trend' ? '📊' : group === 'Oscillator' ? '📈' : group === 'Volume' ? '📦' : '🐊'}</span>
+                              <span>{group}</span>
+                            </div>
+                            {groupIndicators.map(ind => {
+                              const isActive = activeIndicators.some(a => a.key === ind.key)
+                              return (
+                                <button key={ind.key} onClick={() => {
+                                  setActiveIndicators(prev => {
+                                    if (isActive) return prev.filter(a => a.key !== ind.key)
+                                    return [...prev, { key: ind.key, label: ind.label, color: ind.color }]
+                                  })
+                                }}
+                                  className={`w-full px-2 py-1 text-[9px] font-bold text-left flex items-center gap-1.5 transition-colors ${
+                                    isActive ? 'bg-black/5' : 'hover:bg-black/5'
+                                  }`}
+                                  style={{ color: isActive ? trTheme.text : trTheme.textSecondary }}>
+                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: isActive ? ind.color : trTheme.inputBg, border: `1px solid ${isActive ? ind.color : trTheme.inputBorder}` }} />
+                                  <span className="flex-1">{ind.label}</span>
+                                  <span className="text-[6px]" style={{ color: trTheme.textFaint }}>{ind.desc}</span>
+                                  {isActive && <Check className="w-2 h-2 text-green-400" />}
+                                </button>
+                              )
+                            })}
+                          </div>
                         )
                       })}
                     </div>
@@ -4704,7 +5123,9 @@ function Dashboard() {
                           const timeAxisH = 12
                           const priceAreaH = 340 - padT - padB
                           const chartH = priceAreaH + padT + padB
-                          const subChartH = (activeIndicators.some(a => a.key === 'rsi') ? 44 : 0) + (activeIndicators.some(a => a.key === 'macd') ? 44 : 0)
+                          const activeSubCharts = activeIndicators.filter(a => SUBCHART_KEYS.includes(a.key))
+                          const visibleSubCharts = activeSubCharts.slice(0, 3)
+                          const subChartH = visibleSubCharts.length * 44
                           const H = chartH + volH + timeAxisH + subChartH
                           const chartW = W - padR - padL
 
@@ -4889,7 +5310,6 @@ function Dashboard() {
                                 if (upperPts.length < 2 || lowerPts.length < 2) return null
                                 const upperPath = upperPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
                                 const lowerPath = lowerPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-                                // Fill between bands
                                 const fillPath = upperPath + ' ' + lowerPts.slice().reverse().map((p, i) => `${i === 0 ? 'L' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z'
                                 return (
                                   <g>
@@ -4900,74 +5320,523 @@ function Dashboard() {
                                 )
                               })()}
 
-                              {/* RSI Sub-chart */}
-                              {activeIndicators.some(a => a.key === 'rsi') && (() => {
-                                const rsiData = computeRSI(visibleCandles)
-                                const rsiH = 40
-                                const rsiY = padT + priceAreaH + volH + timeAxisH + 2
-                                const rsiPad = 2
-                                // Scale: RSI 0-100 maps to rsiH
-                                const rsiYScale = (v: number) => rsiY + rsiPad + ((100 - v) / 100) * (rsiH - rsiPad * 2)
-                                const pts: { x: number; y: number }[] = []
-                                rsiData.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: rsiYScale(v) }) })
-                                if (pts.length < 2) return null
-                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                              {/* Envelopes */}
+                              {activeIndicators.some(a => a.key === 'envelopes') && (() => {
+                                const env = computeEnvelopes(visibleCandles)
+                                const upperPts: { x: number; y: number }[] = []
+                                const lowerPts: { x: number; y: number }[] = []
+                                env.upper.forEach((v, i) => { if (v !== null) upperPts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+                                env.lower.forEach((v, i) => { if (v !== null) lowerPts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+                                if (upperPts.length < 2 || lowerPts.length < 2) return null
+                                const upperPath = upperPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                                const lowerPath = lowerPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                                const fillPath = upperPath + ' ' + lowerPts.slice().reverse().map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z'
                                 return (
                                   <g>
-                                    {/* RSI background */}
-                                    <rect x={padL} y={rsiY} width={chartW} height={rsiH} fill="rgba(245,158,11,0.02)" rx="1" />
-                                    {/* 70/30 lines */}
-                                    <line x1={padL} y1={rsiYScale(70)} x2={padL + chartW} y2={rsiYScale(70)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
-                                    <line x1={padL} y1={rsiYScale(30)} x2={padL + chartW} y2={rsiYScale(30)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
-                                    <line x1={padL} y1={rsiYScale(50)} x2={padL + chartW} y2={rsiYScale(50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
-                                    {/* Labels */}
-                                    <text x={padL + chartW + 2} y={rsiYScale(70) + 2} fontSize="4.5" fill="rgba(239,83,80,0.4)" fontFamily="monospace">70</text>
-                                    <text x={padL + chartW + 2} y={rsiYScale(30) + 2} fontSize="4.5" fill="rgba(34,197,94,0.4)" fontFamily="monospace">30</text>
-                                    <text x={padL + 2} y={rsiY + 5} fontSize="4.5" fill="rgba(245,158,11,0.5)" fontFamily="monospace" fontWeight="700">RSI(14)</text>
-                                    {/* RSI line */}
-                                    <path d={pathD} fill="none" stroke="#f59e0b" strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />
+                                    <path d={fillPath} fill="rgba(20,184,166,0.03)" />
+                                    <path d={upperPath} fill="none" stroke="#14b8a6" strokeWidth="0.4" opacity="0.45" strokeLinejoin="round" />
+                                    <path d={lowerPath} fill="none" stroke="#14b8a6" strokeWidth="0.4" opacity="0.45" strokeLinejoin="round" />
                                   </g>
                                 )
                               })()}
 
-                              {/* MACD Sub-chart */}
-                              {activeIndicators.some(a => a.key === 'macd') && (() => {
-                                const macdData = computeMACD(visibleCandles)
-                                const macdH = 40
-                                const macdY = padT + priceAreaH + volH + timeAxisH + (activeIndicators.some(a => a.key === 'rsi') ? 44 : 2)
-                                // Find MACD range for scaling
-                                const allMacdVals = [...macdData.macd, ...macdData.signal].filter((v): v is number => v !== null)
-                                const macdMax = Math.max(...allMacdVals.map(Math.abs), 0.001)
-                                const macdYScale = (v: number) => macdY + macdH / 2 - (v / macdMax) * (macdH / 2 - 2)
-                                // MACD line
-                                const macdPts: { x: number; y: number }[] = []
-                                macdData.macd.forEach((v, i) => { if (v !== null) macdPts.push({ x: padL + (i + 0.5) * candleSpacing, y: macdYScale(v) }) })
-                                // Signal line
-                                const sigPts: { x: number; y: number }[] = []
-                                macdData.signal.forEach((v, i) => { if (v !== null) sigPts.push({ x: padL + (i + 0.5) * candleSpacing, y: macdYScale(v) }) })
+                              {/* Ichimoku Kinko Hyo */}
+                              {activeIndicators.some(a => a.key === 'ichimoku') && (() => {
+                                const ich = computeIchimoku(visibleCandles)
+                                const mkPts = (arr: (number | null)[]) => { const pts: { x: number; y: number }[] = []; arr.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) }); return pts }
+                                const mkPath = (pts: { x: number; y: number }[]) => pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                                const tenkanPts = mkPts(ich.tenkan)
+                                const kijunPts = mkPts(ich.kijun)
+                                const senkouAPts = mkPts(ich.senkouA)
+                                const senkouBPts = mkPts(ich.senkouB)
+                                const chikouPts = mkPts(ich.chikou)
+                                // Cloud fill
+                                let cloudFill: JSX.Element | null = null
+                                if (senkouAPts.length >= 2 && senkouBPts.length >= 2) {
+                                  const aPath = mkPath(senkouAPts)
+                                  const bPath = mkPath(senkouBPts)
+                                  const fillD = aPath + ' ' + senkouBPts.slice().reverse().map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z'
+                                  cloudFill = <path d={fillD} fill="rgba(234,179,8,0.04)" />
+                                }
                                 return (
                                   <g>
-                                    {/* MACD background */}
-                                    <rect x={padL} y={macdY} width={chartW} height={macdH} fill="rgba(59,130,246,0.02)" rx="1" />
-                                    {/* Zero line */}
-                                    <line x1={padL} y1={macdY + macdH / 2} x2={padL + chartW} y2={macdY + macdH / 2} stroke={trTheme.border} strokeWidth="0.3" />
-                                    <text x={padL + 2} y={macdY + 5} fontSize="4.5" fill="rgba(59,130,246,0.5)" fontFamily="monospace" fontWeight="700">MACD</text>
-                                    {/* Histogram bars */}
-                                    {macdData.histogram.map((v, i) => {
-                                      if (v === null) return null
-                                      const x = padL + i * candleSpacing + candleSpacing * 0.15
-                                      const w = candleSpacing * 0.7
-                                      const y0 = macdY + macdH / 2
-                                      const y1 = macdYScale(v)
-                                      return <rect key={`macd-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={v >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,83,80,0.3)'} rx="0.3" />
-                                    })}
-                                    {/* MACD line */}
-                                    {macdPts.length >= 2 && <path d={macdPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')} fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
-                                    {/* Signal line */}
-                                    {sigPts.length >= 2 && <path d={sigPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')} fill="none" stroke="#ef5350" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                    {cloudFill}
+                                    {tenkanPts.length >= 2 && <path d={mkPath(tenkanPts)} fill="none" stroke="#eab308" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                    {kijunPts.length >= 2 && <path d={mkPath(kijunPts)} fill="none" stroke="#3b82f6" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                    {senkouAPts.length >= 2 && <path d={mkPath(senkouAPts)} fill="none" stroke="#22c55e" strokeWidth="0.3" opacity="0.35" strokeLinejoin="round" strokeDasharray="2,1" />}
+                                    {senkouBPts.length >= 2 && <path d={mkPath(senkouBPts)} fill="none" stroke="#ef4444" strokeWidth="0.3" opacity="0.35" strokeLinejoin="round" strokeDasharray="2,1" />}
+                                    {chikouPts.length >= 2 && <path d={mkPath(chikouPts)} fill="none" stroke="#a855f7" strokeWidth="0.3" opacity="0.3" strokeLinejoin="round" />}
                                   </g>
                                 )
                               })()}
+
+                              {/* Parabolic SAR */}
+                              {activeIndicators.some(a => a.key === 'sar') && (() => {
+                                const sarData = computeSAR(visibleCandles)
+                                return (
+                                  <g>
+                                    {sarData.map((v, i) => {
+                                      if (v === null) return null
+                                      const cx = padL + (i + 0.5) * candleSpacing
+                                      const cy = yScale(v)
+                                      const isAbove = v > visibleCandles[i].close
+                                      return <circle key={`sar-${i}`} cx={cx} cy={cy} r={candleSpacing > 4 ? 1.2 : 0.8} fill={isAbove ? 'rgba(239,83,80,0.5)' : 'rgba(34,197,94,0.5)'} />
+                                    })}
+                                  </g>
+                                )
+                              })()}
+
+                              {/* ZigZag */}
+                              {activeIndicators.some(a => a.key === 'zigzag') && (() => {
+                                const zzData = computeZigZag(visibleCandles)
+                                const pts: { x: number; y: number }[] = []
+                                zzData.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+                                if (pts.length < 2) return null
+                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+                                return <path d={pathD} fill="none" stroke="#a855f7" strokeWidth="0.6" opacity="0.5" strokeLinejoin="round" strokeLinecap="round" />
+                              })()}
+
+                              {/* Alligator */}
+                              {activeIndicators.some(a => a.key === 'alligator') && (() => {
+                                const alg = computeAlligator(visibleCandles)
+                                const mkPts = (arr: (number | null)[]) => { const pts: { x: number; y: number }[] = []; arr.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) }); return pts }
+                                const mkPath = (pts: { x: number; y: number }[]) => pts.length >= 2 ? pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') : ''
+                                const jawPts = mkPts(alg.jaw)
+                                const teethPts = mkPts(alg.teeth)
+                                const lipsPts = mkPts(alg.lips)
+                                return (
+                                  <g>
+                                    {jawPts.length >= 2 && <path d={mkPath(jawPts)} fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.4" strokeLinejoin="round" />}
+                                    {teethPts.length >= 2 && <path d={mkPath(teethPts)} fill="none" stroke="#ef4444" strokeWidth="0.5" opacity="0.4" strokeLinejoin="round" />}
+                                    {lipsPts.length >= 2 && <path d={mkPath(lipsPts)} fill="none" stroke="#22c55e" strokeWidth="0.5" opacity="0.4" strokeLinejoin="round" />}
+                                  </g>
+                                )
+                              })()}
+
+                              {/* Fractals */}
+                              {activeIndicators.some(a => a.key === 'fractals') && (() => {
+                                const frac = computeFractals(visibleCandles)
+                                return (
+                                  <g>
+                                    {frac.up.map((v, i) => {
+                                      if (!v) return null
+                                      const cx = padL + (i + 0.5) * candleSpacing
+                                      const cy = yScale(visibleCandles[i].high) - 3
+                                      return <polygon key={`frac-up-${i}`} points={`${cx},${cy} ${cx-1.5},${cy-2.5} ${cx+1.5},${cy-2.5}`} fill="rgba(239,83,80,0.5)" />
+                                    })}
+                                    {frac.down.map((v, i) => {
+                                      if (!v) return null
+                                      const cx = padL + (i + 0.5) * candleSpacing
+                                      const cy = yScale(visibleCandles[i].low) + 3
+                                      return <polygon key={`frac-dn-${i}`} points={`${cx},${cy} ${cx-1.5},${cy+2.5} ${cx+1.5},${cy+2.5}`} fill="rgba(34,197,94,0.5)" />
+                                    })}
+                                  </g>
+                                )
+                              })()}
+
+                              {/* ── Sub-chart Indicators (dynamic, max 3) ── */}
+                              {visibleSubCharts.map((subInd, subIdx) => {
+                                const subY = padT + priceAreaH + volH + timeAxisH + subIdx * 44 + 2
+                                const subH = 40
+                                const subPad = 2
+                                const xOf = (i: number) => padL + (i + 0.5) * candleSpacing
+                                const indColor = subInd.color
+                                const indKey = subInd.key
+                                const indLabel = subInd.label
+
+                                // Helper: make line path from array
+                                const mkLine = (arr: (number | null)[], yFn: (v: number) => number) => {
+                                  const pts: { x: number; y: number }[] = []
+                                  arr.forEach((v, i) => { if (v !== null) pts.push({ x: xOf(i), y: yFn(v) }) })
+                                  return pts.length >= 2 ? pts.map((p, j) => `${j === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') : null
+                                }
+
+                                // Helper: auto-scale from array
+                                const autoScale = (arr: (number | null)[], pad = 2) => {
+                                  const vals = arr.filter((v): v is number => v !== null)
+                                  if (vals.length === 0) return { min: -1, max: 1, yFn: (v: number) => subY + subH / 2 }
+                                  const mn = Math.min(...vals), mx = Math.max(...vals)
+                                  const range = mx - mn || 1
+                                  const scaledMin = mn - range * 0.05, scaledMax = mx + range * 0.05
+                                  const scaledRange = scaledMax - scaledMin
+                                  return { min: scaledMin, max: scaledMax, yFn: (v: number) => subY + subPad + ((scaledMax - v) / scaledRange) * (subH - subPad * 2) }
+                                }
+
+                                // Helper: fixed range scale
+                                const fixedScale = (lo: number, hi: number) => {
+                                  const range = hi - lo
+                                  return (v: number) => subY + subPad + ((hi - v) / range) * (subH - subPad * 2)
+                                }
+
+                                // Helper: zero-centered auto-scale
+                                const zeroScale = (arr: (number | null)[]) => {
+                                  const vals = arr.filter((v): v is number => v !== null)
+                                  const maxAbs = Math.max(...vals.map(Math.abs), 0.001)
+                                  return (v: number) => subY + subH / 2 - (v / maxAbs) * (subH / 2 - subPad)
+                                }
+
+                                // Background & label for every sub-chart
+                                const bgRect = <rect x={padL} y={subY} width={chartW} height={subH} fill={`${indColor}03`} rx="1" />
+                                const labelText = <text x={padL + 2} y={subY + 5} fontSize="4.5" fill={`${indColor}80`} fontFamily="monospace" fontWeight="700">{indLabel}</text>
+
+                                switch (indKey) {
+                                  case 'rsi': {
+                                    const data = computeRSI(visibleCandles)
+                                    const yFn = fixedScale(0, 100)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={yFn(70)} x2={padL + chartW} y2={yFn(70)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(30)} x2={padL + chartW} y2={yFn(30)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(50)} x2={padL + chartW} y2={yFn(50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+                                        <text x={padL + chartW + 2} y={yFn(70) + 2} fontSize="4" fill="rgba(239,83,80,0.35)" fontFamily="monospace">70</text>
+                                        <text x={padL + chartW + 2} y={yFn(30) + 2} fontSize="4" fill="rgba(34,197,94,0.35)" fontFamily="monospace">30</text>
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'macd': {
+                                    const data = computeMACD(visibleCandles)
+                                    const yFn = zeroScale([...data.macd, ...data.signal].filter((v): v is number => v !== null))
+                                    const macdLine = mkLine(data.macd, yFn)
+                                    const sigLine = mkLine(data.signal, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {data.histogram.map((v, i) => {
+                                          if (v === null) return null
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.15
+                                          const w = candleSpacing * 0.7
+                                          const y0 = subY + subH / 2
+                                          const y1 = yFn(v)
+                                          return <rect key={`macd-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={v >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,83,80,0.3)'} rx="0.3" />
+                                        })}
+                                        {macdLine && <path d={macdLine} fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                        {sigLine && <path d={sigLine} fill="none" stroke="#ef5350" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'adx': {
+                                    const data = computeADX(visibleCandles)
+                                    const yFn = fixedScale(0, 100)
+                                    const adxLine = mkLine(data.adx, yFn)
+                                    const pdiLine = mkLine(data.plusDI, yFn)
+                                    const mdiLine = mkLine(data.minusDI, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={yFn(25)} x2={padL + chartW} y2={yFn(25)} stroke={trTheme.gridLine} strokeWidth="0.2" strokeDasharray="2,2" />
+                                        <text x={padL + chartW + 2} y={yFn(25) + 2} fontSize="4" fill={`${indColor}40`} fontFamily="monospace">25</text>
+                                        {adxLine && <path d={adxLine} fill="none" stroke={indColor} strokeWidth="0.6" opacity="0.7" strokeLinejoin="round" />}
+                                        {pdiLine && <path d={pdiLine} fill="none" stroke="#22c55e" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                        {mdiLine && <path d={mdiLine} fill="none" stroke="#ef4444" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'atr': {
+                                    const data = computeATR(visibleCandles)
+                                    const { yFn } = autoScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'bears': {
+                                    const data = computeBearsPower(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'bulls': {
+                                    const data = computeBullsPower(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'cci': {
+                                    const data = computeCCI(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        <line x1={padL} y1={yFn(100)} x2={padL + chartW} y2={yFn(100)} stroke="rgba(239,83,80,0.15)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(-100)} x2={padL + chartW} y2={yFn(-100)} stroke="rgba(34,197,94,0.15)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'demarker': {
+                                    const data = computeDeMarker(visibleCandles)
+                                    const yFn = fixedScale(0, 1)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={yFn(0.7)} x2={padL + chartW} y2={yFn(0.7)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(0.3)} x2={padL + chartW} y2={yFn(0.3)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(0.5)} x2={padL + chartW} y2={yFn(0.5)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'force': {
+                                    const data = computeForceIndex(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'momentum': {
+                                    const data = computeMomentum(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'osma': {
+                                    const data = computeOsMA(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {data.map((v, i) => {
+                                          if (v === null) return null
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.15
+                                          const w = candleSpacing * 0.7
+                                          const y0 = subY + subH / 2
+                                          const y1 = yFn(v)
+                                          return <rect key={`osma-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={v >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,83,80,0.3)'} rx="0.3" />
+                                        })}
+                                      </g>
+                                    )
+                                  }
+                                  case 'rvi': {
+                                    const data = computeRVI(visibleCandles)
+                                    const yFn = zeroScale([...data.rvi, ...data.signal].filter((v): v is number => v !== null))
+                                    const rviLine = mkLine(data.rvi, yFn)
+                                    const sigLine = mkLine(data.signal, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {rviLine && <path d={rviLine} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                        {sigLine && <path d={sigLine} fill="none" stroke="#ef5350" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'stochastic': {
+                                    const data = computeStochastic(visibleCandles)
+                                    const yFn = fixedScale(0, 100)
+                                    const kLine = mkLine(data.k, yFn)
+                                    const dLine = mkLine(data.d, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={yFn(80)} x2={padL + chartW} y2={yFn(80)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(20)} x2={padL + chartW} y2={yFn(20)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(50)} x2={padL + chartW} y2={yFn(50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+                                        {kLine && <path d={kLine} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                        {dLine && <path d={dLine} fill="none" stroke="#3b82f6" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'williamsr': {
+                                    const data = computeWilliamsR(visibleCandles)
+                                    const yFn = fixedScale(-100, 0)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={yFn(-20)} x2={padL + chartW} y2={yFn(-20)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(-80)} x2={padL + chartW} y2={yFn(-80)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(-50)} x2={padL + chartW} y2={yFn(-50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'ad': {
+                                    const data = computeAD(visibleCandles)
+                                    const dataNullable: (number | null)[] = data
+                                    const { yFn } = autoScale(dataNullable)
+                                    const line = mkLine(dataNullable, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'mfi': {
+                                    const data = computeMFI(visibleCandles)
+                                    const yFn = fixedScale(0, 100)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={yFn(80)} x2={padL + chartW} y2={yFn(80)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        <line x1={padL} y1={yFn(20)} x2={padL + chartW} y2={yFn(20)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'obv': {
+                                    const data = computeOBV(visibleCandles)
+                                    const dataNullable: (number | null)[] = data
+                                    const { yFn } = autoScale(dataNullable)
+                                    const line = mkLine(dataNullable, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'volumes': {
+                                    const data = visibleCandles.map(c => c.volume)
+                                    const { yFn } = autoScale(data.map(v => v as number | null), 2)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        {data.map((v, i) => {
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+                                          const w = candleSpacing * 0.8
+                                          const y1 = yFn(v)
+                                          const y0 = yFn(0)
+                                          const isBull = visibleCandles[i].close >= visibleCandles[i].open
+                                          return <rect key={`vol-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={isBull ? 'rgba(34,197,94,0.25)' : 'rgba(239,83,80,0.25)'} rx="0.3" />
+                                        })}
+                                      </g>
+                                    )
+                                  }
+                                  case 'ac': {
+                                    const data = computeAC(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {data.map((v, i) => {
+                                          if (v === null) return null
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+                                          const w = candleSpacing * 0.8
+                                          const y0 = subY + subH / 2
+                                          const y1 = yFn(v)
+                                          const prev = i > 0 && data[i-1] !== null ? data[i-1]! : 0
+                                          const barColor = v > prev ? 'rgba(34,197,94,0.35)' : 'rgba(239,83,80,0.35)'
+                                          return <rect key={`ac-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+                                        })}
+                                      </g>
+                                    )
+                                  }
+                                  case 'ao': {
+                                    const data = computeAO(visibleCandles)
+                                    const yFn = zeroScale(data)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {data.map((v, i) => {
+                                          if (v === null) return null
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+                                          const w = candleSpacing * 0.8
+                                          const y0 = subY + subH / 2
+                                          const y1 = yFn(v)
+                                          const prev = i > 0 && data[i-1] !== null ? data[i-1]! : 0
+                                          const barColor = v > prev ? 'rgba(34,197,94,0.35)' : 'rgba(239,83,80,0.35)'
+                                          return <rect key={`ao-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+                                        })}
+                                      </g>
+                                    )
+                                  }
+                                  case 'gator': {
+                                    const data = computeGator(visibleCandles)
+                                    const allVals = [...data.upper, ...data.lower].filter((v): v is number => v !== null)
+                                    const maxAbs = Math.max(...allVals.map(Math.abs), 0.001)
+                                    const yFn = (v: number) => subY + subH / 2 - (v / maxAbs) * (subH / 2 - subPad)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+                                        {data.upper.map((v, i) => {
+                                          if (v === null) return null
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+                                          const w = candleSpacing * 0.8
+                                          const y0 = yFn(0)
+                                          const y1 = yFn(v)
+                                          const prev = i > 0 && data.upper[i-1] !== null ? data.upper[i-1]! : 0
+                                          const barColor = v > prev ? 'rgba(34,197,94,0.35)' : 'rgba(34,197,94,0.2)'
+                                          return <rect key={`gator-u-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+                                        })}
+                                        {data.lower.map((v, i) => {
+                                          if (v === null) return null
+                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+                                          const w = candleSpacing * 0.8
+                                          const y0 = yFn(0)
+                                          const y1 = yFn(v)
+                                          const prev = i > 0 && data.lower[i-1] !== null ? data.lower[i-1]! : 0
+                                          const barColor = v < prev ? 'rgba(239,83,80,0.35)' : 'rgba(239,83,80,0.2)'
+                                          return <rect key={`gator-l-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+                                        })}
+                                      </g>
+                                    )
+                                  }
+                                  case 'bwMFI': {
+                                    const data = computeBWIMFI(visibleCandles)
+                                    const dataN: (number | null)[] = data
+                                    const { yFn } = autoScale(dataN)
+                                    const line = mkLine(dataN, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  case 'stddev': {
+                                    const data = computeStdDev(visibleCandles)
+                                    const { yFn } = autoScale(data)
+                                    const line = mkLine(data, yFn)
+                                    return (
+                                      <g key={indKey}>
+                                        {bgRect}{labelText}
+                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+                                      </g>
+                                    )
+                                  }
+                                  default:
+                                    return null
+                                }
+                              })}
 
                               {/* Indicator Legend — top area */}
                               <g opacity="0.55">

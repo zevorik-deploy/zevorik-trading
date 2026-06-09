@@ -493,3 +493,117 @@ Stage Summary:
 - Font sizes increased significantly across all trading tab sections for readability
 - Chart SVG uses theme-aware colors for background, grid lines, text, and crosshair
 - No lint errors, server compiles successfully
+
+---
+Task ID: 7
+Agent: Indicator Agent
+Task: Add ALL 30+ MT5 indicators to the Trading tab (computation, menu, SVG rendering)
+
+Work Log:
+
+### 1. Added ALL_INDICATORS Constant (before Dashboard function, ~line 706)
+- Created comprehensive `ALL_INDICATORS` array with 33 indicators organized into 4 groups:
+  - **Trend** (9): ADX, Bollinger Bands, Envelopes, Ichimoku, MA 5, MA 20, Parabolic SAR, Std Deviation, ZigZag
+  - **Oscillator** (13): ATR, Bears Power, Bulls Power, CCI, DeMarker, Force Index, MACD, Momentum, OsMA, RSI, RVI, Stochastic, Williams'%R
+  - **Volume** (4): A/D, MFI, OBV, Volumes
+  - **Bill Williams** (6): Accelerator, Alligator, Awesome AO, Fractals, Gator, BW MFI
+- Each indicator has: key, label, color, group, desc
+- Added `OVERLAY_KEYS` (9 indicators rendered on main chart) and `SUBCHART_KEYS` (23 indicators rendered as sub-charts)
+
+### 2. Added Computation Functions (after computeMACD, ~line 1132)
+Added 28 new `useCallback` computation functions:
+
+**Trend Indicators:**
+- `computeADX` - Average Directional Movement Index with Wilder's smoothing (returns adx, plusDI, minusDI)
+- `computeEnvelopes` - Price envelopes (20, 5%) with upper/middle/lower
+- `computeIchimoku` - Ichimoku Kinko Hyo (9,26,52) with tenkan/kijun/senkouA/senkouB/chikou
+- `computeSAR` - Parabolic SAR with step/max acceleration
+- `computeStdDev` - Standard Deviation (20)
+- `computeZigZag` - ZigZag pattern filter (5% deviation)
+
+**Oscillator Indicators:**
+- `computeATR` - Average True Range (14)
+- `computeBearsPower` - Bears Power (13) - low minus MA
+- `computeBullsPower` - Bulls Power (13) - high minus MA
+- `computeCCI` - Commodity Channel Index (14)
+- `computeDeMarker` - DeMarker (14) - 0 to 1 range
+- `computeForceIndex` - Force Index (13) - price × volume
+- `computeMomentum` - Momentum (14) - close minus close[n]
+- `computeOsMA` - OsMA (MACD histogram)
+- `computeRVI` - Relative Vigor Index (10) with signal line
+- `computeStochastic` - Stochastic Oscillator (5,3) with K and D lines
+- `computeWilliamsR` - Williams' Percent Range (14) -0 to -100
+
+**Volume Indicators:**
+- `computeAD` - Accumulation/Distribution (cumulative)
+- `computeMFI` - Money Flow Index (14) - 0 to 100
+- `computeOBV` - On Balance Volume (cumulative)
+
+**Bill Williams Indicators:**
+- `computeAO` - Awesome Oscillator (5-34 midpoint)
+- `computeAC` - Accelerator Oscillator (AO minus AO SMA5)
+- `computeAlligator` - Alligator (Jaw 13, Teeth 8, Lips 5)
+- `computeFractals` - Fractals (up/down peaks)
+- `computeGator` - Gator Oscillator (abs differences of Alligator lines)
+- `computeBWIMFI` - Market Facilitation Index (range/volume)
+
+### 3. Replaced Indicator Menu (was lines 4528-4559)
+- Replaced flat 5-indicator list with categorized 4-group menu
+- Each group has emoji header: 📊 Trend, 📈 Oscillator, 📦 Volume, 🐊 Bill Williams
+- Menu is scrollable (maxHeight: 320px, overflowY: auto)
+- Uses ALL_INDICATORS constant for consistent data
+- Each indicator shows color dot, label, description, and check mark when active
+- Minimum width increased to 190px for longer names
+
+### 4. Updated subChartH Calculation (line 5126)
+- Changed from hardcoded RSI/MACD check to dynamic calculation:
+  ```tsx
+  const activeSubCharts = activeIndicators.filter(a => SUBCHART_KEYS.includes(a.key))
+  const visibleSubCharts = activeSubCharts.slice(0, 3)
+  const subChartH = visibleSubCharts.length * 44
+  ```
+- Maximum 3 sub-charts visible at once to keep main chart visible
+
+### 5. Added Overlay Indicator SVG Rendering (after Bollinger Bands)
+- **Envelopes**: Upper/lower lines with teal fill between (like Bollinger)
+- **Ichimoku**: Tenkan (yellow), Kijun (blue), Senkou A (green dashed), Senkou B (red dashed), Chikou (purple), Cloud fill (yellow transparent)
+- **Parabolic SAR**: Dots above/below candles (red above = bearish, green below = bullish)
+- **ZigZag**: Purple line connecting swing highs/lows
+- **Alligator**: Jaw (blue), Teeth (red), Lips (green) moving averages
+- **Fractals**: Red triangles above peaks, green triangles below valleys
+
+### 6. Replaced RSI+MACD Sub-charts with Generic Sub-chart Rendering
+- Removed individual RSI and MACD sub-chart blocks
+- Added `visibleSubCharts.map()` with switch statement for all 23 sub-chart indicators
+- Each sub-chart uses:
+  - `subY = padT + priceAreaH + volH + timeAxisH + subIdx * 44 + 2` for positioning
+  - `bgRect` with indicator color at 3% opacity
+  - `labelText` with indicator name in top-left
+  - Proper scale function (fixedScale, autoScale, or zeroScale)
+  - Reference lines (overbought/oversold, zero line, etc.)
+- **Scale types:**
+  - `fixedScale(lo, hi)` - for RSI (0-100), Stochastic (0-100), Williams%R (-100,0), MFI (0-100), DeMarker (0,1), ADX (0,100)
+  - `zeroScale(arr)` - for MACD, Bears/Bulls, CCI, Force, Momentum, OsMA, RVI, AC, AO, Gator
+  - `autoScale(arr)` - for ATR, A/D, OBV, Volumes, BW MFI, StdDev
+- **Rendering types:**
+  - Line charts: ATR, Bears/Bulls, CCI, DeMarker, Force, Momentum, Williams%R, A/D, MFI, OBV, StdDev, BW MFI
+  - Dual-line charts: RSI, MACD, ADX, RVI, Stochastic
+  - Histogram charts: MACD, OsMA, AC, AO, Gator, Volumes
+- All sub-charts use trTheme colors for grid lines and backgrounds
+
+### No Changes To:
+- Any other tab (home, market, portfolio, investasi, profil)
+- Bottom navigation
+- Login page
+- Trading logic (positions, P/L calculation, lot system)
+- Interaction handlers (crosshair, zoom, pan, pinch, scroll)
+- Confirm trade dialog
+
+Stage Summary:
+- 33 MT5 indicators fully implemented (computation + rendering)
+- Indicator menu organized into 4 categories with scrollable dropdown
+- Overlay indicators: MA5, MA20, Bollinger, Envelopes, Ichimoku, SAR, ZigZag, Alligator, Fractals
+- Sub-chart indicators: RSI, MACD, ADX, ATR, Bears/Bulls, CCI, DeMarker, Force, Momentum, OsMA, RVI, Stochastic, Williams%R, A/D, MFI, OBV, Volumes, AC, AO, Gator, BW MFI, StdDev
+- Maximum 3 sub-charts visible simultaneously
+- All sub-charts properly scaled with reference lines
+- No lint errors, server compiles and runs correctly
