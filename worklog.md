@@ -346,3 +346,37 @@ Stage Summary:
 - Leverage selector now compact dropdown below LOT stepper
 - Chart uses professional MT5 rendering with glowing price dot, dotted grid, adaptive candles
 - All features verified working in browser
+---
+Task ID: 2
+Agent: Main Agent
+Task: Add MT5 chart toolbar features (chart types, indicators, crosshair)
+
+Work Log:
+- Added states: chartType, crosshairMode, showIndicatorMenu, activeIndicators (with MA5/MA20 default)
+- Added icon imports: Crosshair, Activity, SlidersHorizontal
+- Added indicator computation functions: computeBollinger, computeRSI, computeMACD
+- Added chart toolbar UI between trading bar and chart with:
+  - Chart type buttons (🕯 Candle / 📈 Line / 📊 Bar)
+  - Crosshair toggle button
+  - Indicators dropdown with 5 options (MA5, MA20, Bollinger Bands, RSI 14, MACD)
+  - Active indicator pills showing currently active indicators
+- Implemented 3 chart type renderings:
+  - Candlestick (existing, enhanced)
+  - Line chart with gradient area fill
+  - OHLC bar chart
+- Implemented indicator overlays:
+  - MA5/MA20 lines (conditional based on activeIndicators)
+  - Bollinger Bands (purple upper/lower bands with fill)
+  - RSI sub-chart (below main chart, with 70/30 lines)
+  - MACD sub-chart (below RSI, with histogram bars, signal line)
+- Dynamic SVG height adjusts for RSI/MACD sub-charts
+- Crosshair respects crosshairMode toggle
+- Dynamic indicator legend at top of chart
+- All verified in browser with zero errors
+
+Stage Summary:
+- Full MT5-style chart toolbar with chart type switching, crosshair toggle, and indicator management
+- 5 technical indicators: MA5, MA20, Bollinger Bands, RSI(14), MACD(12,26,9)
+- RSI and MACD render as sub-charts below the main chart
+- Chart type switching between Candlestick, Line, and Bar works instantly
+- All features browser-verified and working
