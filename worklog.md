@@ -632,3 +632,25 @@ Stage Summary:
 - Crosshair much more visible with colored price badge
 - Chart tab has compact BUY/SELL, Trade tab has full order form with SL/TP
 - No compilation errors
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Polish ZEVORIX trading platform - lot selector, crosshair, candles, price line, design
+
+Work Log:
+- Added lot selector with +/- buttons between BUY/SELL in Chart tab (vertical layout: + on top, value in middle, - on bottom)
+- Improved candlestick rendering: solid filled candles with green (#26a69a) for up, red (#ef5350) for down, subtle 3D inner glow effect, thicker wicks
+- Enhanced crosshair: always visible on hover (not requiring crosshair mode toggle), 3-layer center dot (outer glow + main dot + white center), OHLC data tooltip in top-left, price label on right axis, time label on bottom axis, extends through volume area
+- Improved current price line: thicker dashed line with subtle glow underneath, larger pulsing dot, bigger price badge
+- Changed price line from straight line segments to smooth cubic bezier curves for continuous feel
+- Price line now uses chart color (green/red) instead of blue for better visual consistency
+- Cleaned up buy/sell bar: taller buttons (40px), tighter spacing, panel background
+- Verified all changes work via browser automation: lot increment/decrement confirmed, chart renders properly, no console errors
+
+Stage Summary:
+- Lot selector with +/- buttons working in both Chart and Trade tabs
+- Candles are solid filled with color coding and 3D effect
+- Crosshair is premium MT5 style with OHLC tooltip
+- Price line is smooth bezier with glow effect
+- No compilation or runtime errors

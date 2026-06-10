@@ -4785,8 +4785,8 @@ function Dashboard() {
                 const hasBuyPos = activePos.some(p => p.direction === 'NAIK')
                 const hasSellPos = activePos.some(p => p.direction === 'TURUN')
                 return (
-              <div className="flex-shrink-0" style={{ background: trTheme.bg, borderBottom: '1px solid ' + trTheme.border }}>
-                <div className="flex items-center gap-2 px-3 py-2">
+              <div className="flex-shrink-0" style={{ background: trTheme.bgPanel, borderBottom: '1px solid ' + trTheme.border }}>
+                <div className="flex items-center gap-1.5 px-2 py-1.5">
                   {/* SELL Button */}
                   <button
                     onClick={() => {
@@ -4799,7 +4799,7 @@ function Dashboard() {
                       setConfirmTradeDir('TURUN')
                       setShowConfirmTrade(true)
                     }}
-                    className="flex-1 relative rounded-lg flex items-center justify-center gap-2 transition-all overflow-hidden active:scale-[0.97] h-[36px]"
+                    className="flex-1 relative rounded-lg flex items-center justify-center gap-1.5 transition-all overflow-hidden active:scale-[0.97] h-[40px]"
                     style={(() => {
                       let bg: string
                       if (hasSellPos) {
@@ -4811,15 +4811,25 @@ function Dashboard() {
                       }
                       return { background: bg, boxShadow: '0 2px 12px rgba(239,68,68,0.3)' }
                     })()}>
-                    <TrendingDown className="w-4 h-4 text-white/80" />
-                    <span className="text-[14px] font-black tracking-[0.2em] text-white">SELL</span>
+                    <TrendingDown className="w-4 h-4 text-white/90" />
+                    <span className="text-[13px] font-black tracking-[0.15em] text-white">SELL</span>
                     <span className="text-[8px] font-bold tabular-nums text-white/50">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
                   </button>
 
-                  {/* Current Lot/Lev indicator */}
-                  <div className="flex flex-col items-center px-1.5 py-0.5 rounded-md" style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.borderSubtle }}>
-                    <span className="text-[10px] font-black tabular-nums" style={{ color: trTheme.text }}>{sinyalLots}</span>
-                    <span className="text-[6px] font-bold text-amber-400/70">1:{sinyalLeverage}</span>
+                  {/* Lot Selector with +/- buttons */}
+                  <div className="flex flex-col items-center rounded-lg overflow-hidden" style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.inputBorder, minWidth: '72px' }}>
+                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur + 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+                      className="w-full h-4 flex items-center justify-center transition-colors hover:bg-green-500/20 active:bg-green-500/30" style={{ borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+                      <Plus className="w-2.5 h-2.5" style={{ color: '#4ade80' }} strokeWidth={3} />
+                    </button>
+                    <div className="flex flex-col items-center justify-center py-0.5 px-2">
+                      <span className="text-[11px] font-black tabular-nums leading-none" style={{ color: trTheme.text }}>{sinyalLots}</span>
+                      <span className="text-[6px] font-bold leading-none mt-0.5" style={{ color: 'rgba(251,191,36,0.6)' }}>LOT</span>
+                    </div>
+                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+                      className="w-full h-4 flex items-center justify-center transition-colors hover:bg-red-500/20 active:bg-red-500/30" style={{ borderTop: '1px solid ' + trTheme.borderSubtle }}>
+                      <Minus className="w-2.5 h-2.5" style={{ color: '#f87171' }} strokeWidth={3} />
+                    </button>
                   </div>
 
                   {/* BUY Button */}
@@ -4834,7 +4844,7 @@ function Dashboard() {
                       setConfirmTradeDir('NAIK')
                       setShowConfirmTrade(true)
                     }}
-                    className="flex-1 relative rounded-lg flex items-center justify-center gap-2 transition-all overflow-hidden active:scale-[0.97] h-[36px]"
+                    className="flex-1 relative rounded-lg flex items-center justify-center gap-1.5 transition-all overflow-hidden active:scale-[0.97] h-[40px]"
                     style={(() => {
                       let bg: string
                       if (hasBuyPos) {
@@ -4846,8 +4856,8 @@ function Dashboard() {
                       }
                       return { background: bg, boxShadow: '0 2px 12px rgba(34,197,94,0.3)' }
                     })()}>
-                    <TrendingUp className="w-4 h-4 text-white/80" />
-                    <span className="text-[14px] font-black tracking-[0.2em] text-white">BUY</span>
+                    <TrendingUp className="w-4 h-4 text-white/90" />
+                    <span className="text-[13px] font-black tracking-[0.15em] text-white">BUY</span>
                     <span className="text-[8px] font-bold tabular-nums text-white/50">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
                   </button>
                 </div>
@@ -5187,31 +5197,49 @@ function Dashboard() {
                                 const bodyH = Math.max(0.6, bodyBot - bodyTop)
                                 const wickTop = yScale(c.high)
                                 const wickBot = yScale(c.low)
-                                const wickW = candleBodyW > 6 ? 0.8 : 0.6
+                                const wickW = candleBodyW > 6 ? 1 : 0.7
+                                const bullColor = '#26a69a'
+                                const bearColor = '#ef5350'
+                                const fillColor = isBull ? bullColor : bearColor
+                                const strokeColor = isBull ? '#2bbd8e' : '#f87171'
                                 return (
                                   <g key={`candle-${i}`}>
-                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={isBull ? '#26a69a' : '#ef5350'} strokeWidth={wickW} strokeLinecap="round" />
-                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={isBull ? '#26a69a' : '#ef5350'} strokeWidth={wickW} strokeLinecap="round" />
-                                    {isBull ? (
-                                      <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH} fill="#26a69a" stroke="#2bbd8e" strokeWidth={candleBodyW > 4 ? 0.5 : 0.3} rx={candleBodyW > 6 ? 0.5 : 0} />
-                                    ) : (
-                                      <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH} fill="#ef5350" stroke="#f87171" strokeWidth={candleBodyW > 4 ? 0.5 : 0.3} rx={candleBodyW > 6 ? 0.5 : 0} />
+                                    {/* Upper wick */}
+                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth={wickW} strokeLinecap="round" />
+                                    {/* Lower wick */}
+                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth={wickW} strokeLinecap="round" />
+                                    {/* Candle body — solid filled */}
+                                    <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
+                                      fill={fillColor} stroke={strokeColor} strokeWidth={candleBodyW > 4 ? 0.4 : 0.2} rx={candleBodyW > 8 ? 0.8 : candleBodyW > 5 ? 0.4 : 0} />
+                                    {/* Subtle inner glow for 3D effect */}
+                                    {candleBodyW > 5 && bodyH > 2 && (
+                                      <rect x={cx - candleBodyW / 2 + 0.5} y={bodyTop + 0.5} width={candleBodyW - 1} height={Math.max(0.3, bodyH * 0.3)}
+                                        fill={isBull ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'} rx="0.3" />
                                     )}
                                   </g>
                                 )
                               })}
 
-                              {/* ── Continuous Price Line (close-to-close connection) ── */}
+                              {/* Continuous Price Line - smooth spline */}
                               {chartType === 'candle' && (() => {
                                 const pts: { x: number; y: number }[] = []
                                 visibleCandles.forEach((c, i) => {
                                   pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(c.close) })
                                 })
                                 if (pts.length < 2) return null
-                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-                                return <path d={pathD} fill="none" stroke="rgba(59,130,246,0.18)" strokeWidth="0.4" strokeLinejoin="round" strokeLinecap="round" />
+                                let pathD = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`
+                                for (let j = 1; j < pts.length; j++) {
+                                  const prev = pts[j - 1]
+                                  const curr = pts[j]
+                                  const cpx = (prev.x + curr.x) / 2
+                                  pathD += ` C${cpx.toFixed(1)},${prev.y.toFixed(1)} ${cpx.toFixed(1)},${curr.y.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`
+                                }
+                                const lineColor = isUp ? 'rgba(38,166,154,' : 'rgba(239,83,80,'
+                                return <g>
+                                  <path d={pathD} fill="none" stroke={lineColor + '0.12)'} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+                                  <path d={pathD} fill="none" stroke={lineColor + '0.35)'} strokeWidth="0.7" strokeLinejoin="round" strokeLinecap="round" />
+                                </g>
                               })()}
-
                               {/* Line Chart */}
                               {chartType === 'line' && (() => {
                                 const pts: { x: number; y: number }[] = []
@@ -5842,52 +5870,74 @@ function Dashboard() {
                                 )
                               })}
 
-                              {/* Current price line — thin dashed */}
+                              {/* Current price line — solid with glow */}
                               <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
-                                stroke={priceColor} strokeWidth="0.3" strokeDasharray="2,2" opacity="0.35" />
+                                stroke={priceColor} strokeWidth="0.5" strokeDasharray="4,2" opacity="0.55" />
+                              {/* Subtle glow under price line */}
+                              <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
+                                stroke={priceColor} strokeWidth="3" opacity="0.06" />
 
                               {/* Current price dot — glowing */}
-                              <circle cx={padL + chartW} cy={yLast} r="1.5" fill={priceColor} filter="url(#glowDot)">
-                                <animate attributeName="r" values="1.5;2.2;1.5" dur="2s" repeatCount="indefinite" />
+                              <circle cx={padL + chartW} cy={yLast} r="2" fill={priceColor} filter="url(#glowDot)">
+                                <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite" />
                               </circle>
 
                               {/* Current price badge — right edge MT5 style */}
-                              <rect x={padL + chartW + 1} y={yLast - 5} width={padR - 2} height="10" rx="1" fill="url(#priceBadgeGrad)" />
-                              <text x={padL + chartW + padR / 2} y={yLast + 2.5} fontSize="6" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{fmtChartPrice(lastPrice)}</text>
+                              <rect x={padL + chartW + 0.5} y={yLast - 6} width={padR - 1} height="12" rx="1.5" fill="url(#priceBadgeGrad)" />
+                              <text x={padL + chartW + padR / 2} y={yLast + 3} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{fmtChartPrice(lastPrice)}</text>
 
-                              {/* Crosshair — Clear MT5 style (shows when hovering or crosshair mode active) */}
-                              {(crosshairMode || sinyalCrosshair) && sinyalCrosshair && (() => {
+                              {/* Crosshair — Premium MT5 Style (always visible on hover) */}
+                              {sinyalCrosshair && (() => {
                                 const svgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
                                 const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
                                 const crossPrice = paddedMax - ((svgY - padT) / priceAreaH) * paddedRange
-                                // Find the candle index under cursor for time label
+                                // Find the candle index under cursor for OHLC display
                                 const candleIdx = Math.floor((svgX - padL) / candleSpacing)
-                                const timeLabel = candleIdx >= 0 && candleIdx < visibleCandles.length ? visibleCandles[candleIdx].time : ''
+                                const hoveredCandle = candleIdx >= 0 && candleIdx < visibleCandles.length ? visibleCandles[candleIdx] : null
+                                const timeLabel = hoveredCandle ? hoveredCandle.time : ''
+                                const crosshairColor = isTrDark ? 'rgba(160,175,195,0.6)' : 'rgba(60,60,60,0.5)'
+                                const crosshairDotColor = isUp ? '#26a69a' : '#ef5350'
                                 return (
-                                  <g opacity="0.85">
-                                    {/* Vertical crosshair line */}
-                                    <line x1={svgX} y1={padT} x2={svgX} y2={padT + priceAreaH} stroke={isTrDark ? 'rgba(148,163,184,0.55)' : 'rgba(80,80,80,0.55)'} strokeWidth="0.4" strokeDasharray="2.5,1.5" />
+                                  <g>
+                                    {/* Vertical crosshair line — full height including volume */}
+                                    <line x1={svgX} y1={padT} x2={svgX} y2={chartH + volH}
+                                      stroke={crosshairColor} strokeWidth="0.5" strokeDasharray="3,2" />
                                     {/* Horizontal crosshair line */}
-                                    <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY} stroke={isTrDark ? 'rgba(148,163,184,0.55)' : 'rgba(80,80,80,0.55)'} strokeWidth="0.4" strokeDasharray="2.5,1.5" />
+                                    <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY}
+                                      stroke={crosshairColor} strokeWidth="0.5" strokeDasharray="3,2" />
+                                    {/* Crosshair center dot */}
+                                    {svgY > padT && svgY < padT + priceAreaH && svgX > padL && svgX < padL + chartW && (
+                                      <>
+                                        <circle cx={svgX} cy={svgY} r="3" fill={crosshairDotColor} opacity="0.15" />
+                                        <circle cx={svgX} cy={svgY} r="1.8" fill={crosshairDotColor} opacity="0.8" />
+                                        <circle cx={svgX} cy={svgY} r="0.6" fill="#ffffff" opacity="0.9" />
+                                      </>
+                                    )}
                                     {/* Price label on right axis */}
                                     {svgY > padT && svgY < padT + priceAreaH && (
                                       <>
-                                        <rect x={padL + chartW + 0.5} y={svgY - 6} width={padR - 1} height="12" rx="1.5"
-                                          fill={isUp ? '#26a69a' : '#ef5350'} stroke="none" />
-                                        <text x={padL + chartW + padR / 2} y={svgY + 2.5} fontSize="7" fill="#ffffff" textAnchor="middle" fontFamily="monospace" fontWeight="800">{fmtChartPrice(crossPrice)}</text>
+                                        <rect x={padL + chartW + 0.5} y={svgY - 6.5} width={padR - 1} height="13" rx="2"
+                                          fill={crosshairDotColor} stroke="none" />
+                                        <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="7" fill="#ffffff" textAnchor="middle" fontFamily="monospace" fontWeight="800">{fmtChartPrice(crossPrice)}</text>
                                       </>
                                     )}
                                     {/* Time label on bottom axis */}
                                     {svgX > padL && svgX < padL + chartW && timeLabel && (
                                       <>
-                                        <rect x={svgX - 14} y={chartH + volH + 0.5} width="28" height="11" rx="1.5"
-                                          fill={isTrDark ? 'rgba(15,20,35,0.95)' : 'rgba(240,242,245,0.95)'} stroke={isTrDark ? 'rgba(148,163,184,0.3)' : 'rgba(0,0,0,0.15)'} strokeWidth="0.3" />
-                                        <text x={svgX} y={chartH + volH + 8.5} fontSize="6" fill={isTrDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)'} textAnchor="middle" fontFamily="monospace" fontWeight="700">{timeLabel}</text>
+                                        <rect x={svgX - 16} y={chartH + volH + 0.5} width="32" height="12" rx="2"
+                                          fill={isTrDark ? 'rgba(20,28,50,0.95)' : 'rgba(240,242,245,0.95)'} stroke={isTrDark ? 'rgba(148,163,184,0.25)' : 'rgba(0,0,0,0.12)'} strokeWidth="0.3" />
+                                        <text x={svgX} y={chartH + volH + 9} fontSize="6.5" fill={isTrDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)'} textAnchor="middle" fontFamily="monospace" fontWeight="700">{timeLabel}</text>
                                       </>
                                     )}
-                                    {/* Crosshair center dot */}
-                                    {svgY > padT && svgY < padT + priceAreaH && svgX > padL && svgX < padL + chartW && (
-                                      <circle cx={svgX} cy={svgY} r="1.5" fill={isUp ? '#26a69a' : '#ef5350'} opacity="0.7" />
+                                    {/* OHLC data tooltip — top-left corner of chart */}
+                                    {hoveredCandle && svgX > padL && svgX < padL + chartW && (
+                                      <g>
+                                        <rect x={padL + 3} y={padT + 2} width="62" height="32" rx="2"
+                                          fill={isTrDark ? 'rgba(10,14,23,0.92)' : 'rgba(255,255,255,0.92)'} stroke={isTrDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'} strokeWidth="0.3" />
+                                        <text x={padL + 6} y={padT + 9} fontSize="5" fill={isTrDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} fontFamily="monospace" fontWeight="600">O <tspan fill={isTrDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)'}>{fmtChartPrice(hoveredCandle.open)}</tspan>  H <tspan fill={hoveredCandle.high >= hoveredCandle.open ? '#26a69a' : '#ef5350'}>{fmtChartPrice(hoveredCandle.high)}</tspan></text>
+                                        <text x={padL + 6} y={padT + 17} fontSize="5" fill={isTrDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} fontFamily="monospace" fontWeight="600">L <tspan fill={hoveredCandle.low < hoveredCandle.open ? '#ef5350' : '#26a69a'}>{fmtChartPrice(hoveredCandle.low)}</tspan>  C <tspan fill={hoveredCandle.close >= hoveredCandle.open ? '#26a69a' : '#ef5350'}>{fmtChartPrice(hoveredCandle.close)}</tspan></text>
+                                        <text x={padL + 6} y={padT + 25} fontSize="4.5" fill={isTrDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)'} fontFamily="monospace" fontWeight="600">Vol {formatNumber(hoveredCandle.volume)}</text>
+                                      </g>
                                     )}
                                   </g>
                                 )
