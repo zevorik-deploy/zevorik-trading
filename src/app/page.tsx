@@ -1001,38 +1001,40 @@ function Dashboard() {
       if (sim.phase === 1) sim.trend = Math.random() > 0.5 ? 1 : -1
     }
 
-    const volatility = baseVal * (sim.phase === 0 ? 0.002 : sim.phase === 1 ? 0.004 : 0.008)
-    const drift = sim.phase === 1 ? sim.trend * baseVal * 0.002 : sim.phase === 2 ? (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.005 : 0
+    // Smoother volatility for cleaner candle flow
+    const volatility = baseVal * (sim.phase === 0 ? 0.0015 : sim.phase === 1 ? 0.003 : 0.006)
+    const drift = sim.phase === 1 ? sim.trend * baseVal * 0.0015 : sim.phase === 2 ? (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.004 : 0
 
-    sim.momentum = sim.momentum * 0.4 + drift + (Math.random() - 0.5) * volatility * 2
-    const meanRevert = (baseVal - prevClose) * 0.004
+    // Stronger momentum smoothing for sequential flow
+    sim.momentum = sim.momentum * 0.55 + drift + (Math.random() - 0.5) * volatility * 1.5
+    const meanRevert = (baseVal - prevClose) * 0.003
 
     const open = prevClose
     const rawClose = prevClose + sim.momentum + meanRevert
     const close = Math.round(Math.max(baseVal * 0.9, Math.min(baseVal * 1.1, rawClose)))
     const bodySize = Math.abs(close - open)
-    const maxWick = Math.max(bodySize * 0.5, baseVal * 0.001)
+    const maxWick = Math.max(bodySize * 0.6, baseVal * 0.0008)
 
-    // Determine pattern type
+    // Determine pattern type — reduced extreme patterns for cleaner flow
     const patternRoll = Math.random()
     let high: number, low: number
 
-    if (patternRoll < 0.08 && bodySize < baseVal * 0.0005) {
+    if (patternRoll < 0.06 && bodySize < baseVal * 0.0005) {
       // Doji: open ≈ close, small wicks
-      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 2)
-      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 2)
-    } else if (patternRoll < 0.14 && close > open) {
-      // Hammer: long lower wick, small body at top
-      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 0.5)
-      low = Math.min(open, close) - Math.round(maxWick * (2 + Math.random() * 3))
-    } else if (patternRoll < 0.20 && close < open) {
-      // Shooting star: long upper wick, small body at bottom
-      high = Math.max(open, close) + Math.round(maxWick * (2 + Math.random() * 3))
-      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 0.5)
+      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 1.5)
+      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 1.5)
+    } else if (patternRoll < 0.10 && close > open) {
+      // Hammer: moderate lower wick, small body at top
+      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 0.4)
+      low = Math.min(open, close) - Math.round(maxWick * (1.5 + Math.random() * 2))
+    } else if (patternRoll < 0.14 && close < open) {
+      // Shooting star: moderate upper wick, small body at bottom
+      high = Math.max(open, close) + Math.round(maxWick * (1.5 + Math.random() * 2))
+      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 0.4)
     } else {
-      // Normal candle
-      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 1.5 + baseVal * 0.0005)
-      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 1.5 + baseVal * 0.0005)
+      // Normal candle — controlled wick sizes for clean appearance
+      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 1.2 + baseVal * 0.0003)
+      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 1.2 + baseVal * 0.0003)
     }
 
     // Ensure high >= max(open,close) and low <= min(open,close)
@@ -2511,35 +2513,35 @@ function Dashboard() {
       const volMult = stockTier.volMultiplier
       // Scale volatility by timeframe — longer candles have more total movement
       const tfScale = Math.sqrt(tfSeconds / 60) // sqrt for realistic volatility scaling
-      // Moderate volatility (0.0018) for realistic MT5-style movement
-      const volatility = baseVal * 0.0018 * volMult * tfScale
+      // Smoother volatility for cleaner sequential candles
+      const volatility = baseVal * 0.0014 * volMult * tfScale
       let drift = 0
 
       const progress = cc.tickCount / cc.maxTicks
 
-      // Natural market movement — no rigging, pure trend + noise
+      // Natural market movement — smooth sequential flow
       // Trend strength varies naturally through the candle (like real markets)
-      const trendStrength = baseVal * 0.0005 * tfScale * (0.8 + Math.random() * 0.4)
+      const trendStrength = baseVal * 0.0004 * tfScale * (0.8 + Math.random() * 0.3)
       const noise = (Math.random() - 0.5) * volatility
 
       if (progress < 0.3) {
-        // Early phase: trend emerges with noise (market finding direction)
-        drift = sim.trend * trendStrength + noise
+        // Early phase: trend emerges smoothly
+        drift = sim.trend * trendStrength * 0.8 + noise * 0.7
       } else if (progress < 0.7) {
-        // Middle phase: trend strengthens (momentum builds naturally)
-        drift = sim.trend * trendStrength * 1.3 + noise
+        // Middle phase: trend strengthens (momentum builds)
+        drift = sim.trend * trendStrength * 1.1 + noise * 0.8
       } else {
-        // Late phase: trend continues or reversal attempt (natural market dynamics)
-        // Small chance of trend reversal (like real markets)
-        const reversalChance = Math.random() < 0.15
+        // Late phase: trend continues or slight reversal
+        const reversalChance = Math.random() < 0.12
         if (reversalChance) {
-          drift = -sim.trend * trendStrength * 0.8 + noise * 0.7
+          drift = -sim.trend * trendStrength * 0.6 + noise * 0.5
         } else {
-          drift = sim.trend * trendStrength * 1.1 + noise * 0.6
+          drift = sim.trend * trendStrength * 0.9 + noise * 0.5
         }
       }
 
-      sim.momentum = sim.momentum * 0.5 + drift
+      // Stronger momentum smoothing for sequential flow
+      sim.momentum = sim.momentum * 0.6 + drift
       // Weaker mean reversion so trends develop more dramatically
       const meanRevert = (sim.basePrice - sim.price) * 0.001
       sim.price = Math.round(Math.max(baseVal * 0.85, Math.min(baseVal * 1.15, sim.price + sim.momentum + meanRevert)))
@@ -2576,7 +2578,8 @@ function Dashboard() {
         cc.volume = 0
         cc.tickCount = 0
         cc.maxTicks = maxTicks
-        sim.trend = Math.random() > 0.5 ? 1 : -1
+        // Smooth trend transition — continue current trend or gradual reversal
+        sim.trend = Math.random() < 0.35 ? -sim.trend as 1 | -1 : sim.trend
       }
     }, tickIntervalMs)
 
@@ -4816,19 +4819,19 @@ function Dashboard() {
                     <span className="text-[8px] font-bold tabular-nums text-white/50">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
                   </button>
 
-                  {/* Lot Selector with +/- buttons */}
-                  <div className="flex flex-col items-center rounded-lg overflow-hidden" style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.inputBorder, minWidth: '72px' }}>
-                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur + 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                      className="w-full h-4 flex items-center justify-center transition-colors hover:bg-green-500/20 active:bg-green-500/30" style={{ borderBottom: '1px solid ' + trTheme.borderSubtle }}>
-                      <Plus className="w-2.5 h-2.5" style={{ color: '#4ade80' }} strokeWidth={3} />
-                    </button>
-                    <div className="flex flex-col items-center justify-center py-0.5 px-2">
-                      <span className="text-[11px] font-black tabular-nums leading-none" style={{ color: trTheme.text }}>{sinyalLots}</span>
-                      <span className="text-[6px] font-bold leading-none mt-0.5" style={{ color: 'rgba(251,191,36,0.6)' }}>LOT</span>
-                    </div>
+                  {/* Lot Selector with -/+ buttons side by side */}
+                  <div className="flex items-center rounded-lg overflow-hidden h-[40px]" style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.inputBorder }}>
                     <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
-                      className="w-full h-4 flex items-center justify-center transition-colors hover:bg-red-500/20 active:bg-red-500/30" style={{ borderTop: '1px solid ' + trTheme.borderSubtle }}>
-                      <Minus className="w-2.5 h-2.5" style={{ color: '#f87171' }} strokeWidth={3} />
+                      className="h-full w-8 flex items-center justify-center transition-colors hover:bg-red-500/20 active:bg-red-500/30" style={{ borderRight: '1px solid ' + trTheme.borderSubtle }}>
+                      <Minus className="w-3 h-3" style={{ color: '#f87171' }} strokeWidth={2.5} />
+                    </button>
+                    <div className="flex flex-col items-center justify-center px-2 min-w-[42px]">
+                      <span className="text-[12px] font-black tabular-nums leading-none" style={{ color: trTheme.text }}>{sinyalLots}</span>
+                      <span className="text-[5px] font-bold leading-none mt-0.5" style={{ color: 'rgba(251,191,36,0.6)' }}>LOT</span>
+                    </div>
+                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur + 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+                      className="h-full w-8 flex items-center justify-center transition-colors hover:bg-green-500/20 active:bg-green-500/30" style={{ borderLeft: '1px solid ' + trTheme.borderSubtle }}>
+                      <Plus className="w-3 h-3" style={{ color: '#4ade80' }} strokeWidth={2.5} />
                     </button>
                   </div>
 
@@ -5886,21 +5889,23 @@ function Dashboard() {
                               <rect x={padL + chartW + 0.5} y={yLast - 6} width={padR - 1} height="12" rx="1.5" fill="url(#priceBadgeGrad)" />
                               <text x={padL + chartW + padR / 2} y={yLast + 3} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{fmtChartPrice(lastPrice)}</text>
 
-                              {/* Crosshair — Premium MT5 Style (always visible on hover) */}
+                              {/* Crosshair — Premium MT5 Style with candle snapping */}
                               {sinyalCrosshair && (() => {
-                                const svgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
+                                const rawSvgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
                                 const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
+                                // Snap vertical line to nearest candle center
+                                const rawCandleIdx = (rawSvgX - padL) / candleSpacing - 0.5
+                                const snappedIdx = Math.max(0, Math.min(visibleCandles.length - 1, Math.round(rawCandleIdx)))
+                                const svgX = padL + (snappedIdx + 0.5) * candleSpacing
                                 const crossPrice = paddedMax - ((svgY - padT) / priceAreaH) * paddedRange
-                                // Find the candle index under cursor for OHLC display
-                                const candleIdx = Math.floor((svgX - padL) / candleSpacing)
-                                const hoveredCandle = candleIdx >= 0 && candleIdx < visibleCandles.length ? visibleCandles[candleIdx] : null
+                                const hoveredCandle = snappedIdx >= 0 && snappedIdx < visibleCandles.length ? visibleCandles[snappedIdx] : null
                                 const timeLabel = hoveredCandle ? hoveredCandle.time : ''
                                 const crosshairColor = isTrDark ? 'rgba(160,175,195,0.6)' : 'rgba(60,60,60,0.5)'
                                 const crosshairDotColor = isUp ? '#26a69a' : '#ef5350'
                                 return (
                                   <g>
-                                    {/* Vertical crosshair line — full height including volume */}
-                                    <line x1={svgX} y1={padT} x2={svgX} y2={chartH + volH}
+                                    {/* Vertical crosshair line — snapped to candle center */}
+                                    <line x1={svgX} y1={padT} x2={svgX} y2={chartH + volH + timeAxisH}
                                       stroke={crosshairColor} strokeWidth="0.5" strokeDasharray="3,2" />
                                     {/* Horizontal crosshair line */}
                                     <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY}
@@ -5921,7 +5926,7 @@ function Dashboard() {
                                         <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="7" fill="#ffffff" textAnchor="middle" fontFamily="monospace" fontWeight="800">{fmtChartPrice(crossPrice)}</text>
                                       </>
                                     )}
-                                    {/* Time label on bottom axis */}
+                                    {/* Time label on bottom axis — snapped to candle */}
                                     {svgX > padL && svgX < padL + chartW && timeLabel && (
                                       <>
                                         <rect x={svgX - 16} y={chartH + volH + 0.5} width="32" height="12" rx="2"

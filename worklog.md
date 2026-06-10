@@ -654,3 +654,44 @@ Stage Summary:
 - Crosshair is premium MT5 style with OHLC tooltip
 - Price line is smooth bezier with glow effect
 - No compilation or runtime errors
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Fix lot selector layout (side-by-side), improve candle sequential flow, fix crosshair alignment, polish UI
+
+Work Log:
+- Changed Chart tab lot selector from vertical (+/− top/bottom) to horizontal (− on left, lot value in center, + on right) matching user request
+- Horizontal layout uses `flex items-center` with `−` button having `borderRight`, `+` button having `borderLeft`
+- Lot value shows in compact format with "LOT" label underneath
+- Fixed lot selector height to match BUY/SELL buttons (h-[40px])
+- Improved candle generation (generateCandle function):
+  - Reduced volatility for smoother sequential flow (0.002→0.0015 consolidation, 0.004→0.003 trend, 0.008→0.006 breakout)
+  - Increased momentum smoothing factor (0.4→0.55) for less jumpy candles
+  - Reduced mean reversion strength (0.004→0.003) for more natural trend development
+  - Reduced extreme pattern probabilities (doji 8%→6%, hammer 6%→4%, shooting star 6%→4%)
+  - Controlled wick sizes for cleaner appearance (maxWick multiplier 1.5→1.2)
+- Improved real-time tick simulation for smoother candles:
+  - Reduced tick volatility (0.0018→0.0014) for less random noise
+  - Adjusted trend strength (0.0005→0.0004) for smoother directional movement
+  - Early phase uses gentler trend emergence (0.8x strength, 0.7x noise)
+  - Increased momentum smoothing (0.5→0.6) for better sequential flow
+  - Reduced reversal probability (15%→12%) and strength (0.8→0.6)
+- Fixed crosshair to snap to nearest candle center:
+  - Calculates raw mouse X position and snaps to closest candle index
+  - `snappedIdx = Math.round((rawSvgX - padL) / candleSpacing - 0.5)`
+  - `svgX = padL + (snappedIdx + 0.5) * candleSpacing` ensures crosshair always aligns with a candle
+  - Vertical crosshair line now extends through time axis area for full visibility
+- Improved trend transition between candles:
+  - Changed from random 50/50 new trend to 35% reversal chance
+  - Preserves current trend direction for more coherent price movement
+  - Type assertion `as 1 | -1` for proper TypeScript typing
+- Verified all changes with Agent Browser: lot −/+ buttons work, chart renders with smooth candles, crosshair snaps correctly
+- No lint errors, server compiles and runs correctly
+
+Stage Summary:
+- Lot selector now has − on left, lot value center, + on right (side by side, not vertical)
+- Candles flow more smoothly with reduced volatility and stronger momentum smoothing
+- Crosshair snaps to nearest candle center for precise alignment
+- Trend transitions are smoother (65% continue vs 50/50 random)
+- All verified working in browser
