@@ -923,8 +923,11 @@ function Dashboard() {
   const [sinyalCategory, setSinyalCategory] = useState<string>('popular')
   const [marketSignalTab, setMarketSignalTab] = useState<string>('favorit')
   const [marketFavFilter, setMarketFavFilter] = useState<string>('semua')
+  const [marketRegionFilter, setMarketRegionFilter] = useState<string>('semua')
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [marketSearchQuery, setMarketSearchQuery] = useState<string>('')
+  const [marketPage, setMarketPage] = useState<number>(1)
+  const MARKET_PAGE_SIZE = 50
   const [sinyalHistoryFilter, setSinyalHistoryFilter] = useState<string>('Semua')
   const [saldoSubTab, setSaldoSubTab] = useState<'posisi' | 'riwayat' | 'order'>('posisi')
   const [stopLossPrice, setStopLossPrice] = useState('')
@@ -2015,14 +2018,30 @@ function Dashboard() {
   // ============ MARKET CATEGORY HELPER ============
   const getMarketCategory = useCallback((s: Stock): string => {
     const cat = (s.category || '').toLowerCase()
-    const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE', 'SHIB', 'ATOM', 'FIL', 'NEAR', 'ALGO', 'VET', 'SAND', 'MANA', 'AXS', 'THETA', 'APT', 'ARB', 'OP', 'IMX', 'INJ', 'TIA', 'SEI', 'SUI', 'PEPE', 'FTM', 'GRT', 'ENS', 'LDO', 'RPL', 'STX']
-    const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPCAD', 'USDSGD', 'USDHKD', 'USDSEK', 'USDNOK', 'USDDKK', 'USDZAR', 'USDTRY', 'USDMXN', 'USDPLN', 'EURCHF']
-    const commodityCodes = ['GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER', 'PLATINUM', 'PALLADIUM', 'WHEAT', 'CORN', 'SOYBEANS', 'SUGAR', 'COFFEE', 'COTTON', 'LUMBER', 'RICE', 'CACAO', 'RUBBER', 'IRON']
+    const cryptoCodes = ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE', 'SHIB', 'ATOM', 'FIL', 'NEAR', 'ALGO', 'VET', 'SAND', 'MANA', 'AXS', 'THETA', 'APT', 'ARB', 'OP', 'IMX', 'INJ', 'TIA', 'SEI', 'SUI', 'PEPE', 'FTM', 'GRT', 'ENS', 'LDO', 'RPL', 'STX', 'RUNE', 'KAVA', 'DYDX', 'MINA', 'WLD', 'BONK', 'JUP', 'WIF']
+    const forexCodes = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPCAD', 'USDSGD', 'USDHKD', 'USDSEK', 'USDNOK', 'USDDKK', 'USDZAR', 'USDTRY', 'USDMXN', 'USDPLN', 'EURCHF', 'CADJPY', 'CHFJPY', 'NZDJPY', 'AUDCAD', 'AUDNZD', 'GBPNZD', 'EURCAD']
+    const commodityCodes = ['GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER', 'PLATINUM', 'PALLADIUM', 'WHEAT', 'CORN', 'SOYBEANS', 'SUGAR', 'COFFEE', 'COTTON', 'LUMBER', 'RICE', 'CACAO', 'RUBBER', 'IRON', 'ALUMINIUM', 'ZINC', 'NICKEL', 'LEAD', 'OILWTI', 'ETHANOL', 'OJ', 'OATS', 'COCOA']
     if (cat.includes('crypto') || cat.includes('kripto') || cryptoCodes.includes(s.code)) return 'crypto'
     if (cat.includes('forex') || forexCodes.includes(s.code)) return 'forex'
     if (cat.includes('commodity') || cat.includes('komoditas') || commodityCodes.includes(s.code)) return 'komoditas'
-    // All stock categories (tech, bluechip, banking, healthcare, consumer, energy, infrastructure, media, etc.) map to 'saham'
+    // All stock categories (tech, bluechip, banking, healthcare, consumer, energy, infrastructure, media, saham, etc.) map to 'saham'
     return 'saham'
+  }, [])
+
+  const getMarketRegion = useCallback((s: Stock): string => {
+    const sector = (s.sector || '').toLowerCase()
+    const code = s.code.toUpperCase()
+    // IDX stocks
+    const idxCodes = ['BBRI', 'BBCA', 'BMRI', 'TLKM', 'ASII', 'BBNI', 'UNVR', 'GOTO', 'EMTK', 'ANTM', 'BRIS', 'ICBP', 'KLBF', 'ACES', 'MAPI']
+    if (idxCodes.includes(code) || sector === 'idx') return 'IDX'
+    // European stocks
+    const euCodes = ['SAP', 'ASML', 'NESN', 'AZN', 'SHEL', 'BP', 'RIO', 'BHP', 'GSK', 'SNY', 'NOVN', 'ROG', 'NOVO', 'LVMH', 'MC', 'DTE', 'SIE', 'AIR', 'TTE', 'BN', 'UL']
+    if (euCodes.includes(code) || sector === 'european') return 'European'
+    // Asian stocks
+    const asiaCodes = ['BABA', 'JD', 'PDD', 'TCEHY', 'SONY', 'TM', 'HMC', 'SSNLF', 'HYMTF', 'KRX', 'MUFG', 'NTDOY', 'HDB', 'INFY', 'WIT', 'SEHK', 'SMFG', 'LI', 'XPEV', 'YMM', 'NIO', 'TSM']
+    if (asiaCodes.includes(code) || sector === 'asian') return 'Asian'
+    // Default: US
+    return 'US'
   }, [])
 
   // ============ TOGGLE FAVORITE ============
@@ -2450,28 +2469,8 @@ function Dashboard() {
       // Stock-specific initial trend bias (some stocks tend upward, some downward)
       const stockSeed = selectedSinyalStock.code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
       const initialTrend = stockSeed % 2 === 0 ? 1 : -1
-      const sim = {
-        price: basePrice,
-        basePrice,
-        momentum: 0,
-        trend: initialTrend,
-        phase: 1,
-        phaseLen: 5,
-        vol,
-        currentCandle: {
-          open: basePrice,
-          high: basePrice,
-          low: basePrice,
-          close: basePrice,
-          volume: 0,
-          tickCount: 0,
-          maxTicks,
-        },
-        // No rigging — real MT5 trending, chart moves naturally
-      }
 
-      // Generate more historical candles based on timeframe
-      // For 1m: 60 candles (1 hour of data), for 5m: 60 candles (5 hours), etc.
+      // Generate historical candles FIRST, then connect simulation to the last candle
       const histCount = 60
       const histCandles: CandleData[] = []
       const histStartOffset = (stockSeed % 7 - 3) / 100
@@ -2486,6 +2485,28 @@ function Dashboard() {
         histCandles.push({ ...candle, time: timeLabel })
         prevClose = candle.close
       }
+
+      // CRITICAL: Simulation starts where last historical candle ended
+      // This ensures seamless continuity — new candle open = last candle close
+      const sim = {
+        price: prevClose,
+        basePrice,
+        momentum: histSim.momentum, // Carry over momentum for smooth transition
+        trend: histSim.trend,       // Carry over trend direction
+        phase: histSim.phase,
+        phaseLen: histSim.phaseLen,
+        vol,
+        currentCandle: {
+          open: prevClose,  // NEW candle opens at last candle's close
+          high: prevClose,
+          low: prevClose,
+          close: prevClose,
+          volume: 0,
+          tickCount: 0,
+          maxTicks,
+        },
+      }
+
       setSinyalCandles(histCandles)
       setSinyalCurrentPrice(prevClose)
       sinyalChartSimRef.current = sim
@@ -3946,6 +3967,35 @@ function Dashboard() {
                   </div>
                 </div>
 
+                {/* Market Indices Overview */}
+                <div className="flex gap-2 overflow-x-auto pb-2 mb-2" style={{ scrollbarWidth: 'none' }}>
+                  {(() => {
+                    const indices = [
+                      { name: 'DOW', value: 42512.84, change: -42.77, changePct: -0.11 },
+                      { name: 'S&P 500', value: 5921.41, change: 28.73, changePct: 0.49 },
+                      { name: 'NASDAQ', value: 18920.80, change: 145.62, changePct: 0.78 },
+                      { name: 'NIKKEI', value: 38456.12, change: -312.45, changePct: -0.81 },
+                      { name: 'FTSE', value: 8245.63, change: 18.34, changePct: 0.22 },
+                      { name: 'DAX', value: 18452.78, change: 85.12, changePct: 0.46 },
+                      { name: 'IDX', value: 7245.18, change: 32.56, changePct: 0.45 },
+                      { name: 'SHCOMP', value: 3312.56, change: -18.32, changePct: -0.55 },
+                      { name: 'HANG', value: 18456.32, change: 125.78, changePct: 0.69 },
+                    ]
+                    return indices.map(idx => {
+                      const isUp = idx.changePct >= 0
+                      return (
+                        <div key={idx.name} className="flex-shrink-0 min-w-[100px] px-2.5 py-1.5 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+                          <span className="block text-[8px] font-bold text-[var(--zv-muted)]">{idx.name}</span>
+                          <span className="block text-[10px] font-black text-[var(--zv-text)] tabular-nums">{idx.value.toLocaleString()}</span>
+                          <span className={`text-[8px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+                            {isUp ? '+' : ''}{idx.changePct.toFixed(2)}%
+                          </span>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+
                 {/* Category Tabs - Favorit / Paling Ditraded / Top Movers */}
                 <div className="flex gap-1 mb-2">
                   {[
@@ -3953,7 +4003,7 @@ function Dashboard() {
                     { key: 'populer', label: 'Paling Ditraded' },
                     { key: 'top', label: 'Top Movers' },
                   ].map(tab => (
-                    <button key={tab.key} onClick={() => setMarketSignalTab(tab.key)}
+                    <button key={tab.key} onClick={() => { setMarketSignalTab(tab.key); setMarketPage(1) }}
                       className={`flex-shrink-0 h-8 px-3 rounded-lg text-[10px] font-bold transition-all ${
                         marketSignalTab === tab.key
                           ? 'bg-[#3b82f6] text-white'
@@ -3976,7 +4026,7 @@ function Dashboard() {
                       { key: 'komoditas', label: 'Komoditas' },
                       { key: 'saham', label: 'Saham' },
                     ].map(cat => (
-                      <button key={cat.key} onClick={() => setMarketFavFilter(cat.key)}
+                      <button key={cat.key} onClick={() => { setMarketFavFilter(cat.key); setMarketRegionFilter('semua'); setMarketPage(1) }}
                         className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${
                           marketFavFilter === cat.key
                             ? 'bg-[var(--zv-text)] text-[var(--zv-background)]'
@@ -3987,6 +4037,38 @@ function Dashboard() {
                     ))
                   })()}
                 </div>
+
+                {/* Region Filter (only visible when Saham is selected) */}
+                {marketFavFilter === 'saham' && (
+                  <div className="flex gap-1 overflow-x-auto pb-1 mt-1.5" style={{ scrollbarWidth: 'none' }}>
+                    {(() => {
+                      const regionCounts: Record<string, number> = { semua: 0, US: 0, European: 0, Asian: 0, IDX: 0 }
+                      stocks.forEach(s => {
+                        if (getMarketCategory(s) === 'saham') {
+                          regionCounts.semua++
+                          const r = getMarketRegion(s)
+                          if (regionCounts[r] !== undefined) regionCounts[r]++
+                        }
+                      })
+                      return [
+                        { key: 'semua', label: 'Semua Region' },
+                        { key: 'US', label: '🇺🇸 US' },
+                        { key: 'European', label: '🇪🇺 Europe' },
+                        { key: 'Asian', label: '🌏 Asia' },
+                        { key: 'IDX', label: '🇮🇩 IDX' },
+                      ].map(region => (
+                        <button key={region.key} onClick={() => { setMarketRegionFilter(region.key); setMarketPage(1) }}
+                          className={`flex-shrink-0 h-6 px-2.5 rounded-full text-[8px] font-bold transition-all ${
+                            marketRegionFilter === region.key
+                              ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                              : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)] border border-[var(--zv-border)]'
+                          }`}>
+                          {region.label} <span className="opacity-60">{regionCounts[region.key] || 0}</span>
+                        </button>
+                      ))
+                    })()}
+                  </div>
+                )}
               </div>
 
               {/* Search */}
@@ -3995,12 +4077,12 @@ function Dashboard() {
                 <input
                   type="text"
                   value={marketSearchQuery}
-                  onChange={(e) => setMarketSearchQuery(e.target.value)}
-                  placeholder="Cari instrumen..."
+                  onChange={(e) => { setMarketSearchQuery(e.target.value); setMarketPage(1) }}
+                  placeholder="Cari kode, nama, atau sektor..."
                   className="w-full h-9 pl-9 pr-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[11px] text-[var(--zv-text)] placeholder:text-[var(--zv-muted)] focus:outline-none focus:border-[#3b82f6]/50 transition-colors"
                 />
                 {marketSearchQuery && (
-                  <button onClick={() => setMarketSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[var(--zv-border)] grid place-items-center">
+                  <button onClick={() => { setMarketSearchQuery(''); setMarketPage(1) }} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[var(--zv-border)] grid place-items-center">
                     <X className="w-3 h-3 text-[var(--zv-muted)]" />
                   </button>
                 )}
@@ -4008,16 +4090,21 @@ function Dashboard() {
 
               {/* Instrument List - Vertical Cards */}
               {(() => {
-                // Filter by search
+                // Filter by search (now includes sector)
                 let filteredMarketStocks = stocks.filter(s => {
                   const q = marketSearchQuery.toLowerCase()
-                  if (q && !s.code.toLowerCase().includes(q) && !s.name.toLowerCase().includes(q)) return false
+                  if (q && !s.code.toLowerCase().includes(q) && !s.name.toLowerCase().includes(q) && !(s.sector || '').toLowerCase().includes(q) && !(s.description || '').toLowerCase().includes(q)) return false
                   return true
                 })
 
                 // Filter by market category
                 if (marketFavFilter !== 'semua') {
                   filteredMarketStocks = filteredMarketStocks.filter(s => getMarketCategory(s) === marketFavFilter)
+                }
+
+                // Filter by region (only for saham)
+                if (marketFavFilter === 'saham' && marketRegionFilter !== 'semua') {
+                  filteredMarketStocks = filteredMarketStocks.filter(s => getMarketRegion(s) === marketRegionFilter)
                 }
 
                 // Filter/sort by tab
@@ -4032,6 +4119,12 @@ function Dashboard() {
                 } else if (marketSignalTab === 'top') {
                   filteredMarketStocks = [...filteredMarketStocks].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
                 }
+
+                // Pagination
+                const totalItems = filteredMarketStocks.length
+                const totalPages = Math.ceil(totalItems / MARKET_PAGE_SIZE)
+                const paginatedStocks = filteredMarketStocks.slice(0, marketPage * MARKET_PAGE_SIZE)
+                const hasMore = marketPage < totalPages
 
                 const formatPrice = (s: Stock) => {
                   const mcat = getMarketCategory(s)
@@ -4054,7 +4147,7 @@ function Dashboard() {
                     </div>
 
                     <div className="max-h-[calc(100vh-320px)] overflow-y-auto space-y-1.5 pr-0.5" style={{ scrollbarWidth: 'thin' }}>
-                      {filteredMarketStocks.map(s => {
+                      {paginatedStocks.map(s => {
                         const isUp = s.changePercent >= 0
                         const sparkData = getSparklineData(s)
                         const sparkColor = isUp ? '#22c55e' : '#ef5350'
@@ -4085,6 +4178,11 @@ function Dashboard() {
                                   }`}>
                                     {mcat === 'crypto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'}
                                   </span>
+                                  {mcat === 'saham' && (
+                                    <span className="text-[7px] font-bold px-1 py-0.5 rounded bg-[var(--zv-surface)] text-[var(--zv-muted)]">
+                                      {getMarketRegion(s)}
+                                    </span>
+                                  )}
                                 </div>
                                 <span className="block text-[9px] text-[var(--zv-muted)] truncate">{s.name}</span>
                               </div>
@@ -4158,6 +4256,27 @@ function Dashboard() {
                         {marketSignalTab === 'favorit' && favorites.size === 0 && (
                           <p className="text-[9px] text-[var(--zv-muted)] mt-1">Tap ⭐ untuk menambahkan favorit</p>
                         )}
+                      </div>
+                    )}
+
+                    {/* Load More Button */}
+                    {hasMore && (
+                      <div className="flex justify-center pt-3 pb-2">
+                        <button
+                          onClick={() => setMarketPage(p => p + 1)}
+                          className="h-9 px-6 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[10px] font-bold text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/30 transition-all"
+                        >
+                          Muat Lagi ({totalItems - paginatedStocks.length} tersisa)
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Results summary */}
+                    {totalItems > 0 && (
+                      <div className="text-center pt-1 pb-2">
+                        <span className="text-[8px] text-[var(--zv-muted)]">
+                          Menampilkan {paginatedStocks.length} dari {totalItems} instrumen
+                        </span>
                       </div>
                     )}
                   </div>
@@ -4732,11 +4851,11 @@ function Dashboard() {
                   {/* Category tabs — clean horizontal */}
                   <div className="flex items-center px-2 pt-1.5 gap-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                     {[
-                      { key: 'popular', label: '🔥 Popular' },
-                      { key: 'saham', label: '📈 Saham' },
-                      { key: 'crypto', label: '₿ Kripto' },
-                      { key: 'komoditas', label: '🛢 Komoditas' },
-                      { key: 'forex', label: '💱 Forex' },
+                      { key: 'popular', label: 'Popular' },
+                      { key: 'saham', label: 'Saham' },
+                      { key: 'crypto', label: 'Kripto' },
+                      { key: 'komoditas', label: 'Komoditas' },
+                      { key: 'forex', label: 'Forex' },
                     ].map(cat => (
                       <button key={cat.key} onClick={() => setSinyalCategory(cat.key)}
                         className={`flex-shrink-0 h-7 px-2.5 rounded-md text-[9px] font-bold transition-all ${

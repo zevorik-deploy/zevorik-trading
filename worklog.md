@@ -695,3 +695,127 @@ Stage Summary:
 - Crosshair snaps to nearest candle center for precise alignment
 - Trend transitions are smoother (65% continue vs 50/50 random)
 - All verified working in browser
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Fix candle continuity (open=prev close), remove emoji from categories, expand Quote tab markets
+
+Work Log:
+- Fixed critical candle continuity bug: when simulation starts, `sim.price` and `sim.currentCandle.open` were set to `basePrice` instead of `prevClose` (last historical candle's close)
+- Reordered code: generate historical candles FIRST, then create simulation object starting from last candle's close
+- `sim.momentum` now carries over from `histSim.momentum` for seamless transition
+- `sim.trend` and `sim.phase` also carry over from historical simulation state
+- This ensures every new candle's open = previous candle's close (no visual gaps)
+- Removed emojis from Chart tab category buttons: 🔥 Popular → Popular, 📈 Saham → Saham, ₿ Kripto → Kripto, 🛢 Komoditas → Komoditas, 💱 Forex → Forex
+- Delegated massive stock data expansion to subagent (Task ID 3): expanded from ~80 to ~230+ instruments
+- Added US, European, Asian, IDX stocks, more crypto/forex/commodities
+- Quote tab now shows 223 instruments with market indices overview, region sub-filters, enhanced search, pagination
+- Verified all changes with Agent Browser: category tabs show text only, Quote shows 223 instruments, lot −/+ works
+- No lint errors, server compiles and runs correctly
+
+Stage Summary:
+- Candle continuity fixed: new candles open at previous candle's close price
+- Category tabs now text-only (no emojis)
+- Quote tab massively expanded with 223+ global instruments
+- All verified working in browser
+---
+Task ID: 3
+Agent: Main Agent
+Task: Massively expand stock seed data and improve Quote tab UI for global market coverage
+
+Work Log:
+
+### 1. Expanded Stock Seed Data (route.ts)
+Added ~150+ new instruments across all categories:
+
+**More US Stocks (~35 added):**
+- Finance: HD, BLK, C, AXP, WFC, MS, SCHW, BX, CB, MMC, AIG, USB
+- Retail: TGT, LOW, TJX, DG, DLTR, LULU, TSCO, ROST, PSA
+- Consumer: GIS, KMB, CLX, KHC, MDLZ, FOX
+
+**European Stocks (~22 added):** category: 'saham', sector: 'European'
+- SAP, ASML, NESN, AZN, SHEL, BP, RIO, BHP, GSK, SNY, NOVN, ROG, NOVO
+- LVMH, MC, DTE, SIE, AIR, TTE, BN, UL
+
+**Asian Stocks (~22 added):** category: 'saham', sector: 'Asian'
+- BABA, JD, PDD, TCEHY, SONY, TM, HMC, SSNLF (Samsung), HYMTF, KRX (SK Hynix)
+- MUFG, NTDOY, HDB, INFY, WIT, SEHK, SMFG, LI, XPEV, YMM
+
+**IDX Indonesian Stocks (~15 added):** category: 'saham', sector: 'IDX'
+- BBRI, BBCA, BMRI, TLKM, ASII, BBNI, UNVR, GOTO, EMTK, ANTM, BRIS, ICBP, KLBF, ACES, MAPI
+- Realistic IDR prices (e.g., BBCA 9550, GOTO 82, BBRI 5250)
+- lotSize: 100 (Indonesian standard)
+
+**More Crypto (~25 added):**
+- APT, ARB, OP, IMX, INJ, TIA, SEI, SUI, PEPE, FTM, GRT, ENS, LDO, RPL, STX
+- RUNE, KAVA, DYDX, MINA, WLD, BONK, JUP, WIF
+
+**More Forex Pairs (~17 added):**
+- USDSGD, USDHKD, USDSEK, USDNOK, USDDKK, USDZAR, USDTRY, USDMXN, USDPLN
+- EURCHF, CADJPY, CHFJPY, NZDJPY, AUDCAD, AUDNZD, GBPNZD, EURCAD
+
+**More Commodities (~12 added):**
+- CACAO, RUBBER, IRON, ALUMINIUM, ZINC, NICKEL, LEAD, OILWTI, ETHANOL, OJ, OATS, COCOA
+
+### 2. Updated getMarketCategory function (page.tsx ~line 2019)
+- Added new crypto codes: RUNE, KAVA, DYDX, MINA, WLD, BONK, JUP, WIF
+- Added new forex codes: CADJPY, CHFJPY, NZDJPY, AUDCAD, AUDNZD, GBPNZD, EURCAD
+- Added new commodity codes: ALUMINIUM, ZINC, NICKEL, LEAD, OILWTI, ETHANOL, OJ, OATS, COCOA
+- Added 'saham' category mapping for European/Asian/IDX stocks
+
+### 3. Added getMarketRegion function (page.tsx ~line 2031)
+- Returns: 'US', 'European', 'Asian', or 'IDX' based on stock code/sector
+- Used for region sub-filtering when Saham category is selected
+
+### 4. Added New State Variables (page.tsx ~line 926-930)
+- `marketRegionFilter` - filters stocks by region (US/European/Asian/IDX)
+- `marketPage` - current pagination page number
+- `MARKET_PAGE_SIZE` = 50 - items per page
+
+### 5. Quote Tab UI Improvements
+
+**Market Indices Overview (top of Quote tab):**
+- Horizontal scrollable row showing 9 major indices
+- DOW, S&P 500, NASDAQ, NIKKEI, FTSE, DAX, IDX, SHCOMP, HANG SENG
+- Each shows index name, value, and change percentage with color coding
+
+**Region Sub-Filter (below category filter):**
+- Only visible when Saham category is selected
+- Shows: Semua Region, 🇺🇸 US, 🇪🇺 Europe, 🌏 Asia, 🇮🇩 IDX
+- Each with count of instruments
+- Amber highlight for active region filter
+- Reset to 'semua' when category changes
+
+**Improved Search:**
+- Now searches code, name, sector, AND description
+- Placeholder updated to "Cari kode, nama, atau sektor..."
+- Resets page to 1 on search change
+
+**Pagination with "Load More":**
+- Shows first 50 instruments initially
+- "Muat Lagi" (Load More) button shows remaining count
+- Results summary: "Menampilkan X dari Y instrumen"
+- Page resets to 1 when filters change
+
+**Region Badge on Stock Cards:**
+- When mcat === 'saham', shows region badge (US/European/Asian/IDX)
+- Small badge next to category tag
+
+### 6. Database Reset
+- Deleted dev.db and re-pushed schema to apply new seed data
+- New seed will populate on next API call when stock count is 0
+
+### No Changes To:
+- Trading logic (positions, P/L calculation, lot system)
+- Chart rendering
+- Any other tab (home, portfolio, investasi, profil)
+- Bottom navigation
+- Confirm trade dialog
+
+Stage Summary:
+- Stock seed data expanded from ~80 to ~230+ instruments
+- Covers US, European, Asian, and IDX (Indonesian) markets
+- 50+ crypto, 32+ forex pairs, 27+ commodities
+- Quote tab now has market indices overview, region sub-filters, improved search, pagination
+- No lint errors, server running correctly

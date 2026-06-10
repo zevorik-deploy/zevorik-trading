@@ -1,59 +1,29 @@
-# Task 3 - Admin Panel UI Build
-
-## Agent: main
-
-## Task: Build comprehensive admin panel UI inside ZEVORIX trading platform
+# Task 3: Expand Stock Seed Data & Improve Quote Tab UI
 
 ## Summary
-Successfully built a comprehensive admin panel integrated into the existing ZEVORIX trading platform's main page.tsx file. The admin panel is accessible via a new "Admin" tab in all navigation areas (bottom nav, desktop sidebar, side menu) and is only visible to users with `role === 'admin'`.
+Massively expanded stock seed data from ~80 to ~230+ instruments and improved the Quote tab UI with market indices, region sub-filters, pagination, and enhanced search.
 
 ## Changes Made
 
-### Frontend (page.tsx)
-1. **Admin State Variables** (22 variables added after line ~811):
-   - adminTab, adminUsers, adminDeposits, adminWithdrawals, adminStocks, adminInvestments, adminNews, adminPromos, adminStats
-   - adminSearch, adminLoading
-   - adminEditUser/Modal, adminEditStock/Modal, adminEditInvest/Modal, adminEditNews/Modal, adminEditPromo/Modal
+### Stock Seed Data (route.ts)
+- Added ~150 new instruments across 6 categories
+- US Stocks: +35 (HD, BLK, C, AXP, WFC, MS, SCHW, BX, CB, TGT, LOW, TJX, etc.)
+- European Stocks: +22 (SAP, ASML, NESN, AZN, SHEL, BP, RIO, NOVO, LVMH, etc.)
+- Asian Stocks: +22 (BABA, JD, PDD, TCEHY, SONY, TM, SSNLF, HDB, INFY, etc.)
+- IDX Indonesian: +15 (BBRI, BBCA, BMRI, TLKM, GOTO, etc.)
+- Crypto: +25 (APT, ARB, OP, SUI, PEPE, WLD, BONK, WIF, etc.)
+- Forex: +17 (USDSGD, USDTRY, USDMXN, CADJPY, GBPNZD, etc.)
+- Commodities: +12 (CACAO, RUBBER, IRON, ALUMINIUM, NICKEL, etc.)
 
-2. **Admin Fetch Functions** (9 functions added after fetchContracts):
-   - fetchAdminStats, fetchAdminUsers, fetchAdminDeposits, fetchAdminWithdrawals
-   - fetchAdminStocks, fetchAdminInvestments, fetchAdminNews, fetchAdminPromos, fetchAdminAll
-   - useEffect auto-fetches data when activeTab === 'admin'
+### Quote Tab UI (page.tsx)
+- Added market indices overview (DOW, S&P500, NASDAQ, NIKKEI, FTSE, DAX, IDX, SHCOMP, HANG)
+- Added region sub-filter for Saham category (US/European/Asian/IDX)
+- Added getMarketRegion() helper function
+- Improved search to include sector and description
+- Added pagination (50 per page) with "Muat Lagi" button
+- Added region badge on stock cards
+- Reset page to 1 on filter changes
 
-3. **Navigation Updates** (3 areas modified):
-   - Bottom nav: Added conditional Admin tab with Shield icon
-   - Desktop sidebar: Added conditional Admin tab with Shield icon  
-   - Side menu: Added conditional "Admin Panel" option with Shield icon
-
-4. **Admin Panel UI** (8 sub-tabs + 5 modals):
-   - Dashboard: 6 stat cards + Quick Overview panel
-   - Users: Search + user cards with role/VIP/KYC badges + Edit modal
-   - Deposits: Request list with status badges + Approve/Reject buttons
-   - Withdrawals: Request list with status badges + Approve/Reject buttons
-   - Stocks: List with price +/-1% buttons + Edit modal
-   - Investments: Product list with Enable/Disable toggle + Edit modal
-   - News: Article list with Add/Edit/Delete + Create/Edit modal
-   - Promos: Promo list with Add/Edit/Delete + Create/Edit modal
-
-### Backend (15 API route files)
-- `/api/admin/dashboard` — GET platform stats
-- `/api/admin/users` — GET users with search
-- `/api/admin/users/[id]` — PATCH user (role, VIP, KYC, balance)
-- `/api/admin/deposits` — GET deposits with user info
-- `/api/admin/deposits/[id]` — PATCH approve/reject
-- `/api/admin/withdrawals` — GET withdrawals with user info
-- `/api/admin/withdrawals/[id]` — PATCH approve/reject
-- `/api/admin/stocks` — GET stocks list
-- `/api/admin/stocks/[id]` — PATCH stock (name, price, category)
-- `/api/admin/investments` — GET investment products
-- `/api/admin/investments/[id]` — PATCH investment
-- `/api/admin/news` — GET/POST news
-- `/api/admin/news/[id]` — PATCH/DELETE news
-- `/api/admin/promos` — GET/POST promos
-- `/api/admin/promos/[id]` — PATCH/DELETE promos
-
-## Verification
-- ESLint passes clean
-- All API endpoints tested via curl (200 responses)
-- Admin user exists in DB (phone: 080000000000, role: admin)
-- Dev server running without errors
+### Database
+- Reset dev.db to trigger re-seeding with new data
+- Lint passes with no errors
