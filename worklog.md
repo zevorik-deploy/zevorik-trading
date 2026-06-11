@@ -819,3 +819,37 @@ Stage Summary:
 - 50+ crypto, 32+ forex pairs, 27+ commodities
 - Quote tab now has market indices overview, region sub-filters, improved search, pagination
 - No lint errors, server running correctly
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix candle generation for realistic market patterns + add riwayat (history) back to trading tab + clean up layout
+
+Work Log:
+- Completely rewrote generateCandle() function with structured approach:
+  - Phase management with longer periods: consolidation (8-25 candles), trending (12-41 candles), breakout (3-8 candles)
+  - Momentum with HIGH persistence (0.90) so trends continue smoothly instead of zigzagging
+  - 65% trend continuation vs 35% reversal within trending phase
+  - 18% pullback probability within trend (realistic intra-trend corrections)
+  - Phase-aware volatility: low in consolidation, moderate in trends, high in breakouts
+  - Realistic wick generation: trending candles have rejection wicks opposite to direction
+  - Special patterns (doji, hammer, shooting star) at realistic frequencies (3-4% each)
+  - Weak mean reversion (0.0008) prevents extreme drift while allowing natural trends
+- Rewrote real-time tick simulation:
+  - Momentum persistence 0.92 (was 0.6) for smooth sequential candle flow
+  - Trend reversal only 22% per candle (was 35%) creating natural consecutive candles
+  - Smaller per-tick noise (0.0003 * volMult) that accumulates naturally
+  - Very weak mean reversion (0.0003)
+- Added sinyalTerminalTab state for Trade/History tab switching
+- Added MT5-style terminal panel with Trade/History tabs at bottom of chart:
+  - Trade tab: shows active positions with symbol, type, volume, entry, current price, P&L, close button
+  - History tab: shows closed positions with win/loss summary, Semua/Profit/Loss filters, position details
+  - Tab header with blue underline indicator matching MT5 style
+  - Empty states when no positions exist
+- Both lint and dev server running without errors
+- Browser verification confirmed: realistic candlestick patterns, Trade/History terminal panel working
+
+Stage Summary:
+- Candles now produce realistic market-like patterns with proper trends and consolidation
+- Trade/History terminal panel added to sinyal tab (riwayat is back)
+- No compilation errors, all verified working

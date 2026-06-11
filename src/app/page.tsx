@@ -930,6 +930,7 @@ function Dashboard() {
   const MARKET_PAGE_SIZE = 50
   const [sinyalHistoryFilter, setSinyalHistoryFilter] = useState<string>('Semua')
   const [saldoSubTab, setSaldoSubTab] = useState<'posisi' | 'riwayat' | 'order'>('posisi')
+  const [sinyalTerminalTab, setSinyalTerminalTab] = useState<'trade' | 'history'>('trade')
   const [stopLossPrice, setStopLossPrice] = useState('')
   const [takeProfitPrice, setTakeProfitPrice] = useState('')
   const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
@@ -995,60 +996,121 @@ function Dashboard() {
   const investChartTickRef = useRef(0)
 
   // Generate a single realistic OHLC candle from previous close
+  // Uses a structured approach: first determine the candle's direction & body,
+  // then add realistic wicks based on intra-candle price action simulation
   const generateCandle = useCallback((prevClose: number, baseVal: number, sim: {momentum: number; trend: number; phase: number; phaseLen: number; vol: number}, idx: number): CandleData => {
-    // Phase management: trending, consolidation, breakout
+    // ── Phase Management (longer phases for realistic trends) ──
+    // 0 = consolidation/ranging, 1 = trending, 2 = breakout/volatile
     sim.phaseLen -= 1
     if (sim.phaseLen <= 0) {
-      sim.phase = Math.random() < 0.3 ? 0 : Math.random() < 0.6 ? 1 : 2 // 0=consolidate, 1=trend, 2=breakout
-      sim.phaseLen = sim.phase === 0 ? Math.floor(5 + Math.random() * 10) : sim.phase === 1 ? Math.floor(4 + Math.random() * 8) : Math.floor(2 + Math.random() * 3)
-      if (sim.phase === 1) sim.trend = Math.random() > 0.5 ? 1 : -1
+      const r = Math.random()
+      if (r < 0.30) {
+        // Consolidation — price chops sideways in a range
+        sim.phase = 0
+        sim.phaseLen = Math.floor(8 + Math.random() * 18) // 8-25 candles of ranging
+      } else if (r < 0.82) {
+        // Trending — sustained directional move (most common in real markets)
+        sim.phase = 1
+        sim.phaseLen = Math.floor(12 + Math.random() * 30) // 12-41 candles of trend
+        // 65% continue existing trend, 35% reverse
+        if (Math.random() < 0.35) sim.trend = (sim.trend === 1 ? -1 : 1) as 1 | -1
+      } else {
+        // Breakout — volatile expansion after consolidation
+        sim.phase = 2
+        sim.phaseLen = Math.floor(3 + Math.random() * 6) // 3-8 volatile candles
+        sim.trend = Math.random() > 0.5 ? 1 : -1
+      }
     }
 
-    // Smoother volatility for cleaner candle flow
-    const volatility = baseVal * (sim.phase === 0 ? 0.0015 : sim.phase === 1 ? 0.003 : 0.006)
-    const drift = sim.phase === 1 ? sim.trend * baseVal * 0.0015 : sim.phase === 2 ? (Math.random() > 0.5 ? 1 : -1) * baseVal * 0.004 : 0
-
-    // Stronger momentum smoothing for sequential flow
-    sim.momentum = sim.momentum * 0.55 + drift + (Math.random() - 0.5) * volatility * 1.5
-    const meanRevert = (baseVal - prevClose) * 0.003
-
+    // ── Core Price Movement Engine ──
     const open = prevClose
-    const rawClose = prevClose + sim.momentum + meanRevert
-    const close = Math.round(Math.max(baseVal * 0.9, Math.min(baseVal * 1.1, rawClose)))
-    const bodySize = Math.abs(close - open)
-    const maxWick = Math.max(bodySize * 0.6, baseVal * 0.0008)
 
-    // Determine pattern type — reduced extreme patterns for cleaner flow
-    const patternRoll = Math.random()
-    let high: number, low: number
+    // Volatility scales with phase — trending markets have moderate vol,
+    // consolidation has low vol, breakouts have high vol
+    const baseVol = baseVal * 0.0012
+    const phaseVol = sim.phase === 0 ? 0.5 : sim.phase === 1 ? 1.0 : 2.2
+    const volatility = baseVol * phaseVol
 
-    if (patternRoll < 0.06 && bodySize < baseVal * 0.0005) {
-      // Doji: open ≈ close, small wicks
-      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 1.5)
-      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 1.5)
-    } else if (patternRoll < 0.10 && close > open) {
-      // Hammer: moderate lower wick, small body at top
-      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 0.4)
-      low = Math.min(open, close) - Math.round(maxWick * (1.5 + Math.random() * 2))
-    } else if (patternRoll < 0.14 && close < open) {
-      // Shooting star: moderate upper wick, small body at bottom
-      high = Math.max(open, close) + Math.round(maxWick * (1.5 + Math.random() * 2))
-      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 0.4)
+    // Trend drift — the directional force
+    let drift: number
+    if (sim.phase === 1) {
+      // Strong trend: consistent directional bias
+      drift = sim.trend * baseVal * 0.0022
+      // Small pullback within trend (~20% of candles pull back against trend)
+      if (Math.random() < 0.18) {
+        drift = -sim.trend * baseVal * 0.0008
+      }
+    } else if (sim.phase === 2) {
+      // Breakout: strong directional move with high vol
+      drift = sim.trend * baseVal * 0.0035
     } else {
-      // Normal candle — controlled wick sizes for clean appearance
-      high = Math.max(open, close) + Math.round(Math.random() * maxWick * 1.2 + baseVal * 0.0003)
-      low = Math.min(open, close) - Math.round(Math.random() * maxWick * 1.2 + baseVal * 0.0003)
+      // Consolidation: very small random drift, mostly noise
+      drift = (Math.random() - 0.5) * baseVal * 0.0004
     }
 
-    // Ensure high >= max(open,close) and low <= min(open,close)
-    high = Math.max(high, Math.max(open, close))
-    low = Math.min(low, Math.min(open, close))
+    // Momentum with HIGH persistence — this is key to realistic consecutive candles
+    // Higher persistence (0.90) = trends continue smoothly
+    sim.momentum = sim.momentum * 0.90 + drift * 0.35 + (Math.random() - 0.5) * volatility
 
-    // Volume correlates with candle size
-    const baseVol = sim.vol
-    const volMultiplier = sim.phase === 2 ? 2.5 : sim.phase === 1 ? 1.3 : 0.8
+    // Weak mean reversion — prevents price from drifting too far from base
+    const meanRevert = (baseVal - prevClose) * 0.0008
+
+    const rawClose = prevClose + sim.momentum + meanRevert
+    const close = Math.round(Math.max(baseVal * 0.85, Math.min(baseVal * 1.15, rawClose)))
+    const bodySize = Math.abs(close - open)
+    const isBullish = close >= open
+
+    // ── Realistic Wick Generation ──
+    // Simulate intra-candle price action to generate wicks
+    // In real markets: trending candles have wicks opposite to trend direction
+    // Consolidation candles have balanced wicks
+    let upperWick: number, lowerWick: number
+
+    if (sim.phase === 1) {
+      // Trending phase: wick mainly on the RETREAT side
+      if (isBullish) {
+        // Bullish trend candle: small upper wick, moderate lower wick (rejection of lows)
+        upperWick = bodySize * (0.1 + Math.random() * 0.4) + baseVal * 0.00015
+        lowerWick = bodySize * (0.3 + Math.random() * 0.8) + baseVal * 0.0003
+      } else {
+        // Bearish trend candle: moderate upper wick (rejection of highs), small lower wick
+        upperWick = bodySize * (0.3 + Math.random() * 0.8) + baseVal * 0.0003
+        lowerWick = bodySize * (0.1 + Math.random() * 0.4) + baseVal * 0.00015
+      }
+    } else if (sim.phase === 2) {
+      // Breakout: longer wicks on both sides (volatility)
+      upperWick = bodySize * (0.4 + Math.random() * 1.0) + baseVal * 0.0005
+      lowerWick = bodySize * (0.4 + Math.random() * 1.0) + baseVal * 0.0005
+    } else {
+      // Consolidation: balanced wicks, often long relative to body
+      upperWick = bodySize * (0.4 + Math.random() * 1.2) + baseVal * 0.0004
+      lowerWick = bodySize * (0.4 + Math.random() * 1.2) + baseVal * 0.0004
+    }
+
+    // Special patterns (infrequent, like real markets)
+    const patternRoll = Math.random()
+    if (patternRoll < 0.04 && bodySize < baseVal * 0.0003) {
+      // Doji: very small body, moderate wicks
+      upperWick = baseVal * (0.0008 + Math.random() * 0.0015)
+      lowerWick = baseVal * (0.0008 + Math.random() * 0.0015)
+    } else if (patternRoll < 0.07 && isBullish) {
+      // Hammer: long lower wick, small upper wick
+      lowerWick = bodySize * (2.0 + Math.random() * 2.5) + baseVal * 0.0005
+      upperWick = bodySize * (0.05 + Math.random() * 0.2)
+    } else if (patternRoll < 0.10 && !isBullish) {
+      // Shooting star: long upper wick, small lower wick
+      upperWick = bodySize * (2.0 + Math.random() * 2.5) + baseVal * 0.0005
+      lowerWick = bodySize * (0.05 + Math.random() * 0.2)
+    }
+
+    const high = Math.max(open, close) + Math.round(upperWick)
+    const low = Math.min(open, close) - Math.round(lowerWick)
+
+    // Volume correlates with phase and candle size
+    const simBaseVol = sim.vol
+    const volMultiplier = sim.phase === 2 ? 2.2 : sim.phase === 1 ? 1.2 : 0.6
     const bodyRatio = bodySize / baseVal
-    const volume = Math.round(baseVol * volMultiplier * (0.6 + Math.random() * 0.8 + bodyRatio * 20))
+    const volume = Math.round(simBaseVol * volMultiplier * (0.6 + Math.random() * 0.8 + bodyRatio * 15))
 
     const now = new Date()
     now.setMinutes(now.getMinutes() - (40 - idx))
@@ -2526,45 +2588,25 @@ function Dashboard() {
       const cc = sim.currentCandle
       cc.tickCount++
 
-      // REAL MT5 TRENDING — no rigging, chart moves naturally based on market dynamics
-      // The price follows realistic market movement with trend, momentum, and noise
+      // ── Realistic intra-candle tick simulation ──
       const baseVal = sim.basePrice
-      // Stock-specific volatility from payout tier
       const stockTier = getStockPayoutTier(selectedSinyalStock.code)
       const volMult = stockTier.volMultiplier
-      // Scale volatility by timeframe — longer candles have more total movement
-      const tfScale = Math.sqrt(tfSeconds / 60) // sqrt for realistic volatility scaling
-      // Smoother volatility for cleaner sequential candles
-      const volatility = baseVal * 0.0014 * volMult * tfScale
-      let drift = 0
+      const tfScale = Math.sqrt(tfSeconds / 60)
 
-      const progress = cc.tickCount / cc.maxTicks
+      // Base volatility per tick (small, accumulates over many ticks)
+      const tickVol = baseVal * 0.0003 * volMult * tfScale
+      const noise = (Math.random() - 0.5) * tickVol
 
-      // Natural market movement — smooth sequential flow
-      // Trend strength varies naturally through the candle (like real markets)
-      const trendStrength = baseVal * 0.0004 * tfScale * (0.8 + Math.random() * 0.3)
-      const noise = (Math.random() - 0.5) * volatility
+      // Trend drift per tick — consistent directional force
+      const trendDrift = sim.trend * baseVal * 0.00008 * tfScale
 
-      if (progress < 0.3) {
-        // Early phase: trend emerges smoothly
-        drift = sim.trend * trendStrength * 0.8 + noise * 0.7
-      } else if (progress < 0.7) {
-        // Middle phase: trend strengthens (momentum builds)
-        drift = sim.trend * trendStrength * 1.1 + noise * 0.8
-      } else {
-        // Late phase: trend continues or slight reversal
-        const reversalChance = Math.random() < 0.12
-        if (reversalChance) {
-          drift = -sim.trend * trendStrength * 0.6 + noise * 0.5
-        } else {
-          drift = sim.trend * trendStrength * 0.9 + noise * 0.5
-        }
-      }
+      // Momentum with HIGH persistence for smooth sequential flow
+      // This ensures candles flow in the same direction instead of zigzagging
+      sim.momentum = sim.momentum * 0.92 + trendDrift * 0.3 + noise
 
-      // Stronger momentum smoothing for sequential flow
-      sim.momentum = sim.momentum * 0.6 + drift
-      // Weaker mean reversion so trends develop more dramatically
-      const meanRevert = (sim.basePrice - sim.price) * 0.001
+      // Very weak mean reversion — only prevents extreme drift
+      const meanRevert = (sim.basePrice - sim.price) * 0.0003
       sim.price = Math.round(Math.max(baseVal * 0.85, Math.min(baseVal * 1.15, sim.price + sim.momentum + meanRevert)))
 
       cc.close = sim.price
@@ -2599,8 +2641,9 @@ function Dashboard() {
         cc.volume = 0
         cc.tickCount = 0
         cc.maxTicks = maxTicks
-        // Smooth trend transition — continue current trend or gradual reversal
-        sim.trend = Math.random() < 0.35 ? -sim.trend as 1 | -1 : sim.trend
+        // Trend continues most of the time — only 22% reversal per candle
+        // This creates natural consecutive trend candles
+        sim.trend = Math.random() < 0.22 ? -sim.trend as 1 | -1 : sim.trend
       }
     }, tickIntervalMs)
 
@@ -6151,63 +6194,179 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══ 6. POSITIONS TABLE — Premium MT5 Dark ══ */}
-              {activePos.length > 0 && (
-                <div className="flex-shrink-0" style={{ background: trTheme.bgCard }}>
-                  <div className="grid grid-cols-12 gap-0 px-3 py-1 text-[7px] font-black uppercase tracking-[0.15em]" style={{ color: trTheme.textMuted, borderBottom: '1px solid ' + trTheme.borderSubtle }}>
-                    <div className="col-span-2">Symbol</div>
-                    <div className="col-span-1">Type</div>
-                    <div className="col-span-1">Vol</div>
-                    <div className="col-span-2">Entry</div>
-                    <div className="col-span-2">Current</div>
-                    <div className="col-span-3">P&L</div>
-                    <div className="col-span-1"></div>
-                  </div>
-                  <div className="max-h-24 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-                    {activePos.map((pos, idx) => {
-                      const livePL = getPositionLivePL(pos)
-                      const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
-                      const isUp = pos.direction === 'NAIK'
-                      return (
-                        <div key={pos.id} className={`grid grid-cols-12 gap-0 px-3 py-1 items-center text-[8px] font-bold ${idx % 2 === 0 ? '' : ''} transition-colors`} style={idx % 2 === 0 ? { background: trTheme.inputBg } : undefined}>
-                          <div className="col-span-2 font-black" style={{ color: trTheme.text }}>{pos.stockCode}</div>
-                          <div className="col-span-1">
-                            <span className="px-1 py-0.5 rounded text-[6px] font-black text-white"
-                              style={isUp
-                                ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)' }
-                                : { background: 'linear-gradient(135deg, #f87171, #ef5350)' }}>
-                              {isUp ? 'BUY' : 'SELL'}
+              {/* ══ 6. TERMINAL PANEL — Trade / History Tabs (MT5 Style) ══ */}
+              <div className="flex-shrink-0" style={{ background: trTheme.bgCard }}>
+                {/* Terminal Tab Header */}
+                <div className="flex items-center border-b" style={{ borderColor: trTheme.borderSubtle }}>
+                  {(['trade', 'history'] as const).map(tab => (
+                    <button key={tab} onClick={() => setSinyalTerminalTab(tab)}
+                      className={`px-4 py-1.5 text-[8px] font-black uppercase tracking-[0.15em] transition-all relative ${
+                        sinyalTerminalTab === tab ? '' : ''
+                      }`}
+                      style={{
+                        color: sinyalTerminalTab === tab ? '#3b82f6' : trTheme.textMuted,
+                        borderBottom: sinyalTerminalTab === tab ? '2px solid #3b82f6' : '2px solid transparent',
+                      }}>
+                      {tab === 'trade' ? `Trade (${activePos.length})` : `History (${sinyalPositions.filter(p => p.status === 'won' || p.status === 'lost').length})`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Trade Tab — Active Positions */}
+                {sinyalTerminalTab === 'trade' && (
+                  <>
+                    {activePos.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-12 gap-0 px-3 py-1 text-[7px] font-black uppercase tracking-[0.15em]" style={{ color: trTheme.textMuted, borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+                          <div className="col-span-2">Symbol</div>
+                          <div className="col-span-1">Type</div>
+                          <div className="col-span-1">Vol</div>
+                          <div className="col-span-2">Entry</div>
+                          <div className="col-span-2">Current</div>
+                          <div className="col-span-3">P&L</div>
+                          <div className="col-span-1"></div>
+                        </div>
+                        <div className="max-h-24 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                          {activePos.map((pos, idx) => {
+                            const livePL = getPositionLivePL(pos)
+                            const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || pos.startPrice
+                            const isUp = pos.direction === 'NAIK'
+                            return (
+                              <div key={pos.id} className={`grid grid-cols-12 gap-0 px-3 py-1 items-center text-[8px] font-bold transition-colors`} style={idx % 2 === 0 ? { background: trTheme.inputBg } : undefined}>
+                                <div className="col-span-2 font-black" style={{ color: trTheme.text }}>{pos.stockCode}</div>
+                                <div className="col-span-1">
+                                  <span className="px-1 py-0.5 rounded text-[6px] font-black text-white"
+                                    style={isUp
+                                      ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)' }
+                                      : { background: 'linear-gradient(135deg, #f87171, #ef5350)' }}>
+                                    {isUp ? 'BUY' : 'SELL'}
+                                  </span>
+                                </div>
+                                <div className="col-span-1 tabular-nums" style={{ color: trTheme.textMuted }}>{(pos.amount / LOT_SIZE).toFixed(2)}</div>
+                                <div className="col-span-2 tabular-nums" style={{ color: trTheme.textMuted }}>{formatNumber(pos.startPrice)}</div>
+                                <div className="col-span-2 tabular-nums" style={{ color: trTheme.textSecondary }}>{formatNumber(currentPrice)}</div>
+                                <div className={`col-span-3 font-black tabular-nums ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
+                                </div>
+                                <div className="col-span-1 flex justify-end">
+                                  <button onClick={() => closeSinyalPosition(pos.id)}
+                                    className="h-5 w-5 rounded flex items-center justify-center transition-all hover:scale-110 active:scale-90"
+                                    style={{ background: 'linear-gradient(135deg, #f87171, #ef5350)', boxShadow: '0 1px 4px rgba(239,83,80,0.3)' }}
+                                    title="Tutup posisi">
+                                    <X className="w-2.5 h-2.5 text-white" />
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-0.5" style={{ borderTop: '1px solid ' + trTheme.borderSubtle }}>
+                          <span className="text-[7px] font-bold" style={{ color: trTheme.textMuted }}>{activePos.length} posisi aktif</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[7px] font-bold" style={{ color: trTheme.textMuted }}>Total P&L:</span>
+                            <span className={`text-[8px] font-black tabular-nums ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {totalLivePL >= 0 ? '+' : ''}{formatRupiah(totalLivePL)}
                             </span>
                           </div>
-                          <div className="col-span-1 tabular-nums" style={{ color: trTheme.textMuted }}>{(pos.amount / LOT_SIZE).toFixed(2)}</div>
-                          <div className="col-span-2 tabular-nums" style={{ color: trTheme.textMuted }}>{formatNumber(pos.startPrice)}</div>
-                          <div className="col-span-2 tabular-nums" style={{ color: trTheme.textSecondary }}>{formatNumber(currentPrice)}</div>
-                          <div className={`col-span-3 font-black tabular-nums ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
-                          </div>
-                          <div className="col-span-1 flex justify-end">
-                            <button onClick={() => closeSinyalPosition(pos.id)}
-                              className="h-5 w-5 rounded flex items-center justify-center transition-all hover:scale-110 active:scale-90"
-                              style={{ background: 'linear-gradient(135deg, #f87171, #ef5350)', boxShadow: '0 1px 4px rgba(239,83,80,0.3)' }}
-                              title="Tutup posisi">
-                              <X className="w-2.5 h-2.5 text-white" />
-                            </button>
-                          </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between px-2 py-0.5" style={{ borderTop: '1px solid ' + trTheme.borderSubtle }}>
-                    <span className="text-[7px] font-bold" style={{ color: trTheme.textMuted }}>{activePos.length} posisi aktif</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[7px] font-bold" style={{ color: trTheme.textMuted }}>Total P&L:</span>
-                      <span className={`text-[8px] font-black tabular-nums ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {totalLivePL >= 0 ? '+' : ''}{formatRupiah(totalLivePL)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+                      </>
+                    ) : (
+                      <div className="px-4 py-3 text-center">
+                        <p className="text-[8px] font-bold" style={{ color: trTheme.textMuted }}>No open positions</p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* History Tab — Closed Positions (Riwayat) */}
+                {sinyalTerminalTab === 'history' && (() => {
+                  const closedPos = sinyalPositions.filter(p => p.status === 'won' || p.status === 'lost')
+                  const wonCount = closedPos.filter(p => p.status === 'won').length
+                  const lostCount = closedPos.filter(p => p.status === 'lost').length
+                  const totalProfitPL = closedPos.filter(p => p.status === 'won').reduce((s, p) => s + (p.closedPL || 0), 0)
+                  const totalLossPL = closedPos.filter(p => p.status === 'lost').reduce((s, p) => s + (p.closedPL || 0), 0)
+                  const netPL = totalProfitPL + totalLossPL
+                  return (
+                    <>
+                      {/* Summary bar */}
+                      <div className="flex items-center justify-between px-3 py-1.5" style={{ borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[7px] font-black text-green-400">{wonCount} Win</span>
+                          <span className="text-[7px] font-black text-red-400">{lostCount} Loss</span>
+                        </div>
+                        <span className={`text-[8px] font-black tabular-nums ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          Net: {netPL >= 0 ? '+' : ''}{formatRupiah(netPL)}
+                        </span>
+                      </div>
+                      {/* Filter buttons */}
+                      <div className="flex items-center gap-1 px-2 py-1" style={{ borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+                        {['Semua', 'Profit', 'Loss'].map(filter => (
+                          <button key={filter} onClick={() => setSinyalHistoryFilter(filter)}
+                            className={`h-5 px-2 rounded text-[7px] font-bold transition-all border ${
+                              sinyalHistoryFilter === filter
+                                ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
+                                : 'text-[var(--zv-muted)] border-[var(--zv-border)] hover:text-[var(--zv-text)]'
+                            }`}>
+                            {filter}
+                          </button>
+                        ))}
+                      </div>
+                      {closedPos.length === 0 ? (
+                        <div className="px-4 py-4 text-center">
+                          <History className="w-5 h-5 mx-auto mb-1.5" style={{ color: trTheme.textMuted }} />
+                          <p className="text-[8px] font-bold" style={{ color: trTheme.textMuted }}>Belum ada riwayat trading</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-12 gap-0 px-3 py-1 text-[7px] font-black uppercase tracking-[0.15em]" style={{ color: trTheme.textMuted, borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+                            <div className="col-span-2">Symbol</div>
+                            <div className="col-span-1">Type</div>
+                            <div className="col-span-1">Vol</div>
+                            <div className="col-span-2">Entry</div>
+                            <div className="col-span-2">Close</div>
+                            <div className="col-span-3">P&L</div>
+                            <div className="col-span-1">Tm</div>
+                          </div>
+                          <div className="max-h-32 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                            {closedPos.slice().reverse().filter(cp => {
+                              if (sinyalHistoryFilter === 'Profit') return cp.status === 'won'
+                              if (sinyalHistoryFilter === 'Loss') return cp.status === 'lost'
+                              return true
+                            }).map((cp, idx) => {
+                              const isWon = cp.status === 'won'
+                              const isUp = cp.direction === 'NAIK'
+                              const plAmt = cp.closedPL !== undefined ? cp.closedPL : (isWon ? Math.round(cp.amount * cp.profitPercent / 100) : -cp.amount)
+                              const tradeDate = new Date(cp.startTime)
+                              const dateStr = `${tradeDate.getHours().toString().padStart(2, '0')}:${tradeDate.getMinutes().toString().padStart(2, '0')}`
+                              return (
+                                <div key={cp.id} className="grid grid-cols-12 gap-0 px-3 py-1 items-center text-[7px] font-bold transition-colors"
+                                  style={idx % 2 === 0 ? { background: trTheme.inputBg } : undefined}>
+                                  <div className="col-span-2 font-black" style={{ color: trTheme.text }}>{cp.stockCode}</div>
+                                  <div className="col-span-1">
+                                    <span className="px-0.5 py-0.5 rounded text-[5px] font-black text-white"
+                                      style={isUp
+                                        ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)' }
+                                        : { background: 'linear-gradient(135deg, #f87171, #ef5350)' }}>
+                                      {isUp ? 'BUY' : 'SELL'}
+                                    </span>
+                                  </div>
+                                  <div className="col-span-1 tabular-nums" style={{ color: trTheme.textMuted }}>{(cp.amount / LOT_SIZE).toFixed(2)}</div>
+                                  <div className="col-span-2 tabular-nums" style={{ color: trTheme.textMuted }}>{formatNumber(cp.startPrice)}</div>
+                                  <div className="col-span-2 tabular-nums" style={{ color: trTheme.textSecondary }}>—</div>
+                                  <div className={`col-span-3 font-black tabular-nums ${isWon ? 'text-green-400' : 'text-red-400'}`}>
+                                    {isWon ? '+' : ''}{formatRupiah(plAmt)}
+                                  </div>
+                                  <div className="col-span-1 tabular-nums" style={{ color: trTheme.textMuted }}>{dateStr}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
 
             </motion.div>
             )
