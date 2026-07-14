@@ -8,12 +8,11 @@ import {
   Wallet, BarChart3, Briefcase, History, LogOut, RefreshCw,
   ChevronUp, ChevronDown, X, Search, Bell, Star,
   ArrowUpRight, ArrowDownRight, Home as HomeIcon, User, Copy, Check,
-  Plus, Minus, Gift, Newspaper, Shield, CreditCard, Settings,
+  Plus, Minus, Gift, Shield, CreditCard, Settings,
   Clock, AlertCircle, CheckCircle, XCircle, Info, ExternalLink, Share2,
-  BookOpen, Award, Target, PieChart, Zap, Users, Menu,
-  Phone, Lock, ChevronRight, Trophy, CalendarDays, Flame,
-  MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
-  ListChecks, ClipboardList,
+  BookOpen, Target, PieChart, Zap, Users, Menu,
+  Phone, Lock, ChevronRight,
+  MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package,
   Download, Gem, Building2, Headphones, ChevronLeft,
   Video, ThumbsUp, Eye as EyeIcon, Globe, Send,
   Sun, Moon, BellRing, Mail, MessageSquare,
@@ -96,39 +95,6 @@ interface WithdrawalItem {
 
 interface WatchlistItem {
   id: string; userId: string; stockId: string; stock: Stock; createdAt: string;
-}
-
-interface BonusItem {
-  id: string; type: string; amount: number; status: string; createdAt: string; description?: string;
-}
-
-interface PromoItem {
-  id: string; title: string; description: string; imageUrl?: string; startDate: string; endDate: string; type: string; value?: number; isActive?: boolean;
-}
-
-interface LeaderboardEntry {
-  rank: number; name: string; profit: number; profitPercent: number; avatar?: string;
-}
-
-interface InvestProduct {
-  id: string; name: string; category: string; modal: number; dailyProfit: number;
-  totalReturn: number; duration: number; roi: number; order: number; isActive: boolean;
-}
-
-interface UserInvestment {
-  id: string; userId: string; productId: string; amount: number; dailyProfit: number;
-  totalReturn: number; duration: number; daysElapsed: number; totalClaimed: number;
-  status: string; lastClaimAt: string | null; createdAt: string;
-  product: InvestProduct;
-}
-
-interface DailyCheckStatus {
-  streak: number; lastCheckDate: string | null; canCheckToday: boolean; todayReward: number;
-}
-
-interface TaskItem {
-  id: string; taskType: string; title: string; description: string | null;
-  reward: number; progress: number; target: number; completed: boolean; claimed: boolean;
 }
 
 interface StockContract {
@@ -1093,22 +1059,12 @@ function Dashboard() {
     const startTimer = () => {
       if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
       bannerTimerRef.current = setInterval(() => {
-        setBannerIndex(prev => (prev + 1) % 5)
+        setBannerIndex(prev => (prev + 1) % 4)
       }, 4000)
     }
     startTimer()
     return () => { if (bannerTimerRef.current) clearInterval(bannerTimerRef.current) }
   }, [])
-
-  // ============ DAILY CHECK & TASKS STATE ============
-  const [dailyCheckStatus, setDailyCheckStatus] = useState<DailyCheckStatus>({ streak: 0, lastCheckDate: null, canCheckToday: true, todayReward: 0 })
-  const [dailyCheckLoading, setDailyCheckLoading] = useState(false)
-  const [dailyCheckReward, setDailyCheckReward] = useState<number | null>(null)
-  const [showDailyCheckModal, setShowDailyCheckModal] = useState(false)
-  const [tasks, setTasks] = useState<TaskItem[]>([])
-  const [tasksLoading, setTasksLoading] = useState(false)
-  const [showTasksModal, setShowTasksModal] = useState(false)
-  const [taskClaimingId, setTaskClaimingId] = useState<string | null>(null)
 
   // ============ EXTRA MODALS STATE ============
   const [showKycModal, setShowKycModal] = useState(false)
@@ -1119,24 +1075,9 @@ function Dashboard() {
   const [kycAdditionalFile, setKycAdditionalFile] = useState<File | null>(null)
   const [kycSubmitting, setKycSubmitting] = useState(false)
   const [kycRecord, setKycRecord] = useState<any>(null)
-  const [showVipModal, setShowVipModal] = useState(false)
   const [showCsModal, setShowCsModal] = useState(false)
   const [showAboutModal, setShowAboutModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
-  const [showPromoDetailModal, setShowPromoDetailModal] = useState(false)
-  const [selectedPromo, setSelectedPromo] = useState<PromoItem | null>(null)
-  const [promoNotified, setPromoNotified] = useState<Set<string>>(new Set())
-
-  // ============ WELCOME MODAL STATE ============
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
-  const [welcomeDontShow, setWelcomeDontShow] = useState(false)
-
-  // ============ INVEST DETAIL MODAL STATE ============
-  const [showInvestDetailModal, setShowInvestDetailModal] = useState(false)
-  const [selectedDetailProduct, setSelectedDetailProduct] = useState<InvestProduct | null>(null)
-  const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
-  const [investChartType, setInvestChartType] = useState<'area' | 'line' | 'candle' | 'bar'>('area')
-  const [investTimeframe, setInvestTimeframe] = useState<'1H' | '1D' | '1W' | '1M' | 'ALL'>('1D')
 
   // ============ SINYAL PRO STATE ============
   const [sinyalPositions, setSinyalPositions] = useState<{
@@ -1223,11 +1164,6 @@ function Dashboard() {
       setSelectedSinyalStock(stocks[0])
     }
   }, [activeTab, selectedSinyalStock, stocks])
-
-  // ============ LIVE INVESTMENT CHART DATA (CandleData) ============
-  const [investChartData, setInvestChartData] = useState<Map<string, CandleData[]>>(new Map())
-  const investChartSimRef = useRef<Map<string, {lastClose: number; baseVal: number; momentum: number; trend: number; phase: number; phaseLen: number; vol: number; initialized: boolean}>>(new Map())
-  const investChartTickRef = useRef(0)
 
   // Generate a single realistic OHLC candle from previous close
   // Uses a structured approach: first determine the candle's direction & body,
@@ -1803,82 +1739,6 @@ function Dashboard() {
   const computeBWIMFI = useCallback((data: CandleData[]) => {
     return data.map(d => d.high - d.low > 0 ? (d.high - d.low) / d.volume : 0)
   }, [])
-
-  // Initialize investment candle chart data when products load
-  useEffect(() => {
-    if (investProducts.length === 0) return
-    setInvestChartData(prev => {
-      const next = new Map(prev)
-      let changed = false
-      investProducts.forEach(p => {
-        if (investChartSimRef.current.has(p.id)) return
-        changed = true
-        const baseVal = p.modal
-        const baseVol = Math.round(50000 + Math.random() * 150000)
-        const sim = { lastClose: baseVal, baseVal, momentum: 0, trend: 0, phase: 1, phaseLen: 5, vol: baseVol, initialized: true }
-        const candles: CandleData[] = []
-        let prevClose = Math.round(baseVal * (0.97 + Math.random() * 0.06))
-        for (let i = 0; i < 40; i++) {
-          const candle = generateCandle(prevClose, baseVal, sim, i)
-          candles.push(candle)
-          prevClose = candle.close
-          sim.lastClose = candle.close
-        }
-        // Ensure last candle ends near baseVal
-        const lastCandle = candles[candles.length - 1]
-        const diff = baseVal - lastCandle.close
-        if (candles.length > 0) {
-          const adjust = Math.round(diff * 0.7)
-          candles[candles.length - 1] = {
-            ...lastCandle,
-            close: lastCandle.close + adjust,
-            high: Math.max(lastCandle.high, lastCandle.close + adjust),
-          }
-        }
-        next.set(p.id, candles)
-        investChartSimRef.current.set(p.id, { lastClose: candles[candles.length - 1].close, baseVal, momentum: sim.momentum, trend: sim.trend, phase: sim.phase, phaseLen: sim.phaseLen, vol: baseVol, initialized: true })
-      })
-      return changed ? next : prev
-    })
-  }, [investProducts, generateCandle])
-
-  // Live investment chart update — every 3 seconds, add a new candle
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const simMap = investChartSimRef.current
-      if (simMap.size === 0) return
-      investChartTickRef.current += 1
-
-      simMap.forEach((sim, productId) => {
-        setInvestChartData(prev => {
-          const existing = prev.get(productId)
-          if (!existing || existing.length === 0) return prev
-          const prevClose = existing[existing.length - 1].close
-          const newIdx = existing[existing.length - 1].idx + 1
-          const candle = generateCandle(prevClose, sim.baseVal, sim, newIdx)
-          sim.lastClose = candle.close
-
-          const next = [...existing, candle]
-          const trimmed = next.length > 60 ? next.slice(-60) : next
-          const nextMap = new Map(prev)
-          nextMap.set(productId, trimmed)
-          return nextMap
-        })
-      })
-
-      // Also update investMovement
-      setInvestMovement(prev => {
-        const next = new Map(prev)
-        simMap.forEach((sim, productId) => {
-          const changePercent = ((sim.lastClose - sim.baseVal) / sim.baseVal) * 100
-          next.set(productId, { change: Math.round(sim.lastClose - sim.baseVal), changePercent: parseFloat(changePercent.toFixed(2)) })
-        })
-        return next
-      })
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [generateCandle])
-
 
   const initialized2 = useRef(false)
   const stocksRef = useRef<Stock[]>([])
@@ -3003,31 +2863,6 @@ function Dashboard() {
 
   useEffect(() => { const iv = setInterval(refreshAll, 30000); return () => clearInterval(iv) }, [refreshAll])
 
-  // ============ WELCOME MODAL LOGIC ============
-  useEffect(() => {
-    if (user) {
-      const dismissed = localStorage.getItem('gs_welcome_dismissed')
-      if (!dismissed || Date.now() > parseInt(dismissed)) {
-        setShowWelcomeModal(true)
-        // Auto-dismiss after 5 seconds so it doesn't block navigation
-        const timer = setTimeout(() => setShowWelcomeModal(false), 5000)
-        return () => clearTimeout(timer)
-      }
-    }
-  }, [user])
-
-  const handleWelcomeClose = () => {
-    if (welcomeDontShow) {
-      localStorage.setItem('gs_welcome_dismissed', (Date.now() + 30 * 60 * 1000).toString())
-    }
-    setShowWelcomeModal(false)
-  }
-
-  // ============ INVEST CHART DATA HELPER ============
-  const getInvestChartData = useCallback((product: InvestProduct) => {
-    return investChartData.get(product.id) || []
-  }, [investChartData])
-
   // ============ CONTRACT ============
   const handleContract = async () => {
     if (!user || !selectedStock || !contractAmount) return
@@ -3267,81 +3102,6 @@ function Dashboard() {
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
   }
 
-  // ============ DAILY CHECK-IN ============
-  const handleDailyCheck = async () => {
-    if (!user) return
-    setDailyCheckLoading(true)
-    try {
-      const res = await fetch('/api/daily-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setDailyCheckReward(data.reward)
-      setDailyCheckStatus(prev => ({ ...prev, canCheckToday: false, todayReward: data.reward, streak: data.streak }))
-      updateBalance((user.balance || 0) + data.reward)
-      toast({ title: 'Cek Harian Berhasil! 🔥', description: `Bonus ${formatRupiah(data.reward)} — Streak ${data.streak} hari!` })
-      fetchBonuses(); fetchPortfolio(); fetchTasks()
-    } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
-    finally { setDailyCheckLoading(false) }
-  }
-
-  // ============ TASK CLAIM ============
-  const handleClaimTask = async (taskId: string) => {
-    if (!user) return
-    setTaskClaimingId(taskId)
-    try {
-      const res = await fetch('/api/tasks/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, taskId }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, claimed: true } : t))
-      updateBalance((user.balance || 0) + data.reward)
-      toast({ title: 'Tugas Selesai! 🎯', description: `Bonus ${formatRupiah(data.reward)} dari "${data.taskTitle}"` })
-      fetchBonuses(); fetchPortfolio()
-    } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
-    finally { setTaskClaimingId(null) }
-  }
-
-  // ============ INVESTMENT MOVEMENT (now driven by live candlestick data) ============
-
-  // ============ INVESTMENT HANDLERS ============
-  const handlePurchaseInvestment = async () => {
-    if (!user || !selectedProduct) return
-    setInvestLoading(true)
-    try {
-      const res = await fetch('/api/invest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, productId: selectedProduct.id }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      updateBalance(data.newBalance)
-      toast({ title: 'Investasi Berhasil!', description: `Anda berhasil membeli ${selectedProduct.name}` })
-      setShowInvestModal(false)
-      setSelectedProduct(null)
-      fetchUserInvestments(); fetchPortfolio()
-    } catch (err: unknown) {
-      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' })
-    } finally { setInvestLoading(false) }
-  }
-
-  const handleClaimProfit = async (investmentId: string) => {
-    if (!user) return
-    setClaimLoadingId(investmentId)
-    try {
-      const res = await fetch('/api/invest/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, investmentId }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      updateBalance(data.newBalance)
-      toast({ title: 'Profit Diterima!', description: `+${formatRupiah(data.claimedAmount)} dikreditkan ke saldo` })
-      fetchUserInvestments(); fetchPortfolio()
-    } catch (err: unknown) {
-      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' })
-    } finally { setClaimLoadingId(null) }
-  }
-
-  // ============ INVESTMENT SPARKLINE (derived from live chart data) ============
-  const getInvestSparkline = useCallback((product: InvestProduct) => {
-    const chartData = investChartData.get(product.id)
-    if (!chartData || chartData.length === 0) return []
-    return chartData.map((d, i) => ({ i, p: d.close }))
-  }, [investChartData])
-
   // ============ DERIVED ============
   const unreadNotif = notifications.filter(n => !n.isRead).length
   const filteredStocks = stocks.filter(s => {
@@ -3543,10 +3303,10 @@ function Dashboard() {
                   bannerTouchEndX.current = e.changedTouches[0].clientX
                   const diff = bannerTouchStartX.current - bannerTouchEndX.current
                   if (Math.abs(diff) > 50) {
-                    if (diff > 0) setBannerIndex(prev => (prev + 1) % 5)
-                    else setBannerIndex(prev => (prev - 1 + 5) % 5)
+                    if (diff > 0) setBannerIndex(prev => (prev + 1) % 4)
+                    else setBannerIndex(prev => (prev - 1 + 4) % 4)
                     if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
-                    bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 5), 4000)
+                    bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 4), 4000)
                   }
                 }}
               >
@@ -3590,19 +3350,6 @@ function Dashboard() {
                       ],
                       live: false,
                     },
-                    {
-                      img: '/banner-daily-check.png',
-                      overlay: 'linear-gradient(135deg, rgba(12,26,46,0.93) 0%, rgba(245,158,11,0.45) 100%)',
-                      badge: { icon: <CalendarDays className="w-4 h-4 text-yellow-300" />, text: 'CEK HARIAN' },
-                      title: 'Klaim Bonus',
-                      titleAccent: 'Setiap Hari',
-                      desc: dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut!` : 'Klaim bonus harian Anda dan tingkatkan streak.',
-                      btns: dailyCheckStatus.canCheckToday
-                        ? [{ label: dailyCheckLoading ? '' : 'Klaim Sekarang', icon: dailyCheckLoading ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Gift className="w-3.5 h-3.5" />, action: handleDailyCheck, style: 'gold' as const }]
-                        : [],
-                      live: false,
-                      dailyCheck: true,
-                    },
                   ].map((slide, i) => (
                     <div
                       key={i}
@@ -3641,10 +3388,8 @@ function Dashboard() {
                               <button
                                 key={bi}
                                 onClick={btn.action}
-                                disabled={slide.dailyCheck && dailyCheckLoading}
                                 className={`h-8 px-4 rounded-xl text-[9px] font-bold flex items-center gap-1.5 transition-all active:scale-[0.96] ${
                                   btn.style === 'primary' ? 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white hover:from-[#60a5fa] hover:to-[#3b82f6] shadow-lg shadow-blue-500/30' :
-                                  btn.style === 'gold' ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 hover:from-yellow-300 hover:to-amber-400 shadow-lg shadow-yellow-500/30 disabled:opacity-60' :
                                   'bg-white/10 border border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
                                 }`}
                               >
@@ -3653,30 +3398,17 @@ function Dashboard() {
                             ))}
                           </div>
                         )}
-                        {/* Daily check reward display */}
-                        {slide.dailyCheck && dailyCheckReward !== null && (
-                          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                            className="mt-2 rounded-xl p-2 bg-yellow-500/20 border border-yellow-400/30 backdrop-blur-sm text-center">
-                            <span className="text-[8px] text-yellow-200 font-bold">Bonus Hari Ini</span>
-                            <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
-                          </motion.div>
-                        )}
-                        {slide.dailyCheck && !dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
-                          <div className="mt-2 rounded-xl p-2 bg-white/10 border border-white/15 backdrop-blur-sm text-center">
-                            <span className="text-[8px] text-white/70 font-bold">Bonus Hari Ini</span>
-                            <b className="block text-sm font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   ))}
                 </div>
                 {/* Dot Indicators */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                  {[0,1,2,3,4].map(i => (
+                  {[0,1,2,3].map(i => (
                     <button
                       key={i}
-                      onClick={() => { setBannerIndex(i); if (bannerTimerRef.current) clearInterval(bannerTimerRef.current); bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 5), 4000) }}
+                      onClick={() => { setBannerIndex(i); if (bannerTimerRef.current) clearInterval(bannerTimerRef.current); bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 4), 4000) }}
                       className="transition-all duration-300 rounded-full"
                       style={{
                         width: bannerIndex === i ? 24 : 8,
@@ -3810,54 +3542,6 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* ══════════ DAILY CHECK BANNER (full-width) ══════════ */}
-              <div className="rounded-2xl overflow-hidden mb-5 border border-blue-500/15 relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.18)' }}>
-                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
-                <div className="absolute top-0 right-0 w-28 h-28 rounded-full bg-yellow-400/8 blur-2xl" />
-                <div className="relative p-4 text-white">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/10 grid place-items-center backdrop-blur-sm">
-                        <CalendarDays className="w-5 h-5 text-yellow-300" />
-                      </div>
-                      <div>
-                        <b className="text-[12px] font-black">CEK HARIAN</b>
-                        <span className="block text-[8px] font-semibold text-blue-200">
-                          {dailyCheckStatus.streak > 0 ? `🔥 ${dailyCheckStatus.streak} Hari Berturut-turut` : 'Klaim bonus harian Anda'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 h-6 px-2.5 rounded-full bg-white/8 border border-white/10">
-                      <Flame className="w-3 h-3 text-orange-400" />
-                      <span className="text-[8px] font-black text-orange-300">{dailyCheckStatus.streak}</span>
-                    </div>
-                  </div>
-                  {dailyCheckStatus.canCheckToday ? (
-                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
-                      className="w-full h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[10px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all disabled:opacity-60 flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/25">
-                      {dailyCheckLoading ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><Gift className="w-4 h-4" />Klaim Sekarang</>}
-                    </button>
-                  ) : (
-                    <div className="w-full h-10 rounded-xl bg-white/15 border border-white/10 text-[10px] font-bold flex items-center justify-center gap-1.5 backdrop-blur-sm">
-                      <CheckCircle className="w-4 h-4 text-blue-300" />Sudah Dicek Hari Ini
-                    </div>
-                  )}
-                  {dailyCheckReward !== null && (
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-xl p-2.5 bg-yellow-500/20 border border-yellow-400/30 text-center mt-3 backdrop-blur-sm">
-                      <span className="text-[8px] text-yellow-200 font-bold">🎉 Bonus Hari Ini</span>
-                      <b className="block text-[16px] font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
-                    </motion.div>
-                  )}
-                  {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
-                    <div className="rounded-xl p-2.5 bg-white/10 border border-white/15 text-center mt-3 backdrop-blur-sm">
-                      <span className="text-[8px] text-blue-200 font-bold">Bonus Hari Ini</span>
-                      <b className="block text-[16px] font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* ══════════ PORTFOLIO OVERVIEW ══════════ */}
               <div className="rounded-2xl overflow-hidden mb-5 border border-[var(--zv-border)] relative" style={{ background: 'var(--zv-panel)', boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #3b82f6, #06b6d4, transparent)' }} />
@@ -3970,53 +3654,6 @@ function Dashboard() {
                   </div>
                 </div>
               )}
-
-              {/* ══════════ TASKS & REWARDS ══════════ */}
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                {/* Tugas */}
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
-                  <div className="absolute top-0 left-4 w-8 h-[2px] rounded-full bg-amber-500/50" />
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 grid place-items-center">
-                      <ListChecks className="w-4 h-4 text-amber-500" />
-                    </div>
-                    <div>
-                      <b className="text-[10px] font-black text-[var(--zv-text)]">Tugas</b>
-                      <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{tasks.filter(t => t.completed).length}/{tasks.length} selesai</span>
-                    </div>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-2.5 border border-[var(--zv-border)]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500" style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0}%` }} />
-                  </div>
-                  <button onClick={() => { setTasksLoading(true); fetchTasks().finally(() => setTasksLoading(false)); setShowTasksModal(true) }}
-                    className="w-full h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-500 text-[8px] font-bold hover:bg-amber-500/25 transition-colors">
-                    Lihat Tugas
-                  </button>
-                </div>
-                {/* Cek Harian mini */}
-                <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
-                  <div className="absolute top-0 left-4 w-8 h-[2px] rounded-full bg-blue-500/50" />
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/20 grid place-items-center">
-                      <CalendarDays className="w-4 h-4 text-[#3b82f6]" />
-                    </div>
-                    <div>
-                      <b className="text-[10px] font-black text-[var(--zv-text)]">Cek Harian</b>
-                      <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} hari streak` : 'Klaim sekarang'}</span>
-                    </div>
-                  </div>
-                  {dailyCheckStatus.canCheckToday ? (
-                    <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
-                      className="w-full h-8 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[8px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all disabled:opacity-60 shadow-md shadow-yellow-500/20">
-                      {dailyCheckLoading ? '...' : 'Klaim Bonus'}
-                    </button>
-                  ) : (
-                    <div className="w-full h-8 rounded-lg bg-[#22c55e]/15 border border-[#22c55e]/20 text-[#22c55e] text-[8px] font-bold flex items-center justify-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" />Sudah Dicek
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* ══════════ WATCHLIST ══════════ */}
               {watchlist.length > 0 && (
@@ -7461,9 +7098,6 @@ function Dashboard() {
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="h-5 px-2 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[7px] font-bold text-yellow-300 flex items-center gap-1">
-                      <Award className="w-2.5 h-2.5" />Gold VIP
-                    </span>
                     {user?.kycStatus === 'verified' && (
                       <span className="h-5 px-2 rounded-full bg-blue-500/20 border border-blue-400/30 text-[7px] font-bold text-blue-200 flex items-center gap-1">
                         <Shield className="w-2.5 h-2.5" />KYC Verified
@@ -7939,351 +7573,6 @@ function Dashboard() {
       </AnimatePresence>
 
 
-      {/* Daily Check-in Modal */}
-      <AnimatePresence>
-        {showDailyCheckModal && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowDailyCheckModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5 text-[#3b82f6]" />
-                  <span className="text-[12px] font-black text-[var(--zv-text)]">Cek Harian</span>
-                </div>
-                <button onClick={() => setShowDailyCheckModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
-              </div>
-
-              <div className="p-4">
-                {/* Streak Display */}
-                <div className="rounded-2xl p-4 text-center mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                  <Flame className="w-12 h-12 text-yellow-300 mx-auto mb-2" />
-                  <h3 className="text-lg font-black text-white mb-1">
-                    {dailyCheckStatus.streak > 0 ? `${dailyCheckStatus.streak} Hari Berturut-turut` : 'Mulai Streak Anda!'}
-                  </h3>
-                  <p className="text-[9px] text-blue-200">Cek setiap hari untuk mendapat bonus Rp 500</p>
-
-                  {/* Streak dots */}
-                  <div className="flex items-center justify-center gap-1.5 mt-3">
-                    {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                      <div key={day} className={`w-7 h-7 rounded-full flex items-center justify-center text-[8px] font-black border-2 ${
-                        day <= dailyCheckStatus.streak
-                          ? 'bg-yellow-500 border-yellow-400 text-[var(--zv-text)]'
-                          : 'bg-white/10 border-white/20 text-white/40'
-                      }`}>
-                        {day <= dailyCheckStatus.streak ? '✓' : day}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Reward animation */}
-                  {dailyCheckReward !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ type: 'spring', bounce: 0.5 }}
-                      className="mt-4 rounded-xl p-3 bg-yellow-500/20 border border-yellow-400/30"
-                    >
-                      <span className="text-[9px] text-yellow-200 font-bold">Bonus Hari Ini</span>
-                      <b className="block text-2xl font-black text-yellow-300">{formatRupiah(dailyCheckReward)}</b>
-                    </motion.div>
-                  )}
-
-                  {!dailyCheckStatus.canCheckToday && dailyCheckReward === null && dailyCheckStatus.todayReward > 0 && (
-                    <div className="mt-4 rounded-xl p-3 bg-white/10 border border-white/15">
-                      <span className="text-[9px] text-blue-200 font-bold">Bonus Hari Ini</span>
-                      <b className="block text-2xl font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward)}</b>
-                    </div>
-                  )}
-                </div>
-
-                {/* Check-in Button */}
-                {dailyCheckStatus.canCheckToday ? (
-                  <button
-                    onClick={handleDailyCheck}
-                    disabled={dailyCheckLoading}
-                    className="w-full h-12 rounded-xl text-white text-[12px] font-black hover:scale-[1.02] transition-transform disabled:opacity-70"
-                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
-                  >
-                    {dailyCheckLoading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
-                        Memproses...
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center gap-2">
-                        <CalendarDays className="w-4 h-4" /> Klaim Sekarang
-                      </div>
-                    )}
-                  </button>
-                ) : (
-                  <div className="w-full h-12 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-center justify-center gap-2 text-[var(--zv-muted)] text-[11px] font-bold">
-                    <CheckCircle className="w-4 h-4 text-[#3b82f6]" />
-                    Sudah Dicek Hari Ini ✓
-                  </div>
-                )}
-
-                {/* Info */}
-                <div className="mt-3 rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] flex items-start gap-2">
-                  <Info className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
-                  <span className="text-[8px] text-[#3b82f6] leading-relaxed">Streak bertambah setiap kali Anda cek harian secara berturut-turut. Jangan sampai putus!</span>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Tasks Modal */}
-      <AnimatePresence>
-        {showTasksModal && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowTasksModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="w-5 h-5 text-[#f59e0b]" />
-                  <span className="text-[12px] font-black text-[var(--zv-text)]">Tugas</span>
-                </div>
-                <button onClick={() => setShowTasksModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
-              </div>
-
-              <div className="p-4">
-                {/* Progress overview */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
-                  <div className="flex items-center justify-between text-white">
-                    <div>
-                      <span className="text-[9px] font-bold text-amber-100">Progress Tugas</span>
-                      <b className="block text-lg font-black">{tasks.filter(t => t.completed).length}/{tasks.length}</b>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[9px] font-bold text-amber-100">Total Bonus</span>
-                      <b className="block text-lg font-black">{formatRupiah(tasks.filter(t => t.claimed).reduce((sum, t) => sum + t.reward, 0))}</b>
-                    </div>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-white/20 mt-2 overflow-hidden">
-                    <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0}%` }} />
-                  </div>
-                </div>
-
-                {/* Task List */}
-                <div className="space-y-2">
-                  {tasks.map(task => {
-                    const taskIcons: Record<string, React.ReactNode> = {
-                      first_invest: <DollarSign className="w-4 h-4" />,
-                      top_up: <Wallet className="w-4 h-4" />,
-                      invite_3: <Users className="w-4 h-4" />,
-                      verify: <Shield className="w-4 h-4" />,
-                      invest_3: <Package className="w-4 h-4" />,
-                      check_7: <Flame className="w-4 h-4" />,
-                    }
-                    return (
-                      <div key={task.id} className={`rounded-xl p-3 border ${task.claimed ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : task.completed ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-panel)] border-[var(--zv-border)]'}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-9 h-9 rounded-xl grid place-items-center ${
-                              task.claimed ? 'bg-[var(--zv-surface)] text-[#3b82f6]' :
-                              task.completed ? 'bg-[var(--zv-surface)] text-[#f59e0b]' :
-                              'bg-[var(--zv-surface)] text-[var(--zv-muted)]'
-                            }`}>
-                              {task.claimed ? <CheckCircle className="w-4 h-4" /> : taskIcons[task.taskType] || <Target className="w-4 h-4" />}
-                            </div>
-                            <div>
-                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{task.title}</span>
-                              <span className="block text-[8px] text-[var(--zv-muted)]">{task.description}</span>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <div className="w-16 h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all duration-500 ${task.claimed ? 'bg-blue-500' : 'bg-amber-500'}`} style={{ width: `${task.target > 0 ? (task.progress / task.target) * 100 : 0}%` }} />
-                                </div>
-                                <span className="text-[7px] font-bold text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <b className="block text-[10px] font-black text-[#3b82f6]">+{formatRupiah(task.reward)}</b>
-                            {task.claimed ? (
-                              <span className="text-[7px] font-bold text-[#3b82f6]">Diklaim ✓</span>
-                            ) : task.completed ? (
-                              <button
-                                onClick={() => handleClaimTask(task.id)}
-                                disabled={taskClaimingId === task.id}
-                                className="mt-1 h-6 px-3 rounded-lg bg-amber-500 text-white text-[8px] font-bold hover:bg-amber-600 transition-colors disabled:opacity-60"
-                              >
-                                {taskClaimingId === task.id ? (
-                                  <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                                ) : 'Klaim'}
-                              </button>
-                            ) : (
-                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Mulai</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Welcome Modal */}
-      <AnimatePresence>
-        {showWelcomeModal && user && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={handleWelcomeClose} />
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 top-4 left-4 right-4 bottom-20 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md md:bottom-auto bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
-              <div className="relative">
-                {/* Green Header */}
-                <div className="p-6 text-center text-white relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                  <div className="relative z-10">
-                    <div className="mx-auto mb-3">
-                      <ZevorikLogo size={60} />
-                    </div>
-                    <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIK</h2>
-                    <p className="text-[9px] text-blue-200 leading-relaxed max-w-[280px] mx-auto">
-                      Platform investasi terpercaya dengan profit harian, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  {/* Regulatory Badges */}
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
-                        <Shield className="w-5 h-5 text-[#3b82f6]" />
-                      </div>
-                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">OJK</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
-                        <CheckCircle className="w-5 h-5 text-[#f59e0b]" />
-                      </div>
-                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">Bappebti</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
-                        <Lock className="w-5 h-5 text-[#3b82f6]" />
-                      </div>
-                      <span className="text-[7px] font-bold text-[var(--zv-muted)]">Aman</span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <button
-                    onClick={() => { handleWelcomeClose(); setActiveTab('market') }}
-                    className="w-full h-11 rounded-xl text-white text-[11px] font-black tracking-wide hover:scale-[1.02] transition-transform mb-2"
-                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
-                  >
-                    Mulai Berinvestasi
-                  </button>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <button
-                      onClick={handleWelcomeClose}
-                      className="h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#3b82f6] text-[9px] font-bold hover:bg-[var(--zv-border)] transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Headphones className="w-3.5 h-3.5" />Hubungi CS
-                    </button>
-                    <button
-                      onClick={handleWelcomeClose}
-                      className="h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#f59e0b] text-[9px] font-bold hover:bg-[var(--zv-border)] transition-colors flex items-center justify-center gap-1"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />Gabung Channel
-                    </button>
-                  </div>
-
-                  {/* Don't show checkbox */}
-                  <label className="flex items-center gap-2 cursor-pointer justify-center">
-                    <input type="checkbox" checked={welcomeDontShow} onChange={(e) => setWelcomeDontShow(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded accent-blue-500" />
-                    <span className="text-[8px] font-semibold text-[var(--zv-muted)]">Jangan tampilkan selama 30 menit</span>
-                  </label>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-
-      {/* Promo Detail Modal */}
-      <AnimatePresence>
-        {showPromoDetailModal && selectedPromo && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowPromoDetailModal(false)} />
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
-              <div className="relative">
-                {/* Header */}
-                <div className="p-5 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
-                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                  <button onClick={() => setShowPromoDetailModal(false)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 grid place-items-center text-white hover:bg-white/20 transition-colors"><X className="w-4 h-4" /></button>
-                  <div className="relative z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-yellow-500/20 border border-yellow-400/30 grid place-items-center mx-auto mb-3">
-                      <Zap className="w-7 h-7 text-yellow-300" />
-                    </div>
-                    <h2 className="text-[16px] font-black text-center">{selectedPromo.title}</h2>
-                    <div className="flex items-center justify-center gap-2 mt-2">
-                      <span className="h-5 px-2.5 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[8px] font-black text-yellow-300 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />AKTIF</span>
-                      <span className="h-5 px-2.5 rounded-full bg-white/10 border border-white/15 text-[8px] font-bold text-blue-200">{selectedPromo.type === 'deposit_bonus' ? 'Deposit' : selectedPromo.type === 'trading_bonus' ? 'Trading' : selectedPromo.type === 'welcome_bonus' ? 'Welcome' : selectedPromo.type === 'referral_program' ? 'Referral' : selectedPromo.type === 'trading_competition' ? 'Kompetisi' : selectedPromo.type === 'daily_checkin' ? 'Check-in' : 'Promo'}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-5">
-                  <p className="text-[11px] text-[var(--zv-text)] leading-relaxed mb-4">{selectedPromo.description}</p>
-                  <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">Periode</span>
-                      <span className="text-[9px] font-bold text-[var(--zv-text)]">{selectedPromo.startDate ? formatDate(selectedPromo.startDate) : 'Sekarang'} — {selectedPromo.endDate ? formatDate(selectedPromo.endDate) : 'Berlangsung'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">Nilai</span>
-                      <span className="text-[11px] font-black text-[#f59e0b]">{selectedPromo.value ? (selectedPromo.value >= 1000 ? formatRupiah(selectedPromo.value) : `${selectedPromo.value}%`) : '-'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">Status</span>
-                      <span className="text-[9px] font-black text-green-500">Aktif</span>
-                    </div>
-                  </div>
-                  {/* Claim / Action buttons based on promo type */}
-                  {selectedPromo.type === 'daily_checkin' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); setPromoSubTab('daily') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[11px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
-                      <Flame className="w-4 h-4" />Klaim Cek Harian
-                    </button>
-                  ) : selectedPromo.type === 'referral_program' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('market') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
-                      <BarChart3 className="w-4 h-4" />Lihat Pasar
-                    </button>
-                  ) : selectedPromo.type === 'deposit_bonus' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('finance') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[11px] font-bold hover:from-green-400 hover:to-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
-                      <Plus className="w-4 h-4" />Deposit Sekarang
-                    </button>
-                  ) : selectedPromo.type === 'trading_bonus' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('sinyal') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 text-white text-[11px] font-bold hover:from-purple-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20">
-                      <Target className="w-4 h-4" />Mulai Trading
-                    </button>
-                  ) : selectedPromo.type === 'trading_competition' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('sinyal') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white text-[11px] font-bold hover:from-orange-400 hover:to-red-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
-                      <Trophy className="w-4 h-4" />Ikut Kompetisi
-                    </button>
-                  ) : selectedPromo.type === 'welcome_bonus' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); toast({ title: 'Bonus Selamat Datang', description: 'Bonus sudah otomatis dikreditkan ke saldo Anda!' }) }} className="w-full h-11 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 text-[11px] font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
-                      <Gift className="w-4 h-4" />Klaim Bonus
-                    </button>
-                  ) : (
-                    <button onClick={() => { setShowPromoDetailModal(false); toast({ title: 'Promo Aktif', description: 'Anda sudah berpartisipasi dalam promo ini!' }) }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2">
-                      <Zap className="w-4 h-4" />Partisipasi
-                    </button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* KYC Verification Modal */}
       <AnimatePresence>
         {showKycModal && (
@@ -8370,60 +7659,6 @@ function Dashboard() {
                     {kycFormContent()}
                   </>
                 )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* VIP Level Modal */}
-      <AnimatePresence>
-        {showVipModal && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowVipModal(false)} />
-            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', damping: 20 }} className="fixed z-50 inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90vw] md:max-w-md bg-[var(--zv-panel)] rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><Award className="w-5 h-5 text-[#f59e0b]" /></div>
-                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">VIP Level</h2>
-                  </div>
-                  <button onClick={() => setShowVipModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
-                </div>
-                {/* Current Level */}
-                <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 100%)' }}>
-                  <div className="p-4 text-white text-center">
-                    <span className="text-[32px]">🥇</span>
-                    <h3 className="text-[18px] font-black mt-1">Gold</h3>
-                    <p className="text-[9px] text-orange-200">Level saat ini</p>
-                  </div>
-                </div>
-                {/* VIP Tiers */}
-                <div className="space-y-2">
-                  {[
-                    { level: 'Bronze', icon: '🥉', color: 'from-amber-800 to-amber-600', deposit: 'Rp 0', payout: '80%', commission: '5%' },
-                    { level: 'Silver', icon: '🥈', color: 'from-gray-400 to-gray-300', deposit: 'Rp 5.000.000', payout: '85%', commission: '8%' },
-                    { level: 'Gold', icon: '🥇', color: 'from-yellow-500 to-yellow-300', deposit: 'Rp 25.000.000', payout: '90%', commission: '10%', active: true },
-                    { level: 'Platinum', icon: '💎', color: 'from-cyan-500 to-blue-400', deposit: 'Rp 100.000.000', payout: '95%', commission: '14%' },
-                  ].map((tier) => (
-                    <div key={tier.level} className={`rounded-2xl p-3 border transition-all ${tier.active ? 'bg-yellow-500/5 border-yellow-500/20' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-[20px]">{tier.icon}</span>
-                          <div>
-                            <span className="block text-[11px] font-black text-[var(--zv-text)]">{tier.level}</span>
-                            <span className="block text-[8px] text-[var(--zv-muted)]">Deposit {tier.deposit}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="block text-[10px] font-black text-[#f59e0b]">Payout {tier.payout}</span>
-                          <span className="block text-[8px] text-[var(--zv-muted)]">Komisi {tier.commission}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[8px] text-[var(--zv-muted)] text-center mt-3">Deposit lebih banyak untuk meningkatkan level VIP dan mendapat benefit eksklusif!</p>
               </div>
             </motion.div>
           </>
@@ -8540,7 +7775,6 @@ function Dashboard() {
                     { q: 'Berapa minimal deposit?', a: 'Minimal deposit adalah Rp 50.000 untuk semua metode pembayaran.' },
                     { q: 'Bagaimana cara menarik dana?', a: 'Klik menu Dompet → Tarik Saldo → Masukkan jumlah dan rekening tujuan → Konfirmasi penarikan. Proses 1-3 hari kerja.' },
                     { q: 'Apa itu Trading?', a: 'Trading adalah fitur dimana Anda membuka posisi Buy/Sell dengan Lot & Leverage. Posisi terbuka sampai Anda tutup manual, saldo ikut pergerakan grafik real-time seperti MT5.' },
-                    { q: 'Bagaimana sistem komisi referral?', a: 'Anda mendapat komisi 10% dari Level 1, 3% dari Level 2, dan 1% dari Level 3. Komisi bisa diklaim kapan saja.' },
                     { q: 'Apakah ZEVORIK aman?', a: 'ZEVORIK terdaftar dan diawasi oleh OJK. Semua dana nasabah dijamin oleh LPS. Kami menggunakan enkripsi SSL 256-bit.' },
                   ].map((faq, i) => (
                     <details key={i} className="rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] overflow-hidden group">
