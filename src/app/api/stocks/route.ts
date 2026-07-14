@@ -451,17 +451,4 @@ async function seedStocks() {
     }
   }
 
-  // Seed news if empty
-  const newsCount = await db.news.count()
-  if (newsCount === 0) {
-    const newsData = [
-      { title: 'NVIDIA Surges to New All-Time High on AI Chip Demand', content: 'NVIDIA shares soared to a record high after the company reported exceptional demand for its AI accelerator chips.', category: 'market', isPublished: true },
-      { title: 'Fed Holds Interest Rates Steady', content: 'The Federal Reserve kept interest rates unchanged but hinted at a potential rate cut.', category: 'market', isPublished: true },
-      { title: 'Apple Announces Revolutionary AI Features', content: 'Apple introduced groundbreaking AI-powered features across its product lineup.', category: 'company', isPublished: true },
-      { title: 'TrendEdge Platform Upgrade: New Features Released', content: 'We are proud to announce the latest upgrade with advanced charting tools and real-time signals.', category: 'system', isPublished: true },
-    ]
-    for (const news of newsData) {
-      await db.news.create({ data: news })
-    }
-  }
 }
