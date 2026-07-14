@@ -1,0 +1,2002 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react'
+     4→import { useAuthStore } from '@/lib/store'
+     5→import { motion, AnimatePresence } from 'framer-motion'
+     6→import {
+     7→  TrendingUp, TrendingDown, Eye, EyeOff, ArrowRight,
+     8→  Wallet, BarChart3, Briefcase, History, LogOut, RefreshCw,
+     9→  ChevronUp, ChevronDown, X, Search, Bell, Star,
+    10→  ArrowUpRight, ArrowDownRight, Home as HomeIcon, User, Copy, Check,
+    11→  Plus, Minus, Gift, Newspaper, Shield, CreditCard, Settings,
+    12→  Clock, AlertCircle, CheckCircle, XCircle, Info, ExternalLink, Share2,
+    13→  BookOpen, Award, Target, PieChart, Zap, Users, Menu,
+    14→  Phone, Lock, ChevronRight, Trophy, CalendarDays, Flame,
+    15→  MessageCircle, HelpCircle, LogIn, UserPlus, RotateCcw, DollarSign, Package, Sparkles,
+    16→  ListChecks, ClipboardList,
+    17→  Download, Gem, Building2, Headphones, ChevronLeft,
+    18→  Video, ThumbsUp, Eye as EyeIcon, Globe, Send,
+    19→  Sun, Moon, BellRing, Mail, MessageSquare,
+    20→  Crosshair, Activity, SlidersHorizontal
+    21→} from 'lucide-react'
+    22→import { toast } from '@/hooks/use-toast'
+    23→import {
+    24→  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+    25→  PieChart as RePieChart, Pie, Cell, ReferenceLine,
+    26→  LineChart, Line, BarChart as ReBarChart, Bar, CartesianGrid
+    27→} from 'recharts'
+    28→
+    29→// ============================================
+    30→// UTILITY FUNCTIONS
+    31→// ============================================
+    32→const formatRupiah = (num: number): string =>
+    33→  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num)
+    34→
+    35→const formatNumber = (num: number): string =>
+    36→  new Intl.NumberFormat('id-ID').format(num)
+    37→
+    38→const formatPercent = (num: number): string =>
+    39→  `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`
+    40→
+    41→const formatMarketCap = (num: number): string => {
+    42→  if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`
+    43→  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`
+    44→  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`
+    45→  return formatNumber(num)
+    46→}
+    47→
+    48→const formatDate = (dateStr: string) =>
+    49→  new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+    50→
+    51→const formatDateTime = (dateStr: string) =>
+    52→  new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    53→
+    54→// ============================================
+    55→// TYPES
+    56→// ============================================
+    57→interface Stock {
+    58→  id: string; code: string; name: string; price: number; change: number;
+    59→  changePercent: number; high: number; low: number; open: number;
+    60→  volume: number; marketCap: number; category: string; sector?: string;
+    61→  logo?: string; description?: string; peRatio?: number; pbv?: number; dividendYield?: number; lotSize?: number;
+    62→}
+    63→
+    64→interface PortfolioItem {
+    65→  id: string; userId: string; stockId: string; shares: number; avgPrice: number;
+    66→  stock: Stock; currentValue: number; investedValue: number; profitLoss: number; profitLossPercent: number;
+    67→}
+    68→
+    69→interface Transaction {
+    70→  id: string; userId: string; stockId: string; type: string; orderType?: string;
+    71→  shares: number; price: number; total: number; fee?: number; status: string; createdAt: string;
+    72→  stock: Stock;
+    73→}
+    74→
+    75→interface PriceHistory { id: string; stockCode: string; price: number; timestamp: string }
+    76→
+    77→interface MarketIndex {
+    78→  id: string; code: string; name: string; value: number; change: number; changePercent: number;
+    79→}
+    80→
+    81→interface NotificationItem {
+    82→  id: string; userId: string; title: string; message: string; type: string; isRead: boolean; createdAt: string;
+    83→}
+    84→
+    85→interface NewsItem {
+    86→  id: string; title: string; content: string; category: string; imageUrl?: string; createdAt: string;
+    87→}
+    88→
+    89→interface DepositItem {
+    90→  id: string; userId: string; amount: number; method: string; bankName?: string; status: string; createdAt: string;
+    91→}
+    92→
+    93→interface WithdrawalItem {
+    94→  id: string; userId: string; amount: number; bankName?: string; bankAccount?: string; bankHolder?: string; status: string; createdAt: string;
+    95→}
+    96→
+    97→interface WatchlistItem {
+    98→  id: string; userId: string; stockId: string; stock: Stock; createdAt: string;
+    99→}
+   100→
+   101→interface BonusItem {
+   102→  id: string; type: string; amount: number; status: string; createdAt: string; description?: string;
+   103→}
+   104→
+   105→interface PromoItem {
+   106→  id: string; title: string; description: string; imageUrl?: string; startDate: string; endDate: string; type: string; value?: number; isActive?: boolean;
+   107→}
+   108→
+   109→interface LeaderboardEntry {
+   110→  rank: number; name: string; profit: number; profitPercent: number; avatar?: string;
+   111→}
+   112→
+   113→interface InvestProduct {
+   114→  id: string; name: string; category: string; modal: number; dailyProfit: number;
+   115→  totalReturn: number; duration: number; roi: number; order: number; isActive: boolean;
+   116→}
+   117→
+   118→interface UserInvestment {
+   119→  id: string; userId: string; productId: string; amount: number; dailyProfit: number;
+   120→  totalReturn: number; duration: number; daysElapsed: number; totalClaimed: number;
+   121→  status: string; lastClaimAt: string | null; createdAt: string;
+   122→  product: InvestProduct;
+   123→}
+   124→
+   125→interface DailyCheckStatus {
+   126→  streak: number; lastCheckDate: string | null; canCheckToday: boolean; todayReward: number;
+   127→}
+   128→
+   129→interface TaskItem {
+   130→  id: string; taskType: string; title: string; description: string | null;
+   131→  reward: number; progress: number; target: number; completed: boolean; claimed: boolean;
+   132→}
+   133→
+   134→interface StockContract {
+   135→  id: string; userId: string; stockId: string; stockCode: string; stockName: string;
+   136→  amount: number; dailyProfitRate: number; dailyProfitAmount: number;
+   137→  totalProfit: number; totalReturn: number; duration: number;
+   138→  daysElapsed: number; totalClaimed: number; status: string;
+   139→  lastClaimAt: string | null; createdAt: string;
+   140→  stock: Stock;
+   141→}
+   142→
+   143→interface CandleData {
+   144→  idx: number;
+   145→  open: number;
+   146→  high: number;
+   147→  low: number;
+   148→  close: number;
+   149→  volume: number;
+   150→  time: string;
+   151→}
+   152→
+   153→// ============================================
+   154→// TICKER DATA (matching reference)
+   155→// ============================================
+   156→const REFERENCE_TICKERS = [
+   157→  { code: 'TE', change: '+1.59%', up: true },
+   158→  { code: 'IDX', change: '-2.13%', up: false },
+   159→  { code: 'IHSG', change: '+0.28%', up: true },
+   160→  { code: 'SAHAM', change: '+3.22%', up: true },
+   161→  { code: 'GOLD', change: '+4.04%', up: true },
+   162→  { code: 'BANK', change: '+3.30%', up: true },
+   163→  { code: 'ENERGY', change: '+3.77%', up: true },
+   164→  { code: 'OIL', change: '-3.48%', up: false },
+   165→  { code: 'TE', change: '+2.86%', up: true },
+   166→]
+   167→
+   168→const PIE_COLORS = ['#2563eb', '#f59e0b', '#60a5fa', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
+   169→
+   170→// ============================================
+   171→// ZEVORIK LOGO COMPONENT
+   172→// ============================================
+   173→function ZevorikLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
+   174→  return (
+   175→    <div
+   176→      className={`flex items-center justify-center ${className}`}
+   177→      style={{ width: size, height: size }}
+   178→    >
+   179→      <img
+   180→        src="/zevorix-logo.png"
+   181→        alt="ZEVORIK"
+   182→        className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(59,130,246,0.35)]"
+   183→      />
+   184→    </div>
+   185→  )
+   186→}
+   187→
+   188→// ============================================
+   189→// LOGO WITH FALLBACK COMPONENT
+   190→// ============================================
+   191→function LogoWithFallback({ src, alt, size, code, className = '' }: { src: string; alt: string; size: number; code: string; className?: string }) {
+   192→  const [errored, setErrored] = useState(false)
+   193→  if (errored) {
+   194→    return (
+   195→      <div className="flex items-center justify-center rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/30" style={{ width: size, height: size, minWidth: size, minHeight: size }}>
+   196→        <span className="text-[10px] font-black text-[#3b82f6]">{code.slice(0, 2)}</span>
+   197→      </div>
+   198→    )
+   199→  }
+   200→  return (
+   201→    <img
+   202→      src={src}
+   203→      alt={alt}
+   204→      width={size}
+   205→      height={size}
+   206→      className={className}
+   207→      style={{ minWidth: size, minHeight: size }}
+   208→      onError={() => setErrored(true)}
+   209→    />
+   210→  )
+   211→}
+   212→
+   213→// ============================================
+   214→// LOGIN / REGISTER PAGE (2-Step with PIN)
+   215→// ============================================
+   216→function LoginPage() {
+   217→  const [authMode, setAuthMode] = useState<'login' | 'register' | 'pin'>('login')
+   218→  const [identifier, setIdentifier] = useState('') // email or phone
+   219→  const [password, setPassword] = useState('')
+   220→  const [name, setName] = useState('')
+   221→  const [email, setEmail] = useState('')
+   222→  const [phone, setPhone] = useState('')
+   223→  const [confirmPassword, setConfirmPassword] = useState('')
+   224→  const [pin, setPin] = useState(['', '', '', '', '', ''])
+   225→  const [registerPin, setRegisterPin] = useState(['', '', '', '', '', ''])
+   226→  const [confirmPin, setConfirmPin] = useState(['', '', '', '', '', ''])
+   227→  const [showPassword, setShowPassword] = useState(false)
+   228→  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+   229→  const [loading, setLoading] = useState(false)
+   230→  const [agreeTerms, setAgreeTerms] = useState(false)
+   231→  const [tempToken, setTempToken] = useState<string | null>(null)
+   232→  const login = useAuthStore((s) => s.login)
+   233→
+   234→  const pinRefs = useRef<(HTMLInputElement | null)[]>([])
+   235→  const registerPinRefs = useRef<(HTMLInputElement | null)[]>([])
+   236→  const confirmPinRefs = useRef<(HTMLInputElement | null)[]>([])
+   237→
+   238→  const handlePinChange = (index: number, value: string, pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
+   239→    if (!/^\d*$/.test(value)) return
+   240→    const newPin = [...pinArr]
+   241→    newPin[index] = value.slice(-1)
+   242→    setPinArr(newPin)
+   243→    if (value && index < 5) {
+   244→      refs.current[index + 1]?.focus()
+   245→    }
+   246→  }
+   247→
+   248→  const handlePinKeyDown = (index: number, e: React.KeyboardEvent, pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
+   249→    if (e.key === 'Backspace' && !pinArr[index] && index > 0) {
+   250→      refs.current[index - 1]?.focus()
+   251→    }
+   252→  }
+   253→
+   254→  const handlePinPaste = (e: React.ClipboardEvent, setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
+   255→    e.preventDefault()
+   256→    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+   257→    const newPin = [...Array(6)].map((_, i) => pasted[i] || '')
+   258→    setPinArr(newPin)
+   259→    const nextIndex = Math.min(pasted.length, 5)
+   260→    refs.current[nextIndex]?.focus()
+   261→  }
+   262→
+   263→  // Step 1: Login with identifier + password
+   264→  const handleLoginStep1 = async (e: React.FormEvent) => {
+   265→    e.preventDefault()
+   266→    if (!identifier || !password) {
+   267→      toast({ title: 'Error', description: 'Mohon isi email/nomor HP dan kata sandi', variant: 'destructive' })
+   268→      return
+   269→    }
+   270→    setLoading(true)
+   271→    try {
+   272→      const res = await fetch('/api/auth/login', {
+   273→        method: 'POST',
+   274→        headers: { 'Content-Type': 'application/json' },
+   275→        body: JSON.stringify({ identifier, password })
+   276→      })
+   277→      const data = await res.json()
+   278→      if (!res.ok) throw new Error(data.error)
+   279→      if (data.step === 'pin_required') {
+   280→        setTempToken(data.tempToken)
+   281→        setAuthMode('pin')
+   282→        setTimeout(() => pinRefs.current[0]?.focus(), 100)
+   283→      } else {
+   284→        // Admin direct login (no PIN required for admin)
+   285→        if (data.user?.role === 'admin') {
+   286→          localStorage.setItem('adminId', data.user.id)
+   287→          localStorage.setItem('adminToken', data.token)
+   288→          window.location.href = '/admin'
+   289→          return
+   290→        }
+   291→        login(data.user, data.token)
+   292→        toast({ title: 'Selamat Datang!', description: `Halo, ${data.user.name}` })
+   293→      }
+   294→    } catch (err: unknown) {
+   295→      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Terjadi kesalahan', variant: 'destructive' })
+   296→    } finally { setLoading(false) }
+   297→  }
+   298→
+   299→  // Step 2: Verify PIN
+   300→  const handlePinVerify = async (e: React.FormEvent) => {
+   301→    e.preventDefault()
+   302→    const pinStr = pin.join('')
+   303→    if (pinStr.length !== 6) {
+   304→      toast({ title: 'Error', description: 'Masukkan 6 digit PIN', variant: 'destructive' })
+   305→      return
+   306→    }
+   307→    if (!tempToken) {
+   308→      toast({ title: 'Error', description: 'Sesi kadaluarsa, silakan login ulang', variant: 'destructive' })
+   309→      setAuthMode('login')
+   310→      return
+   311→    }
+   312→    setLoading(true)
+   313→    try {
+   314→      const res = await fetch('/api/auth/login', {
+   315→        method: 'POST',
+   316→        headers: { 'Content-Type': 'application/json' },
+   317→        body: JSON.stringify({ tempToken, pin: pinStr })
+   318→      })
+   319→      const data = await res.json()
+   320→      if (!res.ok) throw new Error(data.error)
+   321→      if (data.user?.role === 'admin') {
+   322→        localStorage.setItem('adminId', data.user.id)
+   323→        localStorage.setItem('adminToken', data.token)
+   324→        window.location.href = '/admin'
+   325→        return
+   326→      }
+   327→      login(data.user, data.token)
+   328→      toast({ title: 'Selamat Datang!', description: `Halo, ${data.user.name}` })
+   329→    } catch (err: unknown) {
+   330→      toast({ title: 'PIN Salah', description: err instanceof Error ? err.message : 'Verifikasi PIN gagal', variant: 'destructive' })
+   331→      setPin(['', '', '', '', '', ''])
+   332→      setTimeout(() => pinRefs.current[0]?.focus(), 100)
+   333→    } finally { setLoading(false) }
+   334→  }
+   335→
+   336→  // Register
+   337→  const handleRegister = async (e: React.FormEvent) => {
+   338→    e.preventDefault()
+   339→    if (!name || !email || !phone || !password || !confirmPassword) {
+   340→      toast({ title: 'Error', description: 'Mohon isi semua field', variant: 'destructive' })
+   341→      return
+   342→    }
+   343→    if (password !== confirmPassword) {
+   344→      toast({ title: 'Error', description: 'Kata sandi tidak cocok', variant: 'destructive' })
+   345→      return
+   346→    }
+   347→    if (password.length < 6) {
+   348→      toast({ title: 'Error', description: 'Kata sandi minimal 6 karakter', variant: 'destructive' })
+   349→      return
+   350→    }
+   351→    const pinStr = registerPin.join('')
+   352→    const confirmPinStr = confirmPin.join('')
+   353→    if (pinStr.length !== 6) {
+   354→      toast({ title: 'Error', description: 'Masukkan 6 digit PIN', variant: 'destructive' })
+   355→      return
+   356→    }
+   357→    if (pinStr !== confirmPinStr) {
+   358→      toast({ title: 'Error', description: 'Konfirmasi PIN tidak cocok', variant: 'destructive' })
+   359→      return
+   360→    }
+   361→    if (!agreeTerms) {
+   362→      toast({ title: 'Error', description: 'Anda harus menyetujui proses pendaftaran', variant: 'destructive' })
+   363→      return
+   364→    }
+   365→    setLoading(true)
+   366→    try {
+   367→      const res = await fetch('/api/auth/register', {
+   368→        method: 'POST',
+   369→        headers: { 'Content-Type': 'application/json' },
+   370→        body: JSON.stringify({ name, email, phone, password, pin: pinStr })
+   371→      })
+   372→      const data = await res.json()
+   373→      if (!res.ok) throw new Error(data.error)
+   374→      if (data.user?.role === 'admin') {
+   375→        localStorage.setItem('adminId', data.user.id)
+   376→        localStorage.setItem('adminToken', data.token)
+   377→        window.location.href = '/admin'
+   378→        return
+   379→      }
+   380→      login(data.user, data.token)
+   381→      toast({ title: 'Registrasi Berhasil!', description: `Selamat datang, ${data.user.name}!` })
+   382→    } catch (err: unknown) {
+   383→      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Terjadi kesalahan', variant: 'destructive' })
+   384→    } finally { setLoading(false) }
+   385→  }
+   386→
+   387→  const getHeaderText = () => {
+   388→    if (authMode === 'pin') return { title: 'Verifikasi PIN', subtitle: 'Masukkan 6 digit PIN keamanan Anda untuk melanjutkan login.' }
+   389→    if (authMode === 'register') return { title: 'Daftar ZEVORIK', subtitle: 'Buat akun investor untuk akses portofolio, trading, dan layanan investor ZEVORIK.' }
+   390→    return { title: 'Masuk Investor ZEVORIK', subtitle: 'Akses akun ZEVORIK untuk memantau portofolio, pergerakan saham, dan aktivitas profit.' }
+   391→  }
+   392→  const headerText = getHeaderText()
+   393→
+   394→  const renderPinInputs = (pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => (
+   395→    <div className="flex items-center justify-center gap-2">
+   396→      {pinArr.map((digit, i) => (
+   397→        <input
+   398→          key={i}
+   399→          ref={el => { refs.current[i] = el }}
+   400→          type="password"
+   401→          inputMode="numeric"
+   402→          maxLength={1}
+   403→          value={digit}
+   404→          onChange={(e) => handlePinChange(i, e.target.value, pinArr, setPinArr, refs)}
+   405→          onKeyDown={(e) => handlePinKeyDown(i, e, pinArr, setPinArr, refs)}
+   406→          onPaste={(e) => handlePinPaste(e, setPinArr, refs)}
+   407→          className="w-11 h-13 rounded-xl bg-slate-50 border-2 border-slate-200 text-center text-[18px] font-black text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all"
+   408→        />
+   409→      ))}
+   410→    </div>
+   411→  )
+   412→
+   413→  return (
+   414→    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
+   415→      {/* Desktop Left Branding Panel */}
+   416→      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
+   417→        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+   418→        <div className="relative z-10 text-center text-white max-w-lg">
+   419→          <div className="mx-auto mb-6">
+   420→            <ZevorikLogo size={80} />
+   421→          </div>
+   422→          <h1 className="text-3xl lg:text-4xl font-black mb-2 tracking-[0.15em]" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', textShadow: '0 0 30px rgba(59,130,246,0.5)' }}>ZEVORIK</h1>
+   423→          <p className="text-blue-200/80 text-xs lg:text-sm mb-8 leading-relaxed tracking-widest uppercase font-medium">Future of Investing</p>
+   424→          <div className="grid grid-cols-3 gap-4">
+   425→            <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
+   426→              <BarChart3 className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
+   427→              <b className="block text-sm font-black">Market</b>
+   428→              <span className="block text-xs text-blue-200 font-bold">Live</span>
+   429→            </div>
+   430→            <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
+   431→              <Users className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
+   432→              <b className="block text-sm font-black">125K++</b>
+   433→              <span className="block text-xs text-blue-200 font-bold">Pengguna</span>
+   434→            </div>
+   435→            <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
+   436→              <Shield className="w-6 h-6 text-yellow-300 mx-auto mb-2" />
+   437→              <b className="block text-sm font-black">Aman</b>
+   438→              <span className="block text-xs text-blue-200 font-bold">Terjamin</span>
+   439→            </div>
+   440→          </div>
+   441→          <div className="mt-8 mx-auto h-12 w-full max-w-sm rounded-xl overflow-hidden bg-white/8 border border-white/12">
+   442→            <svg className="w-full h-full" viewBox="0 0 400 50" preserveAspectRatio="none">
+   443→              <defs>
+   444→                <linearGradient id="deskChartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+   445→                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
+   446→                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+   447→                </linearGradient>
+   448→              </defs>
+   449→              <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3 L400,50 L0,50Z" fill="url(#deskChartGrad)" />
+   450→              <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+   451→            </svg>
+   452→          </div>
+   453→        </div>
+   454→      </div>
+   455→
+   456→      {/* Right Side / Mobile Full Content */}
+   457→      <div className="w-full md:w-1/2 lg:w-[45%] flex items-center justify-center px-4 py-4 md:px-8 md:py-8 min-h-screen md:min-h-0">
+   458→        <div className="w-full max-w-[430px] md:max-w-md flex flex-col flex-1 md:flex-none md:justify-center">
+   459→          {/* Top Navigation - mobile only */}
+   460→          <header className="flex items-center justify-between mb-3 md:hidden">
+   461→            <div className="flex items-center gap-2.5">
+   462→              <ZevorikLogo size={36} />
+   463→              <div>
+   464→                <b className="block text-[11px] leading-tight font-black gradient-text tracking-wide">ZEVORIK</b>
+   465→                <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
+   466→              </div>
+   467→            </div>
+   468→            {authMode !== 'pin' && (
+   469→              <button
+   470→                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+   471→                className="h-8 px-4 rounded-xl bg-[#1d4ed8] text-white text-[10px] font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1"
+   472→              >
+   473→                {authMode === 'login' ? <><UserPlus className="w-3 h-3" />Daftar</> : <><LogIn className="w-3 h-3" />Masuk</>}
+   474→              </button>
+   475→            )}
+   476→          </header>
+   477→
+   478→          {/* Desktop switch button */}
+   479→          <div className="hidden md:flex items-center justify-between mb-4">
+   480→            <div className="flex items-center gap-2.5">
+   481→              <ZevorikLogo size={36} />
+   482→              <div>
+   483→                <b className="block text-xs leading-tight font-black gradient-text tracking-wide">ZEVORIK</b>
+   484→                <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
+   485→              </div>
+   486→            </div>
+   487→            {authMode !== 'pin' && (
+   488→              <button
+   489→                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+   490→                className="h-9 px-5 rounded-xl bg-[#1d4ed8] text-white text-xs font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1.5"
+   491→              >
+   492→                {authMode === 'login' ? <><UserPlus className="w-3.5 h-3.5" />Daftar</> : <><LogIn className="w-3.5 h-3.5" />Masuk</>}
+   493→              </button>
+   494→            )}
+   495→          </div>
+   496→
+   497→        {/* Main Card */}
+   498→        <div className="rounded-3xl bg-white shadow-xl overflow-hidden flex-1 md:flex-none flex flex-col">
+   499→          {/* Header Section */}
+   500→          <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
+   501→            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+   502→
+   503→            {/* LIVE Badge + Ticker */}
+   504→            <div className="relative flex items-center gap-2 px-4 pt-3 pb-2">
+   505→              <div className="flex-shrink-0 h-6 px-2.5 rounded-full flex items-center gap-1.5 bg-yellow-500/20 border border-yellow-400/30">
+   506→                <Zap className="w-3 h-3 text-yellow-300" />
+   507→                <span className="text-[8px] font-black text-yellow-300 tracking-wide">LIVE</span>
+   508→              </div>
+   509→              <div className="flex-1 overflow-hidden h-6 rounded-full bg-white/10 border border-white/15">
+   510→                <div className="flex items-center gap-3 whitespace-nowrap animate-ticker px-2 h-full">
+   511→                  {[...REFERENCE_TICKERS, ...REFERENCE_TICKERS].map((item, i) => (
+   512→                    <span key={i} className={`flex items-center gap-1 text-[8px] font-bold ${item.up ? 'text-blue-300' : 'text-red-300'}`}>
+   513→                      <span className={`w-1.5 h-1.5 rounded-full ${item.up ? 'bg-blue-400' : 'bg-red-400'}`} />
+   514→                      {item.code} {item.change}
+   515→                    </span>
+   516→                  ))}
+   517→                </div>
+   518→              </div>
+   519→            </div>
+   520→
+   521→            {/* Center Logo + Text */}
+   522→            <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-3">
+   523→              <div className="mb-2 mx-auto">
+   524→                <ZevorikLogo size={56} />
+   525→              </div>
+   526→
+   527→              {authMode === 'pin' ? (
+   528→                <>
+   529→                  <div className="h-6 px-3 rounded-full bg-green-500/20 border border-green-400/30 flex items-center gap-1.5 mb-2">
+   530→                    <Lock className="w-3 h-3 text-green-300" />
+   531→                    <span className="text-[8px] font-black text-green-300 tracking-wide">VERIFIKASI PIN</span>
+   532→                  </div>
+   533→                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+   534→                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
+   535→                </>
+   536→              ) : authMode === 'register' ? (
+   537→                <>
+   538→                  <div className="h-6 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center gap-1.5 mb-2">
+   539→                    <Shield className="w-3 h-3 text-yellow-300" />
+   540→                    <span className="text-[8px] font-black text-yellow-300 tracking-wide">REGISTRASI INVESTOR</span>
+   541→                  </div>
+   542→                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+   543→                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
+   544→                </>
+   545→              ) : (
+   546→                <>
+   547→                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+   548→                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
+   549→                </>
+   550→              )}
+   551→
+   552→              {/* Stat Boxes */}
+   553→              <div className="mt-3 grid grid-cols-3 gap-2 w-full">
+   554→                <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
+   555→                  <BarChart3 className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+   556→                  <b className="block text-[8px] font-black">Market</b>
+   557→                  <span className="block text-[7px] text-blue-200 font-bold">Live</span>
+   558→                </div>
+   559→                <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
+   560→                  <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+   561→                  <b className="block text-[8px] font-black">125K++</b>
+   562→                  <span className="block text-[7px] text-blue-200 font-bold">Pengguna</span>
+   563→                </div>
+   564→                <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
+   565→                  <Shield className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+   566→                  <b className="block text-[8px] font-black">Aman</b>
+   567→                  <span className="block text-[7px] text-blue-200 font-bold">Terjamin</span>
+   568→                </div>
+   569→              </div>
+   570→            </div>
+   571→
+   572→            {/* Yellow Line Graph */}
+   573→            <div className="relative z-10 mx-4 mb-3 h-10 rounded-xl overflow-hidden bg-white/8 border border-white/12">
+   574→              <svg className="w-full h-full" viewBox="0 0 400 50" preserveAspectRatio="none">
+   575→                <defs>
+   576→                  <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+   577→                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
+   578→                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+   579→                  </linearGradient>
+   580→                </defs>
+   581→                <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3 L400,50 L0,50Z" fill="url(#chartGrad)" />
+   582→                <path d="M0,38 L25,35 L50,33 L75,35 L100,28 L125,25 L150,27 L175,20 L200,17 L225,18 L250,12 L275,10 L300,11 L325,7 L350,8 L375,5 L400,3" fill="none" stroke="#f59e0b" strokeWidth="2.5" className="animate-chart-draw" />
+   583→              </svg>
+   584→              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/10 to-transparent animate-shimmer" />
+   585→            </div>
+   586→          </div>
+   587→
+   588→          {/* Form Section */}
+   589→          <div className="p-4 flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+   590→
+   591→            {/* ===== PIN VERIFICATION MODE ===== */}
+   592→            {authMode === 'pin' && (
+   593→              <form onSubmit={handlePinVerify} className="flex flex-col gap-4 flex-1">
+   594→                <div className="flex items-center justify-center gap-2 mb-2">
+   595→                  <Lock className="w-5 h-5 text-[#3b82f6]" />
+   596→                  <span className="text-[11px] font-black text-[#3b82f6] uppercase tracking-widest">Masukkan PIN Keamanan</span>
+   597→                </div>
+   598→                {renderPinInputs(pin, setPin, pinRefs)}
+   599→                <p className="text-center text-[9px] font-semibold text-slate-400">Masukkan 6 digit PIN yang Anda buat saat registrasi</p>
+   600→                <button type="submit" disabled={loading}
+   601→                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+   602→                  style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
+   603→                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+   604→                  <span className="relative z-10 flex items-center gap-2">
+   605→                    {loading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <><Shield className="w-4 h-4" />VERIFIKASI PIN</>}
+   606→                  </span>
+   607→                </button>
+   608→                <button type="button" onClick={() => { setAuthMode('login'); setPin(['', '', '', '', '', '']); setTempToken(null); }}
+   609→                  className="text-center text-[10px] font-bold text-slate-500 hover:text-[#3b82f6] transition-colors">
+   610→                  ← Kembali ke Login
+   611→                </button>
+   612→              </form>
+   613→            )}
+   614→
+   615→            {/* ===== LOGIN MODE ===== */}
+   616→            {authMode === 'login' && (
+   617→              <form onSubmit={handleLoginStep1} className="flex flex-col gap-3 flex-1">
+   618→                {/* Email/Phone */}
+   619→                <div>
+   620→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   621→                    <Mail className="w-3 h-3 text-[#3b82f6]" /> EMAIL / NOMOR WHATSAPP
+   622→                  </label>
+   623→                  <div className="flex items-center h-11 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
+   624→                    <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-slate-200">
+   625→                      <User className="w-4 h-4" />
+   626→                    </div>
+   627→                    <input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="email@contoh.com atau 81234567890"
+   628→                      className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-slate-900 outline-none placeholder:text-gray-400" />
+   629→                  </div>
+   630→                </div>
+   631→
+   632→                {/* Password */}
+   633→                <div>
+   634→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   635→                    <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
+   636→                  </label>
+   637→                  <div className="relative">
+   638→                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi"
+   639→                      className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+   640→                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+   641→                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
+   642→                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   643→                    </button>
+   644→                  </div>
+   645→                </div>
+   646→
+   647→                {/* Submit */}
+   648→                <button type="submit" disabled={loading}
+   649→                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+   650→                  style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
+   651→                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+   652→                  <span className="relative z-10 flex items-center gap-2">
+   653→                    {loading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <>MASUK SEKARANG <ArrowRight className="w-4 h-4" /></>}
+   654→                  </span>
+   655→                </button>
+   656→
+   657→                <p className="text-center text-[10px] font-semibold text-slate-500">
+   658→                  Belum punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => setAuthMode('register')}>Daftar ZEVORIK</span>
+   659→                </p>
+   660→              </form>
+   661→            )}
+   662→
+   663→            {/* ===== REGISTER MODE ===== */}
+   664→            {authMode === 'register' && (
+   665→              <form onSubmit={handleRegister} className="flex flex-col gap-3 flex-1">
+   666→                {/* Nama Lengkap */}
+   667→                <div>
+   668→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   669→                    <User className="w-3 h-3 text-[#3b82f6]" /> NAMA LENGKAP
+   670→                  </label>
+   671→                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama lengkap"
+   672→                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+   673→                </div>
+   674→
+   675→                {/* Email */}
+   676→                <div>
+   677→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   678→                    <Mail className="w-3 h-3 text-[#3b82f6]" /> EMAIL
+   679→                  </label>
+   680→                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@contoh.com"
+   681→                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+   682→                </div>
+   683→
+   684→                {/* Phone */}
+   685→                <div>
+   686→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   687→                    <Phone className="w-3 h-3 text-[#3b82f6]" /> NOMOR WHATSAPP
+   688→                  </label>
+   689→                  <div className="flex items-center h-11 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
+   690→                    <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-slate-200">
+   691→                      <span className="text-[11px] font-bold">+62</span>
+   692→                    </div>
+   693→                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="81234567890"
+   694→                      className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-slate-900 outline-none placeholder:text-gray-400" />
+   695→                  </div>
+   696→                </div>
+   697→
+   698→                {/* Password */}
+   699→                <div>
+   700→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   701→                    <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
+   702→                  </label>
+   703→                  <div className="relative">
+   704→                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimal 6 karakter"
+   705→                      className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+   706→                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+   707→                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
+   708→                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   709→                    </button>
+   710→                  </div>
+   711→                </div>
+   712→
+   713→                {/* Confirm Password */}
+   714→                <div>
+   715→                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   716→                    <Lock className="w-3 h-3 text-[#3b82f6]" /> KONFIRMASI SANDI
+   717→                  </label>
+   718→                  <div className="relative">
+   719→                    <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi kata sandi"
+   720→                      className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+   721→                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+   722→                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
+   723→                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   724→                    </button>
+   725→                  </div>
+   726→                </div>
+   727→
+   728→                {/* PIN */}
+   729→                <div>
+   730→                  <label className="flex items-center gap-1.5 mb-2 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   731→                    <Shield className="w-3 h-3 text-[#3b82f6]" /> PIN KEAMANAN (6 DIGIT)
+   732→                  </label>
+   733→                  {renderPinInputs(registerPin, setRegisterPin, registerPinRefs)}
+   734→                </div>
+   735→
+   736→                {/* Confirm PIN */}
+   737→                <div>
+   738→                  <label className="flex items-center gap-1.5 mb-2 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+   739→                    <Shield className="w-3 h-3 text-[#3b82f6]" /> KONFIRMASI PIN
+   740→                  </label>
+   741→                  {renderPinInputs(confirmPin, setConfirmPin, confirmPinRefs)}
+   742→                </div>
+   743→
+   744→                {/* Terms */}
+   745→                <label className="flex items-start gap-2 cursor-pointer">
+   746→                  <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)}
+   747→                    className="w-4 h-4 rounded accent-[#3b82f6] mt-0.5" />
+   748→                  <span className="text-[9px] font-semibold text-slate-500 leading-relaxed">
+   749→                    Saya menyetujui proses pendaftaran dan memahami keamanan akun ZEVORIK.
+   750→                  </span>
+   751→                </label>
+   752→
+   753→                {/* Submit */}
+   754→                <button type="submit" disabled={loading}
+   755→                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+   756→                  style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
+   757→                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+   758→                  <span className="relative z-10 flex items-center gap-2">
+   759→                    {loading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <>DAFTAR SEKARANG <ArrowRight className="w-4 h-4" /></>}
+   760→                  </span>
+   761→                </button>
+   762→
+   763→                <p className="text-center text-[10px] font-semibold text-slate-500">
+   764→                  Sudah punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => setAuthMode('login')}>Masuk ZEVORIK</span>
+   765→                </p>
+   766→              </form>
+   767→            )}
+   768→          </div>
+   769→        </div>
+   770→
+   771→        {/* Footer */}
+   772→        <div className="mt-3 pb-2">
+   773→          <div className="text-center mb-2">
+   774→            <b className="block text-[9px] md:text-[10px] font-black text-[#1d4ed8]">Legalitas Perusahaan</b>
+   775→            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-slate-500">Halaman resmi ZEVORIK</span>
+   776→          </div>
+   777→          <div className="flex items-center justify-center gap-3 mb-2">
+   778→            <Shield className="w-4 h-4 text-[#3b82f6]" />
+   779→            <CheckCircle className="w-4 h-4 text-amber-400" />
+   780→            <Lock className="w-4 h-4 text-[#3b82f6]" />
+   781→          </div>
+   782→          <div className="flex items-center justify-center gap-2 text-[8px] md:text-[9px] font-bold text-slate-500">
+   783→            <span>Investasi Aman</span>
+   784→            <span>•</span>
+   785→            <span>Market Live</span>
+   786→            <span>•</span>
+   787→            <span>125K++ Pengguna</span>
+   788→          </div>
+   789→        </div>
+   790→        </div>{/* end max-w-md wrapper */}
+   791→      </div>{/* end right-side container */}
+   792→    </div>
+   793→  )
+   794→}
+   795→
+   796→// ============================================
+   797→// ── MT5 Indicator Definitions ──
+   798→const ALL_INDICATORS = [
+   799→  // TREND
+   800→  { key: 'adx', label: 'ADX', color: '#f97316', group: 'Trend', desc: 'Directional Movement' },
+   801→  { key: 'bollinger', label: 'Bollinger Bands', color: '#8b5cf6', group: 'Trend', desc: 'BB (20,2)' },
+   802→  { key: 'envelopes', label: 'Envelopes', color: '#14b8a6', group: 'Trend', desc: 'Env (20,5%)' },
+   803→  { key: 'ichimoku', label: 'Ichimoku', color: '#eab308', group: 'Trend', desc: 'Kinko Hyo' },
+   804→  { key: 'ma5', label: 'MA 5', color: '#eab308', group: 'Trend', desc: 'Moving Average 5' },
+   805→  { key: 'ma20', label: 'MA 20', color: '#06b6d4', group: 'Trend', desc: 'Moving Average 20' },
+   806→  { key: 'sar', label: 'Parabolic SAR', color: '#22c55e', group: 'Trend', desc: 'Stop & Reverse' },
+   807→  { key: 'stddev', label: 'Std Deviation', color: '#ec4899', group: 'Trend', desc: 'Volatility' },
+   808→  { key: 'zigzag', label: 'ZigZag', color: '#a855f7', group: 'Trend', desc: 'Pattern Filter' },
+   809→  // OSCILLATOR
+   810→  { key: 'atr', label: 'ATR', color: '#f97316', group: 'Oscillator', desc: 'Avg True Range' },
+   811→  { key: 'bears', label: 'Bears Power', color: '#ef4444', group: 'Oscillator', desc: 'Seller Strength' },
+   812→  { key: 'bulls', label: 'Bulls Power', color: '#22c55e', group: 'Oscillator', desc: 'Buyer Strength' },
+   813→  { key: 'cci', label: 'CCI', color: '#06b6d4', group: 'Oscillator', desc: 'Commodity Channel' },
+   814→  { key: 'demarker', label: 'DeMarker', color: '#8b5cf6', group: 'Oscillator', desc: 'Reversal Risk' },
+   815→  { key: 'force', label: 'Force Index', color: '#3b82f6', group: 'Oscillator', desc: 'Price × Volume' },
+   816→  { key: 'macd', label: 'MACD', color: '#3b82f6', group: 'Oscillator', desc: 'MACD (12,26,9)' },
+   817→  { key: 'momentum', label: 'Momentum', color: '#f59e0b', group: 'Oscillator', desc: 'Rate of Change' },
+   818→  { key: 'osma', label: 'OsMA', color: '#6366f1', group: 'Oscillator', desc: 'MA of Oscillator' },
+   819→  { key: 'rsi', label: 'RSI', color: '#f59e0b', group: 'Oscillator', desc: 'Relative Strength' },
+   820→  { key: 'rvi', label: 'RVI', color: '#14b8a6', group: 'Oscillator', desc: 'Relative Vigor' },
+   821→  { key: 'stochastic', label: 'Stochastic', color: '#ec4899', group: 'Oscillator', desc: 'Stoch (5,3)' },
+   822→  { key: 'williamsr', label: "Williams'%R", color: '#a855f7', group: 'Oscillator', desc: 'Percent Range' },
+   823→  // VOLUME
+   824→  { key: 'ad', label: 'A/D', color: '#3b82f6', group: 'Volume', desc: 'Accumulation/Dist' },
+   825→  { key: 'mfi', label: 'MFI', color: '#8b5cf6', group: 'Volume', desc: 'Money Flow Index' },
+   826→  { key: 'obv', label: 'OBV', color: '#f59e0b', group: 'Volume', desc: 'On Balance Volume' },
+   827→  { key: 'volumes', label: 'Volumes', color: '#06b6d4', group: 'Volume', desc: 'Trade Volume' },
+   828→  // BILL WILLIAMS
+   829→  { key: 'ac', label: 'Accelerator', color: '#ef4444', group: 'Bill Williams', desc: 'AC Oscillator' },
+   830→  { key: 'alligator', label: 'Alligator', color: '#22c55e', group: 'Bill Williams', desc: 'Jaw/Teeth/Lips' },
+   831→  { key: 'ao', label: 'Awesome AO', color: '#3b82f6', group: 'Bill Williams', desc: 'AO Oscillator' },
+   832→  { key: 'fractals', label: 'Fractals', color: '#f59e0b', group: 'Bill Williams', desc: 'Peak/Valley' },
+   833→  { key: 'gator', label: 'Gator', color: '#14b8a6', group: 'Bill Williams', desc: 'Gator Oscillator' },
+   834→  { key: 'bwMFI', label: 'BW MFI', color: '#ec4899', group: 'Bill Williams', desc: 'Mkt Facilitation' },
+   835→]
+   836→
+   837→const OVERLAY_KEYS = ['ma5', 'ma20', 'bollinger', 'envelopes', 'ichimoku', 'sar', 'zigzag', 'alligator', 'fractals']
+   838→const SUBCHART_KEYS = ['adx', 'atr', 'bears', 'bulls', 'cci', 'demarker', 'force', 'macd', 'momentum', 'osma', 'rsi', 'rvi', 'stochastic', 'williamsr', 'ad', 'mfi', 'obv', 'volumes', 'ac', 'ao', 'gator', 'bwMFI', 'stddev']
+   839→
+   840→// MAIN DASHBOARD
+   841→// ============================================
+   842→function Dashboard() {
+   843→  const { user, logout, updateBalance, updateUser } = useAuthStore()
+   844→  const [stocks, setStocks] = useState<Stock[]>([])
+   845→  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
+   846→  const [portfolioSummary, setPortfolioSummary] = useState({ totalInvested: 0, totalCurrentValue: 0, totalProfitLoss: 0, totalProfitLossPercent: 0, cashBalance: 0, totalAssets: 0 })
+   847→  const [transactions, setTransactions] = useState<Transaction[]>([])
+   848→  const [indices, setIndices] = useState<MarketIndex[]>([])
+   849→  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+   850→  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
+   851→  const [deposits, setDeposits] = useState<DepositItem[]>([])
+   852→  const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([])
+   853→  const [priceHistory, setPriceHistory] = useState<PriceHistory[]>([])
+   854→
+   855→
+   856→  const [activeTab, setActiveTab] = useState<string>('home')
+   857→  const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
+   858→  const [showStockDetail, setShowStockDetail] = useState(false)
+   859→
+   860→  const [searchQuery, setSearchQuery] = useState('')
+   861→  const [stockFilter, setStockFilter] = useState('all')
+   862→  const [refreshing, setRefreshing] = useState(false)
+   863→  const [showNotifPanel, setShowNotifPanel] = useState(false)
+   864→  const [depositAmount, setDepositAmount] = useState('')
+   865→  const [depositMethod, setDepositMethod] = useState('bank_transfer')
+   866→  const [depositLoading, setDepositLoading] = useState(false)
+   867→  const [depositStep, setDepositStep] = useState<'amount' | 'qris'>('amount')
+   868→  const [financeTab, setFinanceTab] = useState<'deposit' | 'withdraw'>('deposit')
+   869→  const [withdrawAmount, setWithdrawAmount] = useState('')
+   870→  const [withdrawLoading, setWithdrawLoading] = useState(false)
+   871→
+   872→  // ============ DEPOSIT REDESIGN STATE ============
+   873→  const [depositCategory, setDepositCategory] = useState<'qris'>('qris')
+   874→  const [qrisImageUrl, setQrisImageUrl] = useState<string | null>(null)
+   875→
+   876→  // ============ WITHDRAW REDESIGN STATE ============
+   877→  const [withdrawCategory, setWithdrawCategory] = useState<'bank' | 'ewallet' | 'crypto'>('bank')
+   878→  const [withdrawBankMethod, setWithdrawBankMethod] = useState('BCA')
+   879→  const [withdrawEwalletMethod, setWithdrawEwalletMethod] = useState('GOPAY')
+   880→  const [withdrawCryptoMethod, setWithdrawCryptoMethod] = useState('USDT_TRC20')
+   881→  const [withdrawAccountNumber, setWithdrawAccountNumber] = useState('')
+   882→  const [withdrawAccountHolder, setWithdrawAccountHolder] = useState('')
+   883→
+   884→
+   885→  const [profileEdit, setProfileEdit] = useState(false)
+   886→  const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
+   887→
+   888→  const [copied, setCopied] = useState(false)
+   889→  const [txFilter, setTxFilter] = useState('all')
+   890→  const [showSideMenu, setShowSideMenu] = useState(false)
+   891→  const [showBalance, setShowBalance] = useState(true)
+   892→
+   893→  const initialized = useRef(false)
+   894→
+   895→  // ============ BANNER CAROUSEL STATE ============
+   896→  const [bannerIndex, setBannerIndex] = useState(0)
+   897→  const bannerTimerRef = useRef<NodeJS.Timeout | null>(null)
+   898→  const bannerTouchStartX = useRef(0)
+   899→  const bannerTouchEndX = useRef(0)
+   900→
+   901→  // ============ THEME STATE ============
+   902→  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+   903→    if (typeof window !== 'undefined') {
+   904→      const saved = localStorage.getItem('zv-theme')
+   905→      return (saved === 'light' || saved === 'dark') ? saved : 'dark'
+   906→    }
+   907→    return 'dark'
+   908→  })
+   909→  const toggleTheme = () => {
+   910→    const newTheme = theme === 'dark' ? 'light' : 'dark'
+   911→    setTheme(newTheme)
+   912→    document.documentElement.className = newTheme
+   913→    localStorage.setItem('zv-theme', newTheme)
+   914→  }
+   915→
+   916→  useEffect(() => {
+   917→    document.documentElement.className = theme
+   918→  }, [theme])
+   919→
+   920→  // ============ BANNER AUTO-SCROLL ============
+   921→  useEffect(() => {
+   922→    const startTimer = () => {
+   923→      if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
+   924→      bannerTimerRef.current = setInterval(() => {
+   925→        setBannerIndex(prev => (prev + 1) % 5)
+   926→      }, 4000)
+   927→    }
+   928→    startTimer()
+   929→    return () => { if (bannerTimerRef.current) clearInterval(bannerTimerRef.current) }
+   930→  }, [])
+   931→
+   932→  // ============ DAILY CHECK & TASKS STATE ============
+   933→  const [dailyCheckStatus, setDailyCheckStatus] = useState<DailyCheckStatus>({ streak: 0, lastCheckDate: null, canCheckToday: true, todayReward: 0 })
+   934→  const [dailyCheckLoading, setDailyCheckLoading] = useState(false)
+   935→  const [dailyCheckReward, setDailyCheckReward] = useState<number | null>(null)
+   936→  const [showDailyCheckModal, setShowDailyCheckModal] = useState(false)
+   937→  const [tasks, setTasks] = useState<TaskItem[]>([])
+   938→  const [tasksLoading, setTasksLoading] = useState(false)
+   939→  const [showTasksModal, setShowTasksModal] = useState(false)
+   940→  const [taskClaimingId, setTaskClaimingId] = useState<string | null>(null)
+   941→
+   942→  // ============ EXTRA MODALS STATE ============
+   943→  const [showKycModal, setShowKycModal] = useState(false)
+   944→  const [kycForm, setKycForm] = useState({ fullName: '', idNumber: '', address: '', occupation: '', incomeRange: '' })
+   945→  const [kycKtpFile, setKycKtpFile] = useState<File | null>(null)
+   946→  const [kycSelfieFile, setKycSelfieFile] = useState<File | null>(null)
+   947→  const [kycBankFile, setKycBankFile] = useState<File | null>(null)
+   948→  const [kycAdditionalFile, setKycAdditionalFile] = useState<File | null>(null)
+   949→  const [kycSubmitting, setKycSubmitting] = useState(false)
+   950→  const [kycRecord, setKycRecord] = useState<any>(null)
+   951→  const [showVipModal, setShowVipModal] = useState(false)
+   952→  const [showCsModal, setShowCsModal] = useState(false)
+   953→  const [showAboutModal, setShowAboutModal] = useState(false)
+   954→  const [showHelpModal, setShowHelpModal] = useState(false)
+   955→  const [showPromoDetailModal, setShowPromoDetailModal] = useState(false)
+   956→  const [selectedPromo, setSelectedPromo] = useState<PromoItem | null>(null)
+   957→  const [promoNotified, setPromoNotified] = useState<Set<string>>(new Set())
+   958→
+   959→  // ============ WELCOME MODAL STATE ============
+   960→  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
+   961→  const [welcomeDontShow, setWelcomeDontShow] = useState(false)
+   962→
+   963→  // ============ INVEST DETAIL MODAL STATE ============
+   964→  const [showInvestDetailModal, setShowInvestDetailModal] = useState(false)
+   965→  const [selectedDetailProduct, setSelectedDetailProduct] = useState<InvestProduct | null>(null)
+   966→  const [investDetailAutoProfit, setInvestDetailAutoProfit] = useState(true)
+   967→  const [investChartType, setInvestChartType] = useState<'area' | 'line' | 'candle' | 'bar'>('area')
+   968→  const [investTimeframe, setInvestTimeframe] = useState<'1H' | '1D' | '1W' | '1M' | 'ALL'>('1D')
+   969→
+   970→  // ============ SINYAL PRO STATE ============
+   971→  const [sinyalPositions, setSinyalPositions] = useState<{
+   972→    id: string; stockId: string; stockCode: string; stockName: string;
+   973→    direction: 'NAIK' | 'TURUN'; amount: number; duration: number;
+   974→    startPrice: number; startTime: number; profitPercent: number;
+   975→    status: 'active' | 'won' | 'lost'; leverage: number; closedPL?: number;
+   976→    fee?: number; workingCapital?: number;
+   977→  }[]>([])
+   978→  const [sinyalDirection, setSinyalDirection] = useState<'NAIK' | 'TURUN'>('NAIK')
+   979→  const [sinyalAmount, setSinyalAmount] = useState('')
+   980→  const [sinyalLots, setSinyalLots] = useState<string>('0.10')
+   981→  const LOT_SIZE = 100000 // 1 Lot = Rp 100,000
+   982→  const sinyalAmountFromLots = Math.round(parseFloat(sinyalLots || '0') * LOT_SIZE)
+   983→  const [sinyalLeverage, setSinyalLeverage] = useState<number>(1000)
+   984→  const [showConfirmTrade, setShowConfirmTrade] = useState(false)
+   985→  const [confirmTradeDir, setConfirmTradeDir] = useState<'NAIK' | 'TURUN'>('NAIK')
+   986→  const [sinyalCategory, setSinyalCategory] = useState<string>('popular')
+   987→  const [marketSignalTab, setMarketSignalTab] = useState<string>('favorit')
+   988→  const [marketFavFilter, setMarketFavFilter] = useState<string>('semua')
+   989→  const [marketRegionFilter, setMarketRegionFilter] = useState<string>('semua')
+   990→  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+   991→  const [marketSearchQuery, setMarketSearchQuery] = useState<string>('')
+   992→  const [marketPage, setMarketPage] = useState<number>(1)
+   993→  const MARKET_PAGE_SIZE = 50
+   994→  const [sinyalHistoryFilter, setSinyalHistoryFilter] = useState<string>('Semua')
+   995→  const [saldoSubTab, setSaldoSubTab] = useState<'posisi' | 'riwayat' | 'order'>('posisi')
+   996→  const [sinyalTerminalTab, setSinyalTerminalTab] = useState<'trade' | 'history'>('trade')
+   997→  const [stopLossPrice, setStopLossPrice] = useState('')
+   998→  const [takeProfitPrice, setTakeProfitPrice] = useState('')
+   999→  const [selectedSinyalStock, setSelectedSinyalStock] = useState<Stock | null>(null)
+  1000→  const [sinyalResults, setSinyalResults] = useState<{id: string; won: boolean; profit: number; stockCode: string; direction: 'NAIK' | 'TURUN'; amount: number; shownAt?: number}[]>([])
+  1001→  // Track remaining time per position
+  1002→  const [sinyalTimers, setSinyalTimers] = useState<Record<string, number>>({})
+  1003→
+  1004→
+  1005→  // Sinyal Pro live candlestick chart
+  1006→  const [sinyalCandles, setSinyalCandles] = useState<CandleData[]>([])
+  1007→  const [sinyalCurrentPrice, setSinyalCurrentPrice] = useState(0)
+  1008→  const [sinyalChartTick, setSinyalChartTick] = useState(0)
+  1009→  const [sinyalCrosshair, setSinyalCrosshair] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  1010→  // Timeframe: each candle duration = trade duration
+  1011→  const [sinyalTimeframe, setSinyalTimeframe] = useState<'1m' | '2m' | '5m' | '10m' | '15m' | '30m' | '1h'>('1m')
+  1012→  const [showTimeframeMenu, setShowTimeframeMenu] = useState(false)
+  1013→  const [showLeverageMenu, setShowLeverageMenu] = useState(false)
+  1014→  // Chart toolbar: type, crosshair mode, indicators
+  1015→  const [chartType, setChartType] = useState<'candle' | 'line' | 'bar'>('candle')
+  1016→  const [crosshairMode, setCrosshairMode] = useState(false)
+  1017→  const [showIndicatorMenu, setShowIndicatorMenu] = useState(false)
+  1018→  const [activeIndicators, setActiveIndicators] = useState<{ key: string; label: string; color: string }[]>([
+  1019→    { key: 'ma5', label: 'MA5', color: '#eab308' },
+  1020→    { key: 'ma20', label: 'MA20', color: '#06b6d4' },
+  1021→  ])
+  1022→  const sinyalTimeframeSeconds: Record<string, number> = { '1m': 60, '2m': 120, '5m': 300, '10m': 600, '15m': 900, '30m': 1800, '1h': 3600 }
+  1023→  // Trade duration = candle timeframe
+  1024→  const sinyalDuration = sinyalTimeframeSeconds[sinyalTimeframe] || 60
+  1025→  // Chart panning: how many candles to offset from the latest
+  1026→  const [sinyalChartOffset, setSinyalChartOffset] = useState(0)
+  1027→  const sinyalChartOffsetRef = useRef(0)
+  1028→  useEffect(() => { sinyalChartOffsetRef.current = sinyalChartOffset }, [sinyalChartOffset])
+  1029→  // Chart zoom: number of visible candles (lower = more zoomed in)
+  1030→  const [sinyalChartZoom, setSinyalChartZoom] = useState(40)
+  1031→  const sinyalChartZoomRef = useRef(40)
+  1032→  useEffect(() => { sinyalChartZoomRef.current = sinyalChartZoom }, [sinyalChartZoom])
+  1033→  // Drag state for panning
+  1034→  const sinyalDragRef = useRef<{ startX: number; startOffset: number; dragging: boolean }>({ startX: 0, startOffset: 0, dragging: false })
+  1035→  const sinyalPinchRef = useRef<{ startDist: number; startZoom: number } | null>(null)
+  1036→  const sinyalChartSimRef = useRef<{
+  1037→    price: number; basePrice: number; momentum: number; trend: number;
+  1038→    phase: number; phaseLen: number; vol: number;
+  1039→    currentCandle: { open: number; high: number; low: number; close: number; volume: number; tickCount: number; maxTicks: number };
+  1040→  } | null>(null)
+  1041→  const sinyalPositionsRef = useRef(sinyalPositions)
+  1042→  useEffect(() => { sinyalPositionsRef.current = sinyalPositions }, [sinyalPositions])
+  1043→
+  1044→  // Track cumulative P&L offset from closed trades (client-side trades aren't on server)
+  1045→  // When a trade closes, the net P&L (returnAmount - original investment) is added here
+  1046→  // This offset is applied on top of the server balance so portfolio fetch doesn't overwrite
+  1047→  const tradingPLOffsetRef = useRef(0)
+  1048→
+  1049→  // Auto-select first stock when entering sinyal tab
+  1050→  useEffect(() => {
+  1051→    if (activeTab === 'sinyal' && !selectedSinyalStock && stocks.length > 0) {
+  1052→      setSelectedSinyalStock(stocks[0])
+  1053→    }
+  1054→  }, [activeTab, selectedSinyalStock, stocks])
+  1055→
+  1056→  // ============ LIVE INVESTMENT CHART DATA (CandleData) ============
+  1057→  const [investChartData, setInvestChartData] = useState<Map<string, CandleData[]>>(new Map())
+  1058→  const investChartSimRef = useRef<Map<string, {lastClose: number; baseVal: number; momentum: number; trend: number; phase: number; phaseLen: number; vol: number; initialized: boolean}>>(new Map())
+  1059→  const investChartTickRef = useRef(0)
+  1060→
+  1061→  // Generate a single realistic OHLC candle from previous close
+  1062→  // Uses a structured approach: first determine the candle's direction & body,
+  1063→  // then add realistic wicks based on intra-candle price action simulation
+  1064→  const generateCandle = useCallback((prevClose: number, baseVal: number, sim: {momentum: number; trend: number; phase: number; phaseLen: number; vol: number}, idx: number): CandleData => {
+  1065→    // ── Phase Management (longer phases for realistic trends) ──
+  1066→    // 0 = consolidation/ranging, 1 = trending, 2 = breakout/volatile
+  1067→    sim.phaseLen -= 1
+  1068→    if (sim.phaseLen <= 0) {
+  1069→      const r = Math.random()
+  1070→      if (r < 0.30) {
+  1071→        // Consolidation — price chops sideways in a range
+  1072→        sim.phase = 0
+  1073→        sim.phaseLen = Math.floor(8 + Math.random() * 18) // 8-25 candles of ranging
+  1074→      } else if (r < 0.82) {
+  1075→        // Trending — sustained directional move (most common in real markets)
+  1076→        sim.phase = 1
+  1077→        sim.phaseLen = Math.floor(12 + Math.random() * 30) // 12-41 candles of trend
+  1078→        // 65% continue existing trend, 35% reverse
+  1079→        if (Math.random() < 0.35) sim.trend = (sim.trend === 1 ? -1 : 1) as 1 | -1
+  1080→      } else {
+  1081→        // Breakout — volatile expansion after consolidation
+  1082→        sim.phase = 2
+  1083→        sim.phaseLen = Math.floor(3 + Math.random() * 6) // 3-8 volatile candles
+  1084→        sim.trend = Math.random() > 0.5 ? 1 : -1
+  1085→      }
+  1086→    }
+  1087→
+  1088→    // ── Core Price Movement Engine ──
+  1089→    const open = prevClose
+  1090→
+  1091→    // Volatility scales with phase — trending markets have moderate vol,
+  1092→    // consolidation has low vol, breakouts have high vol
+  1093→    const baseVol = baseVal * 0.0012
+  1094→    const phaseVol = sim.phase === 0 ? 0.5 : sim.phase === 1 ? 1.0 : 2.2
+  1095→    const volatility = baseVol * phaseVol
+  1096→
+  1097→    // Trend drift — the directional force
+  1098→    let drift: number
+  1099→    if (sim.phase === 1) {
+  1100→      // Strong trend: consistent directional bias
+  1101→      drift = sim.trend * baseVal * 0.0022
+  1102→      // Small pullback within trend (~20% of candles pull back against trend)
+  1103→      if (Math.random() < 0.18) {
+  1104→        drift = -sim.trend * baseVal * 0.0008
+  1105→      }
+  1106→    } else if (sim.phase === 2) {
+  1107→      // Breakout: strong directional move with high vol
+  1108→      drift = sim.trend * baseVal * 0.0035
+  1109→    } else {
+  1110→      // Consolidation: very small random drift, mostly noise
+  1111→      drift = (Math.random() - 0.5) * baseVal * 0.0004
+  1112→    }
+  1113→
+  1114→    // Momentum with HIGH persistence — this is key to realistic consecutive candles
+  1115→    // Higher persistence (0.90) = trends continue smoothly
+  1116→    sim.momentum = sim.momentum * 0.90 + drift * 0.35 + (Math.random() - 0.5) * volatility
+  1117→
+  1118→    // Weak mean reversion — prevents price from drifting too far from base
+  1119→    const meanRevert = (baseVal - prevClose) * 0.0008
+  1120→
+  1121→    const rawClose = prevClose + sim.momentum + meanRevert
+  1122→    const close = Math.round(Math.max(baseVal * 0.85, Math.min(baseVal * 1.15, rawClose)))
+  1123→    const bodySize = Math.abs(close - open)
+  1124→    const isBullish = close >= open
+  1125→
+  1126→    // ── Realistic Wick Generation ──
+  1127→    // Simulate intra-candle price action to generate wicks
+  1128→    // In real markets: trending candles have wicks opposite to trend direction
+  1129→    // Consolidation candles have balanced wicks
+  1130→    let upperWick: number, lowerWick: number
+  1131→
+  1132→    if (sim.phase === 1) {
+  1133→      // Trending phase: wick mainly on the RETREAT side
+  1134→      if (isBullish) {
+  1135→        // Bullish trend candle: small upper wick, moderate lower wick (rejection of lows)
+  1136→        upperWick = bodySize * (0.1 + Math.random() * 0.4) + baseVal * 0.00015
+  1137→        lowerWick = bodySize * (0.3 + Math.random() * 0.8) + baseVal * 0.0003
+  1138→      } else {
+  1139→        // Bearish trend candle: moderate upper wick (rejection of highs), small lower wick
+  1140→        upperWick = bodySize * (0.3 + Math.random() * 0.8) + baseVal * 0.0003
+  1141→        lowerWick = bodySize * (0.1 + Math.random() * 0.4) + baseVal * 0.00015
+  1142→      }
+  1143→    } else if (sim.phase === 2) {
+  1144→      // Breakout: longer wicks on both sides (volatility)
+  1145→      upperWick = bodySize * (0.4 + Math.random() * 1.0) + baseVal * 0.0005
+  1146→      lowerWick = bodySize * (0.4 + Math.random() * 1.0) + baseVal * 0.0005
+  1147→    } else {
+  1148→      // Consolidation: balanced wicks, often long relative to body
+  1149→      upperWick = bodySize * (0.4 + Math.random() * 1.2) + baseVal * 0.0004
+  1150→      lowerWick = bodySize * (0.4 + Math.random() * 1.2) + baseVal * 0.0004
+  1151→    }
+  1152→
+  1153→    // Special patterns (infrequent, like real markets)
+  1154→    const patternRoll = Math.random()
+  1155→    if (patternRoll < 0.04 && bodySize < baseVal * 0.0003) {
+  1156→      // Doji: very small body, moderate wicks
+  1157→      upperWick = baseVal * (0.0008 + Math.random() * 0.0015)
+  1158→      lowerWick = baseVal * (0.0008 + Math.random() * 0.0015)
+  1159→    } else if (patternRoll < 0.07 && isBullish) {
+  1160→      // Hammer: long lower wick, small upper wick
+  1161→      lowerWick = bodySize * (2.0 + Math.random() * 2.5) + baseVal * 0.0005
+  1162→      upperWick = bodySize * (0.05 + Math.random() * 0.2)
+  1163→    } else if (patternRoll < 0.10 && !isBullish) {
+  1164→      // Shooting star: long upper wick, small lower wick
+  1165→      upperWick = bodySize * (2.0 + Math.random() * 2.5) + baseVal * 0.0005
+  1166→      lowerWick = bodySize * (0.05 + Math.random() * 0.2)
+  1167→    }
+  1168→
+  1169→    const high = Math.max(open, close) + Math.round(upperWick)
+  1170→    const low = Math.min(open, close) - Math.round(lowerWick)
+  1171→
+  1172→    // Volume correlates with phase and candle size
+  1173→    const simBaseVol = sim.vol
+  1174→    const volMultiplier = sim.phase === 2 ? 2.2 : sim.phase === 1 ? 1.2 : 0.6
+  1175→    const bodyRatio = bodySize / baseVal
+  1176→    const volume = Math.round(simBaseVol * volMultiplier * (0.6 + Math.random() * 0.8 + bodyRatio * 15))
+  1177→
+  1178→    const now = new Date()
+  1179→    now.setMinutes(now.getMinutes() - (40 - idx))
+  1180→    const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+  1181→
+  1182→    return { idx, open, high, low, close, volume, time }
+  1183→  }, [])
+  1184→
+  1185→  // Helper: get data based on timeframe
+  1186→  const getDataForTimeframe = useCallback((data: CandleData[], tf: string) => {
+  1187→    if (data.length === 0) return data
+  1188→    switch (tf) {
+  1189→      case '1H': return data.slice(-10)
+  1190→      case '1D': return data.slice(-25)
+  1191→      case '1W': return data.slice(-40)
+  1192→      case '1M': return data
+  1193→      case 'ALL': return data
+  1194→      default: return data
+  1195→    }
+  1196→  }, [])
+  1197→
+  1198→  // Compute MA line values for candle data
+  1199→  const computeMA = useCallback((data: CandleData[], period: number): (number | null)[] => {
+  1200→    return data.map((_, i) => {
+  1201→      if (i < period - 1) return null
+  1202→      let sum = 0
+  1203→      for (let j = i - period + 1; j <= i; j++) sum += data[j].close
+  1204→      return sum / period
+  1205→    })
+  1206→  }, [])
+  1207→
+  1208→  // Bollinger Bands (20,2)
+  1209→  const computeBollinger = useCallback((data: CandleData[]): { upper: (number | null)[]; middle: (number | null)[]; lower: (number | null)[] } => {
+  1210→    const ma20 = computeMA(data, 20)
+  1211→    const upper: (number | null)[] = []
+  1212→    const lower: (number | null)[] = []
+  1213→    data.forEach((_, i) => {
+  1214→      if (ma20[i] === null) { upper.push(null); lower.push(null); return }
+  1215→      let sumSq = 0
+  1216→      for (let j = i - 19; j <= i; j++) sumSq += (data[j].close - ma20[i]!) ** 2
+  1217→      const std = Math.sqrt(sumSq / 20)
+  1218→      upper.push(ma20[i]! + 2 * std)
+  1219→      lower.push(ma20[i]! - 2 * std)
+  1220→    })
+  1221→    return { upper, middle: ma20, lower }
+  1222→  }, [computeMA])
+  1223→
+  1224→  // RSI (14)
+  1225→  const computeRSI = useCallback((data: CandleData[], period = 14): (number | null)[] => {
+  1226→    const result: (number | null)[] = []
+  1227→    if (data.length < period + 1) return data.map(() => null)
+  1228→    let avgGain = 0, avgLoss = 0
+  1229→    for (let i = 1; i <= period; i++) {
+  1230→      const change = data[i].close - data[i - 1].close
+  1231→      if (change > 0) avgGain += change; else avgLoss += Math.abs(change)
+  1232→    }
+  1233→    avgGain /= period; avgLoss /= period
+  1234→    for (let i = 0; i < period; i++) result.push(null)
+  1235→    result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss))
+  1236→    for (let i = period + 1; i < data.length; i++) {
+  1237→      const change = data[i].close - data[i - 1].close
+  1238→      avgGain = (avgGain * (period - 1) + (change > 0 ? change : 0)) / period
+  1239→      avgLoss = (avgLoss * (period - 1) + (change < 0 ? Math.abs(change) : 0)) / period
+  1240→      result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss))
+  1241→    }
+  1242→    return result
+  1243→  }, [])
+  1244→
+  1245→  // MACD (12,26,9)
+  1246→  const computeMACD = useCallback((data: CandleData[]): { macd: (number | null)[]; signal: (number | null)[]; histogram: (number | null)[] } => {
+  1247→    const ema = (arr: number[], p: number): number[] => {
+  1248→      const k = 2 / (p + 1)
+  1249→      const res: number[] = [arr[0]]
+  1250→      for (let i = 1; i < arr.length; i++) res.push(arr[i] * k + res[i - 1] * (1 - k))
+  1251→      return res
+  1252→    }
+  1253→    const closes = data.map(d => d.close)
+  1254→    const ema12 = ema(closes, 12)
+  1255→    const ema26 = ema(closes, 26)
+  1256→    const macdLine = ema12.map((v, i) => i >= 25 ? v - ema26[i] : 0)
+  1257→    const signalLine = ema(macdLine.slice(25), 9)
+  1258→    const macd: (number | null)[] = macdLine.map((v, i) => i >= 25 ? v : null)
+  1259→    const signal: (number | null)[] = macdLine.map((_, i) => i >= 25 ? (signalLine[i - 25] ?? null) : null)
+  1260→    const histogram: (number | null)[] = macd.map((v, i) => v !== null && signal[i] !== null ? v - signal[i]! : null)
+  1261→    return { macd, signal, histogram }
+  1262→  }, [])
+  1263→
+  1264→  // ── TREND INDICATORS ──
+  1265→
+  1266→  // ADX (Average Directional Movement Index) - period 14
+  1267→  const computeADX = useCallback((data: CandleData[], period = 14) => {
+  1268→    if (data.length < period * 2) return { adx: data.map(() => null) as (number | null)[], plusDI: data.map(() => null) as (number | null)[], minusDI: data.map(() => null) as (number | null)[] }
+  1269→    const plusDM: number[] = [], minusDM: number[] = [], tr: number[] = []
+  1270→    for (let i = 1; i < data.length; i++) {
+  1271→      const highDiff = data[i].high - data[i-1].high
+  1272→      const lowDiff = data[i-1].low - data[i].low
+  1273→      plusDM.push(highDiff > lowDiff && highDiff > 0 ? highDiff : 0)
+  1274→      minusDM.push(lowDiff > highDiff && lowDiff > 0 ? lowDiff : 0)
+  1275→      tr.push(Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close)))
+  1276→    }
+  1277→    const smooth = (arr: number[], p: number) => {
+  1278→      const res: number[] = [arr.slice(0, p).reduce((a,b) => a+b, 0)]
+  1279→      for (let i = p; i < arr.length; i++) res.push(res[i-p] - res[i-p]/p + arr[i])
+  1280→      return res
+  1281→    }
+  1282→    const smoothTR = smooth(tr, period), smoothPDM = smooth(plusDM, period), smoothMDM = smooth(minusDM, period)
+  1283→    const plusDI = smoothPDM.map((v, i) => smoothTR[i] > 0 ? (v / smoothTR[i]) * 100 : 0)
+  1284→    const minusDI = smoothMDM.map((v, i) => smoothTR[i] > 0 ? (v / smoothTR[i]) * 100 : 0)
+  1285→    const dx = plusDI.map((v, i) => v + minusDI[i] > 0 ? Math.abs(v - minusDI[i]) / (v + minusDI[i]) * 100 : 0)
+  1286→    const adx: (number | null)[] = [null]
+  1287→    let adxVal = dx.slice(0, period).reduce((a,b) => a+b, 0) / period
+  1288→    adx.push(adxVal)
+  1289→    for (let i = period; i < dx.length; i++) {
+  1290→      adxVal = (adxVal * (period - 1) + dx[i]) / period
+  1291→      adx.push(adxVal)
+  1292→    }
+  1293→    while (adx.length < data.length) adx.unshift(null)
+  1294→    while (plusDI.length < data.length) plusDI.unshift(0)
+  1295→    while (minusDI.length < data.length) minusDI.unshift(0)
+  1296→    return { adx, plusDI: plusDI.map(v => v as number | null), minusDI: minusDI.map(v => v as number | null) }
+  1297→  }, [])
+  1298→
+  1299→  // Envelopes (20, 0.05)
+  1300→  const computeEnvelopes = useCallback((data: CandleData[], period = 20, pct = 0.05) => {
+  1301→    const ma = computeMA(data, period)
+  1302→    return {
+  1303→      upper: ma.map(v => v !== null ? v * (1 + pct) : null),
+  1304→      middle: ma,
+  1305→      lower: ma.map(v => v !== null ? v * (1 - pct) : null),
+  1306→    }
+  1307→  }, [computeMA])
+  1308→
+  1309→  // Ichimoku Kinko Hyo (9, 26, 52)
+  1310→  const computeIchimoku = useCallback((data: CandleData[]) => {
+  1311→    const periodHigh = (d: CandleData[], start: number, len: number) => {
+  1312→      let h = -Infinity
+  1313→      for (let i = Math.max(0, start); i <= Math.min(d.length-1, start+len-1); i++) h = Math.max(h, d[i].high)
+  1314→      return h
+  1315→    }
+  1316→    const periodLow = (d: CandleData[], start: number, len: number) => {
+  1317→      let l = Infinity
+  1318→      for (let i = Math.max(0, start); i <= Math.min(d.length-1, start+len-1); i++) l = Math.min(l, d[i].low)
+  1319→      return l
+  1320→    }
+  1321→    const tenkan = data.map((_, i) => i < 8 ? null : (periodHigh(data, i-8, 9) + periodLow(data, i-8, 9)) / 2)
+  1322→    const kijun = data.map((_, i) => i < 25 ? null : (periodHigh(data, i-25, 26) + periodLow(data, i-25, 26)) / 2)
+  1323→    const senkouA = data.map((_, i) => i < 25 ? null : (tenkan[i] !== null && kijun[i] !== null ? (tenkan[i]! + kijun[i]!) / 2 : null))
+  1324→    const senkouB = data.map((_, i) => i < 51 ? null : (periodHigh(data, i-51, 52) + periodLow(data, i-51, 52)) / 2)
+  1325→    const chikou = data.map((_, i) => i + 26 < data.length ? data[i+26].close : null)
+  1326→    return { tenkan, kijun, senkouA, senkouB, chikou }
+  1327→  }, [])
+  1328→
+  1329→  // Parabolic SAR
+  1330→  const computeSAR = useCallback((data: CandleData[], step = 0.02, max = 0.2) => {
+  1331→    if (data.length < 2) return data.map(() => null)
+  1332→    const result: (number | null)[] = [null]
+  1333→    let isLong = data[1].close > data[0].close
+  1334→    let af = step
+  1335→    let ep = isLong ? data[0].high : data[0].low
+  1336→    let sar = isLong ? data[0].low : data[0].high
+  1337→    for (let i = 1; i < data.length; i++) {
+  1338→      sar = sar + af * (ep - sar)
+  1339→      if (isLong) {
+  1340→        if (i >= 2) sar = Math.min(sar, data[i-1].low, data[i-2].low)
+  1341→        if (data[i].low < sar) { isLong = false; sar = ep; ep = data[i].low; af = step }
+  1342→        else { if (data[i].high > ep) { ep = data[i].high; af = Math.min(af + step, max) } }
+  1343→      } else {
+  1344→        if (i >= 2) sar = Math.max(sar, data[i-1].high, data[i-2].high)
+  1345→        if (data[i].high > sar) { isLong = true; sar = ep; ep = data[i].high; af = step }
+  1346→        else { if (data[i].low < ep) { ep = data[i].low; af = Math.min(af + step, max) } }
+  1347→      }
+  1348→      result.push(sar)
+  1349→    }
+  1350→    return result
+  1351→  }, [])
+  1352→
+  1353→  // Standard Deviation
+  1354→  const computeStdDev = useCallback((data: CandleData[], period = 20) => {
+  1355→    const ma = computeMA(data, period)
+  1356→    return data.map((_, i) => {
+  1357→      if (ma[i] === null) return null
+  1358→      let sumSq = 0
+  1359→      for (let j = i - period + 1; j <= i; j++) sumSq += (data[j].close - ma[i]!) ** 2
+  1360→      return Math.sqrt(sumSq / period)
+  1361→    })
+  1362→  }, [computeMA])
+  1363→
+  1364→  // ZigZag (deviation 5%)
+  1365→  const computeZigZag = useCallback((data: CandleData[], deviation = 5) => {
+  1366→    if (data.length < 3) return data.map(() => null)
+  1367→    const points: { idx: number; price: number; isHigh: boolean }[] = []
+  1368→    let lastHigh = { idx: 0, price: data[0].high }, lastLow = { idx: 0, price: data[0].low }
+  1369→    let isUp = true
+  1370→    for (let i = 1; i < data.length; i++) {
+  1371→      const changeFromHigh = ((data[i].high - lastHigh.price) / lastHigh.price) * 100
+  1372→      const changeFromLow = ((data[i].low - lastLow.price) / lastLow.price) * 100
+  1373→      if (isUp) {
+  1374→        if (changeFromHigh > 0) lastHigh = { idx: i, price: data[i].high }
+  1375→        if (changeFromLow < -deviation) {
+  1376→          points.push({ idx: lastHigh.idx, price: lastHigh.price, isHigh: true })
+  1377→          lastLow = { idx: i, price: data[i].low }
+  1378→          isUp = false
+  1379→        }
+  1380→      } else {
+  1381→        if (changeFromLow < 0) lastLow = { idx: i, price: data[i].low }
+  1382→        if (changeFromHigh > deviation) {
+  1383→          points.push({ idx: lastLow.idx, price: lastLow.price, isHigh: false })
+  1384→          lastHigh = { idx: i, price: data[i].high }
+  1385→          isUp = true
+  1386→        }
+  1387→      }
+  1388→    }
+  1389→    const result: (number | null)[] = data.map(() => null)
+  1390→    points.forEach(p => { result[p.idx] = p.price })
+  1391→    return result
+  1392→  }, [])
+  1393→
+  1394→  // ── OSCILLATOR INDICATORS ──
+  1395→
+  1396→  // ATR (Average True Range) - period 14
+  1397→  const computeATR = useCallback((data: CandleData[], period = 14) => {
+  1398→    if (data.length < 2) return data.map(() => null)
+  1399→    const tr: number[] = [data[0].high - data[0].low]
+  1400→    for (let i = 1; i < data.length; i++) {
+  1401→      tr.push(Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close)))
+  1402→    }
+  1403→    const result: (number | null)[] = []
+  1404→    for (let i = 0; i < period - 1; i++) result.push(null)
+  1405→    let atr = tr.slice(0, period).reduce((a,b) => a+b, 0) / period
+  1406→    result.push(atr)
+  1407→    for (let i = period; i < tr.length; i++) {
+  1408→      atr = (atr * (period - 1) + tr[i]) / period
+  1409→      result.push(atr)
+  1410→    }
+  1411→    return result
+  1412→  }, [])
+  1413→
+  1414→  // Bears Power
+  1415→  const computeBearsPower = useCallback((data: CandleData[], period = 13) => {
+  1416→    const ma = computeMA(data, period)
+  1417→    return data.map((d, i) => ma[i] !== null ? d.low - ma[i]! : null)
+  1418→  }, [computeMA])
+  1419→
+  1420→  // Bulls Power
+  1421→  const computeBullsPower = useCallback((data: CandleData[], period = 13) => {
+  1422→    const ma = computeMA(data, period)
+  1423→    return data.map((d, i) => ma[i] !== null ? d.high - ma[i]! : null)
+  1424→  }, [computeMA])
+  1425→
+  1426→  // CCI (Commodity Channel Index) - period 14
+  1427→  const computeCCI = useCallback((data: CandleData[], period = 14) => {
+  1428→    const tp = data.map(d => (d.high + d.low + d.close) / 3)
+  1429→    const result: (number | null)[] = []
+  1430→    for (let i = 0; i < period - 1; i++) result.push(null)
+  1431→    for (let i = period - 1; i < data.length; i++) {
+  1432→      let sum = 0
+  1433→      for (let j = i - period + 1; j <= i; j++) sum += tp[j]
+  1434→      const mean = sum / period
+  1435→      let meanDev = 0
+  1436→      for (let j = i - period + 1; j <= i; j++) meanDev += Math.abs(tp[j] - mean)
+  1437→      meanDev /= period
+  1438→      result.push(meanDev > 0 ? (tp[i] - mean) / (0.015 * meanDev) : 0)
+  1439→    }
+  1440→    return result
+  1441→  }, [])
+  1442→
+  1443→  // DeMarker
+  1444→  const computeDeMarker = useCallback((data: CandleData[], period = 14) => {
+  1445→    if (data.length < 2) return data.map(() => null)
+  1446→    const dMax: number[] = [0], dMin: number[] = [0]
+  1447→    for (let i = 1; i < data.length; i++) {
+  1448→      dMax.push(data[i].high > data[i-1].high ? data[i].high - data[i-1].high : 0)
+  1449→      dMin.push(data[i].low < data[i-1].low ? data[i-1].low - data[i].low : 0)
+  1450→    }
+  1451→    const result: (number | null)[] = []
+  1452→    for (let i = 0; i < period; i++) result.push(null)
+  1453→    for (let i = period; i < data.length; i++) {
+  1454→      const maxSum = dMax.slice(i-period+1, i+1).reduce((a,b) => a+b, 0)
+  1455→      const minSum = dMin.slice(i-period+1, i+1).reduce((a,b) => a+b, 0)
+  1456→      result.push(maxSum + minSum > 0 ? maxSum / (maxSum + minSum) : 0.5)
+  1457→    }
+  1458→    return result
+  1459→  }, [])
+  1460→
+  1461→  // Force Index
+  1462→  const computeForceIndex = useCallback((data: CandleData[], period = 13) => {
+  1463→    const fi: number[] = [0]
+  1464→    for (let i = 1; i < data.length; i++) fi.push((data[i].close - data[i-1].close) * data[i].volume)
+  1465→    const result: (number | null)[] = []
+  1466→    for (let i = 0; i < period - 1; i++) result.push(null)
+  1467→    for (let i = period - 1; i < fi.length; i++) {
+  1468→      let sum = 0
+  1469→      for (let j = i - period + 1; j <= i; j++) sum += fi[j]
+  1470→      result.push(sum / period)
+  1471→    }
+  1472→    return result
+  1473→  }, [])
+  1474→
+  1475→  // Momentum
+  1476→  const computeMomentum = useCallback((data: CandleData[], period = 14) => {
+  1477→    return data.map((_, i) => i < period ? null : data[i].close - data[i-period].close)
+  1478→  }, [])
+  1479→
+  1480→  // OsMA (Moving Average of Oscillator)
+  1481→  const computeOsMA = useCallback((data: CandleData[]) => {
+  1482→    const macdData = computeMACD(data)
+  1483→    return macdData.histogram
+  1484→  }, [computeMACD])
+  1485→
+  1486→  // Relative Vigor Index
+  1487→  const computeRVI = useCallback((data: CandleData[], period = 10) => {
+  1488→    if (data.length < period + 3) return { rvi: data.map(() => null) as (number | null)[], signal: data.map(() => null) as (number | null)[] }
+  1489→    const co: number[] = data.map(d => d.close - d.open)
+  1490→    const hl: number[] = data.map(d => d.high - d.low)
+  1491→    const rvi: (number | null)[] = data.map(() => null)
+  1492→    const signal: (number | null)[] = data.map(() => null)
+  1493→    for (let i = period + 3; i < data.length; i++) {
+  1494→      let numSum = 0, denSum = 0
+  1495→      for (let j = i - period + 1; j <= i; j++) {
+  1496→        if (j >= 1 && j < co.length - 1) {
+  1497→          numSum += (co[j-1] + 2*co[j] + co[Math.min(j+1, co.length-1)]) / 4
+  1498→          denSum += (hl[j-1] + 2*hl[j] + hl[Math.min(j+1, hl.length-1)]) / 4
+  1499→        }
+  1500→      }
+  1501→      rvi[i] = denSum > 0 ? numSum / denSum : 0
+  1502→    }
+  1503→    for (let i = period + 6; i < data.length; i++) {
+  1504→      if (rvi[i-3] !== null && rvi[i-2] !== null && rvi[i-1] !== null && rvi[i] !== null) {
+  1505→        signal[i] = (rvi[i-3]! + 2*rvi[i-2]! + 2*rvi[i-1]! + rvi[i]!) / 6
+  1506→      }
+  1507→    }
+  1508→    return { rvi, signal }
+  1509→  }, [])
+  1510→
+  1511→  // Stochastic Oscillator (5,3,3)
+  1512→  const computeStochastic = useCallback((data: CandleData[], kPeriod = 5, dPeriod = 3) => {
+  1513→    const k: (number | null)[] = []
+  1514→    for (let i = 0; i < data.length; i++) {
+  1515→      if (i < kPeriod - 1) { k.push(null); continue }
+  1516→      let highest = -Infinity, lowest = Infinity
+  1517→      for (let j = i - kPeriod + 1; j <= i; j++) { highest = Math.max(highest, data[j].high); lowest = Math.min(lowest, data[j].low) }
+  1518→      k.push(highest - lowest > 0 ? ((data[i].close - lowest) / (highest - lowest)) * 100 : 50)
+  1519→    }
+  1520→    const d: (number | null)[] = []
+  1521→    for (let i = 0; i < data.length; i++) {
+  1522→      if (i < kPeriod + dPeriod - 2 || k[i] === null) { d.push(null); continue }
+  1523→      let sum = 0, count = 0
+  1524→      for (let j = i - dPeriod + 1; j <= i; j++) { if (k[j] !== null) { sum += k[j]!; count++ } }
+  1525→      d.push(count > 0 ? sum / count : null)
+  1526→    }
+  1527→    return { k, d }
+  1528→  }, [])
+  1529→
+  1530→  // Williams' Percent Range (14)
+  1531→  const computeWilliamsR = useCallback((data: CandleData[], period = 14) => {
+  1532→    return data.map((_, i) => {
+  1533→      if (i < period - 1) return null
+  1534→      let highest = -Infinity, lowest = Infinity
+  1535→      for (let j = i - period + 1; j <= i; j++) { highest = Math.max(highest, data[j].high); lowest = Math.min(lowest, data[j].low) }
+  1536→      return highest - lowest > 0 ? ((highest - data[i].close) / (highest - lowest)) * -100 : -50
+  1537→    })
+  1538→  }, [])
+  1539→
+  1540→  // ── VOLUME INDICATORS ──
+  1541→
+  1542→  // Accumulation/Distribution
+  1543→  const computeAD = useCallback((data: CandleData[]) => {
+  1544→    const result: number[] = [0]
+  1545→    for (let i = 1; i < data.length; i++) {
+  1546→      const clv = data[i].high - data[i].low > 0 ? ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low) : 0
+  1547→      result.push(result[i-1] + clv * data[i].volume)
+  1548→    }
+  1549→    return result
+  1550→  }, [])
+  1551→
+  1552→  // Money Flow Index (14)
+  1553→  const computeMFI = useCallback((data: CandleData[], period = 14) => {
+  1554→    const tp = data.map(d => (d.high + d.low + d.close) / 3)
+  1555→    const mf = tp.map((v, i) => v * data[i].volume)
+  1556→    const result: (number | null)[] = data.map(() => null)
+  1557→    for (let i = period; i < data.length; i++) {
+  1558→      let posFlow = 0, negFlow = 0
+  1559→      for (let j = i - period + 1; j <= i; j++) {
+  1560→        if (tp[j] > tp[j-1]) posFlow += mf[j]; else negFlow += mf[j]
+  1561→      }
+  1562→      result[i] = negFlow > 0 ? 100 - 100 / (1 + posFlow / negFlow) : 100
+  1563→    }
+  1564→    return result
+  1565→  }, [])
+  1566→
+  1567→  // On Balance Volume
+  1568→  const computeOBV = useCallback((data: CandleData[]) => {
+  1569→    const result: number[] = [0]
+  1570→    for (let i = 1; i < data.length; i++) {
+  1571→      if (data[i].close > data[i-1].close) result.push(result[i-1] + data[i].volume)
+  1572→      else if (data[i].close < data[i-1].close) result.push(result[i-1] - data[i].volume)
+  1573→      else result.push(result[i-1])
+  1574→    }
+  1575→    return result
+  1576→  }, [])
+  1577→
+  1578→  // ── BILL WILLIAMS INDICATORS ──
+  1579→
+  1580→  // Awesome Oscillator
+  1581→  const computeAO = useCallback((data: CandleData[]) => {
+  1582→    const midpoint = data.map(d => (d.high + d.low) / 2)
+  1583→    const sma5: (number | null)[] = [], sma34: (number | null)[] = []
+  1584→    for (let i = 0; i < data.length; i++) {
+  1585→      if (i < 4) { sma5.push(null) } else { let s = 0; for (let j = i-4; j <= i; j++) s += midpoint[j]; sma5.push(s/5) }
+  1586→      if (i < 33) { sma34.push(null) } else { let s = 0; for (let j = i-33; j <= i; j++) s += midpoint[j]; sma34.push(s/34) }
+  1587→    }
+  1588→    return sma5.map((v, i) => v !== null && sma34[i] !== null ? v! - sma34[i]! : null)
+  1589→  }, [])
+  1590→
+  1591→  // Accelerator Oscillator
+  1592→  const computeAC = useCallback((data: CandleData[]) => {
+  1593→    const ao = computeAO(data)
+  1594→    const result: (number | null)[] = []
+  1595→    for (let i = 0; i < data.length; i++) {
+  1596→      if (i < 4 || ao[i] === null) { result.push(null); continue }
+  1597→      let sum = 0, count = 0
+  1598→      for (let j = i - 4; j <= i; j++) { if (ao[j] !== null) { sum += ao[j]!; count++ } }
+  1599→      result.push(count > 0 ? ao[i]! - sum / count : null)
+  1600→    }
+  1601→    return result
+  1602→  }, [computeAO])
+  1603→
+  1604→  // Alligator (Jaw 13, Teeth 8, Lips 5)
+  1605→  const computeAlligator = useCallback((data: CandleData[]) => {
+  1606→    const jaw = computeMA(data, 13).map((v, i) => i < 8 ? null : v)
+  1607→    const teeth = computeMA(data, 8).map((v, i) => i < 5 ? null : v)
+  1608→    const lips = computeMA(data, 5).map((v, i) => i < 3 ? null : v)
+  1609→    return { jaw, teeth, lips }
+  1610→  }, [computeMA])
+  1611→
+  1612→  // Fractals
+  1613→  const computeFractals = useCallback((data: CandleData[]) => {
+  1614→    const up: (boolean | null)[] = data.map(() => null)
+  1615→    const down: (boolean | null)[] = data.map(() => null)
+  1616→    for (let i = 2; i < data.length - 2; i++) {
+  1617→      if (data[i].high > data[i-1].high && data[i].high > data[i-2].high && data[i].high > data[i+1].high && data[i].high > data[i+2].high) up[i] = true
+  1618→      if (data[i].low < data[i-1].low && data[i].low < data[i-2].low && data[i].low < data[i+1].low && data[i].low < data[i+2].low) down[i] = true
+  1619→    }
+  1620→    return { up, down }
+  1621→  }, [])
+  1622→
+  1623→  // Gator Oscillator
+  1624→  const computeGator = useCallback((data: CandleData[]) => {
+  1625→    const { jaw, teeth, lips } = computeAlligator(data)
+  1626→    const upper: (number | null)[] = jaw.map((v, i) => v !== null && teeth[i] !== null ? Math.abs(v! - teeth[i]!) : null)
+  1627→    const lower: (number | null)[] = teeth.map((v, i) => v !== null && lips[i] !== null ? -Math.abs(v! - lips[i]!) : null)
+  1628→    return { upper, lower }
+  1629→  }, [computeAlligator])
+  1630→
+  1631→  // Market Facilitation Index
+  1632→  const computeBWIMFI = useCallback((data: CandleData[]) => {
+  1633→    return data.map(d => d.high - d.low > 0 ? (d.high - d.low) / d.volume : 0)
+  1634→  }, [])
+  1635→
+  1636→  // Initialize investment candle chart data when products load
+  1637→  useEffect(() => {
+  1638→    if (investProducts.length === 0) return
+  1639→    setInvestChartData(prev => {
+  1640→      const next = new Map(prev)
+  1641→      let changed = false
+  1642→      investProducts.forEach(p => {
+  1643→        if (investChartSimRef.current.has(p.id)) return
+  1644→        changed = true
+  1645→        const baseVal = p.modal
+  1646→        const baseVol = Math.round(50000 + Math.random() * 150000)
+  1647→        const sim = { lastClose: baseVal, baseVal, momentum: 0, trend: 0, phase: 1, phaseLen: 5, vol: baseVol, initialized: true }
+  1648→        const candles: CandleData[] = []
+  1649→        let prevClose = Math.round(baseVal * (0.97 + Math.random() * 0.06))
+  1650→        for (let i = 0; i < 40; i++) {
+  1651→          const candle = generateCandle(prevClose, baseVal, sim, i)
+  1652→          candles.push(candle)
+  1653→          prevClose = candle.close
+  1654→          sim.lastClose = candle.close
+  1655→        }
+  1656→        // Ensure last candle ends near baseVal
+  1657→        const lastCandle = candles[candles.length - 1]
+  1658→        const diff = baseVal - lastCandle.close
+  1659→        if (candles.length > 0) {
+  1660→          const adjust = Math.round(diff * 0.7)
+  1661→          candles[candles.length - 1] = {
+  1662→            ...lastCandle,
+  1663→            close: lastCandle.close + adjust,
+  1664→            high: Math.max(lastCandle.high, lastCandle.close + adjust),
+  1665→          }
+  1666→        }
+  1667→        next.set(p.id, candles)
+  1668→        investChartSimRef.current.set(p.id, { lastClose: candles[candles.length - 1].close, baseVal, momentum: sim.momentum, trend: sim.trend, phase: sim.phase, phaseLen: sim.phaseLen, vol: baseVol, initialized: true })
+  1669→      })
+  1670→      return changed ? next : prev
+  1671→    })
+  1672→  }, [investProducts, generateCandle])
+  1673→
+  1674→  // Live investment chart update — every 3 seconds, add a new candle
+  1675→  useEffect(() => {
+  1676→    const interval = setInterval(() => {
+  1677→      const simMap = investChartSimRef.current
+  1678→      if (simMap.size === 0) return
+  1679→      investChartTickRef.current += 1
+  1680→
+  1681→      simMap.forEach((sim, productId) => {
+  1682→        setInvestChartData(prev => {
+  1683→          const existing = prev.get(productId)
+  1684→          if (!existing || existing.length === 0) return prev
+  1685→          const prevClose = existing[existing.length - 1].close
+  1686→          const newIdx = existing[existing.length - 1].idx + 1
+  1687→          const candle = generateCandle(prevClose, sim.baseVal, sim, newIdx)
+  1688→          sim.lastClose = candle.close
+  1689→
+  1690→          const next = [...existing, candle]
+  1691→          const trimmed = next.length > 60 ? next.slice(-60) : next
+  1692→          const nextMap = new Map(prev)
+  1693→          nextMap.set(productId, trimmed)
+  1694→          return nextMap
+  1695→        })
+  1696→      })
+  1697→
+  1698→      // Also update investMovement
+  1699→      setInvestMovement(prev => {
+  1700→        const next = new Map(prev)
+  1701→        simMap.forEach((sim, productId) => {
+  1702→          const changePercent = ((sim.lastClose - sim.baseVal) / sim.baseVal) * 100
+  1703→          next.set(productId, { change: Math.round(sim.lastClose - sim.baseVal), changePercent: parseFloat(changePercent.toFixed(2)) })
+  1704→        })
+  1705→        return next
+  1706→      })
+  1707→    }, 3000)
+  1708→    return () => clearInterval(interval)
+  1709→  }, [generateCandle])
+  1710→
+  1711→
+  1712→  const initialized2 = useRef(false)
+  1713→  const stocksRef = useRef<Stock[]>([])
+  1714→  useEffect(() => { stocksRef.current = stocks }, [stocks])
+  1715→
+  1716→  // ============ LIVE PRICE CHART STATE ============
+  1717→  const [liveBuyChart, setLiveBuyChart] = useState<{time: string; price: number}[]>([])
+  1718→  const [liveSellChart, setLiveSellChart] = useState<{time: string; price: number}[]>([])
+  1719→  const [liveBuyPrice, setLiveBuyPrice] = useState(0)
+  1720→  const [liveSellPrice, setLiveSellPrice] = useState(0)
+  1721→  const [liveChartActive, setLiveChartActive] = useState(false)
+  1722→  const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number; momentum: number; phase: number}>({buyPrice: 0, sellPrice: 0, trend: 0, momentum: 0, phase: 0})
+  1723→  const MAX_CHART_POINTS = 60
+  1724→
+  1725→  // ============ LIVE IHSG CHART STATE (stable, always running) ============
+  1726→  const [ihsgChartData, setIhsgChartData] = useState<{idx: number; value: number}[]>([])
+  1727→  const ihsgChartRef = useRef<{val: number; baseVal: number; initialized: boolean}>({val: 0, baseVal: 0, initialized: false})
+  1728→
+  1729→  // Initialize IHSG chart data ONCE when indices first loads
+  1730→  useEffect(() => {
+  1731→    const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
+  1732→    if (!ihsgIdx || ihsgChartRef.current.initialized) return
+  1733→
+  1734→    ihsgChartRef.current.initialized = true
+  1735→    const baseVal = ihsgIdx.value
+  1736→    ihsgChartRef.current.baseVal = baseVal
+  1737→    const isUp = ihsgIdx.changePercent >= 0
+  1738→
+  1739→    // Generate historical data with VISIBLE up/down zigzag
+  1740→    const pts: {idx: number; value: number}[] = []
+  1741→    let val = baseVal * (1 + (isUp ? -0.005 : 0.005))
+  1742→    let momentum = 0
+  1743→
+  1744→    for (let i = 0; i < 50; i++) {
+  1745→      // Each tick: 50% chance to flip direction — creates natural zigzag
+  1746→      const dir = Math.random() > 0.5 ? 1 : -1
+  1747→      // Adaptive step: ensures ±1 visible change
+  1748→      const minStep = Math.max(1, baseVal * 0.0005)
+  1749→      const stepSize = minStep * (0.8 + Math.random() * 1.2)
+  1750→      // Overall bias toward the final value
+  1751→      const bias = (isUp ? 1 : -1) * baseVal * 0.00005
+  1752→      // Combine: momentum carries, new direction adds, bias drifts toward target
+  1753→      momentum = momentum * 0.25 + dir * stepSize + bias
+  1754→      val += momentum
+  1755→      // Light mean reversion — pulls toward baseVal
+  1756→      val += (baseVal - val) * 0.005
+  1757→      pts.push({ idx: i, value: Math.round(val) })
+  1758→    }
+  1759→    // End at actual value
+  1760→    pts.push({ idx: 50, value: baseVal })
+  1761→    setIhsgChartData(pts)
+  1762→    ihsgChartRef.current = { val: baseVal, baseVal, initialized: true }
+  1763→  }, [indices])
+  1764→
+  1765→  // IHSG live update interval — runs independently, never stops
+  1766→  useEffect(() => {
+  1767→    let ihsgMomentum = 0
+  1768→    const interval = setInterval(() => {
+  1769→      const ref = ihsgChartRef.current
+  1770→      if (!ref.initialized) return
+  1771→      // Each tick: 50% chance to go up or down — natural zigzag
+  1772→      const dir = Math.random() > 0.5 ? 1 : -1
+  1773→      const stepSize = ref.baseVal * (0.0004 + Math.random() * 0.001)
+  1774→      ihsgMomentum = ihsgMomentum * 0.25 + dir * stepSize
+  1775→      ref.val += ihsgMomentum
+  1776→      // Light mean reversion — keeps price near baseVal
+  1777→      ref.val += (ref.baseVal - ref.val) * 0.004
+  1778→
+  1779→      setIhsgChartData(prev => {
+  1780→        if (prev.length === 0) return prev
+  1781→        const nextIdx = prev[prev.length - 1].idx + 1
+  1782→        const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
+  1783→        return next.length > 60 ? next.slice(-60) : next
+  1784→      })
+  1785→    }, 2500)
+  1786→    return () => clearInterval(interval)
+  1787→  }, []) // empty deps = runs once, never restarts
+  1788→
+  1789→  // ============ MEMOIZED SPARKLINE DATA (prevents re-render jitter) ============
+  1790→  const sparklineCache = useRef<Map<string, {i: number; p: number}[]>>(new Map())
+  1791→  const sparklineSimRef = useRef<Map<string, {val: number; prevD: number; trend: number; momentum: number}>>(new Map())
+  1792→
+  1793→  const getSparklineData = useCallback((stock: Stock) => {
+  1794→    // Only generate ONCE per stock ID — never regenerate on price changes
+  1795→    if (sparklineCache.current.has(stock.id)) {
+  1796→      return sparklineCache.current.get(stock.id)!
+  1797→    }
+  1798→    const pts: {i: number; p: number}[] = []
+  1799→    const mainDir = stock.changePercent >= 0 ? 1 : -1
+  1800→    let p = stock.open
+  1801→    let momentum = 0
+  1802→
+  1803→    for (let i = 0; i < 25; i++) {
+  1804→      const dir = Math.random() > 0.5 ? 1 : -1
+  1805→      // Adaptive step: ensures ±1 visible change even for penny stocks (GOTO=74)
+  1806→      const minStep = Math.max(1, stock.price * 0.0015)
+  1807→      const stepSize = minStep * (0.8 + Math.random() * 1.2)
+  1808→      const bias = mainDir * stock.price * 0.0003
+  1809→      momentum = momentum * 0.25 + dir * stepSize + bias
+  1810→      p += momentum
+  1811→      // Adaptive mean reversion: stronger when far from target
+  1812→      const reversionStrength = 0.01 + Math.abs(stock.price - p) / stock.price * 0.1
+  1813→      p += (stock.price - p) * Math.min(reversionStrength, 0.05)
+  1814→      pts.push({ i, p: Math.round(p) })
+  1815→    }
+  1816→    pts.push({ i: 25, p: Math.round(stock.price) })
+  1817→    sparklineCache.current.set(stock.id, pts)
+  1818→    // Save simulation state for live updates
+  1819→    sparklineSimRef.current.set(stock.id, { val: stock.price, prevD: momentum * 0.25, trend: mainDir * stock.price * 0.0003, momentum: 0 })
+  1820→    return pts
+  1821→  }, [])
+  1822→
+  1823→  // ============ SVG INSTRUMENT LOGO GENERATOR ============
+  1824→  const getInstrumentLogo = useCallback((code: string, size: number = 40) => {
+  1825→    const specialColors: Record<string, [string, string]> = {
+  1826→      // Crypto
+  1827→      'BTC': ['#f7931a', '#e88a17'], 'ETH': ['#627eea', '#4c6edb'], 'XRP': ['#00aae4', '#0099cc'],
+  1828→      'SOL': ['#9945ff', '#14f195'], 'DOGE': ['#c3a634', '#ba9e2d'], 'ADA': ['#0033ad', '#002d99'],
+  1829→      'AVAX': ['#e84142', '#d13a3b'], 'DOT': ['#e6007a', '#cc006b'], 'LINK': ['#2a5ada', '#2450c2'],
+  1830→      'MATIC': ['#8247e5', '#703cc9'], 'BCH': ['#0ac18e', '#09ad7e'], 'LTC': ['#bfbbbb', '#a8a5a5'],
+  1831→      'XLM': ['#14b6e7', '#11a0cc'], 'UNI': ['#ff007a', '#e6006e'], 'AAVE': ['#b6509e', '#9e448c'],
+  1832→      'SHIB': ['#ffa409', '#e69408'], 'ATOM': ['#2e3148', '#262a3d'], 'FIL': ['#0090ff', '#0080e6'],
+  1833→      'NEAR': ['#00c1de', '#00abc5'], 'ALGO': ['#000000', '#1a1a1a'], 'VET': ['#15bdff', '#12a8e6'],
+  1834→      'SAND': ['#04adef', '#039ad6'], 'MANA': ['#ff2d55', '#e6284d'], 'AXS': ['#0055d5', '#004cba'],
+  1835→      'THETA': ['#2ab8e6', '#25a5cf'], 'APT': ['#2dd8a3', '#26c292'], 'ARB': ['#28a0f0', '#2390d6'],
+  1836→      'OP': ['#ff0420', '#e6031d'], 'IMX': ['#00c3ff', '#00b0e6'], 'INJ': ['#00f2fe', '#00dbe6'],
+  1837→      'TIA': ['#7b2bf9', '#6c27e0'], 'SEI': ['#9b1c1e', '#8a1819'], 'SUI': ['#6fbcf0', '#5fa8da'],
+  1838→      'PEPE': ['#479F45', '#3d8a3b'], 'FTM': ['#1969ff', '#145ce6'], 'GRT': ['#6747ed', '#5a3dd4'],
+  1839→      'ENS': ['#5298ff', '#4788e6'], 'LDO': ['#00a3ff', '#0092e6'], 'RPL': ['#ff6e4a', '#e66242'],
+  1840→      'STX': ['#2d2d2d', '#1a1a1a'],
+  1841→      // Commodities
+  1842→      'GOLD': ['#ffd700', '#daa520'], 'SILVER': ['#c0c0c0', '#a0a0a0'], 'OIL': ['#2d2d2d', '#1a1a1a'],
+  1843→      'NATGAS': ['#4a90d9', '#3d7cc2'], 'COPPER': ['#b87333', '#a0652d'], 'PLATINUM': ['#e5e4e2', '#c8c7c5'],
+  1844→      'PALLADIUM': ['#ced0dd', '#b5b7c4'], 'WHEAT': ['#f5deb3', '#dcc89d'], 'CORN': ['#f4c430', '#dab22b'],
+  1845→      'SOYBEANS': ['#8db255', '#7d9f4c'], 'SUGAR': ['#f8f8f8', '#dcdcdc'], 'COFFEE': ['#6f4e37', '#5e422e'],
+  1846→      'COTTON': ['#f0f0f0', '#d4d4d4'], 'LUMBER': ['#deb887', '#c5a476'], 'RICE': ['#f5f5dc', '#d9d9c4'],
+  1847→      'CACAO': ['#5c3317', '#4d2b14'], 'RUBBER': ['#333333', '#1a1a1a'], 'IRON': ['#8b8b8b', '#747474'],
+  1848→      // Forex
+  1849→      'EURUSD': ['#003399', '#002d88'], 'GBPUSD': ['#012169', '#011d5c'], 'USDJPY': ['#bc002d', '#a60027'],
+  1850→      'AUDUSD': ['#00008b', '#00007a'], 'USDCAD': ['#ff0000', '#e60000'], 'NZDUSD': ['#000000', '#1a1a1a'],
+  1851→      'USDCHF': ['#ff0000', '#e60000'], 'EURGBP': ['#003399', '#002d88'], 'EURJPY': ['#003399', '#002d88'],
+  1852→      'GBPJPY': ['#012169', '#011d5c'], 'AUDJPY': ['#00008b', '#00007a'], 'EURAUD': ['#003399', '#002d88'],
+  1853→      'GBPAUD': ['#012169', '#011d5c'], 'EURNZD': ['#003399', '#002d88'], 'GBPCAD': ['#012169', '#011d5c'],
+  1854→      'USDSGD': ['#cc0000', '#b30000'], 'USDHKD': ['#cc0000', '#b30000'], 'USDSEK': ['#006aa7', '#005c93'],
+  1855→      'USDNOK': ['#ba0c2f', '#a50a29'], 'USDDKK': ['#c8102e', '#b30e28'], 'USDZAR': ['#007749', '#006640'],
+  1856→      'USDTRY': ['#e30a17', '#cc0915'], 'USDMXN': ['#006341', '#005538'], 'USDPLN': ['#dc143c', '#c61236'],
+  1857→      'EURCHF': ['#003399', '#002d88'],
+  1858→      // Tech / Bluechip
+  1859→      'AAPL': ['#555555', '#444444'], 'NVDA': ['#76b900', '#67a000'], 'MSFT': ['#00a4ef', '#0093d6'],
+  1860→      'GOOGL': ['#4285f4', '#3676d6'], 'META': ['#1877f2', '#1569d8'], 'AMZN': ['#ff9900', '#e68a00'],
+  1861→      'TSLA': ['#cc0000', '#b30000'], 'AMD': ['#ed1c24', '#d4191f'], 'JPM': ['#003087', '#002b78'],
+  1862→      'V': ['#1a1f71', '#151a63'], 'MA': ['#ff5f00', '#e65500'],
+  1863→      // Banking
+  1864→      'GS': ['#7b9abb', '#6a89a8'], 'BAC': ['#012169', '#011d5c'], 'PGR': ['#0072ce', '#0065b5'],
+  1865→      // Healthcare
+  1866→      'UNH': ['#002677', '#001f63'], 'JNJ': ['#d51900', '#bf1700'], 'PFE': ['#0063b2', '#005699'],
+  1867→      'LLY': ['#d52b1e', '#bf261a'], 'ABBV': ['#071d49', '#061840'], 'MRK': ['#00857c', '#00746c'],
+  1868→      'ABT': ['#009cde', '#008ac5'], 'TMO': ['#ee3124', '#d62c20'], 'DHR': ['#004b87', '#004075'],
+  1869→      'ISRG': ['#00573f', '#004b36'], 'SYK': ['#5a2d82', '#4e2772'], 'BSX': ['#00854a', '#007440'],
+  1870→      'EW': ['#e31837', '#cc1532'], 'GILD': ['#c41230', '#af102b'], 'AMGN': ['#0064b4', '#005799'],
+  1871→      'BIIB': ['#1a3c6e', '#153360'], 'REGN': ['#c8102e', '#b30e28'], 'MRNA': ['#05204a', '#041b3f'],
+  1872→      'VRTX': ['#6236a5', '#562e92'], 'CVS': ['#cc0000', '#b30000'], 'CI': ['#003c71', '#003462'],
+  1873→      'HUM': ['#00539b', '#004887'], 'CNC': ['#005eb8', '#0052a0'],
+  1874→      // Consumer
+  1875→      'WMT': ['#0071ce', '#0064b5'], 'COST': ['#e31837', '#cc1532'], 'NKE': ['#f56565', '#e05555'],
+  1876→      'MCD': ['#ffc72c', '#e6b427'], 'KO': ['#f40009', '#da0008'], 'SBUX': ['#006241', '#005538'],
+  1877→      'PEP': ['#004b93', '#004080'], 'PG': ['#003DA5', '#003590'], 'CL': ['#d4002a', '#bf0026'],
+  1878→      'EL': ['#0b2265', '#091d57'], 'PM': ['#003057', '#002a4e'], 'MO': ['#003057', '#002a4e'],
+  1879→      'SPG': ['#c8102e', '#b30e28'], 'PLD': ['#003da5', '#003590'], 'AMT': ['#e31837', '#cc1532'],
+  1880→      'EQIX': ['#ed1c24', '#d4191f'], 'O': ['#003da5', '#003590'],
+  1881→      // Energy
+  1882→      'XOM': ['#ed1c24', '#d4191f'], 'CVX': ['#0055a5', '#004c93'], 'COP': ['#c8102e', '#b30e28'],
+  1883→      'SLB': ['#005cb9', '#0051a2'], 'FANG': ['#2e4a2e', '#264026'], 'MPC': ['#00539b', '#004887'],
+  1884→      'PSX': ['#0d2344', '#0b1d3a'], 'OXY': ['#c8102e', '#b30e28'], 'EOG': ['#006241', '#005538'],
+  1885→      // Infrastructure / Defense
+  1886→      'CAT': ['#ffcd11', '#e6b810'], 'BA': ['#0033a0', '#002d8f'], 'GE': ['#3b73b9', '#3366a3'],
+  1887→      'HON': ['#e31e26', '#cc1b22'], 'DE': ['#367c2b', '#2e6c24'], 'LMT': ['#0033a0', '#002d8f'],
+  1888→      'NOC': ['#0033a0', '#002d8f'], 'RTX': ['#0033a0', '#002d8f'], 'GD': ['#0033a0', '#002d8f'],
+  1889→      // Media
+  1890→      'DIS': ['#113ccf', '#0f35b8'], 'NFLX': ['#e50914', '#cc0812'], 'CMCSA': ['#0c0c0c', '#1a1a1a'],
+  1891→      // Tech / Growth
+  1892→      'COIN': ['#0052ff', '#0049e6'], 'SQ': ['#006aff', '#005fe6'], 'PYPL': ['#003087', '#002b78'],
+  1893→      'AVGO': ['#cc092f', '#b6082a'], 'INTC': ['#0071c5', '#0065ae'], 'TSM': ['#c41230', '#af102b'],
+  1894→      'CRM': ['#00a1e0', '#0090c7'], 'ORCL': ['#f80000', '#df0000'], 'ADBE': ['#ff0000', '#e60000'],
+  1895→      'IBM': ['#054ada', '#0442c2'], 'NOW': ['#81b5a1', '#73a291'], 'UBER': ['#000000', '#1a1a1a'],
+  1896→      'SNAP': ['#fffc00', '#e6e300'], 'PINS': ['#e60023', '#cc001f'], 'RIVN': ['#f5f5f5', '#dcdcdc'],
+  1897→      'LCID': ['#f5a623', '#db951f'], 'NIO': ['#00bfff', '#00ace6'], 'PLTR': ['#101010', '#1a1a1a'],
+  1898→      'DKNG': ['#53d769', '#4ac15e'], 'RBLX': ['#e2231a', '#cb1f17'], 'SHOP': ['#96bf48', '#84a83f'],
+  1899→      'SE': ['#e8333a', '#d02e34'], 'GRAB': ['#00b14f', '#009d45'], 'HOOD': ['#00c805', '#00b405'],
+  1900→      'ROKU': ['#6d1be1', '#6118ca'], 'ZM': ['#2d8cff', '#267de6'], 'TEAM': ['#0052cc', '#0049b8'],
+  1901→      // Cybersecurity / Software
+  1902→      'CRWD': ['#e8243c', '#d02036'], 'PANW': ['#fa582d', '#e14f28'], 'MNDY': ['#ff3d57', '#e6364f'],
+  1903→      'DDOG': ['#632ca6', '#572795'], 'NET': ['#f38020', '#da731d'], 'MDB': ['#00ed64', '#00d55a'],
+  1904→      'HUBS': ['#ff7a59', '#e66e4f'], 'TWLO': ['#f22f46', '#da2a3f'], 'OKTA': ['#007dc1', '#006eab'],
+  1905→      'ZS': ['#0078ff', '#006ce6'], 'PATH': ['#fa1e3c', '#e11b36'], 'AI': ['#c41230', '#af102b'],
+  1906→      'SOUN': ['#00b4d8', '#00a1c1'],
+  1907→      // Additional Financials
+  1908→      'SCHW': ['#003057', '#002a4e'], 'BLK': ['#000000', '#1a1a1a'],
+  1909→      'AXP': ['#006fcf', '#0062b8'], 'C': ['#003b70', '#003362'], 'WFC': ['#d71e28', '#c21a24'],
+  1910→      'MS': ['#002395', '#001f82'], 'AXPO': ['#e31837', '#cc1532'],
+  1911→      // Additional Real Estate / REITs
+  1912→      'PSA': ['#e31837', '#cc1532'], 'CCI': ['#003da5', '#003590'], 'DLR': ['#003399', '#002d88'],
+  1913→      'VICI': ['#003057', '#002a4e'],
+  1914→      // Additional Media
+  1915→      'WBD': ['#0057b8', '#004da0'], 'PARA': ['#0057b8', '#004da0'], 'FOX': ['#0c2340', '#0a1d36'],
+  1916→      // Telecom
+  1917→      'T': ['#009fdb', '#008ec2'], 'VZ': ['#cd040b', '#b6030a'], 'TMUS': ['#e20074', '#cb0068'],
+  1918→      // Retail / Home
+  1919→      'TGT': ['#cc0000', '#b30000'], 'LOW': ['#004990', '#004080'], 'HD': ['#f96302', '#e05a02'],
+  1920→      'DLTR': ['#1f9f43', '#1a8c3b'], 'TJX': ['#c8102e', '#b30e28'],
+  1921→      // Transportation
+  1922→      'UPS': ['#351c15', '#2d1712'], 'FDX': ['#4d148c', '#421278'], 'DAL': ['#003366', '#002b57'],
+  1923→      // Berkshire
+  1924→      'BRK.B': ['#7b2d26', '#6c2822'],
+  1925→    }
+  1926→    // Emoji prefix map for special instrument types
+  1927→    const emojiMap: Record<string, string> = {
+  1928→      'BTC': '₿', 'ETH': 'Ξ', 'XRP': '✕', 'SOL': '◎', 'DOGE': 'Ð',
+  1929→      'GOLD': '🥇', 'SILVER': '🥈', 'OIL': '🛢️', 'NATGAS': '🔥', 'COPPER': '🔶',
+  1930→      'PLATINUM': '💍', 'PALLADIUM': '💎', 'WHEAT': '🌾', 'CORN': '🌽',
+  1931→      'SOYBEANS': '🫘', 'SUGAR': '🍬', 'COFFEE': '☕', 'COTTON': '🧵', 'LUMBER': '🪵', 'RICE': '🍚',
+  1932→      'EURUSD': '🇪🇺', 'GBPUSD': '🇬🇧', 'USDJPY': '🇯🇵', 'AUDUSD': '🇦🇺', 'USDCAD': '🇨🇦',
+  1933→      'NZDUSD': '🇳🇿', 'USDCHF': '🇨🇭', 'EURGBP': '🇪🇺', 'EURJPY': '🇪🇺', 'GBPJPY': '🇬🇧',
+  1934→      'AUDJPY': '🇦🇺', 'EURAUD': '🇪🇺', 'GBPAUD': '🇬🇧', 'EURNZD': '🇪🇺', 'GBPCAD': '🇬🇧',
+  1935→      'USDSGD': '🇸🇬', 'USDHKD': '🇭🇰', 'USDSEK': '🇸🇪', 'USDNOK': '🇳🇴',
+  1936→      'USDDKK': '🇩🇰', 'USDZAR': '🇿🇦', 'USDTRY': '🇹🇷', 'USDMXN': '🇲🇽',
+  1937→      'USDPLN': '🇵🇱', 'EURCHF': '🇨🇭',
+  1938→      'SHIB': '🐕', 'ATOM': '⚛️', 'FIL': '💾', 'NEAR': '🌊', 'ALGO': '∆', 'VET': '⚡',
+  1939→      'SAND': '🏖️', 'MANA': '🌐', 'AXS': '⚔️', 'THETA': '📡', 'APT': '🔷', 'ARB': '🔵',
+  1940→      'OP': '🔴', 'IMX': '♾️', 'INJ': '💉', 'TIA': '💜', 'SEI': '🟠', 'SUI': '💧',
+  1941→      'PEPE': '🐸', 'FTM': '👻', 'GRT': '📊', 'ENS': '📛', 'LDO': '🏛️', 'RPL': '🚀',
+  1942→      'STX': '🧱',
+  1943→      'CACAO': '🍫', 'RUBBER': '⚫', 'IRON': '🔩',
+  1944→    }
+  1945→    const hash = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  1946→    const hue1 = hash % 360
+  1947→    const hue2 = (hash * 7) % 360
+  1948→    const gradientId = `logo-${code}-${size}`
+  1949→    const colors = specialColors[code] || [`hsl(${hue1}, 70%, 50%)`, `hsl(${hue2}, 60%, 40%)`]
+  1950→    const emoji = emojiMap[code]
+  1951→    const displayText = code.length <= 3 ? code.slice(0, 2) : code.slice(0, 3)
+  1952→    return (
+  1953→      <svg width={size} height={size} viewBox="0 0 40 40" style={{ flexShrink: 0 }}>
+  1954→        <defs>
+  1955→          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+  1956→            <stop offset="0%" stopColor={colors[0]} />
+  1957→            <stop offset="100%" stopColor={colors[1]} />
+  1958→          </linearGradient>
+  1959→        </defs>
+  1960→        <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
+  1961→        {emoji ? (
+  1962→          <text x="20" y="21" textAnchor="middle" dominantBaseline="central"
+  1963→            fill="white" fontSize="14" fontWeight="900" fontFamily="system-ui">
+  1964→            {emoji}
+  1965→          </text>
+  1966→        ) : (
+  1967→          <text x="20" y="20" textAnchor="middle" dominantBaseline="central"
+  1968→            fill="white" fontSize={displayText.length > 2 ? "9" : "12"} fontWeight="900" fontFamily="system-ui">
+  1969→            {displayText}
+  1970→          </text>
+  1971→        )}
+  1972→      </svg>
+  1973→    )
+  1974→  }, [])
+  1975→
+  1976→  // ============ REAL LOGO HELPER ============
+  1977→  const getRealLogo = useCallback((code: string, size: number = 36) => {
+  1978→    // Stock domain mapping for Google Favicon API
+  1979→    const stockDomains: Record<string, string> = {
+  1980→      'AAPL': 'apple.com', 'NVDA': 'nvidia.com', 'MSFT': 'microsoft.com',
+  1981→      'GOOGL': 'google.com', 'META': 'meta.com', 'AMZN': 'amazon.com',
+  1982→      'TSLA': 'tesla.com', 'AMD': 'amd.com', 'JPM': 'jpmorgan.com',
+  1983→      'V': 'visa.com', 'MA': 'mastercard.com', 'GS': 'goldmansachs.com',
+  1984→      'BAC': 'bankofamerica.com', 'UNH': 'unitedhealthgroup.com',
+  1985→      'JNJ': 'jnj.com', 'PFE': 'pfizer.com', 'LLY': 'lilly.com',
+  1986→      'ABBV': 'abbvie.com', 'MRK': 'merck.com', 'WMT': 'walmart.com',
+  1987→      'COST': 'costco.com', 'NKE': 'nike.com', 'MCD': 'mcdonalds.com',
+  1988→      'KO': 'coca-cola.com', 'SBUX': 'starbucks.com', 'PEP': 'pepsico.com',
+  1989→      'XOM': 'exxonmobil.com', 'CVX': 'chevron.com', 'COP': 'conocophillips.com',
+  1990→      'CAT': 'caterpillar.com', 'BA': 'boeing.com', 'GE': 'ge.com',
+  1991→      'HON': 'honeywell.com', 'DE': 'deere.com', 'DIS': 'disney.com',
+  1992→      'NFLX': 'netflix.com', 'CMCSA': 'comcast.com', 'COIN': 'coinbase.com',
+  1993→      'SQ': 'block.xyz', 'PYPL': 'paypal.com', 'AVGO': 'broadcom.com',
+  1994→      'INTC': 'intel.com', 'TSM': 'tsmc.com', 'CRM': 'salesforce.com',
+  1995→      'ORCL': 'oracle.com', 'ADBE': 'adobe.com', 'IBM': 'ibm.com',
+  1996→      'NOW': 'servicenow.com', 'UBER': 'uber.com', 'PG': 'pg.com',
+  1997→      'CL': 'colgatepalmolive.com', 'EL': 'estee.com', 'PM': 'pmi.com',
+  1998→      'MO': 'altria.com', 'ABT': 'abbott.com', 'TMO': 'thermofisher.com',
+  1999→      'DHR': 'danaher.com', 'ISRG': 'intuitivesurgical.com', 'SYK': 'stryker.com',
+  2000→      'BSX': 'bsci.com', 'EW': 'edwards.com', 'GILD': 'gilead.com',
+
+[showing lines 1-2000 of 8439; use offset=2001 with limit to continue reading]

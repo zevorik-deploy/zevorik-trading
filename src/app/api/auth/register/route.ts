@@ -5,12 +5,38 @@ import { hashPassword, generateToken } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, phone, password, pin } = body
+    const { name, email, phone, password, pin, otpVerified } = body
 
     // Validate all required fields
     if (!name || !email || !phone || !password || !pin) {
       return NextResponse.json(
         { error: 'Name, email, phone, password, and PIN are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate OTP was verified
+    if (!otpVerified) {
+      return NextResponse.json(
+        { error: 'Email belum diverifikasi. Silakan verifikasi OTP terlebih dahulu.' },
+        { status: 400 }
+      )
+    }
+
+    // Double check that OTP was actually verified in our database
+    const verifiedOTP = await db.oTP.findFirst({
+      where: {
+        email,
+        type: 'register',
+        verified: true,
+        expiresAt: { gt: new Date(Date.now() - 10 * 60 * 1000) }, // within 10 minutes
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (!verifiedOTP) {
+      return NextResponse.json(
+        { error: 'Verifikasi OTP tidak valid atau sudah kadaluarsa. Silakan coba lagi.' },
         { status: 400 }
       )
     }
@@ -27,7 +53,7 @@ export async function POST(request: NextRequest) {
     const existingEmail = await db.user.findUnique({ where: { email } })
     if (existingEmail) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: 'Email sudah terdaftar' },
         { status: 409 }
       )
     }
@@ -36,7 +62,7 @@ export async function POST(request: NextRequest) {
     const existingPhone = await db.user.findUnique({ where: { phone } })
     if (existingPhone) {
       return NextResponse.json(
-        { error: 'Phone number already registered' },
+        { error: 'Nomor telepon sudah terdaftar' },
         { status: 409 }
       )
     }
@@ -45,7 +71,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
     const hashedPin = await hashPassword(pin)
 
-    // Create user
+    // Create user with emailVerified = true since OTP was verified
     const user = await db.user.create({
       data: {
         name,
@@ -56,10 +82,11 @@ export async function POST(request: NextRequest) {
         balance: 0,
         role: 'investor',
         kycStatus: 'pending',
+        emailVerified: true,
       },
     })
 
-    // Welcome notification - use ZEVORIK (not ZEVORIK)
+    // Welcome notification
     await db.notification.create({
       data: {
         userId: user.id,
@@ -80,6 +107,7 @@ export async function POST(request: NextRequest) {
         balance: user.balance,
         role: user.role,
         kycStatus: user.kycStatus,
+        emailVerified: user.emailVerified,
         totalDeposit: user.totalDeposit,
         totalTrading: user.totalTrading,
         bankName: user.bankName,

@@ -52,7 +52,7 @@ const FAQ_DATA = [
   {
     id: 'faq_9',
     question: 'Bagaimana cara melakukan verifikasi KYC?',
-    answer: 'Kunjungi halaman Profil dan pilih menu Verifikasi KYC. Isi data diri Anda termasuk nama lengkap, nomor KTP, alamat, pekerjaan, dan rentang penghasilan. Verifikasi diproses otomatis untuk demo.',
+    answer: 'Kunjungi halaman Profil dan pilih menu Verifikasi KYC. Isi data diri Anda termasuk nama lengkap, nomor KTP, alamat, pekerjaan, dan rentang penghasilan. Verifikasi diproses dalam 1x24 jam.',
     category: 'kyc',
   },
   {

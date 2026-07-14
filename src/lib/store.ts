@@ -14,6 +14,7 @@ interface User {
   bankHolder?: string
   totalDeposit?: number
   totalTrading?: number
+  emailVerified?: boolean
 }
 
 interface AuthState {

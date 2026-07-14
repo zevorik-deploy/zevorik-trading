@@ -5,11 +5,14 @@ import { hashPassword } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { phone, newPassword } = body
+    const { email, phone, newPassword, otpVerified } = body
 
-    if (!phone || !newPassword) {
+    // Support both email and phone lookup
+    const identifier = email || phone
+
+    if (!identifier || !newPassword) {
       return NextResponse.json(
-        { error: 'Phone and newPassword are required' },
+        { error: 'Email/phone and newPassword are required' },
         { status: 400 }
       )
     }
@@ -21,14 +24,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await db.user.findUnique({
-      where: { phone },
+    // OTP verification is required
+    if (!otpVerified) {
+      return NextResponse.json(
+        { error: 'Verifikasi OTP diperlukan untuk reset password' },
+        { status: 400 }
+      )
+    }
+
+    // Find user by email or phone
+    const user = await db.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { phone: identifier },
+        ],
+      },
     })
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Phone number not registered' },
+        { error: 'Akun tidak ditemukan' },
         { status: 404 }
+      )
+    }
+
+    // Verify OTP was actually verified in database
+    const verifiedOTP = await db.oTP.findFirst({
+      where: {
+        email: user.email,
+        type: 'forgot_password',
+        verified: true,
+        expiresAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (!verifiedOTP) {
+      return NextResponse.json(
+        { error: 'Verifikasi OTP tidak valid atau sudah kadaluarsa' },
+        { status: 400 }
       )
     }
 

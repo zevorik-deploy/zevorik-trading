@@ -214,7 +214,7 @@ function LogoWithFallback({ src, alt, size, code, className = '' }: { src: strin
 // LOGIN / REGISTER PAGE (2-Step with PIN)
 // ============================================
 function LoginPage() {
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'pin'>('login')
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'pin' | 'otp'>('login')
   const [identifier, setIdentifier] = useState('') // email or phone
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -229,11 +229,20 @@ function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [tempToken, setTempToken] = useState<string | null>(null)
+
+  // OTP state
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
+  const [otpRefs, setOtpRefs] = useState<(HTMLInputElement | null)[]>([])
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpVerified, setOtpVerified] = useState(false)
+  const [otpResendTimer, setOtpResendTimer] = useState(0)
   const login = useAuthStore((s) => s.login)
 
   const pinRefs = useRef<(HTMLInputElement | null)[]>([])
   const registerPinRefs = useRef<(HTMLInputElement | null)[]>([])
   const confirmPinRefs = useRef<(HTMLInputElement | null)[]>([])
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const handlePinChange = (index: number, value: string, pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
     if (!/^\d*$/.test(value)) return
@@ -259,6 +268,94 @@ function LoginPage() {
     const nextIndex = Math.min(pasted.length, 5)
     refs.current[nextIndex]?.focus()
   }
+
+  // OTP helpers
+  const maskEmail = (emailAddr: string) => {
+    if (!emailAddr) return ''
+    const [local, domain] = emailAddr.split('@')
+    if (!domain) return emailAddr
+    const masked = local.length <= 1 ? local : local[0] + '***'
+    return `${masked}@${domain}`
+  }
+
+  // Send OTP for registration
+  const handleSendOtp = async () => {
+    if (!email) { toast({ title: 'Error', description: 'Masukkan email terlebih dahulu', variant: 'destructive' }); return }
+    setOtpLoading(true)
+    try {
+      const res = await fetch('/api/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, type: 'register' })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setOtpSent(true)
+      setOtpResendTimer(60)
+      toast({ title: 'OTP Terkirim!', description: `Kode verifikasi dikirim ke ${maskEmail(email)}` })
+      setAuthMode('otp')
+      setTimeout(() => otpInputRefs.current[0]?.focus(), 100)
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Gagal mengirim OTP', variant: 'destructive' })
+    } finally { setOtpLoading(false) }
+  }
+
+  // Verify OTP
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const code = otpCode.join('')
+    if (code.length !== 6) { toast({ title: 'Error', description: 'Masukkan 6 digit kode OTP', variant: 'destructive' }); return }
+    setOtpLoading(true)
+    try {
+      const res = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, type: 'register' })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setOtpVerified(true)
+      toast({ title: 'Email Terverifikasi!', description: 'Email Anda berhasil diverifikasi' })
+      // Now proceed with registration
+      await doRegister()
+    } catch (err: unknown) {
+      toast({ title: 'Verifikasi Gagal', description: err instanceof Error ? err.message : 'Kode OTP salah', variant: 'destructive' })
+      setOtpCode(['', '', '', '', '', ''])
+      setTimeout(() => otpInputRefs.current[0]?.focus(), 100)
+    } finally { setOtpLoading(false) }
+  }
+
+  // Actual registration after OTP verified
+  const doRegister = async () => {
+    const pinStr = registerPin.join('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, password, pin: pinStr, otpVerified: true })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (data.user?.role === 'admin') {
+        localStorage.setItem('adminId', data.user.id)
+        localStorage.setItem('adminToken', data.token)
+        window.location.href = '/admin'
+        return
+      }
+      login(data.user, data.token)
+      toast({ title: 'Registrasi Berhasil!', description: `Selamat datang, ${data.user.name}!` })
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Terjadi kesalahan', variant: 'destructive' })
+    } finally { setLoading(false) }
+  }
+
+  // OTP resend timer
+  useEffect(() => {
+    if (otpResendTimer <= 0) return
+    const timer = setTimeout(() => setOtpResendTimer(otpResendTimer - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [otpResendTimer])
 
   // Step 1: Login with identifier + password
   const handleLoginStep1 = async (e: React.FormEvent) => {
@@ -333,7 +430,7 @@ function LoginPage() {
     } finally { setLoading(false) }
   }
 
-  // Register
+  // Register - validates fields then sends OTP
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !email || !phone || !password || !confirmPassword) {
@@ -362,30 +459,13 @@ function LoginPage() {
       toast({ title: 'Error', description: 'Anda harus menyetujui proses pendaftaran', variant: 'destructive' })
       return
     }
-    setLoading(true)
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, pin: pinStr })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      if (data.user?.role === 'admin') {
-        localStorage.setItem('adminId', data.user.id)
-        localStorage.setItem('adminToken', data.token)
-        window.location.href = '/admin'
-        return
-      }
-      login(data.user, data.token)
-      toast({ title: 'Registrasi Berhasil!', description: `Selamat datang, ${data.user.name}!` })
-    } catch (err: unknown) {
-      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Terjadi kesalahan', variant: 'destructive' })
-    } finally { setLoading(false) }
+    // All validations passed — send OTP
+    await handleSendOtp()
   }
 
   const getHeaderText = () => {
     if (authMode === 'pin') return { title: 'Verifikasi PIN', subtitle: 'Masukkan 6 digit PIN keamanan Anda untuk melanjutkan login.' }
+    if (authMode === 'otp') return { title: 'Verifikasi Email', subtitle: `Masukkan 6 digit kode OTP yang dikirim ke ${maskEmail(email)}` }
     if (authMode === 'register') return { title: 'Daftar ZEVORIK', subtitle: 'Buat akun investor untuk akses portofolio, trading, dan layanan investor ZEVORIK.' }
     return { title: 'Masuk Investor ZEVORIK', subtitle: 'Akses akun ZEVORIK untuk memantau portofolio, pergerakan saham, dan aktivitas profit.' }
   }
@@ -465,7 +545,7 @@ function LoginPage() {
                 <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
               </div>
             </div>
-            {authMode !== 'pin' && (
+            {authMode !== 'pin' && authMode !== 'otp' && (
               <button
                 onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
                 className="h-8 px-4 rounded-xl bg-[#1d4ed8] text-white text-[10px] font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1"
@@ -484,7 +564,7 @@ function LoginPage() {
                 <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
               </div>
             </div>
-            {authMode !== 'pin' && (
+            {authMode !== 'pin' && authMode !== 'otp' && (
               <button
                 onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
                 className="h-9 px-5 rounded-xl bg-[#1d4ed8] text-white text-xs font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1.5"
@@ -529,6 +609,15 @@ function LoginPage() {
                   <div className="h-6 px-3 rounded-full bg-green-500/20 border border-green-400/30 flex items-center gap-1.5 mb-2">
                     <Lock className="w-3 h-3 text-green-300" />
                     <span className="text-[8px] font-black text-green-300 tracking-wide">VERIFIKASI PIN</span>
+                  </div>
+                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
+                </>
+              ) : authMode === 'otp' ? (
+                <>
+                  <div className="h-6 px-3 rounded-full bg-cyan-500/20 border border-cyan-400/30 flex items-center gap-1.5 mb-2">
+                    <Mail className="w-3 h-3 text-cyan-300" />
+                    <span className="text-[8px] font-black text-cyan-300 tracking-wide">VERIFIKASI EMAIL</span>
                   </div>
                   <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
                   <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
@@ -609,6 +698,73 @@ function LoginPage() {
                   className="text-center text-[10px] font-bold text-slate-500 hover:text-[#3b82f6] transition-colors">
                   ← Kembali ke Login
                 </button>
+              </form>
+            )}
+
+            {/* ===== OTP VERIFICATION MODE ===== */}
+            {authMode === 'otp' && (
+              <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4 flex-1">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Mail className="w-5 h-5 text-cyan-500" />
+                  <span className="text-[11px] font-black text-cyan-500 uppercase tracking-widest">Kode OTP</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  {otpCode.map((digit, i) => (
+                    <input
+                      key={i}
+                      ref={el => { otpInputRefs.current[i] = el }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => {
+                        if (!/^\d*$/.test(e.target.value)) return
+                        const newOtp = [...otpCode]
+                        newOtp[i] = e.target.value.slice(-1)
+                        setOtpCode(newOtp)
+                        if (e.target.value && i < 5) otpInputRefs.current[i + 1]?.focus()
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Backspace' && !otpCode[i] && i > 0) otpInputRefs.current[i - 1]?.focus()
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault()
+                        const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+                        const newOtp = [...Array(6)].map((_, idx) => pasted[idx] || '')
+                        setOtpCode(newOtp)
+                        const nextIdx = Math.min(pasted.length, 5)
+                        otpInputRefs.current[nextIdx]?.focus()
+                      }}
+                      className="w-11 h-13 rounded-xl bg-slate-50 border-2 border-slate-200 text-center text-[18px] font-black text-slate-900 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all"
+                    />
+                  ))}
+                </div>
+                <p className="text-center text-[9px] font-semibold text-slate-400">
+                  Kode OTP 6 digit dikirim ke <span className="font-black text-cyan-600">{maskEmail(email)}</span>
+                </p>
+                <button type="submit" disabled={otpLoading || otpCode.join('').length !== 6}
+                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                  style={{ background: 'linear-gradient(135deg, #0e7490 0%, #06b6d4 50%, #22d3ee 100%)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    {otpLoading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <><Mail className="w-4 h-4" />VERIFIKASI OTP</>}
+                  </span>
+                </button>
+                <div className="flex items-center justify-center gap-2">
+                  <button type="button" onClick={() => { setAuthMode('register'); setOtpCode(['', '', '', '', '', '']); }}
+                    className="text-[10px] font-bold text-slate-500 hover:text-[#3b82f6] transition-colors">
+                    ← Kembali ke Daftar
+                  </button>
+                  <span className="text-slate-300">|</span>
+                  {otpResendTimer > 0 ? (
+                    <span className="text-[10px] font-bold text-slate-400">Kirim ulang ({otpResendTimer}s)</span>
+                  ) : (
+                    <button type="button" onClick={handleSendOtp} disabled={otpLoading}
+                      className="text-[10px] font-bold text-[#3b82f6] hover:underline disabled:opacity-50">
+                      Kirim Ulang OTP
+                    </button>
+                  )}
+                </div>
               </form>
             )}
 
@@ -880,6 +1036,21 @@ function Dashboard() {
   const [withdrawCryptoMethod, setWithdrawCryptoMethod] = useState('USDT_TRC20')
   const [withdrawAccountNumber, setWithdrawAccountNumber] = useState('')
   const [withdrawAccountHolder, setWithdrawAccountHolder] = useState('')
+
+  // ============ WITHDRAW OTP STATE ============
+  const [withdrawOtpSent, setWithdrawOtpSent] = useState(false)
+  const [withdrawOtpCode, setWithdrawOtpCode] = useState(['', '', '', '', '', ''])
+  const [withdrawOtpVerified, setWithdrawOtpVerified] = useState(false)
+  const [withdrawOtpLoading, setWithdrawOtpLoading] = useState(false)
+  const [withdrawOtpTimer, setWithdrawOtpTimer] = useState(0)
+  const withdrawOtpRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  // Withdraw OTP timer
+  useEffect(() => {
+    if (withdrawOtpTimer <= 0) return
+    const timer = setTimeout(() => setWithdrawOtpTimer(withdrawOtpTimer - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [withdrawOtpTimer])
 
 
   const [profileEdit, setProfileEdit] = useState(false)
@@ -2909,7 +3080,6 @@ function Dashboard() {
   // ============ DEPOSIT ============
   const handleDeposit = async () => {
     if (!user || !depositAmount) return
-    if (user.accountType === 'demo') { toast({ title: 'Akun demo tidak dapat deposit', variant: 'destructive' }); return }
     const amount = parseFloat(depositAmount)
     if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
     setDepositLoading(true)
@@ -2923,10 +3093,53 @@ function Dashboard() {
     finally { setDepositLoading(false) }
   }
 
+  // ============ WITHDRAW OTP ============
+  const handleSendWithdrawOtp = async () => {
+    if (!user?.email) { toast({ title: 'Error', description: 'Email tidak ditemukan', variant: 'destructive' }); return }
+    setWithdrawOtpLoading(true)
+    try {
+      const res = await fetch('/api/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, type: 'withdrawal' })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setWithdrawOtpSent(true)
+      setWithdrawOtpTimer(60)
+      toast({ title: 'OTP Terkirim!', description: `Kode verifikasi dikirim ke ${user.email.replace(/(.{1})(.*)(@.*)/, '$1***$3')}` })
+      setTimeout(() => withdrawOtpRefs.current[0]?.focus(), 100)
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Gagal mengirim OTP', variant: 'destructive' })
+    } finally { setWithdrawOtpLoading(false) }
+  }
+
+  const handleVerifyWithdrawOtp = async () => {
+    if (!user?.email) return
+    const code = withdrawOtpCode.join('')
+    if (code.length !== 6) { toast({ title: 'Error', description: 'Masukkan 6 digit kode OTP', variant: 'destructive' }); return }
+    setWithdrawOtpLoading(true)
+    try {
+      const res = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, code, type: 'withdrawal' })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setWithdrawOtpVerified(true)
+      toast({ title: 'OTP Terverifikasi!', description: 'Anda dapat melanjutkan withdrawal' })
+    } catch (err: unknown) {
+      toast({ title: 'Verifikasi Gagal', description: err instanceof Error ? err.message : 'Kode OTP salah', variant: 'destructive' })
+      setWithdrawOtpCode(['', '', '', '', '', ''])
+      setTimeout(() => withdrawOtpRefs.current[0]?.focus(), 100)
+    } finally { setWithdrawOtpLoading(false) }
+  }
+
   // ============ WITHDRAW ============
   const handleWithdraw = async () => {
     if (!user || !withdrawAmount) return
-    if (user.accountType === 'demo') { toast({ title: 'Akun demo tidak dapat withdraw', variant: 'destructive' }); return }
+    if (!withdrawOtpVerified) { toast({ title: 'Verifikasi OTP Terlebih Dahulu', description: 'Kirim dan verifikasi OTP sebelum withdrawal', variant: 'destructive' }); return }
     const amount = parseFloat(withdrawAmount)
     const isKycVerified = user?.kycStatus === 'verified'
     const minWithdraw = isKycVerified ? 50000 : 250000
@@ -2940,34 +3153,18 @@ function Dashboard() {
     setWithdrawLoading(true)
     try {
       const methodName = withdrawCategory === 'bank' ? withdrawBankMethod : withdrawCategory === 'ewallet' ? withdrawEwalletMethod : withdrawCryptoMethod
-      const res = await fetch('/api/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, bankName: methodName, bankAccount: withdrawAccountNumber || user.bankAccount || '0000000', bankHolder: withdrawAccountHolder || user.name }) })
+      const res = await fetch('/api/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, bankName: methodName, bankAccount: withdrawAccountNumber || user.bankAccount || '0000000', bankHolder: withdrawAccountHolder || user.name, otpVerified: true }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       const adminFee = data.adminFee || Math.round(amount * 0.10)
       const netAmount = data.netAmount || (amount - adminFee)
       toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} via ${methodName}. Biaya admin 10%: ${formatRupiah(adminFee)}. Diterima: ${formatRupiah(netAmount)}` })
-      setWithdrawAmount(''); setWithdrawAccountNumber(''); setWithdrawAccountHolder(''); fetchPortfolio(); fetchWithdrawals()
+      setWithdrawAmount(''); setWithdrawAccountNumber(''); setWithdrawAccountHolder(''); setWithdrawOtpVerified(false); setWithdrawOtpSent(false); setWithdrawOtpCode(['', '', '', '', '', '']); fetchPortfolio(); fetchWithdrawals()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { setWithdrawLoading(false) }
   }
 
-  // ============ DEMO BALANCE REQUEST ============
-  const handleDemoBalanceRequest = async () => {
-    if (!user || !demoRequestAmount) return
-    const amount = parseFloat(demoRequestAmount)
-    if (amount <= 0) { toast({ title: 'Masukkan jumlah saldo', variant: 'destructive' }); return }
-    if (amount > 1000000000) { toast({ title: 'Maksimal Rp 1.000.000.000 per request', variant: 'destructive' }); return }
-    setDemoRequestLoading(true)
-    try {
-      const res = await fetch('/api/demo/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      updateBalance(data.newBalance)
-      toast({ title: 'Saldo Demo Ditambahkan! 🎮', description: `+${formatRupiah(amount)} saldo virtual telah ditambahkan` })
-      setDemoRequestAmount('')
-    } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
-    finally { setDemoRequestLoading(false) }
-  }
+
 
   // ============ WATCHLIST ============
   const toggleWatchlist = async (stockId: string) => {
@@ -3508,12 +3705,6 @@ function Dashboard() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] font-black tracking-wider block">RINGKASAN SALDO</span>
-                          {isDemo && (
-                            <div className="h-4 px-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center gap-0.5">
-                              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
-                              <span className="text-[6px] font-black text-amber-300">DEMO</span>
-                            </div>
-                          )}
                         </div>
                         <span className="text-[7px] font-bold text-blue-300/70">Selamat datang, {user?.name?.split(' ')[0]}</span>
                       </div>
@@ -3526,17 +3717,11 @@ function Dashboard() {
                   {/* Main Balance — includes live P&L from active trading positions */}
                   <div className="mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">{isDemo ? 'Saldo Virtual' : 'Total Saldo'}</span>
+                      <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">Total Saldo</span>
                       {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
                         <div className="h-4 px-2 rounded-full bg-red-400/20 border border-red-400/30 flex items-center gap-1 animate-pulse">
                           <Zap className="w-2.5 h-2.5 text-red-300" />
                           <span className="text-[7px] font-black text-red-300 tracking-wide">LIVE</span>
-                        </div>
-                      )}
-                      {isDemo && (
-                        <div className="h-4 px-2 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center gap-1">
-                          <Sparkles className="w-2.5 h-2.5 text-amber-300" />
-                          <span className="text-[7px] font-black text-amber-300 tracking-wide">DEMO</span>
                         </div>
                       )}
                     </div>
@@ -3561,7 +3746,6 @@ function Dashboard() {
                   </div>
 
                   {/* Dual Wallets — Dompet Utama shows live balance */}
-                  {!isDemo && (
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
                     <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 mb-1.5">
@@ -3586,60 +3770,20 @@ function Dashboard() {
                       <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
-                  )}
-
-                  {/* Demo Balance Request (only for demo accounts) */}
-                  {isDemo && (
-                  <div className="rounded-xl p-3 bg-amber-400/10 border border-amber-400/20 backdrop-blur-sm mb-4">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      <span className="text-[9px] font-black text-amber-200 uppercase tracking-wider">Request Saldo Demo</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <input type="number" value={demoRequestAmount} onChange={(e) => setDemoRequestAmount(e.target.value)} placeholder="Jumlah saldo"
-                        className="flex-1 h-9 rounded-xl bg-white/10 border border-white/15 px-3 text-[12px] font-semibold text-white outline-none focus:border-amber-400/50 placeholder:text-white/30" />
-                      <button onClick={handleDemoBalanceRequest} disabled={demoRequestLoading}
-                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 text-[9px] font-black hover:from-amber-300 hover:to-amber-400 transition-all disabled:opacity-60 flex items-center gap-1.5">
-                        {demoRequestLoading ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><Plus className="w-3.5 h-3.5" />Tambah</>}
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1.5 mt-2">
-                      {['10000000', '50000000', '100000000', '500000000'].map(a => (
-                        <button key={a} onClick={() => setDemoRequestAmount(a)} className="h-7 rounded-lg bg-white/8 border border-white/10 text-[7px] font-bold text-amber-200 hover:bg-amber-400/20 hover:border-amber-400/30 transition-all">
-                          {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  )}
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-3 gap-2">
-                    {isDemo ? (
-                      <>
-                        <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-amber-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-amber-500/25 active:scale-[0.97]">
-                          <Sparkles className="w-3.5 h-3.5" />Saldo
-                        </button>
-                        <button disabled className="h-10 rounded-xl bg-white/5 border border-white/10 text-white/30 text-[9px] font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                          <Minus className="w-3.5 h-3.5" />Tarik
-                        </button>
-                        <button onClick={() => setActiveTab('market')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                          <BarChart3 className="w-3.5 h-3.5" />Pasar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
-                          <Plus className="w-3.5 h-3.5" />Deposit
-                        </button>
-                        <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                          <Minus className="w-3.5 h-3.5" />Tarik
-                        </button>
-                        <button onClick={() => setActiveTab('market')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                          <BarChart3 className="w-3.5 h-3.5" />Pasar
-                        </button>
-                      </>
-                    )}
+                    <>
+                      <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
+                        <Plus className="w-3.5 h-3.5" />Deposit
+                      </button>
+                      <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                        <Minus className="w-3.5 h-3.5" />Tarik
+                      </button>
+                      <button onClick={() => setActiveTab('market')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                        <BarChart3 className="w-3.5 h-3.5" />Pasar
+                      </button>
+                    </>
                   </div>
                 </div>
               </div>
@@ -6069,9 +6213,9 @@ function Dashboard() {
                           <span className="text-[7px] font-black text-green-400">LIVE</span>
                         </span>
                       )}
-                      <span className={`h-5 px-2.5 rounded-full text-[7px] font-black flex items-center gap-1 border ${isDemo ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' : 'bg-green-500/15 border-green-500/30 text-green-400'}`}>
-                        <span className={`w-1 h-1 rounded-full ${isDemo ? 'bg-amber-400' : 'bg-green-400'}`} />
-                        {isDemo ? 'DEMO' : 'REAL'}
+                      <span className="h-5 px-2.5 rounded-full text-[7px] font-black flex items-center gap-1 border bg-green-500/15 border-green-500/30 text-green-400">
+                        <span className="w-1 h-1 rounded-full bg-green-400" />
+                        REAL
                       </span>
                       <button onClick={() => { fetchPortfolio(); fetchTransactions(); }} className="h-6 w-6 rounded-lg bg-white/5 border border-white/10 grid place-items-center hover:border-blue-500/30 hover:bg-white/10 transition-all">
                         <RefreshCw className="w-3 h-3 text-blue-300/60" />
@@ -6250,20 +6394,11 @@ function Dashboard() {
                   <Plus className="w-3.5 h-3.5" />
                   Deposit
                 </button>
-                {!isDemo && (
-                  <button onClick={() => setActiveTab('finance')}
-                    className="h-10 rounded-xl flex items-center justify-center gap-1.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-red-400 hover:border-red-500/30 transition-all active:scale-[0.97]">
-                    <Minus className="w-3.5 h-3.5" />
-                    Withdraw
-                  </button>
-                )}
-                {isDemo && (
-                  <button onClick={() => setActiveTab('finance')}
-                    className="h-10 rounded-xl flex items-center justify-center gap-1.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-amber-400 hover:border-amber-500/30 transition-all active:scale-[0.97]">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Saldo Demo
-                  </button>
-                )}
+                <button onClick={() => setActiveTab('finance')}
+                  className="h-10 rounded-xl flex items-center justify-center gap-1.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-red-400 hover:border-red-500/30 transition-all active:scale-[0.97]">
+                  <Minus className="w-3.5 h-3.5" />
+                  Withdraw
+                </button>
               </div>
 
               {/* ════════ SUB-TAB: ORDER / POSISI / RIWAYAT ════════ */}
@@ -6702,66 +6837,16 @@ function Dashboard() {
             <div className="max-w-lg mx-auto">
               {/* Finance Tabs */}
               <div className="flex gap-2 mb-4">
-                <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? (isDemo ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-900 shadow-md shadow-amber-500/20' : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20') : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
-                  {isDemo ? <Sparkles className="w-3.5 h-3.5 inline mr-1" /> : <Plus className="w-3.5 h-3.5 inline mr-1" />}{isDemo ? 'Saldo Demo' : 'Deposit'}
+                <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+                  <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
                 </button>
-                {!isDemo && (
                 <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'withdraw' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
                   <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
                 </button>
-                )}
               </div>
 
-              {/* Demo Account: Balance Request Instead of Deposit */}
-              {isDemo && financeTab === 'deposit' ? (
-                <>
-                  {/* Demo Balance Info */}
-                  <div className="rounded-2xl p-4 bg-gradient-to-br from-amber-500/10 to-amber-400/5 border border-amber-500/20 mb-3">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-5 h-5 text-amber-500" />
-                      <div>
-                        <span className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Akun Demo</span>
-                        <span className="block text-[8px] font-bold text-amber-500/70">Saldo virtual — tidak dapat ditarik</span>
-                      </div>
-                    </div>
-                    <b className="block text-2xl font-black text-amber-600 mb-1">{formatRupiah(user?.balance || 0)}</b>
-                    <span className="text-[8px] font-bold text-amber-500/50">Saldo saat ini</span>
-                  </div>
-
-                  {/* Demo Balance Request Form */}
-                  <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                    <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Tambah Saldo Demo</label>
-                    <input type="number" value={demoRequestAmount} onChange={(e) => setDemoRequestAmount(e.target.value)} placeholder="Masukkan jumlah saldo"
-                      className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all mb-2" />
-                    <div className="grid grid-cols-4 gap-1.5 mb-4">
-                      {['10000000', '50000000', '100000000', '250000000', '500000000', '750000000', '1000000000'].map(a => (
-                        <button key={a} onClick={() => setDemoRequestAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-amber-500 hover:bg-gradient-to-r hover:from-amber-500 hover:to-amber-400 hover:text-slate-900 hover:border-transparent transition-all">
-                          {parseFloat(a) >= 1e9 ? `${(parseFloat(a) / 1e9).toFixed(0)}M` : parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={handleDemoBalanceRequest} disabled={demoRequestLoading}
-                      className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-900">
-                      {demoRequestLoading ? (
-                        <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
-                      ) : (
-                        <><Sparkles className="w-4 h-4" />Tambah Saldo Demo</>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Demo Notice */}
-                  <div className="rounded-xl p-3 bg-amber-500/5 border border-amber-500/10 mb-4">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-[9px] font-bold text-amber-600 mb-0.5">Akun Demo</p>
-                        <p className="text-[8px] text-amber-500/70 leading-relaxed">Saldo demo adalah saldo virtual yang tidak memiliki nilai riil. Anda dapat menambah saldo demo kapan saja untuk belajar trading. Akun demo <b>TIDAK DAPAT melakukan withdraw</b>.</p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : !isDemo && financeTab === 'deposit' ? (
+              {/* Deposit Section */}
+              {financeTab === 'deposit' ? (
                 <>
                   {depositStep === 'amount' ? (
                     <motion.div key="deposit-amount" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}>
@@ -7135,8 +7220,79 @@ function Dashboard() {
                       </div>
                     )}
 
+                    {/* OTP Verification for Withdrawal */}
+                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Mail className="w-4 h-4 text-[#3b82f6]" />
+                        <span className="text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">Verifikasi Email</span>
+                        {withdrawOtpVerified && (
+                          <span className="h-4 px-1.5 rounded-full bg-green-500/20 border border-green-400/30 text-[7px] font-black text-green-400 flex items-center gap-0.5">
+                            <CheckCircle className="w-2.5 h-2.5" />Verified
+                          </span>
+                        )}
+                      </div>
+                      {!withdrawOtpSent ? (
+                        <button onClick={handleSendWithdrawOtp} disabled={withdrawOtpLoading}
+                          className="w-full h-10 rounded-xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6] text-[10px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#3b82f6]/20 transition-all disabled:opacity-50">
+                          {withdrawOtpLoading ? <div className="w-4 h-4 rounded-full border-2 border-[#3b82f6]/30 border-t-[#3b82f6] animate-spin" /> : <><Mail className="w-3.5 h-3.5" />Kirim OTP ke Email</>}
+                        </button>
+                      ) : !withdrawOtpVerified ? (
+                        <>
+                          <div className="flex items-center justify-center gap-1.5 mb-2">
+                            {withdrawOtpCode.map((digit, i) => (
+                              <input
+                                key={i}
+                                ref={el => { withdrawOtpRefs.current[i] = el }}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                value={digit}
+                                onChange={(e) => {
+                                  if (!/^\d*$/.test(e.target.value)) return
+                                  const newOtp = [...withdrawOtpCode]
+                                  newOtp[i] = e.target.value.slice(-1)
+                                  setWithdrawOtpCode(newOtp)
+                                  if (e.target.value && i < 5) withdrawOtpRefs.current[i + 1]?.focus()
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Backspace' && !withdrawOtpCode[i] && i > 0) withdrawOtpRefs.current[i - 1]?.focus()
+                                }}
+                                onPaste={(e) => {
+                                  e.preventDefault()
+                                  const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+                                  const newOtp = [...Array(6)].map((_, idx) => pasted[idx] || '')
+                                  setWithdrawOtpCode(newOtp)
+                                  const nextIdx = Math.min(pasted.length, 5)
+                                  withdrawOtpRefs.current[nextIdx]?.focus()
+                                }}
+                                className="w-9 h-10 rounded-lg bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center text-[14px] font-black text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all"
+                              />
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={handleVerifyWithdrawOtp} disabled={withdrawOtpLoading || withdrawOtpCode.join('').length !== 6}
+                              className="flex-1 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] font-bold flex items-center justify-center gap-1 hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-50">
+                              {withdrawOtpLoading ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><CheckCircle className="w-3 h-3" />Verifikasi</>}
+                            </button>
+                            {withdrawOtpTimer > 0 ? (
+                              <span className="h-9 px-3 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[9px] font-bold text-[var(--zv-muted)] flex items-center">({withdrawOtpTimer}s)</span>
+                            ) : (
+                              <button onClick={handleSendWithdrawOtp} disabled={withdrawOtpLoading}
+                                className="h-9 px-3 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[9px] font-bold text-[#3b82f6] hover:bg-[#3b82f6]/10 transition-all disabled:opacity-50">
+                                Kirim Ulang
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-[9px] text-green-400 font-bold">
+                          <CheckCircle className="w-3.5 h-3.5" />Email berhasil diverifikasi
+                        </div>
+                      )}
+                    </div>
+
                     {/* Withdraw Button */}
-                    <button onClick={handleWithdraw} disabled={withdrawLoading}
+                    <button onClick={handleWithdraw} disabled={withdrawLoading || !withdrawOtpVerified}
                       className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
                       style={{ background: 'linear-gradient(135deg, #6b2100 0%, #b45309 50%, #f59e0b 100%)' }}>
                       {withdrawLoading ? (
@@ -7305,11 +7461,6 @@ function Dashboard() {
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2 mt-2">
-                    {isDemo && (
-                      <span className="h-5 px-2 rounded-full bg-amber-400/20 border border-amber-400/30 text-[7px] font-bold text-amber-300 flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5" />DEMO
-                      </span>
-                    )}
                     <span className="h-5 px-2 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-[7px] font-bold text-yellow-300 flex items-center gap-1">
                       <Award className="w-2.5 h-2.5" />Gold VIP
                     </span>
@@ -7404,15 +7555,15 @@ function Dashboard() {
               {/* Account Type Badge */}
               <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl grid place-items-center ${isDemo ? 'bg-amber-500/15 border border-amber-500/25' : 'bg-green-500/15 border border-green-500/25'}`}>
-                    {isDemo ? <Sparkles className="w-5 h-5 text-amber-400" /> : <CheckCircle className="w-5 h-5 text-green-400" />}
+                  <div className="w-10 h-10 rounded-xl grid place-items-center bg-green-500/15 border border-green-500/25">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
                   </div>
                   <div className="flex-1">
-                    <span className="block text-[10px] font-black text-[var(--zv-text)]">Akun {isDemo ? 'Demo' : 'Real'}</span>
-                    <span className="block text-[8px] text-[var(--zv-muted)]">{isDemo ? 'Saldo virtual untuk latihan' : 'Saldo riil untuk trading'}</span>
+                    <span className="block text-[10px] font-black text-[var(--zv-text)]">Akun Real</span>
+                    <span className="block text-[8px] text-[var(--zv-muted)]">Saldo riil untuk trading</span>
                   </div>
-                  <span className={`h-5 px-2 rounded-full text-[7px] font-bold flex items-center gap-1 ${isDemo ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-green-500/20 border border-green-400/30 text-green-300'}`}>
-                    {isDemo ? 'DEMO' : 'REAL'}
+                  <span className="h-5 px-2 rounded-full text-[7px] font-bold flex items-center gap-1 bg-green-500/20 border border-green-400/30 text-green-300">
+                    REAL
                   </span>
                 </div>
               </div>

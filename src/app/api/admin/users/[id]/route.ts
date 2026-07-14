@@ -13,7 +13,7 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const { adminId, role, vipLevel, kycStatus, balanceAdjust, name, phone, email, bankName, bankAccount, bankHolder } = body
+    const { adminId, role, kycStatus, balanceAdjust, name, phone, email, bankName, bankAccount, bankHolder } = body
 
     if (!adminId || !(await verifyAdmin(adminId))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
@@ -21,7 +21,6 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = {}
     if (role) updateData.role = role
-    if (vipLevel) updateData.vipLevel = vipLevel
     if (kycStatus) updateData.kycStatus = kycStatus
     if (name) updateData.name = name
     if (phone) updateData.phone = phone
@@ -74,17 +73,9 @@ export async function DELETE(
 
     // Delete related records first
     await db.notification.deleteMany({ where: { userId: id } })
-    await db.bonus.deleteMany({ where: { userId: id } })
     await db.kYC.deleteMany({ where: { userId: id } })
-    await db.dailyCheck.deleteMany({ where: { userId: id } })
-    await db.task.deleteMany({ where: { userId: id } })
-    await db.referralCommission.deleteMany({ where: { referrerId: id } })
-    await db.referralCommission.deleteMany({ where: { referredId: id } })
-    await db.referral.deleteMany({ where: { referrerId: id } })
-    await db.referral.deleteMany({ where: { referredId: id } })
+    await db.oTP.deleteMany({ where: { userId: id } })
     await db.predictionTrade.deleteMany({ where: { userId: id } })
-    await db.stockContract.deleteMany({ where: { userId: id } })
-    await db.investment.deleteMany({ where: { userId: id } })
     await db.watchlist.deleteMany({ where: { userId: id } })
     await db.transaction.deleteMany({ where: { userId: id } })
     await db.portfolio.deleteMany({ where: { userId: id } })

@@ -33,31 +33,32 @@ export async function POST() {
       },
     })
 
-    // Create demo user
-    const hashedPassword = await hashPassword('demo123')
+    // Create test user
+    const hashedPassword = await hashPassword('test123')
     const hashedPin = await hashPassword('123456')
-    const demoUser = await db.user.create({
+    const testUser = await db.user.create({
       data: {
-        name: 'Demo User',
+        name: 'Test User',
         phone: '081234567890',
-        email: 'demo@zevorik.com',
+        email: 'test@zevorik.com',
         password: hashedPassword,
         pin: hashedPin,
         balance: 10000000,
         role: 'investor',
         kycStatus: 'verified',
+        emailVerified: true,
         bankName: 'Bank BCA',
         bankAccount: '1234567890',
-        bankHolder: 'Demo User',
+        bankHolder: 'Test User',
         totalDeposit: 10000000,
         totalTrading: 5000000,
       },
     })
 
-    // Create notification for demo user
+    // Create notification for test user
     await db.notification.create({
       data: {
-        userId: demoUser.id,
+        userId: testUser.id,
         title: 'Selamat Datang! 🎉',
         message: 'Selamat datang di ZEVORIK! Mulai trading sekarang.',
         type: 'system',
@@ -113,7 +114,7 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({ message: 'Database seeded successfully', stocksCreated: stocks.length, demoUser: { phone: '081234567890', password: 'demo123', pin: '123456' } }, { status: 201 })
+    return NextResponse.json({ message: 'Database seeded successfully', stocksCreated: stocks.length, testUser: { phone: '081234567890', password: 'test123', pin: '123456' } }, { status: 201 })
   } catch (error) {
     console.error('Seed error:', error)
     return NextResponse.json({ error: 'Failed to seed database' }, { status: 500 })

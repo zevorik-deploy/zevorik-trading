@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, amount, bankName, bankAccount, bankHolder } = body
+    const { userId, amount, bankName, bankAccount, bankHolder, otpVerified } = body
 
     if (!userId || !amount || !bankName || !bankAccount || !bankHolder) {
       return NextResponse.json(
@@ -13,9 +13,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Require OTP verification for withdrawal
+    if (!otpVerified) {
+      return NextResponse.json(
+        { error: 'Verifikasi OTP diperlukan untuk penarikan dana' },
+        { status: 400 }
+      )
+    }
+
     if (amount <= 0) {
       return NextResponse.json(
-        { error: 'Amount must be greater than 0' },
+        { error: 'Jumlah penarikan harus lebih dari 0' },
         { status: 400 }
       )
     }
@@ -23,16 +31,26 @@ export async function POST(request: NextRequest) {
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'User tidak ditemukan' },
         { status: 404 }
       )
     }
 
-    // Block demo accounts from withdrawing
-    if (user.accountType === 'demo') {
+    // Verify OTP was actually verified
+    const verifiedOTP = await db.oTP.findFirst({
+      where: {
+        email: user.email,
+        type: 'withdrawal',
+        verified: true,
+        expiresAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (!verifiedOTP) {
       return NextResponse.json(
-        { error: 'Akun demo tidak dapat melakukan penarikan. Gunakan akun real untuk withdraw.' },
-        { status: 403 }
+        { error: 'Verifikasi OTP tidak valid atau sudah kadaluarsa' },
+        { status: 400 }
       )
     }
 
@@ -54,18 +72,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // VIP withdrawal limits
-    const withdrawalLimits: Record<string, number> = {
-      Bronze: 50000000,
-      Silver: 100000000,
-      Gold: 250000000,
-      Platinum: 500000000,
-      Diamond: 1000000000,
-    }
-    const limit = withdrawalLimits[user.vipLevel] || 50000000
-    if (amount > limit) {
+    // Maximum withdrawal per transaction
+    const maxWithdraw = 500000000 // 500 million
+    if (amount > maxWithdraw) {
       return NextResponse.json(
-        { error: `Maximum withdrawal for ${user.vipLevel} level is Rp ${limit.toLocaleString('id-ID')}` },
+        { error: `Maximum penarikan per transaksi adalah Rp ${maxWithdraw.toLocaleString('id-ID')}` },
         { status: 400 }
       )
     }

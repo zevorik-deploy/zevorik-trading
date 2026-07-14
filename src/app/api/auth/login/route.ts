@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
           balance: user.balance,
           role: user.role,
           kycStatus: user.kycStatus,
+          emailVerified: user.emailVerified,
           totalDeposit: user.totalDeposit,
           totalTrading: user.totalTrading,
           bankName: user.bankName,
