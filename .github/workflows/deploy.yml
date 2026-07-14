@@ -16,15 +16,26 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASS }}
           port: 22
-          timeout: 60s
-          command_timeout: 10m
+          timeout: 120s
+          command_timeout: 15m
           script: |
             export PATH="/root/.bun/bin:$HOME/.bun/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
             echo "=== Deploying ZEVORIK ==="
-            cd /root/zevorik-trading
+
+            # Find the project directory
+            PROJECT_DIR=""
+            if [ -d "/root/zevorik-trading" ]; then
+              PROJECT_DIR="/root/zevorik-trading"
+            elif [ -d "/home/z/my-project" ]; then
+              PROJECT_DIR="/home/z/my-project"
+            else
+              echo "ERROR: Project directory not found!"
+              exit 1
+            fi
+
+            echo "Project dir: $PROJECT_DIR"
+            cd "$PROJECT_DIR"
 
             echo ">>> Git pull..."
             git fetch --all
@@ -33,28 +44,49 @@ jobs:
             echo ">>> Installing dependencies..."
             bun install
 
+            echo ">>> Writing .env..."
+            cat > .env << 'ENVEOF'
+DATABASE_URL=file:./db/custom.db
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=zevorik@zevorik.com
+SMTP_PASS=v=Z@/B:6q
+EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
+JWT_SECRET=zevorik-jwt-secret-key-2024-secure
+ENVEOF
+
             echo ">>> Pushing database schema..."
             npx prisma db push --accept-data-loss
 
-            echo ">>> Writing .env..."
-            cat > .env << 'ENVEOF'
-            DATABASE_URL=file:./db/custom.db
-            SMTP_HOST=smtp.hostinger.com
-            SMTP_PORT=465
-            SMTP_USER=zevorik@zevorik.com
-            SMTP_PASS=v=Z@/B:6q
-            EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
-            ENVEOF
-
-            echo ">>> Restarting application..."
+            echo ">>> Stopping old process..."
             pkill -f "next-server" 2>/dev/null || true
+            pkill -f "next start" 2>/dev/null || true
             pkill -f "next dev" 2>/dev/null || true
-            pkill -f "bun.*dev" 2>/dev/null || true
-            sleep 2
-            cd /root/zevorik-trading
-            nohup bun run dev > /tmp/zevorik.log 2>&1 &
-            echo "ZEVORIK restarted with PID $!"
+            pkill -f "bun.*next" 2>/dev/null || true
+            sleep 3
 
-            sleep 5
+            echo ">>> Building application..."
+            cd "$PROJECT_DIR"
+            bun run build 2>&1 || echo "Build failed, will use dev mode"
+
+            echo ">>> Starting application..."
+            cd "$PROJECT_DIR"
+            if [ -d ".next" ]; then
+              nohup bun run start -- -p 3000 > /tmp/zevorik.log 2>&1 &
+            else
+              nohup bun run dev > /tmp/zevorik.log 2>&1 &
+            fi
+            APP_PID=$!
+            echo "ZEVORIK started with PID $APP_PID"
+
+            sleep 8
+            echo ">>> Checking status..."
+            if curl -s http://localhost:3000/api/stocks > /dev/null 2>&1; then
+              echo "✅ Application is running!"
+            else
+              echo "⚠️ Application may still be starting..."
+              cat /tmp/zevorik.log 2>/dev/null | tail -20
+            fi
+
             echo "=== Deployment complete! ==="
             echo "Website: https://zevorik.com"
