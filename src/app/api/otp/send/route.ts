@@ -5,7 +5,10 @@ import { sendEmail, generateOTPCode, otpEmailTemplate } from '@/lib/email'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, type } = body // type: 'register' | 'withdrawal' | 'forgot_password'
+    const { email: rawEmail, type } = body // type: 'register' | 'withdrawal' | 'forgot_password'
+
+    // Normalize email to lowercase
+    const email = (rawEmail || '').trim().toLowerCase()
 
     if (!email || !type) {
       return NextResponse.json(
@@ -45,12 +48,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Delete ALL previous OTPs for this email+type (clean up properly)
-    await db.oTP.deleteMany({
-      where: { email, type },
-    })
-
-    // Rate limiting: check if an OTP was recently created (within 60 seconds)
+    // Rate limiting: check if an OTP was recently created (within 60 seconds) BEFORE deleting
     const recentOTP = await db.oTP.findFirst({
       where: {
         email,
@@ -64,6 +62,11 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       )
     }
+
+    // Delete ALL previous OTPs for this email+type (clean up properly)
+    await db.oTP.deleteMany({
+      where: { email, type },
+    })
 
     // Generate new OTP
     const code = generateOTPCode()

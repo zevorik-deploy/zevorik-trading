@@ -4,7 +4,10 @@ import { db } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, code, type } = body
+    const { email: rawEmail, code, type } = body
+
+    // Normalize email to lowercase
+    const email = (rawEmail || '').trim().toLowerCase()
 
     if (!email || !code || !type) {
       return NextResponse.json(

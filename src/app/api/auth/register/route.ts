@@ -5,7 +5,10 @@ import { hashPassword, generateToken } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, phone, password, pin, otpVerified } = body
+    const { name, email: rawEmail, phone, password, pin, otpVerified } = body
+
+    // Normalize email to lowercase immediately
+    const email = (rawEmail || '').trim().toLowerCase()
 
     // Validate all required fields
     if (!name || !email || !phone || !password || !pin) {
@@ -120,7 +123,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         phone: normalizedPhone,
-        email: email.trim().toLowerCase(),
+        email: email,
         password: hashedPassword,
         pin: hashedPin,
         balance: 0,

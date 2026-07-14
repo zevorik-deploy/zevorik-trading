@@ -5,7 +5,10 @@ import { hashPassword } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, phone, newPassword, otpVerified } = body
+    const { email: rawEmail, phone, newPassword, otpVerified } = body
+
+    // Normalize email to lowercase
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : null
 
     // Support both email and phone lookup
     const identifier = email || phone
