@@ -1,0 +1,402 @@
+  1600→                    <button onClick={handleProfileSave} className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[10px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20">
+  1601→                      Simpan Perubahan
+  1602→                    </button>
+  1603→                  </div>
+  1604→                ) : (
+  1605→                  <div className="space-y-2">
+  1606→                    {[
+  1607→                      { label: 'Nama', value: user?.name || '-' },
+  1608→                      { label: 'Email', value: user?.email || '-' },
+  1609→                      { label: 'Bank', value: user?.bankName || '-' },
+  1610→                      { label: 'Rekening', value: user?.bankAccount || '-' },
+  1611→                      { label: 'Pemilik', value: user?.bankHolder || '-' },
+  1612→                    ].map((item, i) => (
+  1613→                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)] last:border-0">
+  1614→                        <span className="text-[9px] font-bold text-[var(--zv-muted)]">{item.label}</span>
+  1615→                        <span className="text-[9px] font-semibold text-[var(--zv-text)]">{item.value}</span>
+  1616→                      </div>
+  1617→                    ))}
+  1618→                  </div>
+  1619→                )}
+  1620→              </div>
+  1621→
+  1622→              {/* Menu Items */}
+  1623→              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden mb-4">
+  1624→                {[
+  1625→                  { icon: <Briefcase className="w-4 h-4 text-[#3b82f6]" />, label: 'Portofolio', desc: 'Lihat portofolio investasi', action: () => setActiveTab('portfolio') },
+  1626→                  { icon: <Wallet className="w-4 h-4 text-[#22c55e]" />, label: 'Keuangan', desc: 'Deposit & penarikan', action: () => setActiveTab('finance') },
+  1627→                  { icon: <History className="w-4 h-4 text-[#f59e0b]" />, label: 'Riwayat', desc: 'Riwayat transaksi', action: () => setActiveTab('history') },
+  1628→                  { icon: <Settings className="w-4 h-4 text-[var(--zv-muted)]" />, label: 'Pengaturan', desc: 'Edit profil & keamanan', action: () => { setProfileForm({ name: user?.name || '', email: user?.email || '', bankName: user?.bankName || '', bankAccount: user?.bankAccount || '', bankHolder: user?.bankHolder || '' }); setProfileEdit(true) } },
+  1629→                  { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : user?.kycStatus === 'pending' ? 'Menunggu verifikasi' : 'Belum verifikasi', action: () => { setShowKycModal(true); fetchKycStatus() } },
+  1630→                  { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => setShowHelpModal(true) },
+  1631→                ].map((item, i) => (
+  1632→                  <button key={i} onClick={item.action} className="w-full flex items-center gap-3 p-3 border-b border-[var(--zv-border)] last:border-0 hover:bg-[var(--zv-surface)] transition-colors">
+  1633→                    {item.icon}
+  1634→                    <div className="flex-1 text-left">
+  1635→                      <span className="block text-[10px] font-bold text-[var(--zv-text)]">{item.label}</span>
+  1636→                      <span className="block text-[7px] text-[var(--zv-muted)]">{item.desc}</span>
+  1637→                    </div>
+  1638→                    <ChevronRight className="w-4 h-4 text-[var(--zv-muted)]" />
+  1639→                  </button>
+  1640→                ))}
+  1641→              </div>
+  1642→
+  1643→              {/* Account Type Badge */}
+  1644→              <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+  1645→                <div className="flex items-center gap-3">
+  1646→                  <div className="w-10 h-10 rounded-xl grid place-items-center bg-green-500/15 border border-green-500/25">
+  1647→                    <CheckCircle className="w-5 h-5 text-green-400" />
+  1648→                  </div>
+  1649→                  <div className="flex-1">
+  1650→                    <span className="block text-[10px] font-black text-[var(--zv-text)]">Akun Real</span>
+  1651→                    <span className="block text-[8px] text-[var(--zv-muted)]">Saldo riil untuk trading</span>
+  1652→                  </div>
+  1653→                  <span className="h-5 px-2 rounded-full text-[7px] font-bold flex items-center gap-1 bg-green-500/20 border border-green-400/30 text-green-300">
+  1654→                    REAL
+  1655→                  </span>
+  1656→                </div>
+  1657→              </div>
+  1658→
+  1659→              {/* Regulatory Footer */}
+  1660→              <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-4 shadow-sm">
+  1661→                <div className="flex items-center justify-center gap-3 mb-2">
+  1662→                  <div className="w-8 h-8 rounded-lg bg-[var(--zv-border)] grid place-items-center"><Shield className="w-4 h-4 text-[#3b82f6]" /></div>
+  1663→                  <div className="w-8 h-8 rounded-lg bg-[var(--zv-border)] grid place-items-center"><CheckCircle className="w-4 h-4 text-[#f59e0b]" /></div>
+  1664→                </div>
+  1665→                <p className="text-center text-[8px] font-black text-[var(--zv-muted)] tracking-wider">ASET GLOBAL • TERDAFTAR & DIAWASI OJK • V1.0</p>
+  1666→              </div>
+  1667→
+  1668→              {/* Logout */}
+  1669→              <button onClick={() => { logout(); toast({ title: 'Berhasil logout' }) }}
+  1670→                className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#ef5350] text-[11px] font-bold flex items-center justify-center gap-2 hover:bg-[var(--zv-border)] transition-colors">
+  1671→                <LogOut className="w-4 h-4" />Keluar
+  1672→              </button>
+  1673→            </motion.div>
+  1674→          )}
+  1675→
+  1676→        </AnimatePresence>
+  1677→      </main>
+  1678→
+  1679→      {/* Trade Confirmation Modal - Tuca Style */}
+  1680→      <AnimatePresence>
+  1681→        {showConfirmTrade && (
+  1682→          <>
+  1683→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowConfirmTrade(false)} />
+  1684→            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto">
+  1685→              <div className="rounded-t-3xl bg-[var(--zv-panel)] border-t border-[var(--zv-border)] p-5" style={{ boxShadow: '0 -10px 40px rgba(0,0,0,0.3)' }}>
+  1686→                <div className="w-10 h-1 rounded-full bg-[var(--zv-border)] mx-auto mb-4" />
+  1687→                <div className="flex items-center gap-3 mb-4">
+  1688→                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${confirmTradeDir === 'NAIK' ? 'bg-green-500/15' : 'bg-red-500/15'}`}>
+  1689→                    {confirmTradeDir === 'NAIK' ? <TrendingUp className="w-6 h-6 text-green-500" /> : <TrendingDown className="w-6 h-6 text-red-500" />}
+  1690→                  </div>
+  1691→                  <div>
+  1692→                    <span className={`text-[10px] font-black ${confirmTradeDir === 'NAIK' ? 'text-green-500' : 'text-red-500'}`}>
+  1693→                      {confirmTradeDir === 'NAIK' ? 'BUY' : 'SELL'} {selectedSinyalStock?.code}
+  1694→                    </span>
+  1695→                    <span className="block text-[8px] text-[var(--zv-muted)]">
+  1696→                      {confirmTradeDir === 'NAIK' ? 'Memprediksi kenaikan harga' : 'Memprediksi penurunan harga'}
+  1697→                    </span>
+  1698→                  </div>
+  1699→                </div>
+  1700→                
+  1701→                <div className="space-y-2 mb-4">
+  1702→                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
+  1703→                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Lot</span>
+  1704→                    <span className="text-[10px] font-black text-[#3b82f6]">{sinyalLots} Lot ({formatRupiah(sinyalAmountFromLots)})</span>
+  1705→                  </div>
+  1706→                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
+  1707→                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Leverage</span>
+  1708→                    <span className="text-[10px] font-black text-amber-400">1:{sinyalLeverage}</span>
+  1709→                  </div>
+  1710→                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
+  1711→                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Effective Position</span>
+  1712→                    <span className="text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(sinyalAmountFromLots * (sinyalLeverage / 100))}</span>
+  1713→                  </div>
+  1714→                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
+  1715→                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Profit/Loss per 1%</span>
+  1716→                    <div className="flex items-center gap-2">
+  1717→                      <span className="text-[9px] font-bold text-green-400">+{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
+  1718→                      <span className="text-[9px] text-[var(--zv-muted)]">/</span>
+  1719→                      <span className="text-[9px] font-bold text-red-400">-{formatRupiah(Math.round(sinyalAmountFromLots * (sinyalLeverage / 100) * 0.01))}</span>
+  1720→                    </div>
+  1721→                  </div>
+  1722→                  <div className="flex justify-between py-2 border-b border-[var(--zv-border)]">
+  1723→                    <span className="text-[10px] text-[var(--zv-muted)] font-bold">Tutup Posisi</span>
+  1724→                    <span className="text-[10px] font-black text-green-400">Manual (Anda tentukan)</span>
+  1725→                  </div>
+  1726→                  <div className="rounded-lg p-2 bg-blue-500/8 border border-blue-500/15">
+  1727→                    <div className="flex items-center gap-1.5">
+  1728→                      <Info className="w-3 h-3 text-blue-400" />
+  1729→                      <span className="text-[8px] font-bold text-blue-400">Posisi terbuka sampai Anda tutup manual. Saldo ikut pergerakan grafik real-time seperti MT5!</span>
+  1730→                    </div>
+  1731→                  </div>
+  1732→                </div>
+  1733→
+  1734→                <button onClick={() => {
+  1735→                  openSinyalPosition(confirmTradeDir)
+  1736→                  setShowConfirmTrade(false)
+  1737→                }}
+  1738→                  className="relative w-full h-14 rounded-xl text-white text-[13px] font-black tracking-wide flex items-center justify-center gap-2 transition-all active:scale-[0.96] overflow-hidden"
+  1739→                  style={confirmTradeDir === 'NAIK'
+  1740→                    ? { background: 'linear-gradient(180deg, #4ade80 0%, #22c55e 30%, #16a34a 70%, #166534 100%)', boxShadow: '0 6px 28px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.2)' }
+  1741→                    : { background: 'linear-gradient(180deg, #f87171 0%, #ef5350 30%, #dc2626 70%, #991b1b 100%)', boxShadow: '0 6px 28px rgba(239,83,80,0.45), 0 2px 8px rgba(239,83,80,0.3), inset 0 1px 0 rgba(255,255,255,0.2)' }
+  1742→                  }>
+  1743→                  <div className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)' }} />
+  1744→                  {confirmTradeDir === 'NAIK' ? <TrendingUp className="w-5 h-5 relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" /> : <TrendingDown className="w-5 h-5 relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />}
+  1745→                  <span className="relative drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">CONFIRM {confirmTradeDir === 'NAIK' ? 'BUY' : 'SELL'}</span>
+  1746→                </button>
+  1747→                <button onClick={() => setShowConfirmTrade(false)} className="w-full h-10 mt-2 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[10px] font-bold text-[var(--zv-muted)] hover:text-[var(--zv-text)] transition-all">
+  1748→                  Batal
+  1749→                </button>
+  1750→              </div>
+  1751→            </motion.div>
+  1752→          </>
+  1753→        )}
+  1754→      </AnimatePresence>
+  1755→
+  1756→      {/* Bottom Navigation */}
+  1757→      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--zv-border)] md:hidden bottom-nav-safe glass-header">
+  1758→        <div className="max-w-7xl mx-auto flex">
+  1759→          {[
+  1760→            { key: 'home', label: 'Beranda', icon: HomeIcon },
+  1761→            { key: 'market', label: 'Quote', icon: BarChart3 },
+  1762→            { key: 'sinyal', label: 'Chart', icon: Activity },
+  1763→            { key: 'saldo', label: 'Trade', icon: Wallet },
+  1764→            { key: 'profil', label: 'Profil', icon: User },
+  1765→          ].map(tab => {
+  1766→            const isActive = activeTab === tab.key
+  1767→            return (
+  1768→              <button key={tab.key} onClick={() => {
+  1769→                setActiveTab(tab.key)
+  1770→              }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[var(--zv-text)]'}`}>
+  1771→                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-b-full" style={{ background: 'linear-gradient(135deg, #3b82f6, #60a5fa)' }} />}
+  1772→                <div className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${isActive ? 'bg-[#3b82f6]/10' : ''}`}>
+  1773→                  <tab.icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+  1774→                  <span className={`text-[9px] font-bold ${isActive ? 'text-[#3b82f6]' : ''}`}>{tab.label}</span>
+  1775→                </div>
+  1776→              </button>
+  1777→            )
+  1778→          })}
+  1779→        </div>
+  1780→      </nav>
+  1781→
+  1782→      {/* Desktop Sidebar Navigation - hidden on mobile */}
+  1783→      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-4 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
+  1784→        {/* Logo */}
+  1785→        <div className="flex flex-col items-center gap-1 mb-3 pb-3 border-b border-[var(--zv-border)]">
+  1786→          <ZevorikLogo size={32} />
+  1787→          <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIK</span>
+  1788→        </div>
+  1789→        {[
+  1790→          { key: 'home', label: 'Beranda', icon: HomeIcon },
+  1791→          { key: 'market', label: 'Quote', icon: BarChart3 },
+  1792→          { key: 'sinyal', label: 'Chart', icon: Activity },
+  1793→          { key: 'saldo', label: 'Trade', icon: Wallet },
+  1794→          { key: 'profil', label: 'Profil', icon: User },
+  1795→          { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
+  1796→          { key: 'finance', label: 'Keuangan', icon: CreditCard },
+  1797→          { key: 'history', label: 'Riwayat', icon: History },
+  1798→        ].map(tab => (
+  1799→          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+  1800→            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
+  1801→            {activeTab === tab.key && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #60a5fa)' }} />}
+  1802→            <tab.icon className="w-5 h-5" />
+  1803→            <span className="text-[7px] lg:text-[8px] font-bold">{tab.label}</span>
+  1804→          </button>
+  1805→        ))}
+  1806→        <div className="mt-auto">
+  1807→          <button onClick={() => { logout(); toast({ title: 'Berhasil logout' }) }}
+  1808→            className="w-full flex flex-col items-center gap-0.5 py-2.5 text-[#ef5350] hover:text-[#ff6b6b] transition-colors">
+  1809→            <LogOut className="w-5 h-5" />
+  1810→            <span className="text-[7px] lg:text-[8px] font-bold">Keluar</span>
+  1811→          </button>
+  1812→        </div>
+  1813→      </nav>
+  1814→
+  1815→      {/* Side Menu */}
+  1816→      <AnimatePresence>
+  1817→        {showSideMenu && (
+  1818→          <>
+  1819→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowSideMenu(false)} />
+  1820→            <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[280px] md:w-[320px] bg-[var(--zv-panel)] border-r border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+  1821→              <div className="p-5" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+  1822→                <div className="flex items-center justify-between mb-4">
+  1823→                  <div className="flex items-center gap-3">
+  1824→                    <div className="w-12 h-12 rounded-full bg-white/20 border border-white/10 grid place-items-center"><User className="w-6 h-6 text-yellow-300" /></div>
+  1825→                    <div className="text-white">
+  1826→                      <b className="block text-[13px] font-black">{user?.name}</b>
+  1827→                      <span className="block text-[9px] text-blue-200">+62 {user?.phone}</span>
+  1828→                    </div>
+  1829→                  </div>
+  1830→                  <button onClick={() => setShowSideMenu(false)} className="w-8 h-8 rounded-full bg-white/10 border border-white/10 grid place-items-center text-white hover:bg-white/20 transition-colors">
+  1831→                    <X className="w-4 h-4" />
+  1832→                  </button>
+  1833→                </div>
+  1834→                <div className="flex items-center gap-2">
+  1835→                  <div className="flex-1 rounded-xl p-2 bg-white/10 border border-white/15 text-center">
+  1836→                    <Wallet className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+  1837→                    <b className="block text-[9px] font-black text-white">{formatRupiah(user?.balance || 0).replace('Rp', '').trim()}</b>
+  1838→                    <span className="block text-[7px] text-blue-200">Saldo</span>
+  1839→                  </div>
+  1840→                  <div className="flex-1 rounded-xl p-2 bg-white/10 border border-white/15 text-center">
+  1841→                    <Briefcase className="w-4 h-4 text-blue-300 mx-auto mb-0.5" />
+  1842→                    <b className="block text-[9px] font-black text-white">{portfolioSummary.totalCurrentValue > 0 ? formatRupiah(portfolioSummary.totalCurrentValue).replace('Rp', '').trim() : '0'}</b>
+  1843→                    <span className="block text-[7px] text-blue-200">Portofolio</span>
+  1844→                  </div>
+  1845→                </div>
+  1846→              </div>
+  1847→              <div className="p-3">
+  1848→                {[
+  1849→                  { icon: <HomeIcon className="w-4 h-4" />, label: 'Beranda', key: 'home' },
+  1850→                  { icon: <BarChart3 className="w-4 h-4" />, label: 'Pasar Global', key: 'market' },
+  1851→                  { icon: <Target className="w-4 h-4" />, label: 'Trading', key: 'sinyal' },
+  1852→                  { icon: <Wallet className="w-4 h-4" />, label: 'Saldo Live', key: 'saldo' },
+  1853→                  { icon: <Briefcase className="w-4 h-4" />, label: 'Portofolio', key: 'portfolio' },
+  1854→                  { icon: <CreditCard className="w-4 h-4" />, label: 'Keuangan', key: 'finance' },
+  1855→                  { icon: <History className="w-4 h-4" />, label: 'Riwayat', key: 'history' },
+  1856→                  { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profil' },
+  1857→                ].map(item => (
+  1858→                  <button key={item.key} onClick={() => { setActiveTab(item.key); setShowSideMenu(false) }}
+  1859→                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold transition-all ${activeTab === item.key ? 'bg-[var(--zv-surface)] text-[#3b82f6] border border-[var(--zv-border)]' : 'text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
+  1860→                    {item.icon}{item.label}
+  1861→                  </button>
+  1862→                ))}
+  1863→                <div className="mt-3 pt-3 border-t border-[var(--zv-border)]">
+  1864→                  <button onClick={() => { logout(); setShowSideMenu(false); toast({ title: 'Berhasil logout' }) }}
+  1865→                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold text-[#ef5350] hover:bg-[var(--zv-surface)] transition-colors">
+  1866→                    <LogOut className="w-4 h-4" />Keluar
+  1867→                  </button>
+  1868→                </div>
+  1869→              </div>
+  1870→            </motion.div>
+  1871→          </>
+  1872→        )}
+  1873→      </AnimatePresence>
+  1874→
+  1875→      {/* Notification Panel */}
+  1876→      <AnimatePresence>
+  1877→        {showNotifPanel && (
+  1878→          <>
+  1879→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowNotifPanel(false)} />
+  1880→            <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[320px] md:w-[400px] bg-[var(--zv-panel)] border-l border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+  1881→              <div className="p-4 border-b border-[var(--zv-border)] flex items-center justify-between" style={{ background: 'linear-gradient(145deg, var(--zv-surface) 0%, var(--zv-panel) 100%)' }}>
+  1882→                <div className="flex items-center gap-2">
+  1883→                  <Bell className="w-4 h-4 text-[#3b82f6]" />
+  1884→                  <h3 className="text-[14px] font-black gradient-text">Notifikasi</h3>
+  1885→                </div>
+  1886→                <div className="flex items-center gap-2">
+  1887→                  <button onClick={() => markNotifRead()} className="text-[9px] font-bold text-[#3b82f6] hover:underline">Tandai dibaca</button>
+  1888→                  <button onClick={() => setShowNotifPanel(false)} className="w-8 h-8 rounded-xl grid place-items-center hover:bg-[var(--zv-surface)] bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
+  1889→                </div>
+  1890→              </div>
+  1891→              <div className="p-3">
+  1892→                {notifications.map(n => (
+  1893→                  <div key={n.id} className={`p-3 rounded-xl mb-2 border transition-colors ${n.isRead ? 'bg-[var(--zv-panel)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>
+  1894→                    <div className="flex items-center gap-2 mb-1">
+  1895→                      <div className="w-6 h-6 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+  1896→                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#3b82f6]" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
+  1897→                      </div>
+  1898→                      <span className="flex-1 text-[9px] font-bold text-[var(--zv-text)]">{n.title}</span>
+  1899→                      {!n.isRead && <span className="w-2 h-2 rounded-full bg-blue-500" />}
+  1900→                    </div>
+  1901→                    <p className="text-[8px] text-[var(--zv-muted)] leading-relaxed">{n.message}</p>
+  1902→                    <span className="block text-[7px] text-[var(--zv-muted)] mt-1">{formatDateTime(n.createdAt)}</span>
+  1903→                  </div>
+  1904→                ))}
+  1905→                {notifications.length === 0 && (
+  1906→                  <div className="text-center py-8">
+  1907→                    <Bell className="w-8 h-8 text-[var(--zv-muted)] mx-auto mb-2" />
+  1908→                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Tidak ada notifikasi</p>
+  1909→                  </div>
+  1910→                )}
+  1911→              </div>
+  1912→            </motion.div>
+  1913→          </>
+  1914→        )}
+  1915→      </AnimatePresence>
+  1916→
+  1917→
+  1918→      {/* Stock Detail Modal */}
+  1919→      <AnimatePresence>
+  1920→        {showStockDetail && selectedStock && (
+  1921→          <>
+  1922→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowStockDetail(false)} />
+  1923→            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-2xl md:mx-auto md:my-auto">
+  1924→              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl">
+  1925→                <div className="flex items-center gap-2">
+  1926→                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">{getRealLogo(selectedStock.code, 40)}</div>
+  1927→                  <div>
+  1928→                    <span className="block text-[12px] font-black text-[var(--zv-text)]">{selectedStock.code}</span>
+  1929→                    <span className="block text-[8px] text-[var(--zv-muted)]">{selectedStock.name}</span>
+  1930→                  </div>
+  1931→                </div>
+  1932→                <button onClick={() => setShowStockDetail(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
+  1933→              </div>
+  1934→
+  1935→              <div className="p-4">
+  1936→                {/* Price */}
+  1937→                <div className="mb-3">
+  1938→                  <span className="block text-2xl font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(selectedStock.price)}</span>
+  1939→                  <div className="flex items-center gap-2 mt-0.5">
+  1940→                    <span className={`text-[11px] font-bold ${selectedStock.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+  1941→                      {selectedStock.changePercent >= 0 ? <TrendingUp className="w-3.5 h-3.5 inline" /> : <TrendingDown className="w-3.5 h-3.5 inline" />}
+  1942→                      {' '}{formatRupiah(selectedStock.change)} ({formatPercent(selectedStock.changePercent)})
+  1943→                    </span>
+  1944→                  </div>
+  1945→                </div>
+  1946→                  {/* Contract Profit Preview */}
+  1947→                  <div className="mb-3 rounded-xl p-3 border border-[var(--zv-border)] bg-[var(--zv-surface)]">
+  1948→                    <div className="flex items-center gap-1.5 mb-2">
+  1949→                      <Package className="w-4 h-4 text-[#3b82f6]" />
+  1950→                      <span className="text-[10px] font-black text-[#3b82f6] uppercase tracking-wider">Info Kontrak</span>
+  1951→                    </div>
+  1952→                    <div className="grid grid-cols-3 gap-2">
+  1953→                      <div className="rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+  1954→                        <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Rate Dasar</span>
+  1955→                        <span className="block text-[12px] font-black text-[#22c55e]">{getStockBaseRate(selectedStock.code)}%</span>
+  1956→                        <span className="block text-[6px] text-[var(--zv-muted)]">per hari</span>
+  1957→                      </div>
+  1958→                      <div className="rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+  1959→                        <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Min. Durasi</span>
+  1960→                        <span className="block text-[12px] font-black text-[#3b82f6]">30</span>
+  1961→                        <span className="block text-[6px] text-[var(--zv-muted)]">hari</span>
+  1962→                      </div>
+  1963→                      <div className="rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
+  1964→                        <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Max. Durasi</span>
+  1965→                        <span className="block text-[12px] font-black text-[#3b82f6]">365</span>
+  1966→                        <span className="block text-[6px] text-[var(--zv-muted)]">hari</span>
+  1967→                      </div>
+  1968→                    </div>
+  1969→                    <div className="mt-2 rounded-lg p-2 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+  1970→                      <div className="flex items-center gap-1 mb-1">
+  1971→                        <Zap className="w-3 h-3 text-[#f59e0b]" />
+  1972→                        <span className="text-[7px] font-bold text-[var(--zv-muted)]">Contoh: Rp 1.000.000 × 30 hari</span>
+  1973→                      </div>
+  1974→                      {(() => {
+  1975→                        const exampleProfit = calcContractProfit(selectedStock, 30, 1000000)
+  1976→                        return (
+  1977→                          <div className="flex items-center justify-between">
+  1978→                            <span className="text-[8px] text-[var(--zv-muted)]">Profit/hari: <b className="text-[#22c55e]">{formatRupiah(exampleProfit.dailyProfitAmount)}</b></span>
+  1979→                            <span className="text-[8px] text-[var(--zv-muted)]">Total: <b className="text-[#22c55e]">{formatRupiah(exampleProfit.totalReturn)}</b></span>
+  1980→                          </div>
+  1981→                        )
+  1982→                      })()}
+  1983→                    </div>
+  1984→                  </div>
+  1985→
+  1986→                {/* Stats */}
+  1987→                <div className="grid grid-cols-4 gap-2 mb-3">
+  1988→                  {[
+  1989→                    { label: 'Open', value: formatRupiah(selectedStock.open) },
+  1990→                    { label: 'High', value: formatRupiah(selectedStock.high) },
+  1991→                    { label: 'Low', value: formatRupiah(selectedStock.low) },
+  1992→                    { label: 'Volume', value: formatNumber(selectedStock.volume) },
+  1993→                  ].map((s, i) => (
+  1994→                    <div key={i} className="rounded-xl p-2 bg-[var(--zv-surface)] text-center">
+  1995→                      <span className="block text-[7px] font-bold text-[var(--zv-muted)]">{s.label}</span>
+  1996→                      <span className="block text-[8px] font-black text-[var(--zv-text)] tabular-nums">{s.value}</span>
+  1997→                    </div>
+  1998→                  ))}
+  1999→                </div>
+
+[showing lines 1600-1999 of 2281; use offset=2000 with limit to continue reading]

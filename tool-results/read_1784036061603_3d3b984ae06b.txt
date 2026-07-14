@@ -1,0 +1,702 @@
+  3992→          {activeTab === 'saldo' && (
+  3993→            <motion.div key="saldo" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
+  3994→              className="flex flex-col gap-3" style={{ minHeight: 'calc(100vh - 140px)' }}>
+  3995→
+  3996→              {(() => {
+  3997→                const activePos = sinyalPositions.filter(p => p.status === 'active')
+  3998→                const closedPos = sinyalPositions.filter(p => p.status === 'won' || p.status === 'lost')
+  3999→                const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
+  4000→                const totalBalance = (user?.balance || 0)
+  4001→                // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
+  4002→                const equity = totalBalance + totalLivePL
+  4003→                const usedMargin = activePos.reduce((s, p) => s + p.amount, 0)
+  4004→                const freeMargin = equity - usedMargin
+  4005→                const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0
+  4006→                const wonCount = closedPos.filter(p => p.status === 'won').length
+  4007→                const lostCount = closedPos.filter(p => p.status === 'lost').length
+  4008→                const totalTrades = closedPos.length
+  4009→                const winRate = totalTrades > 0 ? (wonCount / totalTrades) * 100 : 0
+  4010→                const totalProfitPL = closedPos.filter(p => p.status === 'won').reduce((s, p) => s + (p.closedPL || 0), 0)
+  4011→                const totalLossPL = closedPos.filter(p => p.status === 'lost').reduce((s, p) => s + (p.closedPL || 0), 0)
+  4012→                const netPL = totalProfitPL + totalLossPL
+  4013→                const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  4014→                const todayPL = closedPos.filter(p => p.startTime >= todayStart.getTime()).reduce((s, p) => s + (p.closedPL || 0), 0)
+  4015→                const marginLevelColor = marginLevel > 200 ? '#22c55e' : marginLevel > 100 ? '#f59e0b' : marginLevel > 50 ? '#ef5350' : '#dc2626'
+  4016→                const marginLevelBg = marginLevel > 200 ? 'bg-green-500' : marginLevel > 100 ? 'bg-amber-500' : 'bg-red-500'
+  4017→                const freeMarginColor = freeMargin >= 0 ? (freeMargin > totalBalance * 0.3 ? 'text-green-400' : 'text-cyan-400') : 'text-red-400'
+  4018→
+  4019→                return (
+  4020→                  <>
+  4021→              {/* ════════ ACCOUNT SUMMARY CARD — Premium MT5 Dark ════════ */}
+  4022→              <div className="relative rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(145deg, #080f1e 0%, #0c1a2e 25%, #162544 55%, #1e3a5f 100%)' }}>
+  4023→                {/* Subtle top highlight */}
+  4024→                <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(59,130,246,0.3) 50%, transparent 90%)' }} />
+  4025→                {/* Subtle glow */}
+  4026→                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)' }} />
+  4027→
+  4028→                <div className="relative px-4 pt-4 pb-3">
+  4029→                  {/* Top row: Account badge + Refresh */}
+  4030→                  <div className="flex items-center justify-between mb-3">
+  4031→                    <div className="flex items-center gap-2">
+  4032→                      <Wallet className="w-4 h-4 text-blue-400" />
+  4033→                      <span className="text-[10px] font-black text-blue-300/80 uppercase tracking-widest">ZEVORIK Terminal</span>
+  4034→                    </div>
+  4035→                    <div className="flex items-center gap-2">
+  4036→                      {activePos.length > 0 && (
+  4037→                        <span className="flex items-center gap-1 h-5 px-2 rounded-full bg-green-500/15 border border-green-500/25">
+  4038→                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+  4039→                          <span className="text-[7px] font-black text-green-400">LIVE</span>
+  4040→                        </span>
+  4041→                      )}
+  4042→                      <span className="h-5 px-2.5 rounded-full text-[7px] font-black flex items-center gap-1 border bg-green-500/15 border-green-500/30 text-green-400">
+  4043→                        <span className="w-1 h-1 rounded-full bg-green-400" />
+  4044→                        REAL
+  4045→                      </span>
+  4046→                      <button onClick={() => { fetchPortfolio(); fetchTransactions(); }} className="h-6 w-6 rounded-lg bg-white/5 border border-white/10 grid place-items-center hover:border-blue-500/30 hover:bg-white/10 transition-all">
+  4047→                        <RefreshCw className="w-3 h-3 text-blue-300/60" />
+  4048→                      </button>
+  4049→                    </div>
+  4050→                  </div>
+  4051→
+  4052→                  {/* Balance — Big & Prominent */}
+  4053→                  <div className="mb-1">
+  4054→                    <div className="flex items-center gap-1.5 mb-0.5">
+  4055→                      <DollarSign className="w-3 h-3 text-blue-300/50" />
+  4056→                      <span className="text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">Balance</span>
+  4057→                    </div>
+  4058→                    <b className={`block text-[26px] font-black transition-colors duration-500 leading-tight text-white`}
+  4059→                      style={{ textShadow: totalLivePL !== 0 ? `0 0 20px ${totalLivePL > 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)'}` : 'none' }}>
+  4060→                      {formatRupiah(totalBalance)}
+  4061→                    </b>
+  4062→                  </div>
+  4063→
+  4064→                  {/* Equity + Floating P&L — Always show Equity (MT5: Equity = Balance when no positions) */}
+  4065→                  <div className="flex items-end justify-between">
+  4066→                    <div>
+  4067→                      <div className="flex items-center gap-1.5 mb-0.5">
+  4068→                        <BarChart3 className="w-3 h-3 text-blue-300/50" />
+  4069→                        <span className="text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">Equity</span>
+  4070→                        {activePos.length > 0 && (
+  4071→                          <span className="flex items-center gap-0.5 ml-1">
+  4072→                            <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
+  4073→                            <span className="text-[6px] font-black text-green-400">LIVE</span>
+  4074→                          </span>
+  4075→                        )}
+  4076→                      </div>
+  4077→                      <div className={`text-[18px] font-black transition-colors duration-500 ${totalLivePL > 0 ? 'text-green-400' : totalLivePL < 0 ? 'text-red-400' : 'text-blue-100'}`}>
+  4078→                        {formatRupiah(equity)}
+  4079→                      </div>
+  4080→                    </div>
+  4081→                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+  4082→                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${totalLivePL >= 0 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+  4083→                      {totalLivePL >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-green-400" /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+  4084→                      <div>
+  4085→                        <div className="text-[7px] font-bold text-blue-300/50 uppercase">Floating P&L</div>
+  4086→                        <div className={`text-[13px] font-black ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+  4087→                          {activePos.length > 0 ? `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}` : 'Rp0'}
+  4088→                        </div>
+  4089→                      </div>
+  4090→                    </motion.div>
+  4091→                  </div>
+  4092→                </div>
+  4093→
+  4094→                {/* ════════ MT5 Terminal Stats Grid — 2x3 ════════ */}
+  4095→                <div className="grid grid-cols-3 gap-px bg-white/[0.03] border-t border-white/[0.06]">
+  4096→                  {/* Saldo */}
+  4097→                  <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
+  4098→                    <div className="flex items-center gap-1 mb-1">
+  4099→                      <Wallet className="w-2.5 h-2.5 text-blue-400/50" />
+  4100→                      <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Saldo</span>
+  4101→                    </div>
+  4102→                    <div className="text-[11px] font-black text-white">{formatRupiah(totalBalance)}</div>
+  4103→                  </div>
+  4104→                  {/* Equity */}
+  4105→                  <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
+  4106→                    <div className="flex items-center gap-1 mb-1">
+  4107→                      <BarChart3 className="w-2.5 h-2.5 text-blue-400/50" />
+  4108→                      <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Equity</span>
+  4109→                    </div>
+  4110→                    <div className={`text-[11px] font-black ${totalLivePL > 0 ? 'text-green-400' : totalLivePL < 0 ? 'text-red-400' : 'text-white'}`}>{formatRupiah(equity)}</div>
+  4111→                  </div>
+  4112→                  {/* Margin (Used) */}
+  4113→                  <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
+  4114→                    <div className="flex items-center gap-1 mb-1">
+  4115→                      <Shield className="w-2.5 h-2.5 text-amber-400/50" />
+  4116→                      <span className="text-[6px] font-bold text-amber-300/40 uppercase tracking-wider">Margin</span>
+  4117→                    </div>
+  4118→                    <div className="text-[11px] font-black text-amber-400">{usedMargin > 0 ? formatRupiah(usedMargin) : 'Rp0'}</div>
+  4119→                  </div>
+  4120→                  {/* Free Margin */}
+  4121→                  <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
+  4122→                    <div className="flex items-center gap-1 mb-1">
+  4123→                      <CreditCard className="w-2.5 h-2.5 text-blue-400/50" />
+  4124→                      <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Mrg Bebas</span>
+  4125→                    </div>
+  4126→                    <div className={`text-[11px] font-black ${freeMarginColor}`}>{formatRupiah(freeMargin)}</div>
+  4127→                  </div>
+  4128→                  {/* Margin Level */}
+  4129→                  <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
+  4130→                    <div className="flex items-center gap-1 mb-1">
+  4131→                      <Zap className="w-2.5 h-2.5 text-blue-400/50" />
+  4132→                      <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Level Mrg</span>
+  4133→                    </div>
+  4134→                    <div className={`text-[11px] font-black`} style={{ color: activePos.length > 0 ? marginLevelColor : 'rgba(255,255,255,0.5)' }}>
+  4135→                      {usedMargin > 0 ? `${formatNumber(Math.round(marginLevel * 100) / 100)}%` : '—'}
+  4136→                    </div>
+  4137→                    {usedMargin > 0 && (
+  4138→                      <div className="w-full h-1 rounded-full bg-white/10 mt-1">
+  4139→                        <div className={`h-full rounded-full transition-all duration-700 ${marginLevelBg}`} style={{ width: `${Math.min(100, Math.max(0, marginLevel))}%` }} />
+  4140→                      </div>
+  4141→                    )}
+  4142→                  </div>
+  4143→                  {/* Modal Live */}
+  4144→                  <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(8,15,30,0.95), rgba(12,26,46,0.95))' }}>
+  4145→                    <div className="flex items-center gap-1 mb-1">
+  4146→                      <Target className="w-2.5 h-2.5 text-blue-400/50" />
+  4147→                      <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-wider">Modal Live</span>
+  4148→                    </div>
+  4149→                    <div className={`text-[11px] font-black ${liveModal > 0 ? (totalLivePL >= 0 ? 'text-green-400' : 'text-red-400') : 'text-white/50'}`}>
+  4150→                      {liveModal > 0 ? formatRupiah(liveModal) : '—'}
+  4151→                    </div>
+  4152→                  </div>
+  4153→                </div>
+  4154→
+  4155→                {/* Margin Level Warning Bar */}
+  4156→                {activePos.length > 0 && marginLevel > 0 && marginLevel < 100 && (
+  4157→                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+  4158→                    className="px-4 py-2 border-t border-white/[0.06] flex items-center gap-2"
+  4159→                    style={{ background: marginLevel < 50 ? 'rgba(220,38,38,0.15)' : 'rgba(245,158,11,0.1)' }}>
+  4160→                    <AlertCircle className={`w-3.5 h-3.5 ${marginLevel < 50 ? 'text-red-400 animate-pulse' : 'text-amber-400'}`} />
+  4161→                    <span className={`text-[8px] font-black uppercase ${marginLevel < 50 ? 'text-red-400' : 'text-amber-400'}`}>
+  4162→                      {marginLevel < 50 ? '⚠️ STOP OUT RISK! Modal hampir habis' : '⚠️ MARGIN CALL — Level Margin di bawah 100%'}
+  4163→                    </span>
+  4164→                  </motion.div>
+  4165→                )}
+  4166→              </div>
+  4167→
+  4168→              {/* ════════ TRADING PERFORMANCE ════════ */}
+  4169→              <div className="rounded-2xl overflow-hidden border border-[var(--zv-border)] bg-[var(--zv-surface)]">
+  4170→                <div className="px-4 py-2.5 border-b border-[var(--zv-border)] flex items-center gap-2">
+  4171→                  <PieChart className="w-3.5 h-3.5 text-[#3b82f6]" />
+  4172→                  <span className="text-[9px] font-black text-[var(--zv-text)] uppercase tracking-wider">Performa Trading</span>
+  4173→                </div>
+  4174→                <div className="grid grid-cols-4 gap-px bg-[var(--zv-border)]/30">
+  4175→                  {/* Total Trades */}
+  4176→                  <div className="p-3 bg-[var(--zv-surface)] text-center">
+  4177→                    <div className="text-[7px] font-bold text-[var(--zv-muted)] uppercase mb-1">Trade</div>
+  4178→                    <div className="text-[16px] font-black text-[var(--zv-text)]">{totalTrades}</div>
+  4179→                  </div>
+  4180→                  {/* Win Rate */}
+  4181→                  <div className="p-3 bg-[var(--zv-surface)] text-center">
+  4182→                    <div className="text-[7px] font-bold text-[var(--zv-muted)] uppercase mb-1">Win Rate</div>
+  4183→                    <div className="relative mx-auto w-10 h-10">
+  4184→                      <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+  4185→                        <circle cx="18" cy="18" r="14" fill="none" stroke="var(--zv-border)" strokeWidth="3" />
+  4186→                        <circle cx="18" cy="18" r="14" fill="none" stroke={winRate >= 50 ? '#22c55e' : '#ef5350'} strokeWidth="3"
+  4187→                          strokeDasharray={`${winRate * 0.88} 88`} strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.8s ease' }} />
+  4188→                      </svg>
+  4189→                      <div className="absolute inset-0 flex items-center justify-center">
+  4190→                        <span className={`text-[8px] font-black ${winRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>{winRate.toFixed(0)}%</span>
+  4191→                      </div>
+  4192→                    </div>
+  4193→                  </div>
+  4194→                  {/* Net P&L */}
+  4195→                  <div className="p-3 bg-[var(--zv-surface)] text-center">
+  4196→                    <div className="text-[7px] font-bold text-[var(--zv-muted)] uppercase mb-1">Total P&L</div>
+  4197→                    <div className={`text-[12px] font-black ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+  4198→                      {netPL >= 0 ? '+' : ''}{formatRupiah(netPL)}
+  4199→                    </div>
+  4200→                  </div>
+  4201→                  {/* Today P&L */}
+  4202→                  <div className="p-3 bg-[var(--zv-surface)] text-center">
+  4203→                    <div className="text-[7px] font-bold text-[var(--zv-muted)] uppercase mb-1">Hari Ini</div>
+  4204→                    <div className={`text-[12px] font-black ${todayPL >= 0 ? 'text-green-400' : todayPL < 0 ? 'text-red-400' : 'text-[var(--zv-muted)]'}`}>
+  4205→                      {todayPL !== 0 ? `${todayPL >= 0 ? '+' : ''}${formatRupiah(todayPL)}` : '—'}
+  4206→                    </div>
+  4207→                  </div>
+  4208→                </div>
+  4209→              </div>
+  4210→
+  4211→              {/* ════════ QUICK ACTION BUTTONS ════════ */}
+  4212→              <div className="grid grid-cols-3 gap-2">
+  4213→                <button onClick={() => setActiveTab('sinyal')}
+  4214→                  className="h-10 rounded-xl flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#1d4ed8] to-[#3b82f6] text-white text-[9px] font-bold shadow-md shadow-blue-500/20 active:scale-[0.97] transition-transform border border-blue-400/20">
+  4215→                  <TrendingUp className="w-3.5 h-3.5" />
+  4216→                  Mulai Trading
+  4217→                </button>
+  4218→                <button onClick={() => setActiveTab('finance')}
+  4219→                  className="h-10 rounded-xl flex items-center justify-center gap-1.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-green-400 hover:border-green-500/30 transition-all active:scale-[0.97]">
+  4220→                  <Plus className="w-3.5 h-3.5" />
+  4221→                  Deposit
+  4222→                </button>
+  4223→                <button onClick={() => setActiveTab('finance')}
+  4224→                  className="h-10 rounded-xl flex items-center justify-center gap-1.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[9px] font-bold text-red-400 hover:border-red-500/30 transition-all active:scale-[0.97]">
+  4225→                  <Minus className="w-3.5 h-3.5" />
+  4226→                  Withdraw
+  4227→                </button>
+  4228→              </div>
+  4229→
+  4230→              {/* ════════ SUB-TAB: ORDER / POSISI / RIWAYAT ════════ */}
+  4231→              <div className="flex gap-1">
+  4232→                {(['order', 'posisi', 'riwayat'] as const).map(sub => (
+  4233→                  <button key={sub} onClick={() => setSaldoSubTab(sub)}
+  4234→                    className={`flex-1 h-9 rounded-xl text-[10px] font-bold transition-all border ${
+  4235→                      saldoSubTab === sub
+  4236→                        ? 'bg-gradient-to-r from-[#1e3a5f] to-[#1d4ed8] text-white border-[#3b82f6] shadow-md shadow-blue-500/20'
+  4237→                        : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:text-[var(--zv-text)]'
+  4238→                    }`}>
+  4239→                    {sub === 'order' ? '📋 Order' : sub === 'posisi' ? `Posisi (${activePos.length})` : `Riwayat (${closedPos.length})`}
+  4240→                  </button>
+  4241→                ))}
+  4242→              </div>
+  4243→
+  4244→              {/* ════════ ORDER FORM — Full Trading Panel ════════ */}
+  4245→              {saldoSubTab === 'order' && (
+  4246→                <div className="rounded-2xl overflow-hidden border border-[var(--zv-border)]" style={{ background: 'linear-gradient(145deg, #080f1e 0%, #0c1a2e 25%, #162544 55%, #1e3a5f 100%)' }}>
+  4247→                  {/* Header */}
+  4248→                  <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+  4249→                    <div className="flex items-center gap-2">
+  4250→                      <Target className="w-4 h-4 text-blue-400" />
+  4251→                      <span className="text-[10px] font-black text-blue-300/80 uppercase tracking-widest">Open Position</span>
+  4252→                    </div>
+  4253→                    {selectedSinyalStock && (
+  4254→                      <div className="flex items-center gap-2">
+  4255→                        <span className="text-[12px] font-black text-white">{selectedSinyalStock.code}</span>
+  4256→                        <span className={`text-[10px] font-bold ${selectedSinyalStock.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+  4257→                          {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
+  4258→                        </span>
+  4259→                      </div>
+  4260→                    )}
+  4261→                  </div>
+  4262→
+  4263→                  <div className="p-4 space-y-3">
+  4264→                    {/* Instrument Selector */}
+  4265→                    <div>
+  4266→                      <label className="flex items-center gap-1.5 mb-1.5 text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">
+  4267→                        <BarChart3 className="w-3 h-3" /> Instrument
+  4268→                      </label>
+  4269→                      {!selectedSinyalStock ? (
+  4270→                        <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+  4271→                          {stocks.slice(0, 12).map(s => (
+  4272→                            <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalLots('0.01'); setSinyalAmount(''); setSinyalCandles([]); setSinyalCurrentPrice(0); sinyalChartSimRef.current = null }}
+  4273→                              className="flex-shrink-0 h-8 px-3 rounded-lg text-[9px] font-bold border border-white/10 text-white/60 hover:border-blue-500/40 hover:text-blue-300 transition-all"
+  4274→                              style={{ background: 'rgba(255,255,255,0.04)' }}>
+  4275→                              {s.code}
+  4276→                            </button>
+  4277→                          ))}
+  4278→                        </div>
+  4279→                      ) : (
+  4280→                        <div className="flex items-center gap-2">
+  4281→                          <div className="flex-1 h-10 rounded-xl flex items-center justify-between px-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+  4282→                            <div className="flex items-center gap-2">
+  4283→                              <span className="text-[13px] font-black text-white">{selectedSinyalStock.code}</span>
+  4284→                              <span className="text-[8px] text-blue-300/50">{selectedSinyalStock.name?.slice(0, 14)}</span>
+  4285→                            </div>
+  4286→                            <div className="flex items-center gap-1.5">
+  4287→                              <span className="text-[11px] font-black tabular-nums" style={{ color: sinyalCurrentPrice >= (selectedSinyalStock.price) ? '#4ade80' : '#f87171' }}>
+  4288→                                {formatRupiah(sinyalCurrentPrice || selectedSinyalStock.price)}
+  4289→                              </span>
+  4290→                            </div>
+  4291→                          </div>
+  4292→                          <button onClick={() => setSelectedSinyalStock(null)} className="h-10 w-10 rounded-xl grid place-items-center border border-white/10 text-white/40 hover:text-red-400 hover:border-red-500/30 transition-all" style={{ background: 'rgba(255,255,255,0.04)' }}>
+  4293→                            <X className="w-4 h-4" />
+  4294→                          </button>
+  4295→                        </div>
+  4296→                      )}
+  4297→                    </div>
+  4298→
+  4299→                    {/* Lot & Leverage Row */}
+  4300→                    <div className="grid grid-cols-2 gap-2">
+  4301→                      {/* Lot Size */}
+  4302→                      <div>
+  4303→                        <label className="flex items-center gap-1 mb-1 text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">
+  4304→                          <Package className="w-2.5 h-2.5" /> Lot Size
+  4305→                        </label>
+  4306→                        <div className="flex items-center rounded-xl overflow-hidden h-10" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+  4307→                          <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+  4308→                            className="h-full w-10 flex items-center justify-center hover:bg-red-500/15 transition-all">
+  4309→                            <Minus className="w-3 h-3 text-red-400/70" strokeWidth={2.5} />
+  4310→                          </button>
+  4311→                          <div className="flex-1 flex flex-col items-center justify-center" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+  4312→                            <span className="text-[15px] font-black tabular-nums text-white leading-none">{sinyalLots}</span>
+  4313→                            <span className="text-[6px] font-bold text-blue-300/40 uppercase tracking-widest mt-0.5">LOT</span>
+  4314→                          </div>
+  4315→                          <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = cur + 0.01; setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+  4316→                            className="h-full w-10 flex items-center justify-center hover:bg-green-500/15 transition-all">
+  4317→                            <Plus className="w-3 h-3 text-green-400/70" strokeWidth={2.5} />
+  4318→                          </button>
+  4319→                        </div>
+  4320→                        <div className="text-[7px] font-bold text-amber-400/50 mt-0.5 text-center">{formatRupiah(sinyalAmountFromLots)}</div>
+  4321→                      </div>
+  4322→                      {/* Leverage */}
+  4323→                      <div>
+  4324→                        <label className="flex items-center gap-1 mb-1 text-[8px] font-bold text-blue-300/50 uppercase tracking-widest">
+  4325→                          <Zap className="w-2.5 h-2.5" /> Leverage
+  4326→                        </label>
+  4327→                        <div className="relative">
+  4328→                          <button onClick={() => { setShowLeverageMenu(prev => !prev); setShowTimeframeMenu(false) }}
+  4329→                            className="w-full h-10 rounded-xl flex items-center justify-between px-3 transition-all"
+  4330→                            style={{ background: showLeverageMenu ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.05)', border: `1px solid ${showLeverageMenu ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}` }}>
+  4331→                            <span className="text-[14px] font-black text-amber-400">1:{sinyalLeverage}</span>
+  4332→                            <ChevronDown className={`w-3 h-3 text-amber-400/50 transition-transform ${showLeverageMenu ? 'rotate-180' : ''}`} />
+  4333→                          </button>
+  4334→                          {showLeverageMenu && (
+  4335→                            <div className="absolute left-0 right-0 top-11 z-50 rounded-xl overflow-hidden py-0.5"
+  4336→                              style={{ background: '#0c1a2e', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+  4337→                              {[100, 200, 300, 500, 1000].map(lev => (
+  4338→                                <button key={lev} onClick={() => { setSinyalLeverage(lev); setShowLeverageMenu(false) }}
+  4339→                                  className={`w-full px-3 py-2 text-[11px] font-bold text-left transition-colors flex items-center justify-between ${
+  4340→                                    sinyalLeverage === lev ? 'text-amber-400 bg-amber-500/10' : 'text-white/60 hover:bg-white/5'
+  4341→                                  }`}>
+  4342→                                  <span>1:{lev}</span>
+  4343→                                  {sinyalLeverage === lev && <CheckCircle className="w-3 h-3 text-amber-400" />}
+  4344→                                </button>
+  4345→                              ))}
+  4346→                            </div>
+  4347→                          )}
+  4348→                        </div>
+  4349→                        <div className="text-[7px] font-bold text-blue-300/30 mt-0.5 text-center">Multiplier</div>
+  4350→                      </div>
+  4351→                    </div>
+  4352→
+  4353→                    {/* Stop Loss & Take Profit */}
+  4354→                    <div className="grid grid-cols-2 gap-2">
+  4355→                      <div>
+  4356→                        <label className="flex items-center gap-1 mb-1 text-[8px] font-bold text-red-300/50 uppercase tracking-widest">
+  4357→                          <AlertCircle className="w-2.5 h-2.5" /> Stop Loss
+  4358→                        </label>
+  4359→                        <div className="relative">
+  4360→                          <input type="number" value={stopLossPrice} onChange={(e) => setStopLossPrice(e.target.value)} placeholder="Opsional"
+  4361→                            className="w-full h-10 rounded-xl px-3 pr-10 text-[12px] font-bold text-red-300 placeholder:text-red-300/20 outline-none transition-all focus:border-red-500/30"
+  4362→                            style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }} />
+  4363→                          {stopLossPrice && (
+  4364→                            <button onClick={() => setStopLossPrice('')} className="absolute right-2 top-1/2 -translate-y-1/2">
+  4365→                              <X className="w-3 h-3 text-red-400/40" />
+  4366→                            </button>
+  4367→                          )}
+  4368→                        </div>
+  4369→                      </div>
+  4370→                      <div>
+  4371→                        <label className="flex items-center gap-1 mb-1 text-[8px] font-bold text-green-300/50 uppercase tracking-widest">
+  4372→                          <Target className="w-2.5 h-2.5" /> Take Profit
+  4373→                        </label>
+  4374→                        <div className="relative">
+  4375→                          <input type="number" value={takeProfitPrice} onChange={(e) => setTakeProfitPrice(e.target.value)} placeholder="Opsional"
+  4376→                            className="w-full h-10 rounded-xl px-3 pr-10 text-[12px] font-bold text-green-300 placeholder:text-green-300/20 outline-none transition-all focus:border-green-500/30"
+  4377→                            style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)' }} />
+  4378→                          {takeProfitPrice && (
+  4379→                            <button onClick={() => setTakeProfitPrice('')} className="absolute right-2 top-1/2 -translate-y-1/2">
+  4380→                              <X className="w-3 h-3 text-green-400/40" />
+  4381→                            </button>
+  4382→                          )}
+  4383→                        </div>
+  4384→                      </div>
+  4385→                    </div>
+  4386→
+  4387→                    {/* Spread Info */}
+  4388→                    {selectedSinyalStock && (
+  4389→                      <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+  4390→                        <div className="flex items-center gap-3">
+  4391→                          <div>
+  4392→                            <div className="text-[6px] font-bold text-blue-300/30 uppercase">Bid</div>
+  4393→                            <div className="text-[10px] font-black text-red-400 tabular-nums">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</div>
+  4394→                          </div>
+  4395→                          <div className="text-[7px] font-bold text-blue-300/20">|</div>
+  4396→                          <div>
+  4397→                            <div className="text-[6px] font-bold text-blue-300/30 uppercase">Ask</div>
+  4398→                            <div className="text-[10px] font-black text-green-400 tabular-nums">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</div>
+  4399→                          </div>
+  4400→                          <div className="text-[7px] font-bold text-blue-300/20">|</div>
+  4401→                          <div>
+  4402→                            <div className="text-[6px] font-bold text-blue-300/30 uppercase">Spread</div>
+  4403→                            <div className="text-[10px] font-black text-amber-400/70 tabular-nums">{sinyalCurrentPrice > 0 ? spreadValue.toFixed(1) : '—'}</div>
+  4404→                          </div>
+  4405→                        </div>
+  4406→                        <div className="text-right">
+  4407→                          <div className="text-[6px] font-bold text-blue-300/30 uppercase">Free Margin</div>
+  4408→                          <div className={`text-[10px] font-black tabular-nums ${freeMargin >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{formatRupiah(freeMargin)}</div>
+  4409→                        </div>
+  4410→                      </div>
+  4411→                    )}
+  4412→
+  4413→                    {/* BUY / SELL Buttons */}
+  4414→                    <div className="grid grid-cols-2 gap-2">
+  4415→                      <button
+  4416→                        onClick={() => {
+  4417→                          if (!selectedSinyalStock) { toast({ title: 'Pilih instrument', variant: 'destructive' }); return }
+  4418→                          if (sinyalAmountFromLots < 1000) { toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return }
+  4419→                          if (sinyalAmountFromLots > freeMargin) { toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return }
+  4420→                          setConfirmTradeDir('TURUN')
+  4421→                          setShowConfirmTrade(true)
+  4422→                        }}
+  4423→                        className="relative rounded-xl flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[56px]"
+  4424→                        style={{ background: 'linear-gradient(135deg, #ef5350, #dc2626, #b91c1c)', boxShadow: '0 4px 20px rgba(239,68,68,0.4)' }}>
+  4425→                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+  4426→                        <div className="relative flex items-center gap-2">
+  4427→                          <TrendingDown className="w-5 h-5 text-white/80" />
+  4428→                          <span className="text-[18px] font-black tracking-[0.25em] text-white">SELL</span>
+  4429→                        </div>
+  4430→                        <span className="text-[9px] font-bold tabular-nums text-white/50 mt-0.5 relative">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
+  4431→                      </button>
+  4432→                      <button
+  4433→                        onClick={() => {
+  4434→                          if (!selectedSinyalStock) { toast({ title: 'Pilih instrument', variant: 'destructive' }); return }
+  4435→                          if (sinyalAmountFromLots < 1000) { toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return }
+  4436→                          if (sinyalAmountFromLots > freeMargin) { toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return }
+  4437→                          setConfirmTradeDir('NAIK')
+  4438→                          setShowConfirmTrade(true)
+  4439→                        }}
+  4440→                        className="relative rounded-xl flex flex-col items-center justify-center transition-all overflow-hidden active:scale-[0.97] h-[56px]"
+  4441→                        style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a, #15803d)', boxShadow: '0 4px 20px rgba(34,197,94,0.4)' }}>
+  4442→                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+  4443→                        <div className="relative flex items-center gap-2">
+  4444→                          <TrendingUp className="w-5 h-5 text-white/80" />
+  4445→                          <span className="text-[18px] font-black tracking-[0.25em] text-white">BUY</span>
+  4446→                        </div>
+  4447→                        <span className="text-[9px] font-bold tabular-nums text-white/50 mt-0.5 relative">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
+  4448→                      </button>
+  4449→                    </div>
+  4450→                  </div>
+  4451→                </div>
+  4452→              )}
+  4453→
+  4454→              {/* ════════ ACTIVE POSITIONS — Premium MT5 Cards ════════ */}
+  4455→              {saldoSubTab === 'posisi' && (
+  4456→                <>
+  4457→                  {activePos.length === 0 ? (
+  4458→                    <div className="rounded-2xl p-8 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
+  4459→                      <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center mx-auto mb-3">
+  4460→                        <BarChart3 className="w-7 h-7 text-blue-400/40" />
+  4461→                      </div>
+  4462→                      <p className="text-[12px] font-bold text-[var(--zv-text)] mb-1">Belum Ada Posisi Aktif</p>
+  4463→                      <p className="text-[9px] text-[var(--zv-muted)] mb-3">Buka posisi di tab Trade untuk mulai trading</p>
+  4464→                      <button onClick={() => setActiveTab('sinyal')} className="h-10 px-8 rounded-xl bg-gradient-to-r from-[#1d4ed8] to-[#3b82f6] text-white text-[11px] font-bold shadow-lg shadow-blue-500/25 active:scale-[0.97] transition-transform">
+  4465→                        Mulai Trading →
+  4466→                      </button>
+  4467→                    </div>
+  4468→                  ) : (
+  4469→                    <div className="space-y-2">
+  4470→                      {/* Total Floating P&L Summary Bar */}
+  4471→                      <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${totalLivePL >= 0 ? 'bg-green-500/8 border-green-500/15' : 'bg-red-500/8 border-red-500/15'}`}>
+  4472→                        <div className="flex items-center gap-2">
+  4473→                          <Zap className={`w-4 h-4 ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'} animate-pulse`} />
+  4474→                          <span className="text-[9px] font-black text-[var(--zv-muted)] uppercase">Total Floating P&L</span>
+  4475→                        </div>
+  4476→                        <div className="flex items-center gap-3">
+  4477→                          <span className={`text-[14px] font-black ${totalLivePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+  4478→                            {totalLivePL >= 0 ? '+' : ''}{formatRupiah(totalLivePL)}
+  4479→                          </span>
+  4480→                          {activePos.length > 1 && (
+  4481→                            <button onClick={() => activePos.forEach(p => closeSinyalPosition(p.id))}
+  4482→                              className="relative h-7 px-3 rounded-lg overflow-hidden text-[7px] font-black text-white transition-all active:scale-[0.95]"
+  4483→                              style={{ background: 'linear-gradient(180deg, #f87171 0%, #ef5350 50%, #dc2626 100%)', boxShadow: '0 2px 8px rgba(239,83,80,0.3)' }}>
+  4484→                              CLOSE ALL
+  4485→                            </button>
+  4486→                          )}
+  4487→                        </div>
+  4488→                      </div>
+  4489→
+  4490→                      {/* Position Cards */}
+  4491→                      {activePos.map(ap => {
+  4492→                        const isUp = ap.direction === 'NAIK'
+  4493→                        const livePL = getPositionLivePL(ap)
+  4494→                        const currentPrice = sinyalCurrentPrice || sinyalChartSimRef.current?.price || ap.startPrice
+  4495→                        const lots = (ap.amount / LOT_SIZE).toFixed(2)
+  4496→                        const elapsed = sinyalTimers[ap.id] ?? 0
+  4497→                        const mins = Math.floor(elapsed / 60)
+  4498→                        const secs = elapsed % 60
+  4499→                        const elapsedLabel = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+  4500→                        const modalLive = ap.amount + livePL
+  4501→                        return (
+  4502→                          <motion.div key={ap.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+  4503→                            className="rounded-xl overflow-hidden border"
+  4504→                            style={{ borderColor: isUp ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)', background: 'var(--zv-surface)' }}>
+  4505→                            {/* Gradient border top */}
+  4506→                            <div className={`h-0.5 ${isUp ? 'bg-gradient-to-r from-green-500 via-green-400 to-green-500' : 'bg-gradient-to-r from-red-500 via-red-400 to-red-500'}`} />
+  4507→                            <div className="px-3.5 py-3">
+  4508→                              {/* Row 1: Stock + Direction + Leverage */}
+  4509→                              <div className="flex items-center justify-between mb-2">
+  4510→                                <div className="flex items-center gap-2">
+  4511→                                  <span className="text-[12px] font-black text-[var(--zv-text)]">{ap.stockCode}</span>
+  4512→                                  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[8px] font-black text-white ${isUp ? '' : ''}`}
+  4513→                                    style={isUp
+  4514→                                      ? { background: 'linear-gradient(180deg, #4ade80, #22c55e)', boxShadow: '0 2px 6px rgba(34,197,94,0.3)' }
+  4515→                                      : { background: 'linear-gradient(180deg, #f87171, #ef5350)', boxShadow: '0 2px 6px rgba(239,83,80,0.3)' }}>
+  4516→                                    {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+  4517→                                    {isUp ? 'BUY' : 'SELL'}
+  4518→                                  </span>
+  4519→                                  <span className="text-[8px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/15">1:{ap.leverage || 1000}</span>
+  4520→                                </div>
+  4521→                                <button onClick={() => closeSinyalPosition(ap.id)}
+  4522→                                  className="relative h-7 px-3 rounded-lg overflow-hidden text-[8px] font-black text-white transition-all active:scale-[0.95]"
+  4523→                                  style={{ background: 'linear-gradient(180deg, #f87171 0%, #ef5350 50%, #dc2626 100%)', boxShadow: '0 2px 8px rgba(239,83,80,0.3)' }}>
+  4524→                                  ✕ Tutup
+  4525→                                </button>
+  4526→                              </div>
+  4527→                              {/* Row 2: Stats Grid */}
+  4528→                              <div className="grid grid-cols-4 gap-2 mb-2">
+  4529→                                <div>
+  4530→                                  <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Lot</div>
+  4531→                                  <div className="text-[10px] font-black text-[var(--zv-text)]">{lots}</div>
+  4532→                                </div>
+  4533→                                <div>
+  4534→                                  <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Entry</div>
+  4535→                                  <div className="text-[10px] font-black text-[var(--zv-text)]">{formatNumber(ap.startPrice)}</div>
+  4536→                                </div>
+  4537→                                <div>
+  4538→                                  <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Current</div>
+  4539→                                  <div className={`text-[10px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatNumber(currentPrice)}</div>
+  4540→                                </div>
+  4541→                                <div>
+  4542→                                  <div className="text-[6px] font-bold text-[var(--zv-muted)] uppercase">Modal Live</div>
+  4543→                                  <div className={`text-[10px] font-black ${modalLive >= ap.amount ? 'text-green-400' : 'text-red-400'}`}>{formatRupiah(modalLive)}</div>
+  4544→                                </div>
+  4545→                              </div>
+  4546→                              {/* Row 3: P&L + Elapsed Time */}
+  4547→                              <div className="flex items-center justify-between">
+  4548→                                <div className="flex items-center gap-2">
+  4549→                                  {/* Elapsed time */}
+  4550→                                  <div className="flex items-center gap-1.5">
+  4551→                                    <Clock className="w-3 h-3 text-blue-400" />
+  4552→                                    <span className="text-[8px] font-black text-blue-400 tabular-nums">{elapsedLabel}</span>
+  4553→                                    <span className="text-[7px] font-bold text-[var(--zv-muted)]">terbuka</span>
+  4554→                                  </div>
+  4555→                                </div>
+  4556→                                {/* P&L */}
+  4557→                                <div className={`text-[14px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}
+  4558→                                  style={{ textShadow: `0 0 12px ${livePL >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,83,80,0.2)'}` }}>
+  4559→                                  {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
+  4560→                                </div>
+  4561→                              </div>
+  4562→                            </div>
+  4563→                          </motion.div>
+  4564→                        )
+  4565→                      })}
+  4566→                    </div>
+  4567→                  )}
+  4568→                </>
+  4569→              )}
+  4570→
+  4571→              {/* ════════ CLOSED POSITIONS HISTORY ════════ */}
+  4572→              {saldoSubTab === 'riwayat' && (
+  4573→                <>
+  4574→                  {closedPos.length === 0 ? (
+  4575→                    <div className="rounded-2xl p-8 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
+  4576→                      <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center mx-auto mb-3">
+  4577→                        <History className="w-7 h-7 text-blue-400/40" />
+  4578→                      </div>
+  4579→                      <p className="text-[12px] font-bold text-[var(--zv-text)] mb-1">Belum Ada Riwayat</p>
+  4580→                      <p className="text-[9px] text-[var(--zv-muted)]">Riwayat trading akan muncul setelah posisi ditutup</p>
+  4581→                    </div>
+  4582→                  ) : (
+  4583→                    <div className="space-y-2">
+  4584→                      {/* Summary bar */}
+  4585→                      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+  4586→                        <div className="flex items-center gap-3">
+  4587→                          <span className="text-[8px] font-bold text-green-400">{wonCount} Win</span>
+  4588→                          <span className="text-[8px] font-bold text-red-400">{lostCount} Loss</span>
+  4589→                        </div>
+  4590→                        <span className={`text-[10px] font-black ${netPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+  4591→                          Net: {netPL >= 0 ? '+' : ''}{formatRupiah(netPL)}
+  4592→                        </span>
+  4593→                      </div>
+  4594→                      {/* Filter buttons */}
+  4595→                      <div className="flex gap-1">
+  4596→                        {['Semua', 'Profit', 'Loss'].map(filter => (
+  4597→                          <button key={filter} onClick={() => setSinyalHistoryFilter(filter)}
+  4598→                            className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all border ${
+  4599→                              sinyalHistoryFilter === filter
+  4600→                                ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
+  4601→                                : 'text-[var(--zv-muted)] border-[var(--zv-border)] bg-[var(--zv-surface)] hover:text-[var(--zv-text)]'
+  4602→                            }`}>
+  4603→                            {filter}
+  4604→                          </button>
+  4605→                        ))}
+  4606→                      </div>
+  4607→                      <div className="max-h-96 overflow-y-auto space-y-1.5 pr-0.5" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.2) transparent' }}>
+  4608→                        {closedPos.slice(-30).reverse().filter(cp => {
+  4609→                          if (sinyalHistoryFilter === 'Profit') return cp.status === 'won'
+  4610→                          if (sinyalHistoryFilter === 'Loss') return cp.status === 'lost'
+  4611→                          return true
+  4612→                        }).map(cp => {
+  4613→                          const isWon = cp.status === 'won'
+  4614→                          const isUp = cp.direction === 'NAIK'
+  4615→                          const plAmt = cp.closedPL !== undefined ? cp.closedPL : (isWon ? Math.round(cp.amount * cp.profitPercent / 100) : -cp.amount)
+  4616→                          const lots = (cp.amount / LOT_SIZE).toFixed(2)
+  4617→                          const tradeDate = new Date(cp.startTime)
+  4618→                          const dateStr = `${tradeDate.getDate()}/${tradeDate.getMonth() + 1} ${tradeDate.getHours().toString().padStart(2, '0')}:${tradeDate.getMinutes().toString().padStart(2, '0')}`
+  4619→                          return (
+  4620→                            <div key={cp.id} className={`rounded-xl overflow-hidden border ${isWon ? 'border-green-500/15' : 'border-red-500/15'}`} style={{ background: 'var(--zv-surface)' }}>
+  4621→                              <div className={`h-0.5 ${isWon ? 'bg-gradient-to-r from-green-500 via-green-400 to-green-500' : 'bg-gradient-to-r from-red-500 via-red-400 to-red-500'}`} />
+  4622→                              <div className="px-3 py-2.5">
+  4623→                                <div className="flex items-center justify-between mb-1.5">
+  4624→                                  <div className="flex items-center gap-2">
+  4625→                                    {isWon ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
+  4626→                                    <span className="text-[11px] font-black text-[var(--zv-text)]">{cp.stockCode}</span>
+  4627→                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${isUp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{isUp ? 'Buy' : 'Sell'}</span>
+  4628→                                    <span className="text-[7px] font-bold text-amber-400">{lots} lot</span>
+  4629→                                    <span className="text-[7px] font-bold text-[var(--zv-muted)]">1:{cp.leverage || 1000}</span>
+  4630→                                  </div>
+  4631→                                  <span className="text-[7px] font-bold text-[var(--zv-muted)]">{dateStr}</span>
+  4632→                                </div>
+  4633→                                <div className="flex items-center justify-between">
+  4634→                                  <div className="text-[7px] text-[var(--zv-muted)]">
+  4635→                                    Vol {formatRupiah(cp.amount)}
+  4636→                                  </div>
+  4637→                                  <div className="flex items-center gap-3">
+  4638→                                    <div className="text-right">
+  4639→                                      <div className={`text-[11px] font-black ${isWon ? 'text-green-400' : 'text-red-400'}`}>
+  4640→                                        {isWon ? '+' : ''}{formatRupiah(plAmt)}
+  4641→                                      </div>
+  4642→                                    </div>
+  4643→                                  </div>
+  4644→                                </div>
+  4645→                              </div>
+  4646→                            </div>
+  4647→                          )
+  4648→                        })}
+  4649→                      </div>
+  4650→                    </div>
+  4651→                  )}
+  4652→                </>
+  4653→              )}
+  4654→                  </>
+  4655→                )
+  4656→              })()}
+  4657→            </motion.div>
+  4658→          )}
+  4659→
+  4660→          {/* ====== FINANCE TAB ====== */}
+  4661→          {activeTab === 'finance' && (
+  4662→            <motion.div key="finance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+  4663→            <div className="max-w-lg mx-auto">
+  4664→              {/* Finance Tabs */}
+  4665→              <div className="flex gap-2 mb-4">
+  4666→                <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+  4667→                  <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
+  4668→                </button>
+  4669→                <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'withdraw' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+  4670→                  <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
+  4671→                </button>
+  4672→              </div>
+  4673→
+  4674→              {/* Deposit Section */}
+  4675→              {financeTab === 'deposit' ? (
+  4676→                <>
+  4677→                  {depositStep === 'amount' ? (
+  4678→                    <motion.div key="deposit-amount" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}>
+  4679→                      {/* Balance */}
+  4680→                      <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-3">
+  4681→                        <div className="flex items-center justify-between">
+  4682→                          <div>
+  4683→                            <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Saldo Saat Ini</span>
+  4684→                            <b className="block text-xl font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
+  4685→                          </div>
+  4686→                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+  4687→                            <Wallet className="w-6 h-6 text-[#3b82f6]" />
+  4688→                          </div>
+  4689→                        </div>
+  4690→                      </div>
+  4691→
+
+[showing lines 3992-4691 of 6016; use offset=4692 with limit to continue reading]

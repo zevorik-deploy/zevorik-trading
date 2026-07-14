@@ -1,0 +1,462 @@
+     1→   560→      <main className="flex-1 max-w-7xl mx-auto w-full px-3 md:px-6 py-4 pb-24 md:pb-6">
+     2→   561→        <AnimatePresence mode="wait">
+     3→   562→          {/* ====== HOME TAB ====== */}
+     4→   563→          {activeTab === 'home' && (
+     5→   564→            <motion.div key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+     6→   565→
+     7→   566→              {/* ══════════ PREMIUM BANNER CAROUSEL ══════════ */}
+     8→   567→              <div
+     9→   568→                className="relative rounded-2xl overflow-hidden mb-5"
+    10→   569→                style={{ boxShadow: '0 8px 40px rgba(37,99,235,0.25)' }}
+    11→   570→                onTouchStart={(e) => { bannerTouchStartX.current = e.touches[0].clientX }}
+    12→   571→                onTouchEnd={(e) => {
+    13→   572→                  bannerTouchEndX.current = e.changedTouches[0].clientX
+    14→   573→                  const diff = bannerTouchStartX.current - bannerTouchEndX.current
+    15→   574→                  if (Math.abs(diff) > 50) {
+    16→   575→                    if (diff > 0) setBannerIndex(prev => (prev + 1) % 3)
+    17→   576→                    else setBannerIndex(prev => (prev - 1 + 3) % 3)
+    18→   577→                    if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
+    19→   578→                    bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 3), 4000)
+    20→   579→                  }
+    21→   580→                }}
+    22→   581→              >
+    23→   582→                {/* Slides */}
+    24→   583→                <div className="relative w-full h-48 md:h-64">
+    25→   584→                  {[
+    26→   585→                    {
+    27→   586→                      img: '/banner-beranda-hero.png',
+    28→   587→                      overlay: 'linear-gradient(135deg, rgba(12,26,46,0.92) 0%, rgba(30,58,95,0.75) 35%, rgba(37,99,235,0.35) 100%)',
+    29→   588→                      badge: null,
+    30→   589→                      title: 'Investasi Cerdas,',
+    31→   590→                      titleAccent: 'Profit Maksimal',
+    32→   591→                      desc: 'Platform saham digital terpercaya dengan profit harian hingga 7% & sinyal trading real-time.',
+    33→   592→                      btns: [
+    34→   593→                        { label: 'Mulai Investasi', icon: <BarChart3 className="w-3.5 h-3.5" />, action: () => setActiveTab('market'), style: 'primary' as const },
+    35→   594→                        { label: 'Trading', icon: <Target className="w-3.5 h-3.5" />, action: () => setActiveTab('sinyal'), style: 'ghost' as const },
+    36→   595→                      ],
+    37→   596→                      live: true,
+    38→   597→                    },
+    39→   598→                    {
+    40→   599→                      img: '/banner-sinyal-pro.png',
+    41→   600→                      overlay: 'linear-gradient(135deg, rgba(8,15,30,0.93) 0%, rgba(6,182,212,0.55) 100%)',
+    42→   601→                      badge: { icon: <Target className="w-4 h-4 text-cyan-300" />, text: 'SINYAL PRO' },
+    43→   602→                      title: 'Trading Cerdas',
+    44→   603→                      titleAccent: 'Payout 93%',
+    45→   604→                      desc: 'Prediksi arah harga saham real-time dengan candlestick chart profesional.',
+    46→   605→                      btns: [
+    47→   606→                        { label: 'Mulai Trading', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('sinyal'), style: 'primary' as const },
+    48→   607→                      ],
+    49→   608→                      live: true,
+    50→   609→                    },
+    51→   610→                    {
+    52→   611→                      img: '/banner-investasi-promo.png',
+    53→   612→                      overlay: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(180,83,9,0.5) 100%)',
+    54→   613→                      badge: { icon: <Gem className="w-4 h-4 text-amber-300" />, text: 'INVESTASI PRO' },
+    55→   614→                      title: 'Profit Harian',
+    56→   615→                      titleAccent: 'Hingga 7%',
+    57→   616→                      desc: 'Kontrak saham premium dengan profit otomatis setiap 00:00 WIB.',
+    58→   617→                      btns: [
+    59→   618→                        { label: 'Mulai Investasi', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('market'), style: 'primary' as const },
+    60→   619→                      ],
+    61→   620→                      live: false,
+    62→   621→                    },
+    63→   622→                  ].map((slide, i) => (
+    64→   623→                    <div
+    65→   624→                      key={i}
+    66→   625→                      className="absolute inset-0 transition-all duration-700 ease-in-out"
+    67→   626→                      style={{ opacity: bannerIndex === i ? 1 : 0, transform: bannerIndex === i ? 'scale(1)' : 'scale(1.05)' }}
+    68→   627→                    >
+    69→   628→                      <img src={slide.img} alt={slide.titleAccent} className="w-full h-full object-cover" />
+    70→   629→                      <div className="absolute inset-0" style={{ background: slide.overlay }} />
+    71→   630→                      <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
+    72→   631→                        {/* Live badge */}
+    73→   632→                        {slide.live && (
+    74→   633→                          <div className="absolute top-3 right-3 flex items-center gap-1.5 h-5 px-2.5 rounded-full bg-green-500/20 border border-green-400/30 backdrop-blur-md">
+    75→   634→                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+    76→   635→                            <span className="text-[7px] font-black text-green-300 tracking-wider">LIVE</span>
+    77→   636→                          </div>
+    78→   637→                        )}
+    79→   638→                        {/* Badge */}
+    80→   639→                        {slide.badge && (
+    81→   640→                          <div className="flex items-center gap-1.5 mb-2">
+    82→   641→                            <div className="w-7 h-7 rounded-lg bg-white/15 border border-white/10 grid place-items-center backdrop-blur-sm">{slide.badge.icon}</div>
+    83→   642→                            <span className="text-[9px] font-black tracking-[0.15em] uppercase text-white/90">{slide.badge.text}</span>
+    84→   643→                          </div>
+    85→   644→                        )}
+    86→   645→                        {/* Zevorix brand on first slide */}
+    87→   646→                        {i === 0 && (
+    88→   647→                          <div className="flex items-center gap-2 mb-2">
+    89→   648→                            <ZevorikLogo size={28} />
+    90→   649→                            <span className="text-[8px] font-black tracking-[0.2em] uppercase text-blue-300/80">ZEVORIK</span>
+    91→   650→                          </div>
+    92→   651→                        )}
+    93→   652→                        <h2 className="text-[17px] md:text-[22px] font-black text-white leading-tight mb-1 drop-shadow-lg">{slide.title}<br /><span className="gradient-text">{slide.titleAccent}</span></h2>
+    94→   653→                        <p className="text-[9px] md:text-[11px] text-white/70 font-medium mb-3 max-w-[260px] leading-relaxed">{slide.desc}</p>
+    95→   654→                        {slide.btns.length > 0 && (
+    96→   655→                          <div className="flex items-center gap-2">
+    97→   656→                            {slide.btns.map((btn, bi) => (
+    98→   657→                              <button
+    99→   658→                                key={bi}
+   100→   659→                                onClick={btn.action}
+   101→   660→                                className={`h-8 px-4 rounded-xl text-[9px] font-bold flex items-center gap-1.5 transition-all active:scale-[0.96] ${
+   102→   661→                                  btn.style === 'primary' ? 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white hover:from-[#60a5fa] hover:to-[#3b82f6] shadow-lg shadow-blue-500/30' :
+   103→   662→                                  'bg-white/10 border border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
+   104→   663→                                }`}
+   105→   664→                              >
+   106→   665→                                {btn.icon}{btn.label}
+   107→   666→                              </button>
+   108→   667→                            ))}
+   109→   668→                          </div>
+   110→   669→                        )}
+   111→   670→
+   112→   671→                      </div>
+   113→   672→                    </div>
+   114→   673→                  ))}
+   115→   674→                </div>
+   116→   675→                {/* Dot Indicators */}
+   117→   676→                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
+   118→   677→                  {[0,1,2].map(i => (
+   119→   678→                    <button
+   120→   679→                      key={i}
+   121→   680→                      onClick={() => { setBannerIndex(i); if (bannerTimerRef.current) clearInterval(bannerTimerRef.current); bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 3), 4000) }}
+   122→   681→                      className="transition-all duration-300 rounded-full"
+   123→   682→                      style={{
+   124→   683→                        width: bannerIndex === i ? 24 : 8,
+   125→   684→                        height: 8,
+   126→   685→                        background: bannerIndex === i ? 'linear-gradient(90deg, #3b82f6, #06b6d4)' : 'rgba(255,255,255,0.5)',
+   127→   686→                        boxShadow: bannerIndex === i ? '0 0 8px rgba(59,130,246,0.5)' : 'none',
+   128→   687→                      }}
+   129→   688→                    />
+   130→   689→                  ))}
+   131→   690→                </div>
+   132→   691→              </div>
+   133→   692→
+   134→   693→              {/* ══════════ PREMIUM WALLET CARD ══════════ */}
+   135→   694→              <div className="relative rounded-2xl overflow-hidden mb-5 border border-blue-500/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 40%, #2563eb 100%)', boxShadow: '0 6px 32px rgba(37,99,235,0.22)' }}>
+   136→   695→                {/* Decorative dots */}
+   137→   696→                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+   138→   697→                <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-blue-400/10 blur-3xl" />
+   139→   698→                <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-cyan-400/8 blur-3xl" />
+   140→   699→                <div className="relative p-4 text-white">
+   141→   700→                  {/* Header */}
+   142→   701→                  <div className="flex items-center justify-between mb-4">
+   143→   702→                    <div className="flex items-center gap-2.5">
+   144→   703→                      <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 grid place-items-center backdrop-blur-sm">
+   145→   704→                        <Wallet className="w-5 h-5 text-yellow-300" />
+   146→   705→                      </div>
+   147→   706→                      <div>
+   148→   707→                        <div className="flex items-center gap-1.5">
+   149→   708→                          <span className="text-[10px] font-black tracking-wider block">RINGKASAN SALDO</span>
+   150→   709→                        </div>
+   151→   710→                        <span className="text-[7px] font-bold text-blue-300/70">Selamat datang, {user?.name?.split(' ')[0]}</span>
+   152→   711→                      </div>
+   153→   712→                    </div>
+   154→   713→                    <button onClick={() => setShowBalance(!showBalance)} className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center text-white/60 hover:text-white hover:bg-white/20 transition-all">
+   155→   714→                      {showBalance ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+   156→   715→                    </button>
+   157→   716→                  </div>
+   158→   717→
+   159→   718→                  {/* Main Balance — includes live P&L from active trading positions */}
+   160→   719→                  <div className="mb-4">
+   161→   720→                    <div className="flex items-center gap-2">
+   162→   721→                      <span className="text-[8px] font-bold text-blue-200/60 uppercase tracking-widest">Total Saldo</span>
+   163→   722→                      {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+   164→   723→                        <div className="h-4 px-2 rounded-full bg-red-400/20 border border-red-400/30 flex items-center gap-1 animate-pulse">
+   165→   724→                          <Zap className="w-2.5 h-2.5 text-red-300" />
+   166→   725→                          <span className="text-[7px] font-black text-red-300 tracking-wide">LIVE</span>
+   167→   726→                        </div>
+   168→   727→                      )}
+   169→   728→                    </div>
+   170→   729→                    <b className={`block text-[24px] md:text-[28px] font-black tracking-tight transition-colors duration-300 ${
+   171→   730→                      sinyalPositions.filter(p => p.status === 'active').length > 0
+   172→   731→                        ? (() => {
+   173→   732→                            const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+   174→   733→                            return totalPL > 0 ? 'text-green-400' : totalPL < 0 ? 'text-red-400' : ''
+   175→   734→                          })()
+   176→   735→                        : ''
+   177→   736→                    }`}>{showBalance ? formatRupiah(liveEquity) : '••••••••••'}</b>
+   178→   737→                    {sinyalPositions.filter(p => p.status === 'active').length > 0 && (() => {
+   179→   738→                      const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+   180→   739→                      return (
+   181→   740→                        <div className="flex items-center gap-3 mt-0.5">
+   182→   741→                          <span className={`text-[8px] font-bold ${totalPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+   183→   742→                            P&L: {totalPL >= 0 ? '+' : ''}{formatRupiah(totalPL)}
+   184→   743→                          </span>
+   185→   744→                        </div>
+   186→   745→                      )
+   187→   746→                    })()}
+   188→   747→                  </div>
+   189→   748→
+   190→   749→                  {/* Dual Wallets — Dompet Utama shows live balance */}
+   191→   750→                  <div className="grid grid-cols-2 gap-2.5 mb-4">
+   192→   751→                    <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
+   193→   752→                      <div className="flex items-center gap-1.5 mb-1.5">
+   194→   753→                        <div className="w-5 h-5 rounded-lg bg-yellow-400/20 grid place-items-center"><Wallet className="w-3 h-3 text-yellow-300" /></div>
+   195→   754→                        <span className="text-[7px] font-black text-blue-200/80 uppercase tracking-wider">Dompet Utama</span>
+   196→   755→                        {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+   197→   756→                          <Zap className="w-2.5 h-2.5 text-red-400 animate-pulse" />
+   198→   757→                        )}
+   199→   758→                      </div>
+   200→   759→                      <b className={`block text-[14px] font-black ${sinyalPositions.filter(p => p.status === 'active').length > 0 ? (() => {
+   201→   760→                        const totalPL = sinyalPositions.filter(p => p.status === 'active').reduce((s, p) => s + getPositionLivePL(p), 0)
+   202→   761→                        return totalPL < 0 ? 'text-red-400' : totalPL > 0 ? 'text-green-400' : ''
+   203→   762→                      })() : ''}`}>{showBalance ? formatRupiah(liveEquity) : '••••••'}</b>
+   204→   763→                      <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Deposit & trading{sinyalPositions.filter(p => p.status === 'active').length > 0 ? ' (ikut grafik)' : ''}</span>
+   205→   764→                    </div>
+   206→   765→                    <div className="rounded-xl p-3 bg-white/8 border border-white/12 backdrop-blur-sm">
+   207→   766→                      <div className="flex items-center gap-1.5 mb-1.5">
+   208→   767→                        <div className="w-5 h-5 rounded-lg bg-blue-400/20 grid place-items-center"><CreditCard className="w-3 h-3 text-blue-300" /></div>
+   209→   768→                        <span className="text-[7px] font-black text-blue-200/80 uppercase tracking-wider">Penarikan</span>
+   210→   769→                      </div>
+   211→   770→                      <b className="block text-[14px] font-black">{showBalance ? formatRupiah(0) : '••••••'}</b>
+   212→   771→                      <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Dapat ditarik</span>
+   213→   772→                    </div>
+   214→   773→                  </div>
+   215→   774→
+   216→   775→                  {/* Action Buttons */}
+   217→   776→                  <div className="grid grid-cols-3 gap-2">
+   218→   777→                    <>
+   219→   778→                      <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[9px] font-bold hover:from-yellow-300 hover:to-amber-400 transition-all flex items-center justify-center gap-1 shadow-lg shadow-yellow-500/25 active:scale-[0.97]">
+   220→   779→                        <Plus className="w-3.5 h-3.5" />Deposit
+   221→   780→                      </button>
+   222→   781→                      <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+   223→   782→                        <Minus className="w-3.5 h-3.5" />Tarik
+   224→   783→                      </button>
+   225→   784→                      <button onClick={() => setActiveTab('market')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+   226→   785→                        <BarChart3 className="w-3.5 h-3.5" />Pasar
+   227→   786→                      </button>
+   228→   787→                    </>
+   229→   788→                  </div>
+   230→   789→                </div>
+   231→   790→              </div>
+   232→   791→
+   233→   792→              {/* ══════════ QUICK ACCESS MENU ══════════ */}
+   234→   793→              <div className="mb-5">
+   235→   794→                <div className="mb-3 flex items-center gap-2">
+   236→   795→                  <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #06b6d4)' }} />
+   237→   796→                  <h3 className="text-[12px] md:text-sm font-black gradient-text">Akses Cepat</h3>
+   238→   797→                </div>
+   239→   798→                <div className="grid grid-cols-4 gap-2.5">
+   240→   799→                  {[
+   241→   800→                    { icon: <Target className="w-5 h-5" />, label: 'Trading', desc: 'Real MT5', action: () => setActiveTab('sinyal'), iconBg: 'bg-blue-500/15', iconColor: 'text-blue-400', glow: 'rgba(59,130,246,0.08)' },
+   242→   801→                    { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Global', action: () => setActiveTab('market'), iconBg: 'bg-cyan-500/15', iconColor: 'text-cyan-400', glow: 'rgba(6,182,212,0.08)' },
+   243→   802→                    { icon: <Briefcase className="w-5 h-5" />, label: 'Portofolio', desc: 'Saham', action: () => setActiveTab('portfolio'), iconBg: 'bg-amber-500/15', iconColor: 'text-amber-400', glow: 'rgba(245,158,11,0.08)' },
+   244→   803→                    { icon: <CreditCard className="w-5 h-5" />, label: 'Keuangan', desc: 'Deposit', action: () => setActiveTab('finance'), iconBg: 'bg-violet-500/15', iconColor: 'text-violet-400', glow: 'rgba(139,92,246,0.08)' },
+   245→   804→                  ].map((a, i) => (
+   246→   805→                    <button key={i} onClick={a.action} className="stock-card flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg transition-all active:scale-[0.96]" style={{ boxShadow: `0 4px 20px ${a.glow}` }}>
+   247→   806→                      <div className={`w-11 h-11 rounded-xl ${a.iconBg} grid place-items-center ${a.iconColor}`}>{a.icon}</div>
+   248→   807→                      <span className="text-[8px] md:text-[9px] font-black text-[var(--zv-text)]">{a.label}</span>
+   249→   808→                      <span className="text-[6px] font-bold text-[var(--zv-muted)]">{a.desc}</span>
+   250→   809→                    </button>
+   251→   810→                  ))}
+   252→   811→                </div>
+   253→   812→              </div>
+   254→   813→
+   255→   814→              {/* ══════════ PORTFOLIO OVERVIEW ══════════ */}
+   256→   815→              <div className="rounded-2xl overflow-hidden mb-5 border border-[var(--zv-border)] relative" style={{ background: 'var(--zv-panel)', boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+   257→   816→                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #3b82f6, #06b6d4, transparent)' }} />
+   258→   817→                <div className="p-4">
+   259→   818→                  <div className="flex items-center justify-between mb-3.5">
+   260→   819→                    <div className="flex items-center gap-2">
+   261→   820→                      <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #06b6d4)' }} />
+   262→   821→                      <h3 className="text-[12px] font-black gradient-text">Portofolio & Investasi</h3>
+   263→   822→                    </div>
+   264→   823→                    <button onClick={() => setActiveTab('portfolio')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Selengkapnya <ChevronRight className="w-3 h-3" /></button>
+   265→   824→                  </div>
+   266→   825→
+   267→   826→                  {/* Portfolio Stats Row */}
+   268→   827→                  <div className="grid grid-cols-3 gap-2.5 mb-3">
+   269→   828→                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(37,99,235,0.05)' }}>
+   270→   829→                      <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Investasi</span>
+   271→   830→                      <b className="block text-[11px] font-black text-[#3b82f6]">{showBalance ? formatRupiah(portfolioSummary.totalCurrentValue) : '••••'}</b>
+   272→   831→                    </div>
+   273→   832→                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(37,99,235,0.05)' }}>
+   274→   833→                      <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Profit/Loss</span>
+   275→   834→                      <b className={`block text-[11px] font-black ${portfolioSummary.totalProfitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+   276→   835→                        {showBalance ? formatRupiah(Math.abs(portfolioSummary.totalProfitLoss)) : '••••'}
+   277→   836→                      </b>
+   278→   837→                    </div>
+   279→   838→                    <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(37,99,235,0.05)' }}>
+   280→   839→                      <span className="text-[7px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Return</span>
+   281→   840→                      <b className={`block text-[11px] font-black ${portfolioSummary.totalProfitLossPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+   282→   841→                        {portfolioSummary.totalProfitLossPercent >= 0 ? '+' : ''}{portfolioSummary.totalProfitLossPercent.toFixed(1)}%
+   283→   842→                      </b>
+   284→   843→                    </div>
+   285→   844→                  </div>
+   286→   845→
+   287→   846→                  {/* Portfolio Chart */}
+   288→   847→                  {portfolio.length > 0 && (
+   289→   848→                    <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 10px rgba(37,99,235,0.05)' }}>
+   290→   849→                      <div className="w-20 h-20 flex-shrink-0">
+   291→   850→                        <ResponsiveContainer width="100%" height="100%">
+   292→   851→                          <RePieChart><Pie data={portfolioPieData} innerRadius={20} outerRadius={35} paddingAngle={2} dataKey="value">
+   293→   852→                            {portfolioPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
+   294→   853→                          </Pie></RePieChart>
+   295→   854→                        </ResponsiveContainer>
+   296→   855→                      </div>
+   297→   856→                      <div className="flex-1 space-y-1.5 max-h-20 overflow-y-auto custom-scrollbar">
+   298→   857→                        {portfolio.slice(0, 4).map(p => (
+   299→   858→                          <div key={p.id} className="flex items-center gap-1.5">
+   300→   859→                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: portfolioPieData.find(d => d.name === p.stock.code)?.color }} />
+   301→   860→                            <span className="text-[8px] font-black text-[#3b82f6] flex-shrink-0">{p.stock.code}</span>
+   302→   861→                            <span className="flex-1" />
+   303→   862→                            <span className={`text-[8px] font-black ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(p.profitLossPercent)}</span>
+   304→   863→                          </div>
+   305→   864→                        ))}
+   306→   865→                      </div>
+   307→   866→                    </div>
+   308→   867→                  )}
+   309→   868→                </div>
+   310→   869→              </div>
+   311→   870→
+   312→   871→              {/* ══════════ TOP MOVERS ══════════ */}
+   313→   872→              {stocks.length > 0 && (
+   314→   873→                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+   315→   874→                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #22c55e, transparent, #ef5350)' }} />
+   316→   875→                  <div className="flex items-center justify-between mb-3.5">
+   317→   876→                    <div className="flex items-center gap-2">
+   318→   877→                      <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(180deg, #22c55e, #ef5350)' }} />
+   319→   878→                      <h3 className="text-[12px] font-black gradient-text">Top Movers</h3>
+   320→   879→                    </div>
+   321→   880→                    <button onClick={() => setActiveTab('market')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Lihat Semua <ChevronRight className="w-3 h-3" /></button>
+   322→   881→                  </div>
+   323→   882→                  <div className="grid grid-cols-2 gap-3">
+   324→   883→                    {/* Gainers */}
+   325→   884→                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(34,197,94,0.05)' }}>
+   326→   885→                      <div className="flex items-center gap-1.5 mb-2.5">
+   327→   886→                        <div className="w-6 h-6 rounded-lg bg-green-500/15 grid place-items-center"><TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /></div>
+   328→   887→                        <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-wider">Gainers</span>
+   329→   888→                      </div>
+   330→   889→                      <div className="space-y-2">
+   331→   890→                        {topGainers.slice(0, 3).map(s => (
+   332→   891→                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1.5 transition-colors">
+   333→   892→                            <div className="flex items-center gap-2">
+   334→   893→                              <div className="flex-shrink-0">
+   335→   894→                                {getRealLogo(s.code, 28)}
+   336→   895→                              </div>
+   337→   896→                              <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
+   338→   897→                            </div>
+   339→   898→                            <span className="text-[8px] font-black text-[#22c55e] bg-green-500/10 px-2 py-0.5 rounded-md">+{s.changePercent.toFixed(2)}%</span>
+   340→   899→                          </button>
+   341→   900→                        ))}
+   342→   901→                      </div>
+   343→   902→                    </div>
+   344→   903→                    {/* Losers */}
+   345→   904→                    <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]" style={{ boxShadow: '0 2px 8px rgba(239,83,80,0.05)' }}>
+   346→   905→                      <div className="flex items-center gap-1.5 mb-2.5">
+   347→   906→                        <div className="w-6 h-6 rounded-lg bg-red-500/15 grid place-items-center"><TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" /></div>
+   348→   907→                        <span className="text-[8px] font-black text-[#ef5350] uppercase tracking-wider">Losers</span>
+   349→   908→                      </div>
+   350→   909→                      <div className="space-y-2">
+   351→   910→                        {topLosers.slice(0, 3).map(s => (
+   352→   911→                          <button key={s.id} onClick={() => openStockDetail(s)} className="w-full flex items-center justify-between py-1 hover:bg-[var(--zv-hover)] rounded-lg px-1.5 transition-colors">
+   353→   912→                            <div className="flex items-center gap-2">
+   354→   913→                              <div className="flex-shrink-0">
+   355→   914→                                {getRealLogo(s.code, 28)}
+   356→   915→                              </div>
+   357→   916→                              <span className="text-[9px] font-bold text-[var(--zv-text)]">{s.code}</span>
+   358→   917→                            </div>
+   359→   918→                            <span className="text-[8px] font-black text-[#ef5350] bg-red-500/10 px-2 py-0.5 rounded-md">{s.changePercent.toFixed(2)}%</span>
+   360→   919→                          </button>
+   361→   920→                        ))}
+   362→   921→                      </div>
+   363→   922→                    </div>
+   364→   923→                  </div>
+   365→   924→                </div>
+   366→   925→              )}
+   367→   926→
+   368→   927→              {/* ══════════ WATCHLIST ══════════ */}
+   369→   928→              {watchlist.length > 0 && (
+   370→   929→                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+   371→   930→                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #f59e0b, transparent)' }} />
+   372→   931→                  <div className="flex items-center justify-between mb-3.5">
+   373→   932→                    <div className="flex items-center gap-2">
+   374→   933→                      <div className="w-1 h-5 rounded-full bg-[#f59e0b]" />
+   375→   934→                      <h3 className="text-[12px] font-black gradient-text">Watchlist</h3>
+   376→   935→                    </div>
+   377→   936→                    <Star className="w-4 h-4 text-[#f59e0b]" />
+   378→   937→                  </div>
+   379→   938→                  <div className="space-y-1.5">
+   380→   939→                    {watchlist.slice(0, 4).map(w => (
+   381→   940→                      <button key={w.id} onClick={() => openStockDetail(w.stock)} className="w-full flex items-center justify-between py-2 px-2 hover:bg-[var(--zv-hover)] rounded-xl transition-colors">
+   382→   941→                        <div className="flex items-center gap-2.5">
+   383→   942→                          <div className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center border border-[var(--zv-border)]">{getRealLogo(w.stock.code, 32)}</div>
+   384→   943→                          <div className="text-left">
+   385→   944→                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{w.stock.code}</span>
+   386→   945→                            <span className="block text-[7px] text-[var(--zv-muted)]">{w.stock.name.slice(0, 15)}</span>
+   387→   946→                          </div>
+   388→   947→                        </div>
+   389→   948→                        <div className="text-right">
+   390→   949→                          <span className="block text-[9px] font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(w.stock.price)}</span>
+   391→   950→                          <span className={`block text-[8px] font-black ${w.stock.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(w.stock.changePercent)}</span>
+   392→   951→                        </div>
+   393→   952→                      </button>
+   394→   953→                    ))}
+   395→   954→                  </div>
+   396→   955→                </div>
+   397→   956→              )}
+   398→   957→
+   399→   958→              {/* ══════════ RECENT TRANSACTIONS ══════════ */}
+   400→   959→              {transactions.length > 0 && (
+   401→   960→                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+   402→   961→                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #3b82f6, transparent)' }} />
+   403→   962→                  <div className="flex items-center justify-between mb-3.5">
+   404→   963→                    <div className="flex items-center gap-2">
+   405→   964→                      <div className="w-1 h-5 rounded-full bg-[#3b82f6]" />
+   406→   965→                      <h3 className="text-[12px] font-black gradient-text">Transaksi Terakhir</h3>
+   407→   966→                    </div>
+   408→   967→                    <button onClick={() => setActiveTab('history')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Semua <ChevronRight className="w-3 h-3" /></button>
+   409→   968→                  </div>
+   410→   969→                  <div className="space-y-2">
+   411→   970→                    {transactions.slice(0, 3).map(tx => (
+   412→   971→                      <div key={tx.id} className="flex items-center justify-between py-2 px-2 rounded-xl hover:bg-[var(--zv-hover)] transition-colors">
+   413→   972→                        <div className="flex items-center gap-2.5">
+   414→   973→                          <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-blue-500/10 border border-blue-500/15' : 'bg-red-500/10 border border-red-500/15'}`}>
+   415→   974→                            {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#3b82f6]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
+   416→   975→                          </div>
+   417→   976→                          <div>
+   418→   977→                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{tx.type === 'BUY' ? 'Buy' : 'Sell'} {tx.stock.code}</span>
+   419→   978→                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
+   420→   979→                          </div>
+   421→   980→                        </div>
+   422→   981→                        <span className={`text-[10px] font-black ${tx.type === 'BUY' ? 'text-[#ef5350]' : 'text-[#22c55e]'}`}>
+   423→   982→                          {tx.type === 'BUY' ? '-' : '+'}{formatRupiah(tx.total)}
+   424→   983→                        </span>
+   425→   984→                      </div>
+   426→   985→                    ))}
+   427→   986→                  </div>
+   428→   987→                </div>
+   429→   988→              )}
+   430→   989→
+   431→   990→              {/* ══════════ TRUST BADGES ══════════ */}
+   432→   991→              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
+   433→   992→                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4, #22c55e, #f59e0b)' }} />
+   434→   993→                <div className="flex items-center justify-center gap-5 mb-3.5">
+   435→   994→                  {[
+   436→   995→                    { icon: <Shield className="w-4.5 h-4.5" />, label: 'Aman', color: 'blue', bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-[#3b82f6]' },
+   437→   996→                    { icon: <CheckCircle className="w-4.5 h-4.5" />, label: 'Berlisensi', color: 'amber', bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-500' },
+   438→   997→                    { icon: <Lock className="w-4.5 h-4.5" />, label: 'Terenkripsi', color: 'cyan', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-500' },
+   439→   998→                    { icon: <Users className="w-4.5 h-4.5" />, label: '125K++', color: 'green', bg: 'bg-green-500/10', border: 'border-green-500/20', text: 'text-green-500' },
+   440→   999→                  ].map((item, i) => (
+   441→  1000→                    <div key={i} className="flex flex-col items-center gap-1.5">
+   442→  1001→                      <div className={`w-10 h-10 rounded-xl ${item.bg} border ${item.border} grid place-items-center ${item.text}`}>
+   443→  1002→                        {item.icon}
+   444→  1003→                      </div>
+   445→  1004→                      <span className={`text-[7px] font-black ${item.text}`}>{item.label}</span>
+   446→  1005→                    </div>
+   447→  1006→                  ))}
+   448→  1007→                </div>
+   449→  1008→                <p className="text-center text-[7px] font-black text-[var(--zv-muted)] tracking-wider uppercase">ZEVORIK • Aset Saham Terdaftar & Diawasi • V2.0</p>
+   450→  1009→              </div>
+   451→  1010→
+   452→  1011→            </motion.div>
+   453→  1012→          )}
+   454→  1013→
+   455→  1014→          {/* ====== MARKET TAB - PASAR SAHAM SIGNALS ====== */}
+   456→  1015→          {activeTab === 'market' && (
+   457→  1016→            <motion.div key="market" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+   458→  1017→
+   459→  1018→              {/* Header - Dark Trading App Style */}
+   460→  1019→              <div className="mb-3">
+   461→
+   462→[showing lines 560-1019 of 2281; use offset=1020 with limit to continue reading]

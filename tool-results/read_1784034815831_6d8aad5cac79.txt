@@ -1,0 +1,602 @@
+     1→     1→  1160→  }, [activeTab, selectedSinyalStock, stocks])
+     2→     2→  1161→
+     3→     3→  1162→  // Generate a single realistic OHLC candle from previous close
+     4→     4→  1163→  // Uses a structured approach: first determine the candle's direction & body,
+     5→     5→  1164→  // then add realistic wicks based on intra-candle price action simulation
+     6→     6→  1165→  const generateCandle = useCallback((prevClose: number, baseVal: number, sim: {momentum: number; trend: number; phase: number; phaseLen: number; vol: number}, idx: number): CandleData => {
+     7→     7→  1166→    // ── Phase Management (longer phases for realistic trends) ──
+     8→     8→  1167→    // 0 = consolidation/ranging, 1 = trending, 2 = breakout/volatile
+     9→     9→  1168→    sim.phaseLen -= 1
+    10→    10→  1169→    if (sim.phaseLen <= 0) {
+    11→    11→  1170→      const r = Math.random()
+    12→    12→  1171→      if (r < 0.30) {
+    13→    13→  1172→        // Consolidation — price chops sideways in a range
+    14→    14→  1173→        sim.phase = 0
+    15→    15→  1174→        sim.phaseLen = Math.floor(8 + Math.random() * 18) // 8-25 candles of ranging
+    16→    16→  1175→      } else if (r < 0.82) {
+    17→    17→  1176→        // Trending — sustained directional move (most common in real markets)
+    18→    18→  1177→        sim.phase = 1
+    19→    19→  1178→        sim.phaseLen = Math.floor(12 + Math.random() * 30) // 12-41 candles of trend
+    20→    20→  1179→        // 65% continue existing trend, 35% reverse
+    21→    21→  1180→        if (Math.random() < 0.35) sim.trend = (sim.trend === 1 ? -1 : 1) as 1 | -1
+    22→    22→  1181→      } else {
+    23→    23→  1182→        // Breakout — volatile expansion after consolidation
+    24→    24→  1183→        sim.phase = 2
+    25→    25→  1184→        sim.phaseLen = Math.floor(3 + Math.random() * 6) // 3-8 volatile candles
+    26→    26→  1185→        sim.trend = Math.random() > 0.5 ? 1 : -1
+    27→    27→  1186→      }
+    28→    28→  1187→    }
+    29→    29→  1188→
+    30→    30→  1189→    // ── Core Price Movement Engine ──
+    31→    31→  1190→    const open = prevClose
+    32→    32→  1191→
+    33→    33→  1192→    // Volatility scales with phase — trending markets have moderate vol,
+    34→    34→  1193→    // consolidation has low vol, breakouts have high vol
+    35→    35→  1194→    const baseVol = baseVal * 0.0012
+    36→    36→  1195→    const phaseVol = sim.phase === 0 ? 0.5 : sim.phase === 1 ? 1.0 : 2.2
+    37→    37→  1196→    const volatility = baseVol * phaseVol
+    38→    38→  1197→
+    39→    39→  1198→    // Trend drift — the directional force
+    40→    40→  1199→    let drift: number
+    41→    41→  1200→    if (sim.phase === 1) {
+    42→    42→  1201→      // Strong trend: consistent directional bias
+    43→    43→  1202→      drift = sim.trend * baseVal * 0.0022
+    44→    44→  1203→      // Small pullback within trend (~20% of candles pull back against trend)
+    45→    45→  1204→      if (Math.random() < 0.18) {
+    46→    46→  1205→        drift = -sim.trend * baseVal * 0.0008
+    47→    47→  1206→      }
+    48→    48→  1207→    } else if (sim.phase === 2) {
+    49→    49→  1208→      // Breakout: strong directional move with high vol
+    50→    50→  1209→      drift = sim.trend * baseVal * 0.0035
+    51→    51→  1210→    } else {
+    52→    52→  1211→      // Consolidation: very small random drift, mostly noise
+    53→    53→  1212→      drift = (Math.random() - 0.5) * baseVal * 0.0004
+    54→    54→  1213→    }
+    55→    55→  1214→
+    56→    56→  1215→    // Momentum with HIGH persistence — this is key to realistic consecutive candles
+    57→    57→  1216→    // Higher persistence (0.90) = trends continue smoothly
+    58→    58→  1217→    sim.momentum = sim.momentum * 0.90 + drift * 0.35 + (Math.random() - 0.5) * volatility
+    59→    59→  1218→
+    60→    60→  1219→    // Weak mean reversion — prevents price from drifting too far from base
+    61→    61→  1220→    const meanRevert = (baseVal - prevClose) * 0.0008
+    62→    62→  1221→
+    63→    63→  1222→    const rawClose = prevClose + sim.momentum + meanRevert
+    64→    64→  1223→    const close = Math.round(Math.max(baseVal * 0.85, Math.min(baseVal * 1.15, rawClose)))
+    65→    65→  1224→    const bodySize = Math.abs(close - open)
+    66→    66→  1225→    const isBullish = close >= open
+    67→    67→  1226→
+    68→    68→  1227→    // ── Realistic Wick Generation ──
+    69→    69→  1228→    // Simulate intra-candle price action to generate wicks
+    70→    70→  1229→    // In real markets: trending candles have wicks opposite to trend direction
+    71→    71→  1230→    // Consolidation candles have balanced wicks
+    72→    72→  1231→    let upperWick: number, lowerWick: number
+    73→    73→  1232→
+    74→    74→  1233→    if (sim.phase === 1) {
+    75→    75→  1234→      // Trending phase: wick mainly on the RETREAT side
+    76→    76→  1235→      if (isBullish) {
+    77→    77→  1236→        // Bullish trend candle: small upper wick, moderate lower wick (rejection of lows)
+    78→    78→  1237→        upperWick = bodySize * (0.1 + Math.random() * 0.4) + baseVal * 0.00015
+    79→    79→  1238→        lowerWick = bodySize * (0.3 + Math.random() * 0.8) + baseVal * 0.0003
+    80→    80→  1239→      } else {
+    81→    81→  1240→        // Bearish trend candle: moderate upper wick (rejection of highs), small lower wick
+    82→    82→  1241→        upperWick = bodySize * (0.3 + Math.random() * 0.8) + baseVal * 0.0003
+    83→    83→  1242→        lowerWick = bodySize * (0.1 + Math.random() * 0.4) + baseVal * 0.00015
+    84→    84→  1243→      }
+    85→    85→  1244→    } else if (sim.phase === 2) {
+    86→    86→  1245→      // Breakout: longer wicks on both sides (volatility)
+    87→    87→  1246→      upperWick = bodySize * (0.4 + Math.random() * 1.0) + baseVal * 0.0005
+    88→    88→  1247→      lowerWick = bodySize * (0.4 + Math.random() * 1.0) + baseVal * 0.0005
+    89→    89→  1248→    } else {
+    90→    90→  1249→      // Consolidation: balanced wicks, often long relative to body
+    91→    91→  1250→      upperWick = bodySize * (0.4 + Math.random() * 1.2) + baseVal * 0.0004
+    92→    92→  1251→      lowerWick = bodySize * (0.4 + Math.random() * 1.2) + baseVal * 0.0004
+    93→    93→  1252→    }
+    94→    94→  1253→
+    95→    95→  1254→    // Special patterns (infrequent, like real markets)
+    96→    96→  1255→    const patternRoll = Math.random()
+    97→    97→  1256→    if (patternRoll < 0.04 && bodySize < baseVal * 0.0003) {
+    98→    98→  1257→      // Doji: very small body, moderate wicks
+    99→    99→  1258→      upperWick = baseVal * (0.0008 + Math.random() * 0.0015)
+   100→   100→  1259→      lowerWick = baseVal * (0.0008 + Math.random() * 0.0015)
+   101→   101→  1260→    } else if (patternRoll < 0.07 && isBullish) {
+   102→   102→  1261→      // Hammer: long lower wick, small upper wick
+   103→   103→  1262→      lowerWick = bodySize * (2.0 + Math.random() * 2.5) + baseVal * 0.0005
+   104→   104→  1263→      upperWick = bodySize * (0.05 + Math.random() * 0.2)
+   105→   105→  1264→    } else if (patternRoll < 0.10 && !isBullish) {
+   106→   106→  1265→      // Shooting star: long upper wick, small lower wick
+   107→   107→  1266→      upperWick = bodySize * (2.0 + Math.random() * 2.5) + baseVal * 0.0005
+   108→   108→  1267→      lowerWick = bodySize * (0.05 + Math.random() * 0.2)
+   109→   109→  1268→    }
+   110→   110→  1269→
+   111→   111→  1270→    const high = Math.max(open, close) + Math.round(upperWick)
+   112→   112→  1271→    const low = Math.min(open, close) - Math.round(lowerWick)
+   113→   113→  1272→
+   114→   114→  1273→    // Volume correlates with phase and candle size
+   115→   115→  1274→    const simBaseVol = sim.vol
+   116→   116→  1275→    const volMultiplier = sim.phase === 2 ? 2.2 : sim.phase === 1 ? 1.2 : 0.6
+   117→   117→  1276→    const bodyRatio = bodySize / baseVal
+   118→   118→  1277→    const volume = Math.round(simBaseVol * volMultiplier * (0.6 + Math.random() * 0.8 + bodyRatio * 15))
+   119→   119→  1278→
+   120→   120→  1279→    const now = new Date()
+   121→   121→  1280→    now.setMinutes(now.getMinutes() - (40 - idx))
+   122→   122→  1281→    const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+   123→   123→  1282→
+   124→   124→  1283→    return { idx, open, high, low, close, volume, time }
+   125→   125→  1284→  }, [])
+   126→   126→  1285→
+   127→   127→  1286→  // Helper: get data based on timeframe
+   128→   128→  1287→  const getDataForTimeframe = useCallback((data: CandleData[], tf: string) => {
+   129→   129→  1288→    if (data.length === 0) return data
+   130→   130→  1289→    switch (tf) {
+   131→   131→  1290→      case '1H': return data.slice(-10)
+   132→   132→  1291→      case '1D': return data.slice(-25)
+   133→   133→  1292→      case '1W': return data.slice(-40)
+   134→   134→  1293→      case '1M': return data
+   135→   135→  1294→      case 'ALL': return data
+   136→   136→  1295→      default: return data
+   137→   137→  1296→    }
+   138→   138→  1297→  }, [])
+   139→   139→  1298→
+   140→   140→  1299→  // Compute MA line values for candle data
+   141→   141→  1300→  const computeMA = useCallback((data: CandleData[], period: number): (number | null)[] => {
+   142→   142→  1301→    return data.map((_, i) => {
+   143→   143→  1302→      if (i < period - 1) return null
+   144→   144→  1303→      let sum = 0
+   145→   145→  1304→      for (let j = i - period + 1; j <= i; j++) sum += data[j].close
+   146→   146→  1305→      return sum / period
+   147→   147→  1306→    })
+   148→   148→  1307→  }, [])
+   149→   149→  1308→
+   150→   150→  1309→  // Bollinger Bands (20,2)
+   151→   151→  1310→  const computeBollinger = useCallback((data: CandleData[]): { upper: (number | null)[]; middle: (number | null)[]; lower: (number | null)[] } => {
+   152→   152→  1311→    const ma20 = computeMA(data, 20)
+   153→   153→  1312→    const upper: (number | null)[] = []
+   154→   154→  1313→    const lower: (number | null)[] = []
+   155→   155→  1314→    data.forEach((_, i) => {
+   156→   156→  1315→      if (ma20[i] === null) { upper.push(null); lower.push(null); return }
+   157→   157→  1316→      let sumSq = 0
+   158→   158→  1317→      for (let j = i - 19; j <= i; j++) sumSq += (data[j].close - ma20[i]!) ** 2
+   159→   159→  1318→      const std = Math.sqrt(sumSq / 20)
+   160→   160→  1319→      upper.push(ma20[i]! + 2 * std)
+   161→   161→  1320→      lower.push(ma20[i]! - 2 * std)
+   162→   162→  1321→    })
+   163→   163→  1322→    return { upper, middle: ma20, lower }
+   164→   164→  1323→  }, [computeMA])
+   165→   165→  1324→
+   166→   166→  1325→  // RSI (14)
+   167→   167→  1326→  const computeRSI = useCallback((data: CandleData[], period = 14): (number | null)[] => {
+   168→   168→  1327→    const result: (number | null)[] = []
+   169→   169→  1328→    if (data.length < period + 1) return data.map(() => null)
+   170→   170→  1329→    let avgGain = 0, avgLoss = 0
+   171→   171→  1330→    for (let i = 1; i <= period; i++) {
+   172→   172→  1331→      const change = data[i].close - data[i - 1].close
+   173→   173→  1332→      if (change > 0) avgGain += change; else avgLoss += Math.abs(change)
+   174→   174→  1333→    }
+   175→   175→  1334→    avgGain /= period; avgLoss /= period
+   176→   176→  1335→    for (let i = 0; i < period; i++) result.push(null)
+   177→   177→  1336→    result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss))
+   178→   178→  1337→    for (let i = period + 1; i < data.length; i++) {
+   179→   179→  1338→      const change = data[i].close - data[i - 1].close
+   180→   180→  1339→      avgGain = (avgGain * (period - 1) + (change > 0 ? change : 0)) / period
+   181→   181→  1340→      avgLoss = (avgLoss * (period - 1) + (change < 0 ? Math.abs(change) : 0)) / period
+   182→   182→  1341→      result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss))
+   183→   183→  1342→    }
+   184→   184→  1343→    return result
+   185→   185→  1344→  }, [])
+   186→   186→  1345→
+   187→   187→  1346→  // MACD (12,26,9)
+   188→   188→  1347→  const computeMACD = useCallback((data: CandleData[]): { macd: (number | null)[]; signal: (number | null)[]; histogram: (number | null)[] } => {
+   189→   189→  1348→    const ema = (arr: number[], p: number): number[] => {
+   190→   190→  1349→      const k = 2 / (p + 1)
+   191→   191→  1350→      const res: number[] = [arr[0]]
+   192→   192→  1351→      for (let i = 1; i < arr.length; i++) res.push(arr[i] * k + res[i - 1] * (1 - k))
+   193→   193→  1352→      return res
+   194→   194→  1353→    }
+   195→   195→  1354→    const closes = data.map(d => d.close)
+   196→   196→  1355→    const ema12 = ema(closes, 12)
+   197→   197→  1356→    const ema26 = ema(closes, 26)
+   198→   198→  1357→    const macdLine = ema12.map((v, i) => i >= 25 ? v - ema26[i] : 0)
+   199→   199→  1358→    const signalLine = ema(macdLine.slice(25), 9)
+   200→   200→  1359→    const macd: (number | null)[] = macdLine.map((v, i) => i >= 25 ? v : null)
+   201→   201→  1360→    const signal: (number | null)[] = macdLine.map((_, i) => i >= 25 ? (signalLine[i - 25] ?? null) : null)
+   202→   202→  1361→    const histogram: (number | null)[] = macd.map((v, i) => v !== null && signal[i] !== null ? v - signal[i]! : null)
+   203→   203→  1362→    return { macd, signal, histogram }
+   204→   204→  1363→  }, [])
+   205→   205→  1364→
+   206→   206→  1365→  // ── TREND INDICATORS ──
+   207→   207→  1366→
+   208→   208→  1367→  // ADX (Average Directional Movement Index) - period 14
+   209→   209→  1368→  const computeADX = useCallback((data: CandleData[], period = 14) => {
+   210→   210→  1369→    if (data.length < period * 2) return { adx: data.map(() => null) as (number | null)[], plusDI: data.map(() => null) as (number | null)[], minusDI: data.map(() => null) as (number | null)[] }
+   211→   211→  1370→    const plusDM: number[] = [], minusDM: number[] = [], tr: number[] = []
+   212→   212→  1371→    for (let i = 1; i < data.length; i++) {
+   213→   213→  1372→      const highDiff = data[i].high - data[i-1].high
+   214→   214→  1373→      const lowDiff = data[i-1].low - data[i].low
+   215→   215→  1374→      plusDM.push(highDiff > lowDiff && highDiff > 0 ? highDiff : 0)
+   216→   216→  1375→      minusDM.push(lowDiff > highDiff && lowDiff > 0 ? lowDiff : 0)
+   217→   217→  1376→      tr.push(Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close)))
+   218→   218→  1377→    }
+   219→   219→  1378→    const smooth = (arr: number[], p: number) => {
+   220→   220→  1379→      const res: number[] = [arr.slice(0, p).reduce((a,b) => a+b, 0)]
+   221→   221→  1380→      for (let i = p; i < arr.length; i++) res.push(res[i-p] - res[i-p]/p + arr[i])
+   222→   222→  1381→      return res
+   223→   223→  1382→    }
+   224→   224→  1383→    const smoothTR = smooth(tr, period), smoothPDM = smooth(plusDM, period), smoothMDM = smooth(minusDM, period)
+   225→   225→  1384→    const plusDI = smoothPDM.map((v, i) => smoothTR[i] > 0 ? (v / smoothTR[i]) * 100 : 0)
+   226→   226→  1385→    const minusDI = smoothMDM.map((v, i) => smoothTR[i] > 0 ? (v / smoothTR[i]) * 100 : 0)
+   227→   227→  1386→    const dx = plusDI.map((v, i) => v + minusDI[i] > 0 ? Math.abs(v - minusDI[i]) / (v + minusDI[i]) * 100 : 0)
+   228→   228→  1387→    const adx: (number | null)[] = [null]
+   229→   229→  1388→    let adxVal = dx.slice(0, period).reduce((a,b) => a+b, 0) / period
+   230→   230→  1389→    adx.push(adxVal)
+   231→   231→  1390→    for (let i = period; i < dx.length; i++) {
+   232→   232→  1391→      adxVal = (adxVal * (period - 1) + dx[i]) / period
+   233→   233→  1392→      adx.push(adxVal)
+   234→   234→  1393→    }
+   235→   235→  1394→    while (adx.length < data.length) adx.unshift(null)
+   236→   236→  1395→    while (plusDI.length < data.length) plusDI.unshift(0)
+   237→   237→  1396→    while (minusDI.length < data.length) minusDI.unshift(0)
+   238→   238→  1397→    return { adx, plusDI: plusDI.map(v => v as number | null), minusDI: minusDI.map(v => v as number | null) }
+   239→   239→  1398→  }, [])
+   240→   240→  1399→
+   241→   241→  1400→  // Envelopes (20, 0.05)
+   242→   242→  1401→  const computeEnvelopes = useCallback((data: CandleData[], period = 20, pct = 0.05) => {
+   243→   243→  1402→    const ma = computeMA(data, period)
+   244→   244→  1403→    return {
+   245→   245→  1404→      upper: ma.map(v => v !== null ? v * (1 + pct) : null),
+   246→   246→  1405→      middle: ma,
+   247→   247→  1406→      lower: ma.map(v => v !== null ? v * (1 - pct) : null),
+   248→   248→  1407→    }
+   249→   249→  1408→  }, [computeMA])
+   250→   250→  1409→
+   251→   251→  1410→  // Ichimoku Kinko Hyo (9, 26, 52)
+   252→   252→  1411→  const computeIchimoku = useCallback((data: CandleData[]) => {
+   253→   253→  1412→    const periodHigh = (d: CandleData[], start: number, len: number) => {
+   254→   254→  1413→      let h = -Infinity
+   255→   255→  1414→      for (let i = Math.max(0, start); i <= Math.min(d.length-1, start+len-1); i++) h = Math.max(h, d[i].high)
+   256→   256→  1415→      return h
+   257→   257→  1416→    }
+   258→   258→  1417→    const periodLow = (d: CandleData[], start: number, len: number) => {
+   259→   259→  1418→      let l = Infinity
+   260→   260→  1419→      for (let i = Math.max(0, start); i <= Math.min(d.length-1, start+len-1); i++) l = Math.min(l, d[i].low)
+   261→   261→  1420→      return l
+   262→   262→  1421→    }
+   263→   263→  1422→    const tenkan = data.map((_, i) => i < 8 ? null : (periodHigh(data, i-8, 9) + periodLow(data, i-8, 9)) / 2)
+   264→   264→  1423→    const kijun = data.map((_, i) => i < 25 ? null : (periodHigh(data, i-25, 26) + periodLow(data, i-25, 26)) / 2)
+   265→   265→  1424→    const senkouA = data.map((_, i) => i < 25 ? null : (tenkan[i] !== null && kijun[i] !== null ? (tenkan[i]! + kijun[i]!) / 2 : null))
+   266→   266→  1425→    const senkouB = data.map((_, i) => i < 51 ? null : (periodHigh(data, i-51, 52) + periodLow(data, i-51, 52)) / 2)
+   267→   267→  1426→    const chikou = data.map((_, i) => i + 26 < data.length ? data[i+26].close : null)
+   268→   268→  1427→    return { tenkan, kijun, senkouA, senkouB, chikou }
+   269→   269→  1428→  }, [])
+   270→   270→  1429→
+   271→   271→  1430→  // Parabolic SAR
+   272→   272→  1431→  const computeSAR = useCallback((data: CandleData[], step = 0.02, max = 0.2) => {
+   273→   273→  1432→    if (data.length < 2) return data.map(() => null)
+   274→   274→  1433→    const result: (number | null)[] = [null]
+   275→   275→  1434→    let isLong = data[1].close > data[0].close
+   276→   276→  1435→    let af = step
+   277→   277→  1436→    let ep = isLong ? data[0].high : data[0].low
+   278→   278→  1437→    let sar = isLong ? data[0].low : data[0].high
+   279→   279→  1438→    for (let i = 1; i < data.length; i++) {
+   280→   280→  1439→      sar = sar + af * (ep - sar)
+   281→   281→  1440→      if (isLong) {
+   282→   282→  1441→        if (i >= 2) sar = Math.min(sar, data[i-1].low, data[i-2].low)
+   283→   283→  1442→        if (data[i].low < sar) { isLong = false; sar = ep; ep = data[i].low; af = step }
+   284→   284→  1443→        else { if (data[i].high > ep) { ep = data[i].high; af = Math.min(af + step, max) } }
+   285→   285→  1444→      } else {
+   286→   286→  1445→        if (i >= 2) sar = Math.max(sar, data[i-1].high, data[i-2].high)
+   287→   287→  1446→        if (data[i].high > sar) { isLong = true; sar = ep; ep = data[i].high; af = step }
+   288→   288→  1447→        else { if (data[i].low < ep) { ep = data[i].low; af = Math.min(af + step, max) } }
+   289→   289→  1448→      }
+   290→   290→  1449→      result.push(sar)
+   291→   291→  1450→    }
+   292→   292→  1451→    return result
+   293→   293→  1452→  }, [])
+   294→   294→  1453→
+   295→   295→  1454→  // Standard Deviation
+   296→   296→  1455→  const computeStdDev = useCallback((data: CandleData[], period = 20) => {
+   297→   297→  1456→    const ma = computeMA(data, period)
+   298→   298→  1457→    return data.map((_, i) => {
+   299→   299→  1458→      if (ma[i] === null) return null
+   300→   300→  1459→      let sumSq = 0
+   301→   301→  1460→      for (let j = i - period + 1; j <= i; j++) sumSq += (data[j].close - ma[i]!) ** 2
+   302→   302→  1461→      return Math.sqrt(sumSq / period)
+   303→   303→  1462→    })
+   304→   304→  1463→  }, [computeMA])
+   305→   305→  1464→
+   306→   306→  1465→  // ZigZag (deviation 5%)
+   307→   307→  1466→  const computeZigZag = useCallback((data: CandleData[], deviation = 5) => {
+   308→   308→  1467→    if (data.length < 3) return data.map(() => null)
+   309→   309→  1468→    const points: { idx: number; price: number; isHigh: boolean }[] = []
+   310→   310→  1469→    let lastHigh = { idx: 0, price: data[0].high }, lastLow = { idx: 0, price: data[0].low }
+   311→   311→  1470→    let isUp = true
+   312→   312→  1471→    for (let i = 1; i < data.length; i++) {
+   313→   313→  1472→      const changeFromHigh = ((data[i].high - lastHigh.price) / lastHigh.price) * 100
+   314→   314→  1473→      const changeFromLow = ((data[i].low - lastLow.price) / lastLow.price) * 100
+   315→   315→  1474→      if (isUp) {
+   316→   316→  1475→        if (changeFromHigh > 0) lastHigh = { idx: i, price: data[i].high }
+   317→   317→  1476→        if (changeFromLow < -deviation) {
+   318→   318→  1477→          points.push({ idx: lastHigh.idx, price: lastHigh.price, isHigh: true })
+   319→   319→  1478→          lastLow = { idx: i, price: data[i].low }
+   320→   320→  1479→          isUp = false
+   321→   321→  1480→        }
+   322→   322→  1481→      } else {
+   323→   323→  1482→        if (changeFromLow < 0) lastLow = { idx: i, price: data[i].low }
+   324→   324→  1483→        if (changeFromHigh > deviation) {
+   325→   325→  1484→          points.push({ idx: lastLow.idx, price: lastLow.price, isHigh: false })
+   326→   326→  1485→          lastHigh = { idx: i, price: data[i].high }
+   327→   327→  1486→          isUp = true
+   328→   328→  1487→        }
+   329→   329→  1488→      }
+   330→   330→  1489→    }
+   331→   331→  1490→    const result: (number | null)[] = data.map(() => null)
+   332→   332→  1491→    points.forEach(p => { result[p.idx] = p.price })
+   333→   333→  1492→    return result
+   334→   334→  1493→  }, [])
+   335→   335→  1494→
+   336→   336→  1495→  // ── OSCILLATOR INDICATORS ──
+   337→   337→  1496→
+   338→   338→  1497→  // ATR (Average True Range) - period 14
+   339→   339→  1498→  const computeATR = useCallback((data: CandleData[], period = 14) => {
+   340→   340→  1499→    if (data.length < 2) return data.map(() => null)
+   341→   341→  1500→    const tr: number[] = [data[0].high - data[0].low]
+   342→   342→  1501→    for (let i = 1; i < data.length; i++) {
+   343→   343→  1502→      tr.push(Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close)))
+   344→   344→  1503→    }
+   345→   345→  1504→    const result: (number | null)[] = []
+   346→   346→  1505→    for (let i = 0; i < period - 1; i++) result.push(null)
+   347→   347→  1506→    let atr = tr.slice(0, period).reduce((a,b) => a+b, 0) / period
+   348→   348→  1507→    result.push(atr)
+   349→   349→  1508→    for (let i = period; i < tr.length; i++) {
+   350→   350→  1509→      atr = (atr * (period - 1) + tr[i]) / period
+   351→   351→  1510→      result.push(atr)
+   352→   352→  1511→    }
+   353→   353→  1512→    return result
+   354→   354→  1513→  }, [])
+   355→   355→  1514→
+   356→   356→  1515→  // Bears Power
+   357→   357→  1516→  const computeBearsPower = useCallback((data: CandleData[], period = 13) => {
+   358→   358→  1517→    const ma = computeMA(data, period)
+   359→   359→  1518→    return data.map((d, i) => ma[i] !== null ? d.low - ma[i]! : null)
+   360→   360→  1519→  }, [computeMA])
+   361→   361→  1520→
+   362→   362→  1521→  // Bulls Power
+   363→   363→  1522→  const computeBullsPower = useCallback((data: CandleData[], period = 13) => {
+   364→   364→  1523→    const ma = computeMA(data, period)
+   365→   365→  1524→    return data.map((d, i) => ma[i] !== null ? d.high - ma[i]! : null)
+   366→   366→  1525→  }, [computeMA])
+   367→   367→  1526→
+   368→   368→  1527→  // CCI (Commodity Channel Index) - period 14
+   369→   369→  1528→  const computeCCI = useCallback((data: CandleData[], period = 14) => {
+   370→   370→  1529→    const tp = data.map(d => (d.high + d.low + d.close) / 3)
+   371→   371→  1530→    const result: (number | null)[] = []
+   372→   372→  1531→    for (let i = 0; i < period - 1; i++) result.push(null)
+   373→   373→  1532→    for (let i = period - 1; i < data.length; i++) {
+   374→   374→  1533→      let sum = 0
+   375→   375→  1534→      for (let j = i - period + 1; j <= i; j++) sum += tp[j]
+   376→   376→  1535→      const mean = sum / period
+   377→   377→  1536→      let meanDev = 0
+   378→   378→  1537→      for (let j = i - period + 1; j <= i; j++) meanDev += Math.abs(tp[j] - mean)
+   379→   379→  1538→      meanDev /= period
+   380→   380→  1539→      result.push(meanDev > 0 ? (tp[i] - mean) / (0.015 * meanDev) : 0)
+   381→   381→  1540→    }
+   382→   382→  1541→    return result
+   383→   383→  1542→  }, [])
+   384→   384→  1543→
+   385→   385→  1544→  // DeMarker
+   386→   386→  1545→  const computeDeMarker = useCallback((data: CandleData[], period = 14) => {
+   387→   387→  1546→    if (data.length < 2) return data.map(() => null)
+   388→   388→  1547→    const dMax: number[] = [0], dMin: number[] = [0]
+   389→   389→  1548→    for (let i = 1; i < data.length; i++) {
+   390→   390→  1549→      dMax.push(data[i].high > data[i-1].high ? data[i].high - data[i-1].high : 0)
+   391→   391→  1550→      dMin.push(data[i].low < data[i-1].low ? data[i-1].low - data[i].low : 0)
+   392→   392→  1551→    }
+   393→   393→  1552→    const result: (number | null)[] = []
+   394→   394→  1553→    for (let i = 0; i < period; i++) result.push(null)
+   395→   395→  1554→    for (let i = period; i < data.length; i++) {
+   396→   396→  1555→      const maxSum = dMax.slice(i-period+1, i+1).reduce((a,b) => a+b, 0)
+   397→   397→  1556→      const minSum = dMin.slice(i-period+1, i+1).reduce((a,b) => a+b, 0)
+   398→   398→  1557→      result.push(maxSum + minSum > 0 ? maxSum / (maxSum + minSum) : 0.5)
+   399→   399→  1558→    }
+   400→   400→  1559→    return result
+   401→   401→  1560→  }, [])
+   402→   402→  1561→
+   403→   403→  1562→  // Force Index
+   404→   404→  1563→  const computeForceIndex = useCallback((data: CandleData[], period = 13) => {
+   405→   405→  1564→    const fi: number[] = [0]
+   406→   406→  1565→    for (let i = 1; i < data.length; i++) fi.push((data[i].close - data[i-1].close) * data[i].volume)
+   407→   407→  1566→    const result: (number | null)[] = []
+   408→   408→  1567→    for (let i = 0; i < period - 1; i++) result.push(null)
+   409→   409→  1568→    for (let i = period - 1; i < fi.length; i++) {
+   410→   410→  1569→      let sum = 0
+   411→   411→  1570→      for (let j = i - period + 1; j <= i; j++) sum += fi[j]
+   412→   412→  1571→      result.push(sum / period)
+   413→   413→  1572→    }
+   414→   414→  1573→    return result
+   415→   415→  1574→  }, [])
+   416→   416→  1575→
+   417→   417→  1576→  // Momentum
+   418→   418→  1577→  const computeMomentum = useCallback((data: CandleData[], period = 14) => {
+   419→   419→  1578→    return data.map((_, i) => i < period ? null : data[i].close - data[i-period].close)
+   420→   420→  1579→  }, [])
+   421→   421→  1580→
+   422→   422→  1581→  // OsMA (Moving Average of Oscillator)
+   423→   423→  1582→  const computeOsMA = useCallback((data: CandleData[]) => {
+   424→   424→  1583→    const macdData = computeMACD(data)
+   425→   425→  1584→    return macdData.histogram
+   426→   426→  1585→  }, [computeMACD])
+   427→   427→  1586→
+   428→   428→  1587→  // Relative Vigor Index
+   429→   429→  1588→  const computeRVI = useCallback((data: CandleData[], period = 10) => {
+   430→   430→  1589→    if (data.length < period + 3) return { rvi: data.map(() => null) as (number | null)[], signal: data.map(() => null) as (number | null)[] }
+   431→   431→  1590→    const co: number[] = data.map(d => d.close - d.open)
+   432→   432→  1591→    const hl: number[] = data.map(d => d.high - d.low)
+   433→   433→  1592→    const rvi: (number | null)[] = data.map(() => null)
+   434→   434→  1593→    const signal: (number | null)[] = data.map(() => null)
+   435→   435→  1594→    for (let i = period + 3; i < data.length; i++) {
+   436→   436→  1595→      let numSum = 0, denSum = 0
+   437→   437→  1596→      for (let j = i - period + 1; j <= i; j++) {
+   438→   438→  1597→        if (j >= 1 && j < co.length - 1) {
+   439→   439→  1598→          numSum += (co[j-1] + 2*co[j] + co[Math.min(j+1, co.length-1)]) / 4
+   440→   440→  1599→          denSum += (hl[j-1] + 2*hl[j] + hl[Math.min(j+1, hl.length-1)]) / 4
+   441→   441→  1600→        }
+   442→   442→  1601→      }
+   443→   443→  1602→      rvi[i] = denSum > 0 ? numSum / denSum : 0
+   444→   444→  1603→    }
+   445→   445→  1604→    for (let i = period + 6; i < data.length; i++) {
+   446→   446→  1605→      if (rvi[i-3] !== null && rvi[i-2] !== null && rvi[i-1] !== null && rvi[i] !== null) {
+   447→   447→  1606→        signal[i] = (rvi[i-3]! + 2*rvi[i-2]! + 2*rvi[i-1]! + rvi[i]!) / 6
+   448→   448→  1607→      }
+   449→   449→  1608→    }
+   450→   450→  1609→    return { rvi, signal }
+   451→   451→  1610→  }, [])
+   452→   452→  1611→
+   453→   453→  1612→  // Stochastic Oscillator (5,3,3)
+   454→   454→  1613→  const computeStochastic = useCallback((data: CandleData[], kPeriod = 5, dPeriod = 3) => {
+   455→   455→  1614→    const k: (number | null)[] = []
+   456→   456→  1615→    for (let i = 0; i < data.length; i++) {
+   457→   457→  1616→      if (i < kPeriod - 1) { k.push(null); continue }
+   458→   458→  1617→      let highest = -Infinity, lowest = Infinity
+   459→   459→  1618→      for (let j = i - kPeriod + 1; j <= i; j++) { highest = Math.max(highest, data[j].high); lowest = Math.min(lowest, data[j].low) }
+   460→   460→  1619→      k.push(highest - lowest > 0 ? ((data[i].close - lowest) / (highest - lowest)) * 100 : 50)
+   461→   461→  1620→    }
+   462→   462→  1621→    const d: (number | null)[] = []
+   463→   463→  1622→    for (let i = 0; i < data.length; i++) {
+   464→   464→  1623→      if (i < kPeriod + dPeriod - 2 || k[i] === null) { d.push(null); continue }
+   465→   465→  1624→      let sum = 0, count = 0
+   466→   466→  1625→      for (let j = i - dPeriod + 1; j <= i; j++) { if (k[j] !== null) { sum += k[j]!; count++ } }
+   467→   467→  1626→      d.push(count > 0 ? sum / count : null)
+   468→   468→  1627→    }
+   469→   469→  1628→    return { k, d }
+   470→   470→  1629→  }, [])
+   471→   471→  1630→
+   472→   472→  1631→  // Williams' Percent Range (14)
+   473→   473→  1632→  const computeWilliamsR = useCallback((data: CandleData[], period = 14) => {
+   474→   474→  1633→    return data.map((_, i) => {
+   475→   475→  1634→      if (i < period - 1) return null
+   476→   476→  1635→      let highest = -Infinity, lowest = Infinity
+   477→   477→  1636→      for (let j = i - period + 1; j <= i; j++) { highest = Math.max(highest, data[j].high); lowest = Math.min(lowest, data[j].low) }
+   478→   478→  1637→      return highest - lowest > 0 ? ((highest - data[i].close) / (highest - lowest)) * -100 : -50
+   479→   479→  1638→    })
+   480→   480→  1639→  }, [])
+   481→   481→  1640→
+   482→   482→  1641→  // ── VOLUME INDICATORS ──
+   483→   483→  1642→
+   484→   484→  1643→  // Accumulation/Distribution
+   485→   485→  1644→  const computeAD = useCallback((data: CandleData[]) => {
+   486→   486→  1645→    const result: number[] = [0]
+   487→   487→  1646→    for (let i = 1; i < data.length; i++) {
+   488→   488→  1647→      const clv = data[i].high - data[i].low > 0 ? ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low) : 0
+   489→   489→  1648→      result.push(result[i-1] + clv * data[i].volume)
+   490→   490→  1649→    }
+   491→   491→  1650→    return result
+   492→   492→  1651→  }, [])
+   493→   493→  1652→
+   494→   494→  1653→  // Money Flow Index (14)
+   495→   495→  1654→  const computeMFI = useCallback((data: CandleData[], period = 14) => {
+   496→   496→  1655→    const tp = data.map(d => (d.high + d.low + d.close) / 3)
+   497→   497→  1656→    const mf = tp.map((v, i) => v * data[i].volume)
+   498→   498→  1657→    const result: (number | null)[] = data.map(() => null)
+   499→   499→  1658→    for (let i = period; i < data.length; i++) {
+   500→   500→  1659→      let posFlow = 0, negFlow = 0
+   501→   501→  1660→      for (let j = i - period + 1; j <= i; j++) {
+   502→   502→  1661→        if (tp[j] > tp[j-1]) posFlow += mf[j]; else negFlow += mf[j]
+   503→   503→  1662→      }
+   504→   504→  1663→      result[i] = negFlow > 0 ? 100 - 100 / (1 + posFlow / negFlow) : 100
+   505→   505→  1664→    }
+   506→   506→  1665→    return result
+   507→   507→  1666→  }, [])
+   508→   508→  1667→
+   509→   509→  1668→  // On Balance Volume
+   510→   510→  1669→  const computeOBV = useCallback((data: CandleData[]) => {
+   511→   511→  1670→    const result: number[] = [0]
+   512→   512→  1671→    for (let i = 1; i < data.length; i++) {
+   513→   513→  1672→      if (data[i].close > data[i-1].close) result.push(result[i-1] + data[i].volume)
+   514→   514→  1673→      else if (data[i].close < data[i-1].close) result.push(result[i-1] - data[i].volume)
+   515→   515→  1674→      else result.push(result[i-1])
+   516→   516→  1675→    }
+   517→   517→  1676→    return result
+   518→   518→  1677→  }, [])
+   519→   519→  1678→
+   520→   520→  1679→  // ── BILL WILLIAMS INDICATORS ──
+   521→   521→  1680→
+   522→   522→  1681→  // Awesome Oscillator
+   523→   523→  1682→  const computeAO = useCallback((data: CandleData[]) => {
+   524→   524→  1683→    const midpoint = data.map(d => (d.high + d.low) / 2)
+   525→   525→  1684→    const sma5: (number | null)[] = [], sma34: (number | null)[] = []
+   526→   526→  1685→    for (let i = 0; i < data.length; i++) {
+   527→   527→  1686→      if (i < 4) { sma5.push(null) } else { let s = 0; for (let j = i-4; j <= i; j++) s += midpoint[j]; sma5.push(s/5) }
+   528→   528→  1687→      if (i < 33) { sma34.push(null) } else { let s = 0; for (let j = i-33; j <= i; j++) s += midpoint[j]; sma34.push(s/34) }
+   529→   529→  1688→    }
+   530→   530→  1689→    return sma5.map((v, i) => v !== null && sma34[i] !== null ? v! - sma34[i]! : null)
+   531→   531→  1690→  }, [])
+   532→   532→  1691→
+   533→   533→  1692→  // Accelerator Oscillator
+   534→   534→  1693→  const computeAC = useCallback((data: CandleData[]) => {
+   535→   535→  1694→    const ao = computeAO(data)
+   536→   536→  1695→    const result: (number | null)[] = []
+   537→   537→  1696→    for (let i = 0; i < data.length; i++) {
+   538→   538→  1697→      if (i < 4 || ao[i] === null) { result.push(null); continue }
+   539→   539→  1698→      let sum = 0, count = 0
+   540→   540→  1699→      for (let j = i - 4; j <= i; j++) { if (ao[j] !== null) { sum += ao[j]!; count++ } }
+   541→   541→  1700→      result.push(count > 0 ? ao[i]! - sum / count : null)
+   542→   542→  1701→    }
+   543→   543→  1702→    return result
+   544→   544→  1703→  }, [computeAO])
+   545→   545→  1704→
+   546→   546→  1705→  // Alligator (Jaw 13, Teeth 8, Lips 5)
+   547→   547→  1706→  const computeAlligator = useCallback((data: CandleData[]) => {
+   548→   548→  1707→    const jaw = computeMA(data, 13).map((v, i) => i < 8 ? null : v)
+   549→   549→  1708→    const teeth = computeMA(data, 8).map((v, i) => i < 5 ? null : v)
+   550→   550→  1709→    const lips = computeMA(data, 5).map((v, i) => i < 3 ? null : v)
+   551→   551→  1710→    return { jaw, teeth, lips }
+   552→   552→  1711→  }, [computeMA])
+   553→   553→  1712→
+   554→   554→  1713→  // Fractals
+   555→   555→  1714→  const computeFractals = useCallback((data: CandleData[]) => {
+   556→   556→  1715→    const up: (boolean | null)[] = data.map(() => null)
+   557→   557→  1716→    const down: (boolean | null)[] = data.map(() => null)
+   558→   558→  1717→    for (let i = 2; i < data.length - 2; i++) {
+   559→   559→  1718→      if (data[i].high > data[i-1].high && data[i].high > data[i-2].high && data[i].high > data[i+1].high && data[i].high > data[i+2].high) up[i] = true
+   560→   560→  1719→      if (data[i].low < data[i-1].low && data[i].low < data[i-2].low && data[i].low < data[i+1].low && data[i].low < data[i+2].low) down[i] = true
+   561→   561→  1720→    }
+   562→   562→  1721→    return { up, down }
+   563→   563→  1722→  }, [])
+   564→   564→  1723→
+   565→   565→  1724→  // Gator Oscillator
+   566→   566→  1725→  const computeGator = useCallback((data: CandleData[]) => {
+   567→   567→  1726→    const { jaw, teeth, lips } = computeAlligator(data)
+   568→   568→  1727→    const upper: (number | null)[] = jaw.map((v, i) => v !== null && teeth[i] !== null ? Math.abs(v! - teeth[i]!) : null)
+   569→   569→  1728→    const lower: (number | null)[] = teeth.map((v, i) => v !== null && lips[i] !== null ? -Math.abs(v! - lips[i]!) : null)
+   570→   570→  1729→    return { upper, lower }
+   571→   571→  1730→  }, [computeAlligator])
+   572→   572→  1731→
+   573→   573→  1732→  // Market Facilitation Index
+   574→   574→  1733→  const computeBWIMFI = useCallback((data: CandleData[]) => {
+   575→   575→  1734→    return data.map(d => d.high - d.low > 0 ? (d.high - d.low) / d.volume : 0)
+   576→   576→  1735→  }, [])
+   577→   577→  1736→
+   578→   578→  1737→  const initialized2 = useRef(false)
+   579→   579→  1738→  const stocksRef = useRef<Stock[]>([])
+   580→   580→  1739→  useEffect(() => { stocksRef.current = stocks }, [stocks])
+   581→   581→  1740→
+   582→   582→  1741→  // ============ LIVE PRICE CHART STATE ============
+   583→   583→  1742→  const [liveBuyChart, setLiveBuyChart] = useState<{time: string; price: number}[]>([])
+   584→   584→  1743→  const [liveSellChart, setLiveSellChart] = useState<{time: string; price: number}[]>([])
+   585→   585→  1744→  const [liveBuyPrice, setLiveBuyPrice] = useState(0)
+   586→   586→  1745→  const [liveSellPrice, setLiveSellPrice] = useState(0)
+   587→   587→  1746→  const [liveChartActive, setLiveChartActive] = useState(false)
+   588→   588→  1747→  const liveChartRef = useRef<{buyPrice: number; sellPrice: number; trend: number; momentum: number; phase: number}>({buyPrice: 0, sellPrice: 0, trend: 0, momentum: 0, phase: 0})
+   589→   589→  1748→  const MAX_CHART_POINTS = 60
+   590→   590→  1749→
+   591→   591→  1750→  // ============ LIVE IHSG CHART STATE (stable, always running) ============
+   592→   592→  1751→  const [ihsgChartData, setIhsgChartData] = useState<{idx: number; value: number}[]>([])
+   593→   593→  1752→  const ihsgChartRef = useRef<{val: number; baseVal: number; initialized: boolean}>({val: 0, baseVal: 0, initialized: false})
+   594→   594→  1753→
+   595→   595→  1754→  // Initialize IHSG chart data ONCE when indices first loads
+   596→   596→  1755→  useEffect(() => {
+   597→   597→  1756→    const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
+   598→   598→  1757→    if (!ihsgIdx || ihsgChartRef.current.initialized) return
+   599→   599→  1758→
+   600→   600→  1759→    ihsgChartRef.current.initialized = true
+
+[showing lines 1-600 of 602; use offset=601 with limit to continue reading]

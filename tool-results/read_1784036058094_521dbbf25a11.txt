@@ -1,0 +1,502 @@
+  2837→                          sinyalPinchRef.current = null
+  2838→                        }}
+  2839→                        style={{ cursor: sinyalDragRef.current?.dragging ? 'grabbing' : 'grab' }}>
+  2840→                        {(() => {
+  2841→                          const allCandles = [...sinyalCandles]
+  2842→                          const sim = sinyalChartSimRef.current
+  2843→                          if (sim) {
+  2844→                            const cc = sim.currentCandle
+  2845→                            if (cc.tickCount > 0) {
+  2846→                              allCandles.push({
+  2847→                                idx: allCandles.length, open: cc.open, high: cc.high, low: cc.low, close: cc.close, volume: cc.volume,
+  2848→                                time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+  2849→                              })
+  2850→                            }
+  2851→                          }
+  2852→                          if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[10px]" style={{ color: trTheme.textMuted }}>Memuat grafik...</div>
+  2853→
+  2854→                          const allHighs = allCandles.map(c => c.high)
+  2855→                          const allLows = allCandles.map(c => c.low)
+  2856→                          const minP = Math.min(...allLows)
+  2857→                          const maxP = Math.max(...allHighs)
+  2858→                          const rangeP = maxP - minP || 1
+  2859→                          const paddedMin = minP - rangeP * 0.08
+  2860→                          const paddedMax = maxP + rangeP * 0.08
+  2861→                          const paddedRange = paddedMax - paddedMin
+  2862→
+  2863→                          const W = 600
+  2864→                          const padR = 54
+  2865→                          const padL = 1
+  2866→                          const padT = 14
+  2867→                          const padB = 0
+  2868→                          const volH = 24
+  2869→                          const timeAxisH = 12
+  2870→                          const priceAreaH = 340 - padT - padB
+  2871→                          const chartH = priceAreaH + padT + padB
+  2872→                          const activeSubCharts = activeIndicators.filter(a => SUBCHART_KEYS.includes(a.key))
+  2873→                          const visibleSubCharts = activeSubCharts.slice(0, 3)
+  2874→                          const subChartH = visibleSubCharts.length * 44
+  2875→                          const H = chartH + volH + timeAxisH + subChartH
+  2876→                          const chartW = W - padR - padL
+  2877→
+  2878→                          const yScale = (price: number) => padT + ((paddedMax - price) / paddedRange) * priceAreaH
+  2879→
+  2880→                          const maxVisible = sinyalChartZoom
+  2881→                          const totalCandles = allCandles.length
+  2882→                          const endIdx = totalCandles - sinyalChartOffset
+  2883→                          const startIdx = Math.max(0, endIdx - maxVisible)
+  2884→                          const visibleCandles = allCandles.slice(startIdx, endIdx)
+  2885→                          const candleCount = visibleCandles.length
+  2886→                          if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[10px]" style={{ color: trTheme.textMuted }}>Geser kembali...</div>
+  2887→                          const candleSpacing = chartW / candleCount
+  2888→                          const candleBodyW = Math.max(1.5, Math.min(candleSpacing * 0.65, 14))
+  2889→
+  2890→                          const maxVol = Math.max(...visibleCandles.map(c => c.volume), 1)
+  2891→
+  2892→                          const lastCandle = visibleCandles[candleCount - 1]
+  2893→                          const lastPrice = lastCandle.close
+  2894→                          const yLast = yScale(lastPrice)
+  2895→                          const isUp = lastCandle.close >= lastCandle.open
+  2896→                          const priceColor = isUp ? '#26a69a' : '#ef5350'
+  2897→
+  2898→                          const activePositions = sinyalPositions.filter(p => p.status === 'active')
+  2899→
+  2900→                          const gridLevels = 6
+  2901→                          const gridPriceStep = paddedRange / gridLevels
+  2902→
+  2903→                          return (
+  2904→                            <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }}>
+  2905→                              <defs>
+  2906→                                <linearGradient id="priceBadgeGrad" x1="0" y1="0" x2="0" y2="1">
+  2907→                                  <stop offset="0%" stopColor={priceColor} stopOpacity="1" />
+  2908→                                  <stop offset="100%" stopColor={priceColor} stopOpacity="0.85" />
+  2909→                                </linearGradient>
+  2910→                                <filter id="glowDot" x="-100%" y="-100%" width="300%" height="300%">
+  2911→                                  <feGaussianBlur stdDeviation="2" result="blur" />
+  2912→                                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+  2913→                                </filter>
+  2914→                              </defs>
+  2915→
+  2916→                              {/* ── Chart Background ── */}
+  2917→                              <defs>
+  2918→                                <linearGradient id="chartBgGrad" x1="0" y1="0" x2="0" y2="1">
+  2919→                                  <stop offset="0%" stopColor={isTrDark ? '#0d1117' : '#fafbfc'} />
+  2920→                                  <stop offset="50%" stopColor={isTrDark ? '#0a0e17' : '#ffffff'} />
+  2921→                                  <stop offset="100%" stopColor={isTrDark ? '#080c14' : '#f5f6f8'} />
+  2922→                                </linearGradient>
+  2923→                              </defs>
+  2924→                              <rect x={padL} y={padT} width={chartW} height={priceAreaH} fill="url(#chartBgGrad)" />
+  2925→
+  2926→                              {/* ── Horizontal grid lines — MT5 subtle dotted ── */}
+  2927→                              {Array.from({ length: gridLevels + 1 }).map((_, gi) => {
+  2928→                                const gy = padT + (gi / gridLevels) * priceAreaH
+  2929→                                const priceLabel = paddedMax - gridPriceStep * gi
+  2930→                                return (
+  2931→                                  <g key={`hg-${gi}`}>
+  2932→                                    <line x1={padL} y1={gy} x2={padL + chartW} y2={gy}
+  2933→                                      stroke={trTheme.gridLine} strokeWidth="0.3" strokeDasharray="1,3" />
+  2934→                                    <text x={padL + chartW + 3} y={gy + 2.5} fontSize="7" fill={trTheme.gridText} fontFamily="monospace" fontWeight="600" textAnchor="start">{fmtChartPrice(priceLabel)}</text>
+  2935→                                  </g>
+  2936→                                )
+  2937→                              })}
+  2938→
+  2939→                              {/* ── Vertical grid lines with time labels ── */}
+  2940→                              {(() => {
+  2941→                                const step = Math.max(1, Math.floor(candleCount / 5))
+  2942→                                const items: JSX.Element[] = []
+  2943→                                visibleCandles.forEach((c, i) => {
+  2944→                                  if (i % step !== 0 && i !== candleCount - 1) return
+  2945→                                  const vx = padL + (i + 0.5) * candleSpacing
+  2946→                                  items.push(
+  2947→                                    <g key={`vg-${i}`}>
+  2948→                                      <line x1={vx} y1={padT} x2={vx} y2={padT + priceAreaH}
+  2949→                                        stroke={trTheme.gridLine} strokeWidth="0.3" strokeDasharray="1,3" />
+  2950→                                      <text x={vx} y={chartH + volH + 8} fontSize="5.5" fill={trTheme.gridText} textAnchor="middle" fontFamily="monospace" fontWeight="600">{c.time}</text>
+  2951→                                    </g>
+  2952→                                  )
+  2953→                                })
+  2954→                                return items
+  2955→                              })()}
+  2956→
+  2957→                              {/* ── Price/Volume separator ── */}
+  2958→                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke={trTheme.border} strokeWidth="0.3" />
+  2959→
+  2960→                              {/* Volume bars — MT5 style thin */}
+  2961→                              {visibleCandles.map((c, i) => {
+  2962→                                const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.4) / 2
+  2963→                                const volBarH = (c.volume / maxVol) * (volH - 4)
+  2964→                                const isBull = c.close >= c.open
+  2965→                                return (
+  2966→                                  <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 1} width={candleBodyW * 0.4} height={Math.max(0.3, volBarH)}
+  2967→                                    fill={isBull ? 'rgba(38,166,154,0.30)' : 'rgba(239,83,80,0.30)'} />
+  2968→                                )
+  2969→                              })}
+  2970→
+  2971→                              {/* ── Chart Type Rendering ── */}
+  2972→                              {chartType === 'candle' && visibleCandles.map((c, i) => {
+  2973→                                const cx = padL + (i + 0.5) * candleSpacing
+  2974→                                const isBull = c.close >= c.open
+  2975→                                const bodyTop = yScale(Math.max(c.open, c.close))
+  2976→                                const bodyBot = yScale(Math.min(c.open, c.close))
+  2977→                                const bodyH = Math.max(0.6, bodyBot - bodyTop)
+  2978→                                const wickTop = yScale(c.high)
+  2979→                                const wickBot = yScale(c.low)
+  2980→                                const wickW = candleBodyW > 6 ? 1 : 0.7
+  2981→                                const bullColor = '#26a69a'
+  2982→                                const bearColor = '#ef5350'
+  2983→                                const fillColor = isBull ? bullColor : bearColor
+  2984→                                const strokeColor = isBull ? '#2bbd8e' : '#f87171'
+  2985→                                return (
+  2986→                                  <g key={`candle-${i}`}>
+  2987→                                    {/* Upper wick */}
+  2988→                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth={wickW} strokeLinecap="round" />
+  2989→                                    {/* Lower wick */}
+  2990→                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth={wickW} strokeLinecap="round" />
+  2991→                                    {/* Candle body — solid filled */}
+  2992→                                    <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
+  2993→                                      fill={fillColor} stroke={strokeColor} strokeWidth={candleBodyW > 4 ? 0.4 : 0.2} rx={candleBodyW > 8 ? 0.8 : candleBodyW > 5 ? 0.4 : 0} />
+  2994→                                    {/* Subtle inner glow for 3D effect */}
+  2995→                                    {candleBodyW > 5 && bodyH > 2 && (
+  2996→                                      <rect x={cx - candleBodyW / 2 + 0.5} y={bodyTop + 0.5} width={candleBodyW - 1} height={Math.max(0.3, bodyH * 0.3)}
+  2997→                                        fill={isBull ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'} rx="0.3" />
+  2998→                                    )}
+  2999→                                  </g>
+  3000→                                )
+  3001→                              })}
+  3002→
+  3003→                              {/* Continuous Price Line - smooth spline */}
+  3004→                              {chartType === 'candle' && (() => {
+  3005→                                const pts: { x: number; y: number }[] = []
+  3006→                                visibleCandles.forEach((c, i) => {
+  3007→                                  pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(c.close) })
+  3008→                                })
+  3009→                                if (pts.length < 2) return null
+  3010→                                let pathD = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`
+  3011→                                for (let j = 1; j < pts.length; j++) {
+  3012→                                  const prev = pts[j - 1]
+  3013→                                  const curr = pts[j]
+  3014→                                  const cpx = (prev.x + curr.x) / 2
+  3015→                                  pathD += ` C${cpx.toFixed(1)},${prev.y.toFixed(1)} ${cpx.toFixed(1)},${curr.y.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`
+  3016→                                }
+  3017→                                const lineColor = isUp ? 'rgba(38,166,154,' : 'rgba(239,83,80,'
+  3018→                                return <g>
+  3019→                                  <path d={pathD} fill="none" stroke={lineColor + '0.12)'} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+  3020→                                  <path d={pathD} fill="none" stroke={lineColor + '0.35)'} strokeWidth="0.7" strokeLinejoin="round" strokeLinecap="round" />
+  3021→                                </g>
+  3022→                              })()}
+  3023→                              {/* Line Chart */}
+  3024→                              {chartType === 'line' && (() => {
+  3025→                                const pts: { x: number; y: number }[] = []
+  3026→                                visibleCandles.forEach((c, i) => {
+  3027→                                  pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(c.close) })
+  3028→                                })
+  3029→                                if (pts.length < 2) return null
+  3030→                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3031→                                const areaD = pathD + ` L${pts[pts.length - 1].x.toFixed(1)},${(padT + priceAreaH).toFixed(1)} L${pts[0].x.toFixed(1)},${(padT + priceAreaH).toFixed(1)} Z`
+  3032→                                return (
+  3033→                                  <g>
+  3034→                                    <defs>
+  3035→                                      <linearGradient id="lineAreaGrad" x1="0" y1="0" x2="0" y2="1">
+  3036→                                        <stop offset="0%" stopColor={priceColor} stopOpacity="0.15" />
+  3037→                                        <stop offset="100%" stopColor={priceColor} stopOpacity="0" />
+  3038→                                      </linearGradient>
+  3039→                                    </defs>
+  3040→                                    <path d={areaD} fill="url(#lineAreaGrad)" />
+  3041→                                    <path d={pathD} fill="none" stroke={priceColor} strokeWidth="1" strokeLinejoin="round" strokeLinecap="round" opacity="0.9" />
+  3042→                                  </g>
+  3043→                                )
+  3044→                              })()}
+  3045→
+  3046→                              {/* Bar Chart (OHLC bars) */}
+  3047→                              {chartType === 'bar' && visibleCandles.map((c, i) => {
+  3048→                                const cx = padL + (i + 0.5) * candleSpacing
+  3049→                                const isBull = c.close >= c.open
+  3050→                                const color = isBull ? '#26a69a' : '#ef5350'
+  3051→                                const wickTop = yScale(c.high)
+  3052→                                const wickBot = yScale(c.low)
+  3053→                                const openY = yScale(c.open)
+  3054→                                const closeY = yScale(c.close)
+  3055→                                const barHalf = Math.max(1, candleBodyW * 0.35)
+  3056→                                return (
+  3057→                                  <g key={`bar-${i}`}>
+  3058→                                    <line x1={cx} y1={wickTop} x2={cx} y2={wickBot} stroke={color} strokeWidth="0.6" />
+  3059→                                    <line x1={cx - barHalf} y1={openY} x2={cx} y2={openY} stroke={color} strokeWidth="0.8" />
+  3060→                                    <line x1={cx} y1={closeY} x2={cx + barHalf} y2={closeY} stroke={color} strokeWidth="0.8" />
+  3061→                                  </g>
+  3062→                                )
+  3063→                              })}
+  3064→
+  3065→                              {/* ── Indicator Overlays ── */}
+  3066→                              {/* MA5 */}
+  3067→                              {activeIndicators.some(a => a.key === 'ma5') && (() => {
+  3068→                                const ma5 = computeMA(visibleCandles, 5)
+  3069→                                const pts: { x: number; y: number }[] = []
+  3070→                                ma5.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3071→                                if (pts.length < 2) return null
+  3072→                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3073→                                return <path d={pathD} fill="none" stroke="#eab308" strokeWidth="0.5" opacity="0.45" strokeLinejoin="round" strokeLinecap="round" />
+  3074→                              })()}
+  3075→                              {/* MA20 */}
+  3076→                              {activeIndicators.some(a => a.key === 'ma20') && (() => {
+  3077→                                const ma20 = computeMA(visibleCandles, 20)
+  3078→                                const pts: { x: number; y: number }[] = []
+  3079→                                ma20.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3080→                                if (pts.length < 2) return null
+  3081→                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3082→                                return <path d={pathD} fill="none" stroke="#06b6d4" strokeWidth="0.5" opacity="0.35" strokeLinejoin="round" strokeLinecap="round" />
+  3083→                              })()}
+  3084→
+  3085→                              {/* Bollinger Bands */}
+  3086→                              {activeIndicators.some(a => a.key === 'bollinger') && (() => {
+  3087→                                const bb = computeBollinger(visibleCandles)
+  3088→                                const upperPts: { x: number; y: number }[] = []
+  3089→                                const lowerPts: { x: number; y: number }[] = []
+  3090→                                bb.upper.forEach((v, i) => { if (v !== null) upperPts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3091→                                bb.lower.forEach((v, i) => { if (v !== null) lowerPts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3092→                                if (upperPts.length < 2 || lowerPts.length < 2) return null
+  3093→                                const upperPath = upperPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3094→                                const lowerPath = lowerPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3095→                                const fillPath = upperPath + ' ' + lowerPts.slice().reverse().map((p, i) => `${i === 0 ? 'L' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z'
+  3096→                                return (
+  3097→                                  <g>
+  3098→                                    <path d={fillPath} fill="rgba(139,92,246,0.04)" />
+  3099→                                    <path d={upperPath} fill="none" stroke="#8b5cf6" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />
+  3100→                                    <path d={lowerPath} fill="none" stroke="#8b5cf6" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />
+  3101→                                  </g>
+  3102→                                )
+  3103→                              })()}
+  3104→
+  3105→                              {/* Envelopes */}
+  3106→                              {activeIndicators.some(a => a.key === 'envelopes') && (() => {
+  3107→                                const env = computeEnvelopes(visibleCandles)
+  3108→                                const upperPts: { x: number; y: number }[] = []
+  3109→                                const lowerPts: { x: number; y: number }[] = []
+  3110→                                env.upper.forEach((v, i) => { if (v !== null) upperPts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3111→                                env.lower.forEach((v, i) => { if (v !== null) lowerPts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3112→                                if (upperPts.length < 2 || lowerPts.length < 2) return null
+  3113→                                const upperPath = upperPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3114→                                const lowerPath = lowerPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3115→                                const fillPath = upperPath + ' ' + lowerPts.slice().reverse().map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z'
+  3116→                                return (
+  3117→                                  <g>
+  3118→                                    <path d={fillPath} fill="rgba(20,184,166,0.03)" />
+  3119→                                    <path d={upperPath} fill="none" stroke="#14b8a6" strokeWidth="0.4" opacity="0.45" strokeLinejoin="round" />
+  3120→                                    <path d={lowerPath} fill="none" stroke="#14b8a6" strokeWidth="0.4" opacity="0.45" strokeLinejoin="round" />
+  3121→                                  </g>
+  3122→                                )
+  3123→                              })()}
+  3124→
+  3125→                              {/* Ichimoku Kinko Hyo */}
+  3126→                              {activeIndicators.some(a => a.key === 'ichimoku') && (() => {
+  3127→                                const ich = computeIchimoku(visibleCandles)
+  3128→                                const mkPts = (arr: (number | null)[]) => { const pts: { x: number; y: number }[] = []; arr.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) }); return pts }
+  3129→                                const mkPath = (pts: { x: number; y: number }[]) => pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3130→                                const tenkanPts = mkPts(ich.tenkan)
+  3131→                                const kijunPts = mkPts(ich.kijun)
+  3132→                                const senkouAPts = mkPts(ich.senkouA)
+  3133→                                const senkouBPts = mkPts(ich.senkouB)
+  3134→                                const chikouPts = mkPts(ich.chikou)
+  3135→                                // Cloud fill
+  3136→                                let cloudFill: JSX.Element | null = null
+  3137→                                if (senkouAPts.length >= 2 && senkouBPts.length >= 2) {
+  3138→                                  const aPath = mkPath(senkouAPts)
+  3139→                                  const bPath = mkPath(senkouBPts)
+  3140→                                  const fillD = aPath + ' ' + senkouBPts.slice().reverse().map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z'
+  3141→                                  cloudFill = <path d={fillD} fill="rgba(234,179,8,0.04)" />
+  3142→                                }
+  3143→                                return (
+  3144→                                  <g>
+  3145→                                    {cloudFill}
+  3146→                                    {tenkanPts.length >= 2 && <path d={mkPath(tenkanPts)} fill="none" stroke="#eab308" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3147→                                    {kijunPts.length >= 2 && <path d={mkPath(kijunPts)} fill="none" stroke="#3b82f6" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3148→                                    {senkouAPts.length >= 2 && <path d={mkPath(senkouAPts)} fill="none" stroke="#22c55e" strokeWidth="0.3" opacity="0.35" strokeLinejoin="round" strokeDasharray="2,1" />}
+  3149→                                    {senkouBPts.length >= 2 && <path d={mkPath(senkouBPts)} fill="none" stroke="#ef4444" strokeWidth="0.3" opacity="0.35" strokeLinejoin="round" strokeDasharray="2,1" />}
+  3150→                                    {chikouPts.length >= 2 && <path d={mkPath(chikouPts)} fill="none" stroke="#a855f7" strokeWidth="0.3" opacity="0.3" strokeLinejoin="round" />}
+  3151→                                  </g>
+  3152→                                )
+  3153→                              })()}
+  3154→
+  3155→                              {/* Parabolic SAR */}
+  3156→                              {activeIndicators.some(a => a.key === 'sar') && (() => {
+  3157→                                const sarData = computeSAR(visibleCandles)
+  3158→                                return (
+  3159→                                  <g>
+  3160→                                    {sarData.map((v, i) => {
+  3161→                                      if (v === null) return null
+  3162→                                      const cx = padL + (i + 0.5) * candleSpacing
+  3163→                                      const cy = yScale(v)
+  3164→                                      const isAbove = v > visibleCandles[i].close
+  3165→                                      return <circle key={`sar-${i}`} cx={cx} cy={cy} r={candleSpacing > 4 ? 1.2 : 0.8} fill={isAbove ? 'rgba(239,83,80,0.5)' : 'rgba(34,197,94,0.5)'} />
+  3166→                                    })}
+  3167→                                  </g>
+  3168→                                )
+  3169→                              })()}
+  3170→
+  3171→                              {/* ZigZag */}
+  3172→                              {activeIndicators.some(a => a.key === 'zigzag') && (() => {
+  3173→                                const zzData = computeZigZag(visibleCandles)
+  3174→                                const pts: { x: number; y: number }[] = []
+  3175→                                zzData.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) })
+  3176→                                if (pts.length < 2) return null
+  3177→                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  3178→                                return <path d={pathD} fill="none" stroke="#a855f7" strokeWidth="0.6" opacity="0.5" strokeLinejoin="round" strokeLinecap="round" />
+  3179→                              })()}
+  3180→
+  3181→                              {/* Alligator */}
+  3182→                              {activeIndicators.some(a => a.key === 'alligator') && (() => {
+  3183→                                const alg = computeAlligator(visibleCandles)
+  3184→                                const mkPts = (arr: (number | null)[]) => { const pts: { x: number; y: number }[] = []; arr.forEach((v, i) => { if (v !== null) pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(v) }) }); return pts }
+  3185→                                const mkPath = (pts: { x: number; y: number }[]) => pts.length >= 2 ? pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') : ''
+  3186→                                const jawPts = mkPts(alg.jaw)
+  3187→                                const teethPts = mkPts(alg.teeth)
+  3188→                                const lipsPts = mkPts(alg.lips)
+  3189→                                return (
+  3190→                                  <g>
+  3191→                                    {jawPts.length >= 2 && <path d={mkPath(jawPts)} fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.4" strokeLinejoin="round" />}
+  3192→                                    {teethPts.length >= 2 && <path d={mkPath(teethPts)} fill="none" stroke="#ef4444" strokeWidth="0.5" opacity="0.4" strokeLinejoin="round" />}
+  3193→                                    {lipsPts.length >= 2 && <path d={mkPath(lipsPts)} fill="none" stroke="#22c55e" strokeWidth="0.5" opacity="0.4" strokeLinejoin="round" />}
+  3194→                                  </g>
+  3195→                                )
+  3196→                              })()}
+  3197→
+  3198→                              {/* Fractals */}
+  3199→                              {activeIndicators.some(a => a.key === 'fractals') && (() => {
+  3200→                                const frac = computeFractals(visibleCandles)
+  3201→                                return (
+  3202→                                  <g>
+  3203→                                    {frac.up.map((v, i) => {
+  3204→                                      if (!v) return null
+  3205→                                      const cx = padL + (i + 0.5) * candleSpacing
+  3206→                                      const cy = yScale(visibleCandles[i].high) - 3
+  3207→                                      return <polygon key={`frac-up-${i}`} points={`${cx},${cy} ${cx-1.5},${cy-2.5} ${cx+1.5},${cy-2.5}`} fill="rgba(239,83,80,0.5)" />
+  3208→                                    })}
+  3209→                                    {frac.down.map((v, i) => {
+  3210→                                      if (!v) return null
+  3211→                                      const cx = padL + (i + 0.5) * candleSpacing
+  3212→                                      const cy = yScale(visibleCandles[i].low) + 3
+  3213→                                      return <polygon key={`frac-dn-${i}`} points={`${cx},${cy} ${cx-1.5},${cy+2.5} ${cx+1.5},${cy+2.5}`} fill="rgba(34,197,94,0.5)" />
+  3214→                                    })}
+  3215→                                  </g>
+  3216→                                )
+  3217→                              })()}
+  3218→
+  3219→                              {/* ── Sub-chart Indicators (dynamic, max 3) ── */}
+  3220→                              {visibleSubCharts.map((subInd, subIdx) => {
+  3221→                                const subY = padT + priceAreaH + volH + timeAxisH + subIdx * 44 + 2
+  3222→                                const subH = 40
+  3223→                                const subPad = 2
+  3224→                                const xOf = (i: number) => padL + (i + 0.5) * candleSpacing
+  3225→                                const indColor = subInd.color
+  3226→                                const indKey = subInd.key
+  3227→                                const indLabel = subInd.label
+  3228→
+  3229→                                // Helper: make line path from array
+  3230→                                const mkLine = (arr: (number | null)[], yFn: (v: number) => number) => {
+  3231→                                  const pts: { x: number; y: number }[] = []
+  3232→                                  arr.forEach((v, i) => { if (v !== null) pts.push({ x: xOf(i), y: yFn(v) }) })
+  3233→                                  return pts.length >= 2 ? pts.map((p, j) => `${j === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') : null
+  3234→                                }
+  3235→
+  3236→                                // Helper: auto-scale from array
+  3237→                                const autoScale = (arr: (number | null)[], pad = 2) => {
+  3238→                                  const vals = arr.filter((v): v is number => v !== null)
+  3239→                                  if (vals.length === 0) return { min: -1, max: 1, yFn: (v: number) => subY + subH / 2 }
+  3240→                                  const mn = Math.min(...vals), mx = Math.max(...vals)
+  3241→                                  const range = mx - mn || 1
+  3242→                                  const scaledMin = mn - range * 0.05, scaledMax = mx + range * 0.05
+  3243→                                  const scaledRange = scaledMax - scaledMin
+  3244→                                  return { min: scaledMin, max: scaledMax, yFn: (v: number) => subY + subPad + ((scaledMax - v) / scaledRange) * (subH - subPad * 2) }
+  3245→                                }
+  3246→
+  3247→                                // Helper: fixed range scale
+  3248→                                const fixedScale = (lo: number, hi: number) => {
+  3249→                                  const range = hi - lo
+  3250→                                  return (v: number) => subY + subPad + ((hi - v) / range) * (subH - subPad * 2)
+  3251→                                }
+  3252→
+  3253→                                // Helper: zero-centered auto-scale
+  3254→                                const zeroScale = (arr: (number | null)[]) => {
+  3255→                                  const vals = arr.filter((v): v is number => v !== null)
+  3256→                                  const maxAbs = Math.max(...vals.map(Math.abs), 0.001)
+  3257→                                  return (v: number) => subY + subH / 2 - (v / maxAbs) * (subH / 2 - subPad)
+  3258→                                }
+  3259→
+  3260→                                // Background & label for every sub-chart
+  3261→                                const bgRect = <rect x={padL} y={subY} width={chartW} height={subH} fill={`${indColor}03`} rx="1" />
+  3262→                                const labelText = <text x={padL + 2} y={subY + 5} fontSize="4.5" fill={`${indColor}80`} fontFamily="monospace" fontWeight="700">{indLabel}</text>
+  3263→
+  3264→                                switch (indKey) {
+  3265→                                  case 'rsi': {
+  3266→                                    const data = computeRSI(visibleCandles)
+  3267→                                    const yFn = fixedScale(0, 100)
+  3268→                                    const line = mkLine(data, yFn)
+  3269→                                    return (
+  3270→                                      <g key={indKey}>
+  3271→                                        {bgRect}{labelText}
+  3272→                                        <line x1={padL} y1={yFn(70)} x2={padL + chartW} y2={yFn(70)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3273→                                        <line x1={padL} y1={yFn(30)} x2={padL + chartW} y2={yFn(30)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3274→                                        <line x1={padL} y1={yFn(50)} x2={padL + chartW} y2={yFn(50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+  3275→                                        <text x={padL + chartW + 2} y={yFn(70) + 2} fontSize="4" fill="rgba(239,83,80,0.35)" fontFamily="monospace">70</text>
+  3276→                                        <text x={padL + chartW + 2} y={yFn(30) + 2} fontSize="4" fill="rgba(34,197,94,0.35)" fontFamily="monospace">30</text>
+  3277→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3278→                                      </g>
+  3279→                                    )
+  3280→                                  }
+  3281→                                  case 'macd': {
+  3282→                                    const data = computeMACD(visibleCandles)
+  3283→                                    const yFn = zeroScale([...data.macd, ...data.signal].filter((v): v is number => v !== null))
+  3284→                                    const macdLine = mkLine(data.macd, yFn)
+  3285→                                    const sigLine = mkLine(data.signal, yFn)
+  3286→                                    return (
+  3287→                                      <g key={indKey}>
+  3288→                                        {bgRect}{labelText}
+  3289→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3290→                                        {data.histogram.map((v, i) => {
+  3291→                                          if (v === null) return null
+  3292→                                          const x = padL + i * candleSpacing + candleSpacing * 0.15
+  3293→                                          const w = candleSpacing * 0.7
+  3294→                                          const y0 = subY + subH / 2
+  3295→                                          const y1 = yFn(v)
+  3296→                                          return <rect key={`macd-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={v >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,83,80,0.3)'} rx="0.3" />
+  3297→                                        })}
+  3298→                                        {macdLine && <path d={macdLine} fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3299→                                        {sigLine && <path d={sigLine} fill="none" stroke="#ef5350" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3300→                                      </g>
+  3301→                                    )
+  3302→                                  }
+  3303→                                  case 'adx': {
+  3304→                                    const data = computeADX(visibleCandles)
+  3305→                                    const yFn = fixedScale(0, 100)
+  3306→                                    const adxLine = mkLine(data.adx, yFn)
+  3307→                                    const pdiLine = mkLine(data.plusDI, yFn)
+  3308→                                    const mdiLine = mkLine(data.minusDI, yFn)
+  3309→                                    return (
+  3310→                                      <g key={indKey}>
+  3311→                                        {bgRect}{labelText}
+  3312→                                        <line x1={padL} y1={yFn(25)} x2={padL + chartW} y2={yFn(25)} stroke={trTheme.gridLine} strokeWidth="0.2" strokeDasharray="2,2" />
+  3313→                                        <text x={padL + chartW + 2} y={yFn(25) + 2} fontSize="4" fill={`${indColor}40`} fontFamily="monospace">25</text>
+  3314→                                        {adxLine && <path d={adxLine} fill="none" stroke={indColor} strokeWidth="0.6" opacity="0.7" strokeLinejoin="round" />}
+  3315→                                        {pdiLine && <path d={pdiLine} fill="none" stroke="#22c55e" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3316→                                        {mdiLine && <path d={mdiLine} fill="none" stroke="#ef4444" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3317→                                      </g>
+  3318→                                    )
+  3319→                                  }
+  3320→                                  case 'atr': {
+  3321→                                    const data = computeATR(visibleCandles)
+  3322→                                    const { yFn } = autoScale(data)
+  3323→                                    const line = mkLine(data, yFn)
+  3324→                                    return (
+  3325→                                      <g key={indKey}>
+  3326→                                        {bgRect}{labelText}
+  3327→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3328→                                      </g>
+  3329→                                    )
+  3330→                                  }
+  3331→                                  case 'bears': {
+  3332→                                    const data = computeBearsPower(visibleCandles)
+  3333→                                    const yFn = zeroScale(data)
+  3334→                                    const line = mkLine(data, yFn)
+  3335→                                    return (
+  3336→                                      <g key={indKey}>
+
+[showing lines 2837-3336 of 6016; use offset=3337 with limit to continue reading]

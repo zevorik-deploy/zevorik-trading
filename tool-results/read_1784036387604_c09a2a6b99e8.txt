@@ -1,0 +1,702 @@
+     1→  2337→          {activeTab === 'sinyal' && (() => {
+     2→  2338→            // ── Computed values for MT5 terminal ──
+     3→  2339→            const activePos = sinyalPositions.filter(p => p.status === 'active')
+     4→  2340→            const totalBalance = (user?.balance || 0)
+     5→  2341→            const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
+     6→  2342→            // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
+     7→  2343→            const equity = totalBalance + totalLivePL
+     8→  2344→            const usedMargin = activePos.reduce((s, p) => s + p.amount, 0)
+     9→  2345→            const freeMargin = equity - usedMargin
+    10→  2346→            const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0
+    11→  2347→
+    12→  2348→            // ── Bid/Ask spread ──
+    13→  2349→            const spreadPercent = selectedSinyalStock ? (
+    14→  2350→              (selectedSinyalStock.category?.toLowerCase().includes('crypto') || selectedSinyalStock.category?.toLowerCase().includes('kripto')) ? 0.05 :
+    15→  2351→              selectedSinyalStock.category?.toLowerCase().includes('forex') ? 0.01 :
+    16→  2352→              0.03
+    17→  2353→            ) : 0.03
+    18→  2354→            const bidPrice = (sinyalCurrentPrice || selectedSinyalStock?.price || 0) * (1 - spreadPercent / 100)
+    19→  2355→            const askPrice = (sinyalCurrentPrice || selectedSinyalStock?.price || 0) * (1 + spreadPercent / 100)
+    20→  2356→            const spreadValue = askPrice - bidPrice
+    21→  2357→
+    22→  2358→            // ── Price formatting for chart ──
+    23→  2359→            const fmtChartPrice = (p: number) => {
+    24→  2360→              if (p >= 1e6) return `${(p / 1e6).toFixed(2)}M`
+    25→  2361→              if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K`
+    26→  2362→              return p.toFixed(2)
+    27→  2363→            }
+    28→  2364→            const fmtPrice5 = (p: number) => {
+    29→  2365→              if (p >= 1e6) return `${(p / 1e6).toFixed(3)}M`
+    30→  2366→              if (p >= 1e4) return `${(p / 1e3).toFixed(2)}K`
+    31→  2367→              if (p >= 1e3) return `${(p / 1e3).toFixed(3)}K`
+    32→  2368→              return p.toFixed(5)
+    33→  2369→            }
+    34→  2370→
+    35→  2371→            // ── Theme config for trading tab ──
+    36→  2372→            const isTrDark = theme === 'dark'
+    37→  2373→            const trTheme = {
+    38→  2374→              bg: isTrDark ? '#131722' : '#f0f2f5',
+    39→  2375→              bgDeep: isTrDark ? '#0a0e17' : '#ffffff',
+    40→  2376→              bgPanel: isTrDark ? '#1e222d' : '#ffffff',
+    41→  2377→              bgCard: isTrDark ? '#0c0f18' : '#e8eaed',
+    42→  2378→              border: isTrDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)',
+    43→  2379→              borderSubtle: isTrDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+    44→  2380→              text: isTrDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.87)',
+    45→  2381→              textSecondary: isTrDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.54)',
+    46→  2382→              textMuted: isTrDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.35)',
+    47→  2383→              textFaint: isTrDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.22)',
+    48→  2384→              gridLine: isTrDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+    49→  2385→              gridText: isTrDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+    50→  2386→              chartBg: isTrDark ? '#0a0e17' : '#ffffff',
+    51→  2387→              inputBg: isTrDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+    52→  2388→              inputBorder: isTrDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)',
+    53→  2389→              green: '#26a69a',
+    54→  2390→              red: '#ef5350',
+    55→  2391→              pillInactive: isTrDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.05)',
+    56→  2392→              pillActiveBg: isTrDark ? 'rgba(29,78,216,0.25)' : 'rgba(29,78,216,0.12)',
+    57→  2393→              pillActiveBorder: isTrDark ? 'rgba(29,78,216,0.4)' : 'rgba(29,78,216,0.3)',
+    58→  2394→              btnBg: isTrDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    59→  2395→              btnBorder: isTrDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)',
+    60→  2396→              btnText: isTrDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)',
+    61→  2397→              btnTextMuted: isTrDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
+    62→  2398→            }
+    63→  2399→
+    64→  2400→            return (
+    65→  2401→            <motion.div key="sinyal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+    66→  2402→              className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 140px)' }}>
+    67→  2403→
+    68→  2404→              {/* ══ 1. HEADER — Super Clean Single Row ══ */}
+    69→  2405→              <div className="flex-shrink-0" style={{ background: trTheme.bg, borderBottom: '1px solid ' + trTheme.border }}>
+    70→  2406→                {selectedSinyalStock ? (
+    71→  2407→                  <div className="flex items-center justify-between px-3 py-2">
+    72→  2408→                    {/* Left: Symbol + Price */}
+    73→  2409→                    <div className="flex items-center gap-3">
+    74→  2410→                      <div className="flex items-center gap-1.5">
+    75→  2411→                        <span className="text-[14px] font-black" style={{ color: trTheme.text }}>{selectedSinyalStock.code}</span>
+    76→  2412→                        <span className="text-[9px] font-bold" style={{ color: trTheme.textMuted }}>/</span>
+    77→  2413→                        <span className="text-[9px] font-bold" style={{ color: trTheme.textSecondary }}>{selectedSinyalStock.name?.slice(0, 16)}</span>
+    78→  2414→                      </div>
+    79→  2415→                      <div className="flex items-center gap-1.5">
+    80→  2416→                        {(() => {
+    81→  2417→                          const sim = sinyalChartSimRef.current
+    82→  2418→                          const openPrice = sim?.currentCandle.open || selectedSinyalStock.price
+    83→  2419→                          const curPrice = sinyalCurrentPrice || selectedSinyalStock.price
+    84→  2420→                          const priceChange = curPrice - openPrice
+    85→  2421→                          const changePercent = openPrice > 0 ? (priceChange / openPrice) * 100 : 0
+    86→  2422→                          const isPriceUp = priceChange >= 0
+    87→  2423→                          return (
+    88→  2424→                            <>
+    89→  2425→                              <span className="text-[15px] font-black tabular-nums" style={{ color: isPriceUp ? '#22c55e' : '#ef5350' }}>{formatRupiah(curPrice)}</span>
+    90→  2426→                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isPriceUp ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
+    91→  2427→                                {isPriceUp ? '▲' : '▼'} {isPriceUp ? '+' : ''}{changePercent.toFixed(2)}%
+    92→  2428→                              </span>
+    93→  2429→                            </>
+    94→  2430→                          )
+    95→  2431→                        })()}
+    96→  2432→                        {/* Candle countdown */}
+    97→  2433→                        {(() => {
+    98→  2434→                          const sim = sinyalChartSimRef.current
+    99→  2435→                          if (!sim) return null
+   100→  2436→                          const cc = sim.currentCandle
+   101→  2437→                          const totalSecs = cc.maxTicks
+   102→  2438→                          const elapsed = cc.tickCount
+   103→  2439→                          const remaining = totalSecs - elapsed
+   104→  2440→                          const progress = totalSecs > 0 ? elapsed / totalSecs : 0
+   105→  2441→                          const isLow = remaining <= 5 && remaining > 0
+   106→  2442→                          const radius = 9
+   107→  2443→                          const circumference = 2 * Math.PI * radius
+   108→  2444→                          const strokeDash = circumference * progress
+   109→  2445→                          return (
+   110→  2446→                            <div className="flex items-center gap-0.5 ml-1">
+   111→  2447→                              <svg width="22" height="22" className="flex-shrink-0">
+   112→  2448→                                <circle cx="11" cy="11" r={radius} fill="none" stroke={trTheme.borderSubtle} strokeWidth="1.5" />
+   113→  2449→                                <circle cx="11" cy="11" r={radius} fill="none" stroke={isLow ? '#f59e0b' : '#3b82f6'} strokeWidth="1.5"
+   114→  2450→                                  strokeDasharray={`${strokeDash} ${circumference}`} strokeDashoffset="0"
+   115→  2451→                                  strokeLinecap="round" transform="rotate(-90 11 11)"
+   116→  2452→                                  style={{ transition: 'stroke-dasharray 0.8s linear' }} />
+   117→  2453→                                <text x="11" y="13" textAnchor="middle" fontSize="6" fontWeight="900" fill={isLow ? '#f59e0b' : trTheme.textSecondary} fontFamily="monospace">
+   118→  2454→                                  {remaining > 60 ? `${Math.ceil(remaining/60)}m` : `${remaining}`}
+   119→  2455→                                </text>
+   120→  2456→                              </svg>
+   121→  2457→                            </div>
+   122→  2458→                          )
+   123→  2459→                        })()}
+   124→  2460→                      </div>
+   125→  2461→                    </div>
+   126→  2462→                    {/* Right: Timeframe Dropdown + Zoom + Theme Toggle */}
+   127→  2463→                    <div className="flex items-center gap-1.5">
+   128→  2464→                      {/* Theme Toggle */}
+   129→  2465→                      <button onClick={toggleTheme} className="h-6 w-6 rounded-md flex items-center justify-center transition-all hover:scale-105"
+   130→  2466→                        style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.inputBorder }}
+   131→  2467→                        title={isTrDark ? 'Light mode' : 'Dark mode'}>
+   132→  2468→                        {isTrDark ? <Sun className="w-3 h-3" style={{ color: '#eab308' }} /> : <Moon className="w-3 h-3" style={{ color: trTheme.textSecondary }} />}
+   133→  2469→                      </button>
+   134→  2470→                      {/* Timeframe Dropdown — MT5 Style */}
+   135→  2471→                      <div className="relative">
+   136→  2472→                        <button onClick={() => { setShowTimeframeMenu(prev => !prev); setShowLeverageMenu(false) }}
+   137→  2473→                          className="h-7 px-2 rounded-md flex items-center gap-1 transition-all"
+   138→  2474→                          style={{ background: showTimeframeMenu ? trTheme.pillActiveBg : trTheme.btnBg, border: `1px solid ${showTimeframeMenu ? trTheme.pillActiveBorder : trTheme.btnBorder}` }}>
+   139→  2475→                          <span className="text-[10px] font-black uppercase" style={{ color: trTheme.btnText }}>{sinyalTimeframe}</span>
+   140→  2476→                          <ChevronDown className={`w-3 h-3 transition-transform ${showTimeframeMenu ? 'rotate-180' : ''}`} style={{ color: trTheme.btnTextMuted }} />
+   141→  2477→                        </button>
+   142→  2478→                        {showTimeframeMenu && (
+   143→  2479→                          <div className="absolute right-0 top-8 z-50 rounded-lg overflow-hidden py-0.5"
+   144→  2480→                            style={{ background: trTheme.bgPanel, border: '1px solid ' + trTheme.border, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minWidth: '64px' }}>
+   145→  2481→                            {(['1m', '2m', '5m', '10m', '15m', '30m', '1h'] as const).map(tf => (
+   146→  2482→                              <button key={tf} onClick={() => { setSinyalTimeframe(tf); sinyalChartSimRef.current = null; setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartOffset(0); setShowTimeframeMenu(false) }}
+   147→  2483→                                className={`w-full px-3 py-1.5 text-[10px] font-bold text-left transition-colors ${
+   148→  2484→                                  sinyalTimeframe === tf ? 'text-blue-400 bg-blue-500/10' : 'hover:bg-black/5'
+   149→  2485→                                }`}
+   150→  2486→                                style={{ color: sinyalTimeframe === tf ? undefined : trTheme.textSecondary }}>
+   151→  2487→                                {tf}
+   152→  2488→                              </button>
+   153→  2489→                            ))}
+   154→  2490→                          </div>
+   155→  2491→                        )}
+   156→  2492→                      </div>
+   157→  2493→                      {/* Zoom */}
+   158→  2494→                      <div className="flex items-center gap-0.5 rounded-md p-0.5" style={{ background: trTheme.inputBg }}>
+   159→  2495→                        <button onClick={() => setSinyalChartZoom(prev => Math.max(8, prev - (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
+   160→  2496→                          className="h-6 w-6 rounded flex items-center justify-center text-[11px] font-bold transition-colors hover:opacity-80" style={{ color: trTheme.btnTextMuted }}>−</button>
+   161→  2497→                        <button onClick={() => setSinyalChartZoom(prev => Math.min(120, prev + (prev > 60 ? 8 : prev > 30 ? 4 : 2)))}
+   162→  2498→                          className="h-6 w-6 rounded flex items-center justify-center text-[11px] font-bold transition-colors hover:opacity-80" style={{ color: trTheme.btnTextMuted }}>+</button>
+   163→  2499→                      </div>
+   164→  2500→                    </div>
+   165→  2501→                  </div>
+   166→  2502→                ) : (
+   167→  2503→                  <div className="flex items-center justify-center px-3 py-2">
+   168→  2504→                    <span className="text-[10px] font-bold" style={{ color: trTheme.textMuted }}>Pilih instrumen untuk mulai trading</span>
+   169→  2505→                  </div>
+   170→  2506→                )}
+   171→  2507→                {/* ══ Market Selector — Scrollable MT5 Style ══ */}
+   172→  2508→                <div className="flex-shrink-0" style={{ background: trTheme.bg, borderBottom: '1px solid ' + trTheme.border }}>
+   173→  2509→                  {/* Category tabs — clean horizontal */}
+   174→  2510→                  <div className="flex items-center px-2 pt-1.5 gap-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+   175→  2511→                    {[
+   176→  2512→                      { key: 'popular', label: 'Popular' },
+   177→  2513→                      { key: 'saham', label: 'Saham' },
+   178→  2514→                      { key: 'crypto', label: 'Kripto' },
+   179→  2515→                      { key: 'komoditas', label: 'Komoditas' },
+   180→  2516→                      { key: 'forex', label: 'Forex' },
+   181→  2517→                    ].map(cat => (
+   182→  2518→                      <button key={cat.key} onClick={() => setSinyalCategory(cat.key)}
+   183→  2519→                        className={`flex-shrink-0 h-7 px-2.5 rounded-md text-[9px] font-bold transition-all ${
+   184→  2520→                          sinyalCategory === cat.key
+   185→  2521→                            ? 'bg-[#1d4ed8]/20 text-blue-400 border border-blue-500/20'
+   186→  2522→                            : 'border border-transparent'
+   187→  2523→                        }`}
+   188→  2524→                        style={sinyalCategory !== cat.key ? { color: trTheme.textMuted } : undefined}>
+   189→  2525→                        {cat.label}
+   190→  2526→                      </button>
+   191→  2527→                    ))}
+   192→  2528→                  </div>
+   193→  2529→                  {/* Stock pills — scrollable row with smooth scroll */}
+   194→  2530→                  <div className="flex items-center gap-1 px-2 pb-1.5 pt-1 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+   195→  2531→                    {stocks.filter(s => {
+   196→  2532→                      const cat = s.category?.toLowerCase() || ''
+   197→  2533→                      if (sinyalCategory === 'popular') return true
+   198→  2534→                      if (sinyalCategory === 'saham') return !cat.includes('crypto') && !cat.includes('kripto') && !cat.includes('forex') && !cat.includes('commodity') && !cat.includes('komoditas') && !['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'LINK', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER'].includes(s.code)
+   199→  2535→                      if (sinyalCategory === 'crypto') return cat.includes('crypto') || cat.includes('kripto') || ['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'LINK', 'BCH', 'LTC', 'XLM', 'UNI', 'AAVE'].includes(s.code)
+   200→  2536→                      if (sinyalCategory === 'komoditas') return cat.includes('commodity') || cat.includes('komoditas') || ['XOM', 'CVX', 'COP', 'GOLD', 'SILVER', 'OIL', 'NATGAS', 'COPPER'].includes(s.code)
+   201→  2537→                      if (sinyalCategory === 'forex') return cat.includes('forex') || ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF'].includes(s.code)
+   202→  2538→                      return true
+   203→  2539→                    }).slice(0, 30).map(s => {
+   204→  2540→                      const isSelected = selectedSinyalStock?.id === s.id
+   205→  2541→                      const isUp = s.change >= 0
+   206→  2542→                      return (
+   207→  2543→                        <button key={s.id} onClick={() => { setSelectedSinyalStock(s); setSinyalLots('0.01'); setSinyalAmount(''); setSinyalDirection('NAIK'); setSinyalResults([]); setSinyalCandles([]); setSinyalCurrentPrice(0); setSinyalChartTick(0); setSinyalChartOffset(0); sinyalChartSimRef.current = null }}
+   208→  2544→                          className={`flex-shrink-0 h-7 px-2.5 rounded-md text-[9px] font-bold flex items-center gap-1 transition-all ${
+   209→  2545→                            isSelected
+   210→  2546→                              ? 'bg-[#1d4ed8] text-white shadow-sm shadow-blue-500/20'
+   211→  2547→                              : isUp
+   212→  2548→                                ? 'text-green-400/60 hover:text-green-400/90 hover:bg-green-500/5'
+   213→  2549→                                : 'text-red-400/60 hover:text-red-400/90 hover:bg-red-500/5'
+   214→  2550→                          }`}
+   215→  2551→                          style={!isSelected ? { border: '1px solid ' + trTheme.borderSubtle } : undefined}>
+   216→  2552→                          <span>{s.code}</span>
+   217→  2553→                          <span className={`text-[7px] ${isSelected ? 'text-white/60' : ''}`}>{isUp ? '▲' : '▼'}</span>
+   218→  2554→                        </button>
+   219→  2555→                      )
+   220→  2556→                    })}
+   221→  2557→                  </div>
+   222→  2558→                </div>
+   223→  2559→              </div>
+   224→  2560→
+   225→  2561→              {/* ══ 2. QUICK BUY/SELL BAR — Chart Only (Full trading in Trade tab) ══ */}
+   226→  2562→              {selectedSinyalStock && (() => {
+   227→  2563→                const buyPL = activePos.filter(p => p.direction === 'NAIK').reduce((s, p) => s + getPositionLivePL(p), 0)
+   228→  2564→                const sellPL = activePos.filter(p => p.direction === 'TURUN').reduce((s, p) => s + getPositionLivePL(p), 0)
+   229→  2565→                const hasBuyPos = activePos.some(p => p.direction === 'NAIK')
+   230→  2566→                const hasSellPos = activePos.some(p => p.direction === 'TURUN')
+   231→  2567→                return (
+   232→  2568→              <div className="flex-shrink-0" style={{ background: trTheme.bgPanel, borderBottom: '1px solid ' + trTheme.border }}>
+   233→  2569→                <div className="flex items-center gap-1.5 px-2 py-1.5">
+   234→  2570→                  {/* SELL Button */}
+   235→  2571→                  <button
+   236→  2572→                    onClick={() => {
+   237→  2573→                      if (sinyalAmountFromLots < 1000) {
+   238→  2574→                        toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
+   239→  2575→                      }
+   240→  2576→                      if (sinyalAmountFromLots > freeMargin) {
+   241→  2577→                        toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
+   242→  2578→                      }
+   243→  2579→                      setConfirmTradeDir('TURUN')
+   244→  2580→                      setShowConfirmTrade(true)
+   245→  2581→                    }}
+   246→  2582→                    className="flex-1 relative rounded-lg flex items-center justify-center gap-1.5 transition-all overflow-hidden active:scale-[0.97] h-[40px]"
+   247→  2583→                    style={(() => {
+   248→  2584→                      let bg: string
+   249→  2585→                      if (hasSellPos) {
+   250→  2586→                        bg = sellPL > 0
+   251→  2587→                          ? 'linear-gradient(135deg, #f87171, #ef4444, #dc2626)'
+   252→  2588→                          : 'linear-gradient(135deg, #b91c1c, #991b1b)'
+   253→  2589→                      } else {
+   254→  2590→                        bg = 'linear-gradient(135deg, #ef5350, #dc2626, #b91c1c)'
+   255→  2591→                      }
+   256→  2592→                      return { background: bg, boxShadow: '0 2px 12px rgba(239,68,68,0.3)' }
+   257→  2593→                    })()}>
+   258→  2594→                    <TrendingDown className="w-4 h-4 text-white/90" />
+   259→  2595→                    <span className="text-[13px] font-black tracking-[0.15em] text-white">SELL</span>
+   260→  2596→                    <span className="text-[8px] font-bold tabular-nums text-white/50">{sinyalCurrentPrice > 0 ? fmtPrice5(bidPrice) : '—'}</span>
+   261→  2597→                  </button>
+   262→  2598→
+   263→  2599→                  {/* Lot Selector with -/+ buttons side by side */}
+   264→  2600→                  <div className="flex items-center rounded-lg overflow-hidden h-[40px]" style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.inputBorder }}>
+   265→  2601→                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur - 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+   266→  2602→                      className="h-full w-8 flex items-center justify-center transition-colors hover:bg-red-500/20 active:bg-red-500/30" style={{ borderRight: '1px solid ' + trTheme.borderSubtle }}>
+   267→  2603→                      <Minus className="w-3 h-3" style={{ color: '#f87171' }} strokeWidth={2.5} />
+   268→  2604→                    </button>
+   269→  2605→                    <div className="flex flex-col items-center justify-center px-2 min-w-[42px]">
+   270→  2606→                      <span className="text-[12px] font-black tabular-nums leading-none" style={{ color: trTheme.text }}>{sinyalLots}</span>
+   271→  2607→                      <span className="text-[5px] font-bold leading-none mt-0.5" style={{ color: 'rgba(251,191,36,0.6)' }}>LOT</span>
+   272→  2608→                    </div>
+   273→  2609→                    <button onClick={() => { const cur = parseFloat(sinyalLots || '0'); const next = Math.max(0.01, cur + 0.01); setSinyalLots(next.toFixed(2)); setSinyalAmount(String(Math.round(next * LOT_SIZE))) }}
+   274→  2610→                      className="h-full w-8 flex items-center justify-center transition-colors hover:bg-green-500/20 active:bg-green-500/30" style={{ borderLeft: '1px solid ' + trTheme.borderSubtle }}>
+   275→  2611→                      <Plus className="w-3 h-3" style={{ color: '#4ade80' }} strokeWidth={2.5} />
+   276→  2612→                    </button>
+   277→  2613→                  </div>
+   278→  2614→
+   279→  2615→                  {/* BUY Button */}
+   280→  2616→                  <button
+   281→  2617→                    onClick={() => {
+   282→  2618→                      if (sinyalAmountFromLots < 1000) {
+   283→  2619→                        toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return
+   284→  2620→                      }
+   285→  2621→                      if (sinyalAmountFromLots > freeMargin) {
+   286→  2622→                        toast({ title: 'Free Margin tidak cukup', variant: 'destructive' }); return
+   287→  2623→                      }
+   288→  2624→                      setConfirmTradeDir('NAIK')
+   289→  2625→                      setShowConfirmTrade(true)
+   290→  2626→                    }}
+   291→  2627→                    className="flex-1 relative rounded-lg flex items-center justify-center gap-1.5 transition-all overflow-hidden active:scale-[0.97] h-[40px]"
+   292→  2628→                    style={(() => {
+   293→  2629→                      let bg: string
+   294→  2630→                      if (hasBuyPos) {
+   295→  2631→                        bg = buyPL > 0
+   296→  2632→                          ? 'linear-gradient(135deg, #4ade80, #22c55e, #16a34a)'
+   297→  2633→                          : 'linear-gradient(135deg, #166534, #14532d)'
+   298→  2634→                      } else {
+   299→  2635→                        bg = 'linear-gradient(135deg, #22c55e, #16a34a, #15803d)'
+   300→  2636→                      }
+   301→  2637→                      return { background: bg, boxShadow: '0 2px 12px rgba(34,197,94,0.3)' }
+   302→  2638→                    })()}>
+   303→  2639→                    <TrendingUp className="w-4 h-4 text-white/90" />
+   304→  2640→                    <span className="text-[13px] font-black tracking-[0.15em] text-white">BUY</span>
+   305→  2641→                    <span className="text-[8px] font-bold tabular-nums text-white/50">{sinyalCurrentPrice > 0 ? fmtPrice5(askPrice) : '—'}</span>
+   306→  2642→                  </button>
+   307→  2643→                </div>
+   308→  2644→              </div>
+   309→  2645→                )
+   310→  2646→              })()}
+   311→  2647→
+   312→  2648→              {/* ══ 2.5 CHART TOOLBAR — MT5 Style ══ */}
+   313→  2649→              {selectedSinyalStock && (
+   314→  2650→              <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1" style={{ background: trTheme.bgDeep, borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+   315→  2651→                {/* Chart Type Buttons */}
+   316→  2652→                <div className="flex items-center gap-0.5 mr-1">
+   317→  2653→                  {([
+   318→  2654→                    { type: 'candle' as const, label: '🕯', tip: 'Candlestick' },
+   319→  2655→                    { type: 'line' as const, label: '📈', tip: 'Line' },
+   320→  2656→                    { type: 'bar' as const, label: '📊', tip: 'Bar' },
+   321→  2657→                  ]).map(ct => (
+   322→  2658→                    <button key={ct.type} onClick={() => setChartType(ct.type)} title={ct.tip}
+   323→  2659→                      className={`h-6 w-7 rounded flex items-center justify-center text-[11px] transition-all ${
+   324→  2660→                        chartType === ct.type
+   325→  2661→                          ? 'bg-black/10 text-white'
+   326→  2662→                          : ''
+   327→  2663→                      }`}
+   328→  2664→                      style={chartType !== ct.type ? { color: trTheme.textMuted } : undefined}>
+   329→  2665→                      {ct.label}
+   330→  2666→                    </button>
+   331→  2667→                  ))}
+   332→  2668→                </div>
+   333→  2669→                <div className="w-px h-4" style={{ background: trTheme.borderSubtle }} />
+   334→  2670→                {/* Crosshair Toggle */}
+   335→  2671→                <button onClick={() => setCrosshairMode(prev => !prev)} title="Crosshair"
+   336→  2672→                  className={`h-6 w-7 rounded flex items-center justify-center transition-all ${
+   337→  2673→                    crosshairMode ? 'bg-blue-500/20 text-blue-400' : ''
+   338→  2674→                  }`}
+   339→  2675→                  style={!crosshairMode ? { color: trTheme.textMuted } : undefined}>
+   340→  2676→                  <Crosshair className="w-3.5 h-3.5" />
+   341→  2677→                </button>
+   342→  2678→                <div className="w-px h-4" style={{ background: trTheme.borderSubtle }} />
+   343→  2679→                {/* Indicators Button */}
+   344→  2680→                <div className="relative">
+   345→  2681→                  <button onClick={() => { setShowIndicatorMenu(prev => !prev); setShowTimeframeMenu(false); setShowLeverageMenu(false) }} title="Indicators"
+   346→  2682→                    className={`h-6 px-2 rounded flex items-center gap-0.5 transition-all ${
+   347→  2683→                      showIndicatorMenu ? 'bg-purple-500/20 text-purple-400' : activeIndicators.length > 0 ? 'text-purple-400/70' : ''
+   348→  2684→                    }`}
+   349→  2685→                    style={!showIndicatorMenu && activeIndicators.length === 0 ? { color: trTheme.textMuted } : undefined}>
+   350→  2686→                    <Activity className="w-3.5 h-3.5" />
+   351→  2687→                    <span className="text-[8px] font-bold">{activeIndicators.length > 0 ? activeIndicators.length : ''}</span>
+   352→  2688→                  </button>
+   353→  2689→                  {showIndicatorMenu && (
+   354→  2690→                    <div className="absolute left-0 top-8 z-50 rounded-lg overflow-hidden py-1"
+   355→  2691→                      style={{ background: trTheme.bgPanel, border: '1px solid ' + trTheme.border, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minWidth: '190px', maxHeight: '320px', overflowY: 'auto' }}>
+   356→  2692→                      {['Trend', 'Oscillator', 'Volume', 'Bill Williams'].map(group => {
+   357→  2693→                        const groupIndicators = ALL_INDICATORS.filter(ind => ind.group === group)
+   358→  2694→                        return (
+   359→  2695→                          <div key={group}>
+   360→  2696→                            <div className="px-2 py-0.5 text-[7px] font-bold uppercase tracking-widest flex items-center gap-1" style={{ color: trTheme.textFaint, borderTop: group === 'Trend' ? 'none' : `1px solid ${trTheme.borderSubtle}`, marginTop: group === 'Trend' ? 0 : 2, paddingTop: group === 'Trend' ? undefined : 4 }}>
+   361→  2697→                              <span>{group === 'Trend' ? '📊' : group === 'Oscillator' ? '📈' : group === 'Volume' ? '📦' : '🐊'}</span>
+   362→  2698→                              <span>{group}</span>
+   363→  2699→                            </div>
+   364→  2700→                            {groupIndicators.map(ind => {
+   365→  2701→                              const isActive = activeIndicators.some(a => a.key === ind.key)
+   366→  2702→                              return (
+   367→  2703→                                <button key={ind.key} onClick={() => {
+   368→  2704→                                  setActiveIndicators(prev => {
+   369→  2705→                                    if (isActive) return prev.filter(a => a.key !== ind.key)
+   370→  2706→                                    return [...prev, { key: ind.key, label: ind.label, color: ind.color }]
+   371→  2707→                                  })
+   372→  2708→                                }}
+   373→  2709→                                  className={`w-full px-2 py-1 text-[9px] font-bold text-left flex items-center gap-1.5 transition-colors ${
+   374→  2710→                                    isActive ? 'bg-black/5' : 'hover:bg-black/5'
+   375→  2711→                                  }`}
+   376→  2712→                                  style={{ color: isActive ? trTheme.text : trTheme.textSecondary }}>
+   377→  2713→                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: isActive ? ind.color : trTheme.inputBg, border: `1px solid ${isActive ? ind.color : trTheme.inputBorder}` }} />
+   378→  2714→                                  <span className="flex-1">{ind.label}</span>
+   379→  2715→                                  <span className="text-[6px]" style={{ color: trTheme.textFaint }}>{ind.desc}</span>
+   380→  2716→                                  {isActive && <Check className="w-2 h-2 text-green-400" />}
+   381→  2717→                                </button>
+   382→  2718→                              )
+   383→  2719→                            })}
+   384→  2720→                          </div>
+   385→  2721→                        )
+   386→  2722→                      })}
+   387→  2723→                    </div>
+   388→  2724→                  )}
+   389→  2725→                </div>
+   390→  2726→                <div className="w-px h-4" style={{ background: trTheme.borderSubtle }} />
+   391→  2727→                {/* Active indicator pills */}
+   392→  2728→                <div className="flex items-center gap-0.5 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+   393→  2729→                  {activeIndicators.map(ind => (
+   394→  2730→                    <span key={ind.key} className="flex-shrink-0 h-5 px-1.5 rounded text-[7px] font-bold flex items-center gap-0.5" style={{ background: `${ind.color}15`, color: ind.color, border: `0.5px solid ${ind.color}30` }}>
+   395→  2731→                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: ind.color }} />
+   396→  2732→                      {ind.label}
+   397→  2733→                    </span>
+   398→  2734→                  ))}
+   399→  2735→                </div>
+   400→  2736→              </div>
+   401→  2737→              )}
+   402→  2738→
+   403→  2739→              {/* ══ 3. CHART AREA — MT5 Professional Chart (flex-1 fills remaining space) ══ */}
+   404→  2740→              <div className="flex-1 min-h-0 flex flex-col">
+   405→  2741→                  {selectedSinyalStock && (
+   406→  2742→                    <div className="relative flex-1 min-h-0 overflow-hidden" style={{ background: trTheme.chartBg }}>
+   407→  2743→                      {/* Active Trades Overlay — Premium Glass Badges */}
+   408→  2744→                      {sinyalPositions.filter(p => p.status === 'active').length > 0 && (
+   409→  2745→                        <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1 max-w-[140px]">
+   410→  2746→                          {sinyalPositions.filter(p => p.status === 'active').map(ap => {
+   411→  2747→                            const isUp = ap.direction === 'NAIK'
+   412→  2748→                            const livePL = getPositionLivePL(ap)
+   413→  2749→                            return (
+   414→  2750→                              <div key={ap.id}
+   415→  2751→                                className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+   416→  2752→                                style={{
+   417→  2753→                                  backdropFilter: 'blur(12px)',
+   418→  2754→                                  background: isUp ? 'rgba(34,197,94,0.06)' : 'rgba(239,83,80,0.06)',
+   419→  2755→                                  border: `1px solid ${isUp ? 'rgba(34,197,94,0.12)' : 'rgba(239,83,80,0.12)'}`,
+   420→  2756→                                  boxShadow: `0 2px 8px ${isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,83,80,0.08)'}`
+   421→  2757→                                }}>
+   422→  2758→                                <div className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-md"
+   423→  2759→                                  style={{ background: isUp ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'linear-gradient(135deg, #f87171, #ef5350)' }}>
+   424→  2760→                                  <span className="text-[6px] font-black text-white">{isUp ? 'B' : 'S'}</span>
+   425→  2761→                                </div>
+   426→  2762→                                <div className="flex-1 min-w-0">
+   427→  2763→                                  <span className={`text-[8px] font-black ${isUp ? 'text-green-400' : 'text-red-400'}`}>{isUp ? 'BUY' : 'SELL'}</span>
+   428→  2764→                                  <span className={`text-[8px] font-black ${livePL >= 0 ? 'text-green-400' : 'text-red-400'} ml-0.5`}>
+   429→  2765→                                    {livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}
+   430→  2766→                                  </span>
+   431→  2767→                                </div>
+   432→  2768→                                <button onClick={() => closeSinyalPosition(ap.id)}
+   433→  2769→                                  className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 hover:scale-110 transition-transform"
+   434→  2770→                                  style={{ background: 'rgba(239,83,80,0.3)' }}
+   435→  2771→                                  title="Tutup posisi">
+   436→  2772→                                  <X className="w-2.5 h-2.5 text-white" />
+   437→  2773→                                </button>
+   438→  2774→                              </div>
+   439→  2775→                            )
+   440→  2776→                          })}
+   441→  2777→                        </div>
+   442→  2778→                      )}
+   443→  2779→
+   444→  2780→                      {/* ── CANDLESTICK CHART SVG ── */}
+   445→  2781→                      <div className="w-full h-full"
+   446→  2782→                        onMouseMove={(e) => {
+   447→  2783→                          const rect = e.currentTarget.getBoundingClientRect()
+   448→  2784→                          setSinyalCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top, w: rect.width, h: rect.height })
+   449→  2785→                          if (sinyalDragRef.current.dragging) {
+   450→  2786→                            const dx = e.clientX - sinyalDragRef.current.startX
+   451→  2787→                            const candlesPerPx = 3 / rect.width
+   452→  2788→                            const offsetDelta = Math.round(dx * candlesPerPx)
+   453→  2789→                            const newOffset = Math.max(0, sinyalDragRef.current.startOffset + offsetDelta)
+   454→  2790→                            setSinyalChartOffset(newOffset)
+   455→  2791→                          }
+   456→  2792→                        }}
+   457→  2793→                        onMouseDown={(e) => {
+   458→  2794→                          sinyalDragRef.current = { startX: e.clientX, startOffset: sinyalChartOffsetRef.current, dragging: true }
+   459→  2795→                          e.preventDefault()
+   460→  2796→                        }}
+   461→  2797→                        onMouseUp={() => { sinyalDragRef.current.dragging = false }}
+   462→  2798→                        onMouseLeave={() => { setSinyalCrosshair(null); sinyalDragRef.current.dragging = false }}
+   463→  2799→                        onWheel={(e) => {
+   464→  2800→                          e.preventDefault()
+   465→  2801→                          if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+   466→  2802→                            const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY
+   467→  2803→                            const direction = delta > 0 ? -1 : 1
+   468→  2804→                            setSinyalChartOffset(prev => Math.max(0, prev + direction * 2))
+   469→  2805→                          } else {
+   470→  2806→                            const zoomDelta = e.deltaY > 0 ? 1 : -1
+   471→  2807→                            const step = sinyalChartZoomRef.current > 60 ? 4 : sinyalChartZoomRef.current > 30 ? 2 : 1
+   472→  2808→                            setSinyalChartZoom(prev => Math.max(8, Math.min(120, prev + zoomDelta * step)))
+   473→  2809→                          }
+   474→  2810→                        }}
+   475→  2811→                        onDoubleClick={() => { setSinyalChartZoom(40); setSinyalChartOffset(0) }}
+   476→  2812→                        onTouchStart={(e) => {
+   477→  2813→                          if (e.touches.length === 1) {
+   478→  2814→                            sinyalDragRef.current = { startX: e.touches[0].clientX, startOffset: sinyalChartOffsetRef.current, dragging: true }
+   479→  2815→                          } else if (e.touches.length === 2) {
+   480→  2816→                            sinyalDragRef.current.dragging = false
+   481→  2817→                            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY)
+   482→  2818→                            sinyalPinchRef.current = { startDist: dist, startZoom: sinyalChartZoomRef.current }
+   483→  2819→                          }
+   484→  2820→                        }}
+   485→  2821→                        onTouchMove={(e) => {
+   486→  2822→                          if (e.touches.length === 1 && sinyalDragRef.current.dragging) {
+   487→  2823→                            const dx = e.touches[0].clientX - sinyalDragRef.current.startX
+   488→  2824→                            const candlesPerPx = 3 / (e.currentTarget.getBoundingClientRect().width || 300)
+   489→  2825→                            const offsetDelta = Math.round(dx * candlesPerPx)
+   490→  2826→                            setSinyalChartOffset(Math.max(0, sinyalDragRef.current.startOffset + offsetDelta))
+   491→  2827→                          } else if (e.touches.length === 2 && sinyalPinchRef.current) {
+   492→  2828→                            e.preventDefault()
+   493→  2829→                            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY)
+   494→  2830→                            const scale = sinyalPinchRef.current.startDist / dist
+   495→  2831→                            const newZoom = Math.max(8, Math.min(120, Math.round(sinyalPinchRef.current.startZoom * scale)))
+   496→  2832→                            setSinyalChartZoom(newZoom)
+   497→  2833→                          }
+   498→  2834→                        }}
+   499→  2835→                        onTouchEnd={() => {
+   500→  2836→                          sinyalDragRef.current.dragging = false
+   501→  2837→                          sinyalPinchRef.current = null
+   502→  2838→                        }}
+   503→  2839→                        style={{ cursor: sinyalDragRef.current?.dragging ? 'grabbing' : 'grab' }}>
+   504→  2840→                        {(() => {
+   505→  2841→                          const allCandles = [...sinyalCandles]
+   506→  2842→                          const sim = sinyalChartSimRef.current
+   507→  2843→                          if (sim) {
+   508→  2844→                            const cc = sim.currentCandle
+   509→  2845→                            if (cc.tickCount > 0) {
+   510→  2846→                              allCandles.push({
+   511→  2847→                                idx: allCandles.length, open: cc.open, high: cc.high, low: cc.low, close: cc.close, volume: cc.volume,
+   512→  2848→                                time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+   513→  2849→                              })
+   514→  2850→                            }
+   515→  2851→                          }
+   516→  2852→                          if (allCandles.length < 2) return <div className="flex items-center justify-center h-full text-[10px]" style={{ color: trTheme.textMuted }}>Memuat grafik...</div>
+   517→  2853→
+   518→  2854→                          const allHighs = allCandles.map(c => c.high)
+   519→  2855→                          const allLows = allCandles.map(c => c.low)
+   520→  2856→                          const minP = Math.min(...allLows)
+   521→  2857→                          const maxP = Math.max(...allHighs)
+   522→  2858→                          const rangeP = maxP - minP || 1
+   523→  2859→                          const paddedMin = minP - rangeP * 0.08
+   524→  2860→                          const paddedMax = maxP + rangeP * 0.08
+   525→  2861→                          const paddedRange = paddedMax - paddedMin
+   526→  2862→
+   527→  2863→                          const W = 600
+   528→  2864→                          const padR = 54
+   529→  2865→                          const padL = 1
+   530→  2866→                          const padT = 14
+   531→  2867→                          const padB = 0
+   532→  2868→                          const volH = 24
+   533→  2869→                          const timeAxisH = 12
+   534→  2870→                          const priceAreaH = 340 - padT - padB
+   535→  2871→                          const chartH = priceAreaH + padT + padB
+   536→  2872→                          const activeSubCharts = activeIndicators.filter(a => SUBCHART_KEYS.includes(a.key))
+   537→  2873→                          const visibleSubCharts = activeSubCharts.slice(0, 3)
+   538→  2874→                          const subChartH = visibleSubCharts.length * 44
+   539→  2875→                          const H = chartH + volH + timeAxisH + subChartH
+   540→  2876→                          const chartW = W - padR - padL
+   541→  2877→
+   542→  2878→                          const yScale = (price: number) => padT + ((paddedMax - price) / paddedRange) * priceAreaH
+   543→  2879→
+   544→  2880→                          const maxVisible = sinyalChartZoom
+   545→  2881→                          const totalCandles = allCandles.length
+   546→  2882→                          const endIdx = totalCandles - sinyalChartOffset
+   547→  2883→                          const startIdx = Math.max(0, endIdx - maxVisible)
+   548→  2884→                          const visibleCandles = allCandles.slice(startIdx, endIdx)
+   549→  2885→                          const candleCount = visibleCandles.length
+   550→  2886→                          if (candleCount === 0) return <div className="flex items-center justify-center h-full text-[10px]" style={{ color: trTheme.textMuted }}>Geser kembali...</div>
+   551→  2887→                          const candleSpacing = chartW / candleCount
+   552→  2888→                          const candleBodyW = Math.max(1.5, Math.min(candleSpacing * 0.65, 14))
+   553→  2889→
+   554→  2890→                          const maxVol = Math.max(...visibleCandles.map(c => c.volume), 1)
+   555→  2891→
+   556→  2892→                          const lastCandle = visibleCandles[candleCount - 1]
+   557→  2893→                          const lastPrice = lastCandle.close
+   558→  2894→                          const yLast = yScale(lastPrice)
+   559→  2895→                          const isUp = lastCandle.close >= lastCandle.open
+   560→  2896→                          const priceColor = isUp ? '#26a69a' : '#ef5350'
+   561→  2897→
+   562→  2898→                          const activePositions = sinyalPositions.filter(p => p.status === 'active')
+   563→  2899→
+   564→  2900→                          const gridLevels = 6
+   565→  2901→                          const gridPriceStep = paddedRange / gridLevels
+   566→  2902→
+   567→  2903→                          return (
+   568→  2904→                            <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }}>
+   569→  2905→                              <defs>
+   570→  2906→                                <linearGradient id="priceBadgeGrad" x1="0" y1="0" x2="0" y2="1">
+   571→  2907→                                  <stop offset="0%" stopColor={priceColor} stopOpacity="1" />
+   572→  2908→                                  <stop offset="100%" stopColor={priceColor} stopOpacity="0.85" />
+   573→  2909→                                </linearGradient>
+   574→  2910→                                <filter id="glowDot" x="-100%" y="-100%" width="300%" height="300%">
+   575→  2911→                                  <feGaussianBlur stdDeviation="2" result="blur" />
+   576→  2912→                                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+   577→  2913→                                </filter>
+   578→  2914→                              </defs>
+   579→  2915→
+   580→  2916→                              {/* ── Chart Background ── */}
+   581→  2917→                              <defs>
+   582→  2918→                                <linearGradient id="chartBgGrad" x1="0" y1="0" x2="0" y2="1">
+   583→  2919→                                  <stop offset="0%" stopColor={isTrDark ? '#0d1117' : '#fafbfc'} />
+   584→  2920→                                  <stop offset="50%" stopColor={isTrDark ? '#0a0e17' : '#ffffff'} />
+   585→  2921→                                  <stop offset="100%" stopColor={isTrDark ? '#080c14' : '#f5f6f8'} />
+   586→  2922→                                </linearGradient>
+   587→  2923→                              </defs>
+   588→  2924→                              <rect x={padL} y={padT} width={chartW} height={priceAreaH} fill="url(#chartBgGrad)" />
+   589→  2925→
+   590→  2926→                              {/* ── Horizontal grid lines — MT5 subtle dotted ── */}
+   591→  2927→                              {Array.from({ length: gridLevels + 1 }).map((_, gi) => {
+   592→  2928→                                const gy = padT + (gi / gridLevels) * priceAreaH
+   593→  2929→                                const priceLabel = paddedMax - gridPriceStep * gi
+   594→  2930→                                return (
+   595→  2931→                                  <g key={`hg-${gi}`}>
+   596→  2932→                                    <line x1={padL} y1={gy} x2={padL + chartW} y2={gy}
+   597→  2933→                                      stroke={trTheme.gridLine} strokeWidth="0.3" strokeDasharray="1,3" />
+   598→  2934→                                    <text x={padL + chartW + 3} y={gy + 2.5} fontSize="7" fill={trTheme.gridText} fontFamily="monospace" fontWeight="600" textAnchor="start">{fmtChartPrice(priceLabel)}</text>
+   599→  2935→                                  </g>
+   600→  2936→                                )
+   601→  2937→                              })}
+   602→  2938→
+   603→  2939→                              {/* ── Vertical grid lines with time labels ── */}
+   604→  2940→                              {(() => {
+   605→  2941→                                const step = Math.max(1, Math.floor(candleCount / 5))
+   606→  2942→                                const items: JSX.Element[] = []
+   607→  2943→                                visibleCandles.forEach((c, i) => {
+   608→  2944→                                  if (i % step !== 0 && i !== candleCount - 1) return
+   609→  2945→                                  const vx = padL + (i + 0.5) * candleSpacing
+   610→  2946→                                  items.push(
+   611→  2947→                                    <g key={`vg-${i}`}>
+   612→  2948→                                      <line x1={vx} y1={padT} x2={vx} y2={padT + priceAreaH}
+   613→  2949→                                        stroke={trTheme.gridLine} strokeWidth="0.3" strokeDasharray="1,3" />
+   614→  2950→                                      <text x={vx} y={chartH + volH + 8} fontSize="5.5" fill={trTheme.gridText} textAnchor="middle" fontFamily="monospace" fontWeight="600">{c.time}</text>
+   615→  2951→                                    </g>
+   616→  2952→                                  )
+   617→  2953→                                })
+   618→  2954→                                return items
+   619→  2955→                              })()}
+   620→  2956→
+   621→  2957→                              {/* ── Price/Volume separator ── */}
+   622→  2958→                              <line x1={padL} y1={chartH} x2={padL + chartW} y2={chartH} stroke={trTheme.border} strokeWidth="0.3" />
+   623→  2959→
+   624→  2960→                              {/* Volume bars — MT5 style thin */}
+   625→  2961→                              {visibleCandles.map((c, i) => {
+   626→  2962→                                const x = padL + i * candleSpacing + (candleSpacing - candleBodyW * 0.4) / 2
+   627→  2963→                                const volBarH = (c.volume / maxVol) * (volH - 4)
+   628→  2964→                                const isBull = c.close >= c.open
+   629→  2965→                                return (
+   630→  2966→                                  <rect key={`vol-${i}`} x={x} y={chartH + volH - volBarH - 1} width={candleBodyW * 0.4} height={Math.max(0.3, volBarH)}
+   631→  2967→                                    fill={isBull ? 'rgba(38,166,154,0.30)' : 'rgba(239,83,80,0.30)'} />
+   632→  2968→                                )
+   633→  2969→                              })}
+   634→  2970→
+   635→  2971→                              {/* ── Chart Type Rendering ── */}
+   636→  2972→                              {chartType === 'candle' && visibleCandles.map((c, i) => {
+   637→  2973→                                const cx = padL + (i + 0.5) * candleSpacing
+   638→  2974→                                const isBull = c.close >= c.open
+   639→  2975→                                const bodyTop = yScale(Math.max(c.open, c.close))
+   640→  2976→                                const bodyBot = yScale(Math.min(c.open, c.close))
+   641→  2977→                                const bodyH = Math.max(0.6, bodyBot - bodyTop)
+   642→  2978→                                const wickTop = yScale(c.high)
+   643→  2979→                                const wickBot = yScale(c.low)
+   644→  2980→                                const wickW = candleBodyW > 6 ? 1 : 0.7
+   645→  2981→                                const bullColor = '#26a69a'
+   646→  2982→                                const bearColor = '#ef5350'
+   647→  2983→                                const fillColor = isBull ? bullColor : bearColor
+   648→  2984→                                const strokeColor = isBull ? '#2bbd8e' : '#f87171'
+   649→  2985→                                return (
+   650→  2986→                                  <g key={`candle-${i}`}>
+   651→  2987→                                    {/* Upper wick */}
+   652→  2988→                                    <line x1={cx} y1={wickTop} x2={cx} y2={bodyTop} stroke={fillColor} strokeWidth={wickW} strokeLinecap="round" />
+   653→  2989→                                    {/* Lower wick */}
+   654→  2990→                                    <line x1={cx} y1={bodyBot} x2={cx} y2={wickBot} stroke={fillColor} strokeWidth={wickW} strokeLinecap="round" />
+   655→  2991→                                    {/* Candle body — solid filled */}
+   656→  2992→                                    <rect x={cx - candleBodyW / 2} y={bodyTop} width={candleBodyW} height={bodyH}
+   657→  2993→                                      fill={fillColor} stroke={strokeColor} strokeWidth={candleBodyW > 4 ? 0.4 : 0.2} rx={candleBodyW > 8 ? 0.8 : candleBodyW > 5 ? 0.4 : 0} />
+   658→  2994→                                    {/* Subtle inner glow for 3D effect */}
+   659→  2995→                                    {candleBodyW > 5 && bodyH > 2 && (
+   660→  2996→                                      <rect x={cx - candleBodyW / 2 + 0.5} y={bodyTop + 0.5} width={candleBodyW - 1} height={Math.max(0.3, bodyH * 0.3)}
+   661→  2997→                                        fill={isBull ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'} rx="0.3" />
+   662→  2998→                                    )}
+   663→  2999→                                  </g>
+   664→  3000→                                )
+   665→  3001→                              })}
+   666→  3002→
+   667→  3003→                              {/* Continuous Price Line - smooth spline */}
+   668→  3004→                              {chartType === 'candle' && (() => {
+   669→  3005→                                const pts: { x: number; y: number }[] = []
+   670→  3006→                                visibleCandles.forEach((c, i) => {
+   671→  3007→                                  pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(c.close) })
+   672→  3008→                                })
+   673→  3009→                                if (pts.length < 2) return null
+   674→  3010→                                let pathD = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`
+   675→  3011→                                for (let j = 1; j < pts.length; j++) {
+   676→  3012→                                  const prev = pts[j - 1]
+   677→  3013→                                  const curr = pts[j]
+   678→  3014→                                  const cpx = (prev.x + curr.x) / 2
+   679→  3015→                                  pathD += ` C${cpx.toFixed(1)},${prev.y.toFixed(1)} ${cpx.toFixed(1)},${curr.y.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`
+   680→  3016→                                }
+   681→  3017→                                const lineColor = isUp ? 'rgba(38,166,154,' : 'rgba(239,83,80,'
+   682→  3018→                                return <g>
+   683→  3019→                                  <path d={pathD} fill="none" stroke={lineColor + '0.12)'} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+   684→  3020→                                  <path d={pathD} fill="none" stroke={lineColor + '0.35)'} strokeWidth="0.7" strokeLinejoin="round" strokeLinecap="round" />
+   685→  3021→                                </g>
+   686→  3022→                              })()}
+   687→  3023→                              {/* Line Chart */}
+   688→  3024→                              {chartType === 'line' && (() => {
+   689→  3025→                                const pts: { x: number; y: number }[] = []
+   690→  3026→                                visibleCandles.forEach((c, i) => {
+   691→  3027→                                  pts.push({ x: padL + (i + 0.5) * candleSpacing, y: yScale(c.close) })
+   692→  3028→                                })
+   693→  3029→                                if (pts.length < 2) return null
+   694→  3030→                                const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+   695→  3031→                                const areaD = pathD + ` L${pts[pts.length - 1].x.toFixed(1)},${(padT + priceAreaH).toFixed(1)} L${pts[0].x.toFixed(1)},${(padT + priceAreaH).toFixed(1)} Z`
+   696→  3032→                                return (
+   697→  3033→                                  <g>
+   698→  3034→                                    <defs>
+   699→  3035→                                      <linearGradient id="lineAreaGrad" x1="0" y1="0" x2="0" y2="1">
+   700→  3036→                                        <stop offset="0%" stopColor={priceColor} stopOpacity="0.15" />
+   701→
+   702→[showing lines 2337-3036 of 6016; use offset=3037 with limit to continue reading]

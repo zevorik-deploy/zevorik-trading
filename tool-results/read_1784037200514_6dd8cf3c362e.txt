@@ -1,0 +1,402 @@
+  1200→                }
+  1201→
+  1202→                return (
+  1203→                  <div className="space-y-1.5">
+  1204→                    {/* Results count */}
+  1205→                    <div className="flex items-center justify-between px-1 mb-1">
+  1206→                      <span className="text-[9px] font-bold text-[var(--zv-muted)]">{filteredMarketStocks.length} instrumen</span>
+  1207→                      {marketSignalTab === 'favorit' && favorites.size > 0 && (
+  1208→                        <span className="text-[9px] font-bold text-[#f59e0b]">{favorites.size} favorit</span>
+  1209→                      )}
+  1210→                    </div>
+  1211→
+  1212→                    <div className="max-h-[calc(100vh-320px)] overflow-y-auto space-y-1.5 pr-0.5" style={{ scrollbarWidth: 'thin' }}>
+  1213→                      {paginatedStocks.map(s => {
+  1214→                        const isUp = s.changePercent >= 0
+  1215→                        const sparkData = getSparklineData(s)
+  1216→                        const sparkColor = isUp ? '#22c55e' : '#ef5350'
+  1217→                        const mcat = getMarketCategory(s)
+  1218→                        const isFav = favorites.has(s.code)
+  1219→
+  1220→                        return (
+  1221→                          <div key={s.id}
+  1222→                            className="w-full p-2.5 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:bg-[var(--zv-hover)] transition-all active:scale-[0.99] cursor-pointer group"
+  1223→                            onClick={() => { setSelectedSinyalStock(s); setActiveTab('sinyal') }}>
+  1224→                            
+  1225→                            {/* Row 1: Logo + Name + Price + Star */}
+  1226→                            <div className="flex items-center gap-2.5">
+  1227→                              {/* Logo */}
+  1228→                              <div className="flex-shrink-0" onClick={(e) => { e.stopPropagation() }}>
+  1229→                                {getRealLogo(s.code, 36)}
+  1230→                              </div>
+  1231→
+  1232→                              {/* Name + Category */}
+  1233→                              <div className="flex-1 min-w-0 text-left">
+  1234→                                <div className="flex items-center gap-1.5">
+  1235→                                  <span className="text-[12px] font-black text-[var(--zv-text)]">{s.code}</span>
+  1236→                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${
+  1237→                                    mcat === 'crypto' ? 'bg-orange-500/10 text-orange-400' :
+  1238→                                    mcat === 'forex' ? 'bg-blue-500/10 text-blue-400' :
+  1239→                                    mcat === 'komoditas' ? 'bg-amber-500/10 text-amber-400' :
+  1240→                                    'bg-emerald-500/10 text-emerald-400'
+  1241→                                  }`}>
+  1242→                                    {mcat === 'crypto' ? 'KRIPTO' : mcat === 'forex' ? 'FOREX' : mcat === 'komoditas' ? 'KOMODITAS' : 'SAHAM'}
+  1243→                                  </span>
+  1244→                                  {mcat === 'saham' && (
+  1245→                                    <span className="text-[7px] font-bold px-1 py-0.5 rounded bg-[var(--zv-surface)] text-[var(--zv-muted)]">
+  1246→                                      {getMarketRegion(s)}
+  1247→                                    </span>
+  1248→                                  )}
+  1249→                                </div>
+  1250→                                <span className="block text-[9px] text-[var(--zv-muted)] truncate">{s.name}</span>
+  1251→                              </div>
+  1252→
+  1253→                              {/* Price + Change */}
+  1254→                              <div className="flex-shrink-0 text-right">
+  1255→                                <span className="block text-[12px] font-black text-[var(--zv-text)] tabular-nums">{formatPrice(s)}</span>
+  1256→                                <span className={`flex items-center justify-end gap-0.5 text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+  1257→                                  {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+  1258→                                  {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
+  1259→                                </span>
+  1260→                              </div>
+  1261→
+  1262→                              {/* Favorite star */}
+  1263→                              <button
+  1264→                                onClick={(e) => { e.stopPropagation(); toggleFavorite(s.code) }}
+  1265→                                className="flex-shrink-0 w-7 h-7 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] transition-colors"
+  1266→                              >
+  1267→                                <Star className={`w-3.5 h-3.5 transition-colors ${isFav ? 'fill-[#f59e0b] text-[#f59e0b]' : 'text-[var(--zv-muted)] group-hover:text-[#f59e0b]'}`} />
+  1268→                              </button>
+  1269→                            </div>
+  1270→
+  1271→                            {/* Row 2: Sparkline + Stats */}
+  1272→                            <div className="flex items-center gap-2 mt-1.5 pl-[44px]">
+  1273→                              {/* Mini Sparkline - visible on all screens */}
+  1274→                              <div className="flex-shrink-0 w-20 h-7">
+  1275→                                <ResponsiveContainer width="100%" height="100%">
+  1276→                                  <AreaChart data={sparkData.slice(-15)} margin={{ top: 1, right: 0, bottom: 1, left: 0 }}>
+  1277→                                    <defs>
+  1278→                                      <linearGradient id={`ml-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+  1279→                                        <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
+  1280→                                        <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
+  1281→                                      </linearGradient>
+  1282→                                    </defs>
+  1283→                                    <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#ml-${s.id})`} strokeWidth={1.5} dot={false} />
+  1284→                                  </AreaChart>
+  1285→                                </ResponsiveContainer>
+  1286→                              </div>
+  1287→
+  1288→                              {/* Stats */}
+  1289→                              <div className="flex-1 flex items-center gap-3 text-[8px]">
+  1290→                                <div>
+  1291→                                  <span className="text-[var(--zv-muted)]">H </span>
+  1292→                                  <span className="font-bold text-[#22c55e]">{mcat === 'forex' ? s.high.toFixed(4) : mcat === 'crypto' && s.price < 1000000 ? '$' + s.high.toLocaleString() : formatRupiah(s.high)}</span>
+  1293→                                </div>
+  1294→                                <div>
+  1295→                                  <span className="text-[var(--zv-muted)]">L </span>
+  1296→                                  <span className="font-bold text-[#ef5350]">{mcat === 'forex' ? s.low.toFixed(4) : mcat === 'crypto' && s.price < 1000000 ? '$' + s.low.toLocaleString() : formatRupiah(s.low)}</span>
+  1297→                                </div>
+  1298→                                <div>
+  1299→                                  <span className="text-[var(--zv-muted)]">Vol </span>
+  1300→                                  <span className="font-bold text-[var(--zv-text)]">{formatMarketCap(s.volume)}</span>
+  1301→                                </div>
+  1302→                                {s.marketCap > 0 && mcat === 'saham' && (
+  1303→                                  <div className="hidden sm:block">
+  1304→                                    <span className="text-[var(--zv-muted)]">MCap </span>
+  1305→                                    <span className="font-bold text-[var(--zv-text)]">${formatMarketCap(s.marketCap)}</span>
+  1306→                                  </div>
+  1307→                                )}
+  1308→                              </div>
+  1309→                            </div>
+  1310→                          </div>
+  1311→                        )
+  1312→                      })}
+  1313→                    </div>
+  1314→
+  1315→                    {filteredMarketStocks.length === 0 && (
+  1316→                      <div className="text-center py-8">
+  1317→                        <BarChart3 className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+  1318→                        <p className="text-[11px] font-bold text-[var(--zv-muted)]">Tidak ada instrumen ditemukan</p>
+  1319→                        {marketSignalTab === 'favorit' && favorites.size === 0 && (
+  1320→                          <p className="text-[9px] text-[var(--zv-muted)] mt-1">Tap ⭐ untuk menambahkan favorit</p>
+  1321→                        )}
+  1322→                      </div>
+  1323→                    )}
+  1324→
+  1325→                    {/* Load More Button */}
+  1326→                    {hasMore && (
+  1327→                      <div className="flex justify-center pt-3 pb-2">
+  1328→                        <button
+  1329→                          onClick={() => setMarketPage(p => p + 1)}
+  1330→                          className="h-9 px-6 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[10px] font-bold text-[var(--zv-muted)] hover:text-[var(--zv-text)] hover:border-[#3b82f6]/30 transition-all"
+  1331→                        >
+  1332→                          Muat Lagi ({totalItems - paginatedStocks.length} tersisa)
+  1333→                        </button>
+  1334→                      </div>
+  1335→                    )}
+  1336→
+  1337→                    {/* Results summary */}
+  1338→                    {totalItems > 0 && (
+  1339→                      <div className="text-center pt-1 pb-2">
+  1340→                        <span className="text-[8px] text-[var(--zv-muted)]">
+  1341→                          Menampilkan {paginatedStocks.length} dari {totalItems} instrumen
+  1342→                        </span>
+  1343→                      </div>
+  1344→                    )}
+  1345→                  </div>
+  1346→                )
+  1347→              })()}
+  1348→            </motion.div>
+  1349→          )}
+  1350→
+  1351→          {/* ====== PORTFOLIO TAB ====== */}
+  1352→          {activeTab === 'portfolio' && (
+  1353→            <motion.div key="portfolio" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+  1354→              {/* Portfolio Value Card */}
+  1355→              <div className="rounded-2xl overflow-hidden mb-4 border border-blue-600/20" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)', boxShadow: '0 4px 24px rgba(37,99,235,0.15)' }}>
+  1356→                <div className="p-4 text-white relative">
+  1357→                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+  1358→                  <span className="text-[9px] font-medium text-blue-200">Nilai Portofolio</span>
+  1359→                  <b className="block text-2xl font-black mt-0.5">{formatRupiah(portfolioSummary.totalCurrentValue)}</b>
+  1360→                  <div className="flex items-center gap-2 mt-1">
+  1361→                    <span className={`text-[10px] font-bold ${portfolioSummary.totalProfitLoss >= 0 ? 'text-blue-300' : 'text-red-300'}`}>
+  1362→                      {formatRupiah(portfolioSummary.totalProfitLoss)} ({formatPercent(portfolioSummary.totalProfitLossPercent)})
+  1363→                    </span>
+  1364→                  </div>
+  1365→                  <div className="grid grid-cols-2 gap-2 mt-3">
+  1366→                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
+  1367→                      <span className="text-[7px] text-blue-200">Investasi</span>
+  1368→                      <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.totalInvested)}</b>
+  1369→                    </div>
+  1370→                    <div className="rounded-2xl p-2.5 bg-white/10 border border-white/15">
+  1371→                      <span className="text-[7px] text-blue-200">Saldo</span>
+  1372→                      <b className="block text-[11px] font-black mt-0.5">{formatRupiah(portfolioSummary.cashBalance)}</b>
+  1373→                    </div>
+  1374→                  </div>
+  1375→                </div>
+  1376→              </div>
+  1377→
+  1378→              {/* Holdings */}
+  1379→              <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mb-2">Saham Dimiliki</h3>
+  1380→              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+  1381→                {portfolio.map(p => (
+  1382→                  <div key={p.id} className="rounded-2xl p-3 md:p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] transition-all hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5">
+  1383→                    <div className="flex items-center justify-between mb-1.5">
+  1384→                      <div className="flex items-center gap-2 cursor-pointer" onClick={() => openStockDetail(p.stock)}>
+  1385→                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer bg-[var(--zv-surface)]">{getRealLogo(p.stock.code, 36)}</div>
+  1386→                        <div>
+  1387→                          <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{p.stock.code}</span>
+  1388→                          <span className="block text-[7px] md:text-[8px] text-[var(--zv-muted)]">{formatRupiah(p.currentValue)}</span>
+  1389→                        </div>
+  1390→                      </div>
+  1391→                      <div className="text-right">
+  1392→                        <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(p.currentValue)}</span>
+  1393→                        <span className={`block text-[9px] md:text-[10px] font-bold ${p.profitLoss >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
+  1394→                          {formatRupiah(p.profitLoss)} ({formatPercent(p.profitLossPercent)})
+  1395→                        </span>
+  1396→                      </div>
+  1397→                    </div>
+  1398→                    <div className="flex gap-1.5">
+  1399→                      <button onClick={() => openContract(p.stock)} className="flex-1 h-7 md:h-8 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[8px] md:text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm shadow-blue-500/20"><Package className="w-3 h-3" />Kontrak</button>
+  1400→                    </div>
+  1401→                  </div>
+  1402→                ))}
+  1403→                {portfolio.length === 0 && (
+  1404→                  <div className="col-span-full text-center py-8">
+  1405→                    <Briefcase className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+  1406→                    <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Belum ada saham di portofolio</p>
+  1407→                    <button onClick={() => setActiveTab('market')} className="mt-2 h-8 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] md:text-[10px] font-bold shadow-md shadow-blue-500/20">Mulai Investasi</button>
+  1408→                  </div>
+  1409→                )}
+  1410→              </div>
+  1411→
+  1412→
+  1413→            </motion.div>
+  1414→          )}
+  1415→
+  1416→          {/* ====== TRADING TAB - MT5 EXACT LAYOUT ====== */}
+  1417→          {activeTab === 'sinyal' && <SinyalTab />}
+  1418→          {/* ====== SALDO LIVE TAB — MT5-Style Premium Dashboard ====== */}
+  1419→          {activeTab === 'saldo' && <SaldoTab />}
+  1420→          {/* ====== FINANCE TAB ====== */}
+  1421→          {activeTab === 'finance' && <FinanceTab />}
+  1422→          {/* ====== HISTORY TAB ====== */}
+  1423→          {activeTab === 'history' && (
+  1424→            <motion.div key="history" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+  1425→              <h2 className="text-[14px] md:text-lg font-black text-[#3b82f6] mb-3">Riwayat</h2>
+  1426→
+  1427→              {/* ── Sinyal Pro Trade History ── */}
+  1428→              {sinyalPositions.filter(p => p.status !== 'active').length > 0 && (
+  1429→                <div className="mb-5">
+  1430→                  <div className="flex items-center justify-between mb-2">
+  1431→                    <div className="flex items-center gap-1.5">
+  1432→                      <Target className="w-4 h-4 text-purple-500" />
+  1433→                      <h3 className="text-[12px] font-black text-[var(--zv-text)]">Trading</h3>
+  1434→                    </div>
+  1435→                    <div className="flex items-center gap-2">
+  1436→                      <span className="text-[8px] font-bold text-green-400">{sinyalPositions.filter(p => p.status === 'won').length} Menang</span>
+  1437→                      <span className="text-[8px] text-[var(--zv-muted)]">•</span>
+  1438→                      <span className="text-[8px] font-bold text-red-400">{sinyalPositions.filter(p => p.status === 'lost').length} Kalah</span>
+  1439→                      <span className="text-[8px] text-[var(--zv-muted)]">•</span>
+  1440→                      <span className="text-[8px] font-bold text-[var(--zv-muted)]">Win Rate {(() => {
+  1441→                        const total = sinyalPositions.filter(p => p.status !== 'active').length
+  1442→                        const wins = sinyalPositions.filter(p => p.status === 'won').length
+  1443→                        return total > 0 ? `${Math.round(wins / total * 100)}%` : '0%'
+  1444→                      })()}</span>
+  1445→                    </div>
+  1446→                  </div>
+  1447→                  <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar">
+  1448→                    {sinyalPositions.filter(p => p.status !== 'active').slice().reverse().map(pos => {
+  1449→                      const isWon = pos.status === 'won'
+  1450→                      const plAmt = pos.closedPL !== undefined ? pos.closedPL : (isWon ? Math.round(pos.amount * pos.profitPercent / 100) : -pos.amount)
+  1451→                      return (
+  1452→                        <div key={pos.id} className={`rounded-xl p-2.5 border ${isWon ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+  1453→                          <div className="flex items-center justify-between">
+  1454→                            <div className="flex items-center gap-2">
+  1455→                              <div className={`w-8 h-8 rounded-lg grid place-items-center ${isWon ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+  1456→                                {isWon ? <CheckCircle className="w-4 h-4 text-green-400" /> : <X className="w-4 h-4 text-red-400" />}
+  1457→                              </div>
+  1458→                              <div>
+  1459→                                <div className="flex items-center gap-1.5">
+  1460→                                  <span className="text-[10px] font-black text-[var(--zv-text)]">{pos.stockCode}</span>
+  1461→                                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${pos.direction === 'NAIK' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{pos.direction === 'NAIK' ? 'Buy' : 'Sell'}</span>
+  1462→                                </div>
+  1463→                                <span className="text-[7px] text-[var(--zv-muted)]">{formatRupiah(pos.amount)} • Entry {formatNumber(pos.startPrice)}</span>
+  1464→                              </div>
+  1465→                            </div>
+  1466→                            <div className="text-right">
+  1467→                              <span className={`block text-[11px] font-black ${isWon ? 'text-green-400' : 'text-red-400'}`}>
+  1468→                                {isWon ? '+' : ''}{formatRupiah(plAmt)}
+  1469→                              </span>
+  1470→                            </div>
+  1471→                          </div>
+  1472→                        </div>
+  1473→                      )
+  1474→                    })}
+  1475→                  </div>
+  1476→                </div>
+  1477→              )}
+  1478→
+  1479→              {/* ── Divider ── */}
+  1480→              {sinyalPositions.filter(p => p.status !== 'active').length > 0 && filteredTransactions.length > 0 && (
+  1481→                <div className="border-t border-[var(--zv-border)] my-4" />
+  1482→              )}
+  1483→
+  1484→              {/* ── Transaction History ── */}
+  1485→              <div>
+  1486→                <h3 className="text-[12px] font-black text-[var(--zv-text)] mb-2">Transaksi Saham</h3>
+  1487→
+  1488→                {/* Filter */}
+  1489→                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3">
+  1490→                  {[{ key: 'all', label: 'Semua' }, { key: 'BUY', label: 'Buy' }, { key: 'SELL', label: 'Sell' }, { key: 'DEPOSIT', label: 'Deposit' }, { key: 'WITHDRAW', label: 'Withdraw' }].map(f => (
+  1491→                    <button key={f.key} onClick={() => setTxFilter(f.key)}
+  1492→                      className={`flex-shrink-0 h-7 px-3 rounded-full text-[9px] font-bold transition-all ${txFilter === f.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+  1493→                      {f.label}
+  1494→                    </button>
+  1495→                  ))}
+  1496→                </div>
+  1497→
+  1498→                {/* Transaction List */}
+  1499→                <div className="space-y-1.5">
+  1500→                  {filteredTransactions.map(tx => (
+  1501→                    <div key={tx.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
+  1502→                      <div className="flex items-center justify-between">
+  1503→                        <div className="flex items-center gap-2">
+  1504→                          <div className={`w-9 h-9 rounded-xl grid place-items-center ${tx.type === 'BUY' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
+  1505→                            {tx.type === 'BUY' ? <ArrowDownRight className="w-4 h-4 text-[#3b82f6]" /> : <ArrowUpRight className="w-4 h-4 text-[#ef5350]" />}
+  1506→                          </div>
+  1507→                          <div>
+  1508→                            <span className="block text-[10px] font-black text-[var(--zv-text)]">
+  1509→                              {tx.type === 'BUY' ? 'Buy' : 'Sell'} {tx.stock?.code || 'N/A'}
+  1510→                            </span>
+  1511→                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(tx.total)} {tx.orderType ? `(${tx.orderType})` : ''}</span>
+  1512→                          </div>
+  1513→                        </div>
+  1514→                        <div className="text-right">
+  1515→                          <span className={`block text-[10px] font-black ${tx.type === 'BUY' ? 'text-[#ef5350]' : 'text-[#3b82f6]'}`}>
+  1516→                            {tx.type === 'BUY' ? '-' : '+'}{formatRupiah(tx.total)}
+  1517→                          </span>
+  1518→                          <div className="flex items-center gap-1 justify-end">
+  1519→                            <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'completed' ? 'bg-[#3b82f6]' : tx.status === 'pending' ? 'bg-[#f59e0b]' : 'bg-[#ef5350]'}`} />
+  1520→                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">{tx.status}</span>
+  1521→                          </div>
+  1522→                          <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(tx.createdAt)}</span>
+  1523→                        </div>
+  1524→                      </div>
+  1525→                    </div>
+  1526→                  ))}
+  1527→                  {filteredTransactions.length === 0 && (
+  1528→                    <div className="text-center py-8">
+  1529→                      <History className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
+  1530→                      <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum ada transaksi</p>
+  1531→                    </div>
+  1532→                  )}
+  1533→                </div>
+  1534→              </div>
+  1535→            </motion.div>
+  1536→          )}
+  1537→
+  1538→          {/* ====== PROFILE TAB ====== */}
+  1539→          {activeTab === 'profil' && (
+  1540→            <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+  1541→              {/* Profile Header */}
+  1542→              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+  1543→                <div className="p-4 text-white text-center">
+  1544→                  <div className="w-16 h-16 rounded-full bg-white/20 border-2 border-white/30 grid place-items-center mx-auto mb-2">
+  1545→                    <User className="w-8 h-8 text-yellow-300" />
+  1546→                  </div>
+  1547→                  <h2 className="text-[14px] md:text-lg font-black">{user?.name}</h2>
+  1548→                  <div className="flex items-center justify-center gap-1.5 mt-1">
+  1549→                    <span className="text-[9px] md:text-[10px] text-blue-200">+62 {user?.phone}</span>
+  1550→                    <span className="h-4 px-1.5 rounded-full bg-blue-500/30 border border-blue-400/40 text-[7px] font-black text-blue-300 flex items-center gap-0.5">
+  1551→                      <CheckCircle className="w-2.5 h-2.5" />VERIFIED
+  1552→                    </span>
+  1553→                  </div>
+  1554→                  <div className="flex items-center justify-center gap-2 mt-2">
+  1555→                    {user?.kycStatus === 'verified' && (
+  1556→                      <span className="h-5 px-2 rounded-full bg-blue-500/20 border border-blue-400/30 text-[7px] font-bold text-blue-200 flex items-center gap-1">
+  1557→                        <Shield className="w-2.5 h-2.5" />KYC Verified
+  1558→                      </span>
+  1559→                    )}
+  1560→                  </div>
+  1561→                </div>
+  1562→              </div>
+  1563→
+  1564→              {/* Profile Info */}
+  1565→              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+  1566→                <div className="flex items-center justify-between mb-3">
+  1567→                  <h3 className="text-[11px] font-black text-[#3b82f6]">Informasi Profil</h3>
+  1568→                  <button onClick={() => { setProfileForm({ name: user?.name || '', email: user?.email || '', bankName: user?.bankName || '', bankAccount: user?.bankAccount || '', bankHolder: user?.bankHolder || '' }); setProfileEdit(!profileEdit) }}
+  1569→                    className="text-[9px] font-bold text-[#3b82f6] hover:underline flex items-center gap-1">
+  1570→                    <Settings className="w-3 h-3" />{profileEdit ? 'Batal' : 'Edit'}
+  1571→                  </button>
+  1572→                </div>
+  1573→                {profileEdit ? (
+  1574→                  <div className="space-y-2">
+  1575→                    <div>
+  1576→                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nama</label>
+  1577→                      <input type="text" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+  1578→                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+  1579→                    </div>
+  1580→                    <div>
+  1581→                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Email</label>
+  1582→                      <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+  1583→                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+  1584→                    </div>
+  1585→                    <div>
+  1586→                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Bank</label>
+  1587→                      <input type="text" value={profileForm.bankName} onChange={(e) => setProfileForm({ ...profileForm, bankName: e.target.value })}
+  1588→                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+  1589→                    </div>
+  1590→                    <div>
+  1591→                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nomor Rekening</label>
+  1592→                      <input type="text" value={profileForm.bankAccount} onChange={(e) => setProfileForm({ ...profileForm, bankAccount: e.target.value })}
+  1593→                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+  1594→                    </div>
+  1595→                    <div>
+  1596→                      <label className="block text-[8px] font-bold text-[var(--zv-muted)] mb-0.5">Nama Pemilik Rekening</label>
+  1597→                      <input type="text" value={profileForm.bankHolder} onChange={(e) => setProfileForm({ ...profileForm, bankHolder: e.target.value })}
+  1598→                        className="w-full h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+  1599→                    </div>
+
+[showing lines 1200-1599 of 2281; use offset=1600 with limit to continue reading]

@@ -1,0 +1,502 @@
+  3337→                                        {bgRect}{labelText}
+  3338→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3339→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3340→                                      </g>
+  3341→                                    )
+  3342→                                  }
+  3343→                                  case 'bulls': {
+  3344→                                    const data = computeBullsPower(visibleCandles)
+  3345→                                    const yFn = zeroScale(data)
+  3346→                                    const line = mkLine(data, yFn)
+  3347→                                    return (
+  3348→                                      <g key={indKey}>
+  3349→                                        {bgRect}{labelText}
+  3350→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3351→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3352→                                      </g>
+  3353→                                    )
+  3354→                                  }
+  3355→                                  case 'cci': {
+  3356→                                    const data = computeCCI(visibleCandles)
+  3357→                                    const yFn = zeroScale(data)
+  3358→                                    const line = mkLine(data, yFn)
+  3359→                                    return (
+  3360→                                      <g key={indKey}>
+  3361→                                        {bgRect}{labelText}
+  3362→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3363→                                        <line x1={padL} y1={yFn(100)} x2={padL + chartW} y2={yFn(100)} stroke="rgba(239,83,80,0.15)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3364→                                        <line x1={padL} y1={yFn(-100)} x2={padL + chartW} y2={yFn(-100)} stroke="rgba(34,197,94,0.15)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3365→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3366→                                      </g>
+  3367→                                    )
+  3368→                                  }
+  3369→                                  case 'demarker': {
+  3370→                                    const data = computeDeMarker(visibleCandles)
+  3371→                                    const yFn = fixedScale(0, 1)
+  3372→                                    const line = mkLine(data, yFn)
+  3373→                                    return (
+  3374→                                      <g key={indKey}>
+  3375→                                        {bgRect}{labelText}
+  3376→                                        <line x1={padL} y1={yFn(0.7)} x2={padL + chartW} y2={yFn(0.7)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3377→                                        <line x1={padL} y1={yFn(0.3)} x2={padL + chartW} y2={yFn(0.3)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3378→                                        <line x1={padL} y1={yFn(0.5)} x2={padL + chartW} y2={yFn(0.5)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+  3379→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3380→                                      </g>
+  3381→                                    )
+  3382→                                  }
+  3383→                                  case 'force': {
+  3384→                                    const data = computeForceIndex(visibleCandles)
+  3385→                                    const yFn = zeroScale(data)
+  3386→                                    const line = mkLine(data, yFn)
+  3387→                                    return (
+  3388→                                      <g key={indKey}>
+  3389→                                        {bgRect}{labelText}
+  3390→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3391→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3392→                                      </g>
+  3393→                                    )
+  3394→                                  }
+  3395→                                  case 'momentum': {
+  3396→                                    const data = computeMomentum(visibleCandles)
+  3397→                                    const yFn = zeroScale(data)
+  3398→                                    const line = mkLine(data, yFn)
+  3399→                                    return (
+  3400→                                      <g key={indKey}>
+  3401→                                        {bgRect}{labelText}
+  3402→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3403→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3404→                                      </g>
+  3405→                                    )
+  3406→                                  }
+  3407→                                  case 'osma': {
+  3408→                                    const data = computeOsMA(visibleCandles)
+  3409→                                    const yFn = zeroScale(data)
+  3410→                                    return (
+  3411→                                      <g key={indKey}>
+  3412→                                        {bgRect}{labelText}
+  3413→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3414→                                        {data.map((v, i) => {
+  3415→                                          if (v === null) return null
+  3416→                                          const x = padL + i * candleSpacing + candleSpacing * 0.15
+  3417→                                          const w = candleSpacing * 0.7
+  3418→                                          const y0 = subY + subH / 2
+  3419→                                          const y1 = yFn(v)
+  3420→                                          return <rect key={`osma-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={v >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,83,80,0.3)'} rx="0.3" />
+  3421→                                        })}
+  3422→                                      </g>
+  3423→                                    )
+  3424→                                  }
+  3425→                                  case 'rvi': {
+  3426→                                    const data = computeRVI(visibleCandles)
+  3427→                                    const yFn = zeroScale([...data.rvi, ...data.signal].filter((v): v is number => v !== null))
+  3428→                                    const rviLine = mkLine(data.rvi, yFn)
+  3429→                                    const sigLine = mkLine(data.signal, yFn)
+  3430→                                    return (
+  3431→                                      <g key={indKey}>
+  3432→                                        {bgRect}{labelText}
+  3433→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3434→                                        {rviLine && <path d={rviLine} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3435→                                        {sigLine && <path d={sigLine} fill="none" stroke="#ef5350" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3436→                                      </g>
+  3437→                                    )
+  3438→                                  }
+  3439→                                  case 'stochastic': {
+  3440→                                    const data = computeStochastic(visibleCandles)
+  3441→                                    const yFn = fixedScale(0, 100)
+  3442→                                    const kLine = mkLine(data.k, yFn)
+  3443→                                    const dLine = mkLine(data.d, yFn)
+  3444→                                    return (
+  3445→                                      <g key={indKey}>
+  3446→                                        {bgRect}{labelText}
+  3447→                                        <line x1={padL} y1={yFn(80)} x2={padL + chartW} y2={yFn(80)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3448→                                        <line x1={padL} y1={yFn(20)} x2={padL + chartW} y2={yFn(20)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3449→                                        <line x1={padL} y1={yFn(50)} x2={padL + chartW} y2={yFn(50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+  3450→                                        {kLine && <path d={kLine} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3451→                                        {dLine && <path d={dLine} fill="none" stroke="#3b82f6" strokeWidth="0.4" opacity="0.5" strokeLinejoin="round" />}
+  3452→                                      </g>
+  3453→                                    )
+  3454→                                  }
+  3455→                                  case 'williamsr': {
+  3456→                                    const data = computeWilliamsR(visibleCandles)
+  3457→                                    const yFn = fixedScale(-100, 0)
+  3458→                                    const line = mkLine(data, yFn)
+  3459→                                    return (
+  3460→                                      <g key={indKey}>
+  3461→                                        {bgRect}{labelText}
+  3462→                                        <line x1={padL} y1={yFn(-20)} x2={padL + chartW} y2={yFn(-20)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3463→                                        <line x1={padL} y1={yFn(-80)} x2={padL + chartW} y2={yFn(-80)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3464→                                        <line x1={padL} y1={yFn(-50)} x2={padL + chartW} y2={yFn(-50)} stroke={trTheme.gridLine} strokeWidth="0.2" />
+  3465→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3466→                                      </g>
+  3467→                                    )
+  3468→                                  }
+  3469→                                  case 'ad': {
+  3470→                                    const data = computeAD(visibleCandles)
+  3471→                                    const dataNullable: (number | null)[] = data
+  3472→                                    const { yFn } = autoScale(dataNullable)
+  3473→                                    const line = mkLine(dataNullable, yFn)
+  3474→                                    return (
+  3475→                                      <g key={indKey}>
+  3476→                                        {bgRect}{labelText}
+  3477→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3478→                                      </g>
+  3479→                                    )
+  3480→                                  }
+  3481→                                  case 'mfi': {
+  3482→                                    const data = computeMFI(visibleCandles)
+  3483→                                    const yFn = fixedScale(0, 100)
+  3484→                                    const line = mkLine(data, yFn)
+  3485→                                    return (
+  3486→                                      <g key={indKey}>
+  3487→                                        {bgRect}{labelText}
+  3488→                                        <line x1={padL} y1={yFn(80)} x2={padL + chartW} y2={yFn(80)} stroke="rgba(239,83,80,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3489→                                        <line x1={padL} y1={yFn(20)} x2={padL + chartW} y2={yFn(20)} stroke="rgba(34,197,94,0.2)" strokeWidth="0.3" strokeDasharray="2,2" />
+  3490→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3491→                                      </g>
+  3492→                                    )
+  3493→                                  }
+  3494→                                  case 'obv': {
+  3495→                                    const data = computeOBV(visibleCandles)
+  3496→                                    const dataNullable: (number | null)[] = data
+  3497→                                    const { yFn } = autoScale(dataNullable)
+  3498→                                    const line = mkLine(dataNullable, yFn)
+  3499→                                    return (
+  3500→                                      <g key={indKey}>
+  3501→                                        {bgRect}{labelText}
+  3502→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3503→                                      </g>
+  3504→                                    )
+  3505→                                  }
+  3506→                                  case 'volumes': {
+  3507→                                    const data = visibleCandles.map(c => c.volume)
+  3508→                                    const { yFn } = autoScale(data.map(v => v as number | null), 2)
+  3509→                                    return (
+  3510→                                      <g key={indKey}>
+  3511→                                        {bgRect}{labelText}
+  3512→                                        {data.map((v, i) => {
+  3513→                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+  3514→                                          const w = candleSpacing * 0.8
+  3515→                                          const y1 = yFn(v)
+  3516→                                          const y0 = yFn(0)
+  3517→                                          const isBull = visibleCandles[i].close >= visibleCandles[i].open
+  3518→                                          return <rect key={`vol-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={isBull ? 'rgba(34,197,94,0.25)' : 'rgba(239,83,80,0.25)'} rx="0.3" />
+  3519→                                        })}
+  3520→                                      </g>
+  3521→                                    )
+  3522→                                  }
+  3523→                                  case 'ac': {
+  3524→                                    const data = computeAC(visibleCandles)
+  3525→                                    const yFn = zeroScale(data)
+  3526→                                    return (
+  3527→                                      <g key={indKey}>
+  3528→                                        {bgRect}{labelText}
+  3529→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3530→                                        {data.map((v, i) => {
+  3531→                                          if (v === null) return null
+  3532→                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+  3533→                                          const w = candleSpacing * 0.8
+  3534→                                          const y0 = subY + subH / 2
+  3535→                                          const y1 = yFn(v)
+  3536→                                          const prev = i > 0 && data[i-1] !== null ? data[i-1]! : 0
+  3537→                                          const barColor = v > prev ? 'rgba(34,197,94,0.35)' : 'rgba(239,83,80,0.35)'
+  3538→                                          return <rect key={`ac-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+  3539→                                        })}
+  3540→                                      </g>
+  3541→                                    )
+  3542→                                  }
+  3543→                                  case 'ao': {
+  3544→                                    const data = computeAO(visibleCandles)
+  3545→                                    const yFn = zeroScale(data)
+  3546→                                    return (
+  3547→                                      <g key={indKey}>
+  3548→                                        {bgRect}{labelText}
+  3549→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3550→                                        {data.map((v, i) => {
+  3551→                                          if (v === null) return null
+  3552→                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+  3553→                                          const w = candleSpacing * 0.8
+  3554→                                          const y0 = subY + subH / 2
+  3555→                                          const y1 = yFn(v)
+  3556→                                          const prev = i > 0 && data[i-1] !== null ? data[i-1]! : 0
+  3557→                                          const barColor = v > prev ? 'rgba(34,197,94,0.35)' : 'rgba(239,83,80,0.35)'
+  3558→                                          return <rect key={`ao-h-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+  3559→                                        })}
+  3560→                                      </g>
+  3561→                                    )
+  3562→                                  }
+  3563→                                  case 'gator': {
+  3564→                                    const data = computeGator(visibleCandles)
+  3565→                                    const allVals = [...data.upper, ...data.lower].filter((v): v is number => v !== null)
+  3566→                                    const maxAbs = Math.max(...allVals.map(Math.abs), 0.001)
+  3567→                                    const yFn = (v: number) => subY + subH / 2 - (v / maxAbs) * (subH / 2 - subPad)
+  3568→                                    return (
+  3569→                                      <g key={indKey}>
+  3570→                                        {bgRect}{labelText}
+  3571→                                        <line x1={padL} y1={subY + subH / 2} x2={padL + chartW} y2={subY + subH / 2} stroke={trTheme.border} strokeWidth="0.3" />
+  3572→                                        {data.upper.map((v, i) => {
+  3573→                                          if (v === null) return null
+  3574→                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+  3575→                                          const w = candleSpacing * 0.8
+  3576→                                          const y0 = yFn(0)
+  3577→                                          const y1 = yFn(v)
+  3578→                                          const prev = i > 0 && data.upper[i-1] !== null ? data.upper[i-1]! : 0
+  3579→                                          const barColor = v > prev ? 'rgba(34,197,94,0.35)' : 'rgba(34,197,94,0.2)'
+  3580→                                          return <rect key={`gator-u-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+  3581→                                        })}
+  3582→                                        {data.lower.map((v, i) => {
+  3583→                                          if (v === null) return null
+  3584→                                          const x = padL + i * candleSpacing + candleSpacing * 0.1
+  3585→                                          const w = candleSpacing * 0.8
+  3586→                                          const y0 = yFn(0)
+  3587→                                          const y1 = yFn(v)
+  3588→                                          const prev = i > 0 && data.lower[i-1] !== null ? data.lower[i-1]! : 0
+  3589→                                          const barColor = v < prev ? 'rgba(239,83,80,0.35)' : 'rgba(239,83,80,0.2)'
+  3590→                                          return <rect key={`gator-l-${i}`} x={x} y={Math.min(y0, y1)} width={Math.max(0.3, w)} height={Math.abs(y1 - y0)} fill={barColor} rx="0.3" />
+  3591→                                        })}
+  3592→                                      </g>
+  3593→                                    )
+  3594→                                  }
+  3595→                                  case 'bwMFI': {
+  3596→                                    const data = computeBWIMFI(visibleCandles)
+  3597→                                    const dataN: (number | null)[] = data
+  3598→                                    const { yFn } = autoScale(dataN)
+  3599→                                    const line = mkLine(dataN, yFn)
+  3600→                                    return (
+  3601→                                      <g key={indKey}>
+  3602→                                        {bgRect}{labelText}
+  3603→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3604→                                      </g>
+  3605→                                    )
+  3606→                                  }
+  3607→                                  case 'stddev': {
+  3608→                                    const data = computeStdDev(visibleCandles)
+  3609→                                    const { yFn } = autoScale(data)
+  3610→                                    const line = mkLine(data, yFn)
+  3611→                                    return (
+  3612→                                      <g key={indKey}>
+  3613→                                        {bgRect}{labelText}
+  3614→                                        {line && <path d={line} fill="none" stroke={indColor} strokeWidth="0.5" opacity="0.7" strokeLinejoin="round" />}
+  3615→                                      </g>
+  3616→                                    )
+  3617→                                  }
+  3618→                                  default:
+  3619→                                    return null
+  3620→                                }
+  3621→                              })}
+  3622→
+  3623→                              {/* Indicator Legend — top area */}
+  3624→                              <g opacity="0.55">
+  3625→                                {activeIndicators.map((ind, idx) => (
+  3626→                                  <g key={`legend-${ind.key}`}>
+  3627→                                    <line x1={padL + 4 + idx * 32} y1={padT - 5} x2={padL + 12 + idx * 32} y2={padT - 5} stroke={ind.color} strokeWidth="0.7" />
+  3628→                                    <text x={padL + 14 + idx * 32} y={padT - 3} fontSize="5.5" fill={ind.color} fontFamily="monospace" fontWeight="700">{ind.label}</text>
+  3629→                                  </g>
+  3630→                                ))}
+  3631→                              </g>
+  3632→
+  3633→                              {/* Position entry lines — MT5 order lines */}
+  3634→                              {activePositions.map(pos => {
+  3635→                                const entryY = yScale(pos.startPrice)
+  3636→                                const isPosBuy = pos.direction === 'NAIK'
+  3637→                                const lineColor = isPosBuy ? '#2962ff' : '#ef5350'
+  3638→                                const livePL = getPositionLivePL(pos)
+  3639→                                const lotSize = (pos.amount / LOT_SIZE).toFixed(2)
+  3640→                                const plStr = livePL >= 0 ? `+${formatRupiah(livePL)}` : formatRupiah(livePL)
+  3641→                                const labelText = `${isPosBuy ? 'BUY' : 'SELL'} ${lotSize}, ${plStr}`
+  3642→                                const labelW = labelText.length * 3.2 + 6
+  3643→                                return (
+  3644→                                  <g key={`pos-line-${pos.id}`}>
+  3645→                                    <line x1={padL} y1={entryY} x2={padL + chartW} y2={entryY}
+  3646→                                      stroke={lineColor} strokeWidth="0.5" strokeDasharray="3,2" opacity="0.45" />
+  3647→                                    <rect x={padL + 3} y={entryY - 4.5} width={labelW} height="9" rx="1" fill={lineColor} opacity="0.9" />
+  3648→                                    <text x={padL + 3 + labelW / 2} y={entryY + 2} fontSize="5" fill="white" textAnchor="middle" fontWeight="bold" fontFamily="monospace">{labelText}</text>
+  3649→                                  </g>
+  3650→                                )
+  3651→                              })}
+  3652→
+  3653→                              {/* Current price line — solid with glow */}
+  3654→                              <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
+  3655→                                stroke={priceColor} strokeWidth="0.5" strokeDasharray="4,2" opacity="0.55" />
+  3656→                              {/* Subtle glow under price line */}
+  3657→                              <line x1={padL} y1={yLast} x2={padL + chartW} y2={yLast}
+  3658→                                stroke={priceColor} strokeWidth="3" opacity="0.06" />
+  3659→
+  3660→                              {/* Current price dot — glowing */}
+  3661→                              <circle cx={padL + chartW} cy={yLast} r="2" fill={priceColor} filter="url(#glowDot)">
+  3662→                                <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite" />
+  3663→                              </circle>
+  3664→
+  3665→                              {/* Current price badge — right edge MT5 style */}
+  3666→                              <rect x={padL + chartW + 0.5} y={yLast - 6} width={padR - 1} height="12" rx="1.5" fill="url(#priceBadgeGrad)" />
+  3667→                              <text x={padL + chartW + padR / 2} y={yLast + 3} fontSize="6.5" fill="white" textAnchor="middle" fontWeight="800" fontFamily="monospace">{fmtChartPrice(lastPrice)}</text>
+  3668→
+  3669→                              {/* Crosshair — Premium MT5 Style with candle snapping */}
+  3670→                              {sinyalCrosshair && (() => {
+  3671→                                const rawSvgX = (sinyalCrosshair.x / sinyalCrosshair.w) * W
+  3672→                                const svgY = (sinyalCrosshair.y / sinyalCrosshair.h) * H
+  3673→                                // Snap vertical line to nearest candle center
+  3674→                                const rawCandleIdx = (rawSvgX - padL) / candleSpacing - 0.5
+  3675→                                const snappedIdx = Math.max(0, Math.min(visibleCandles.length - 1, Math.round(rawCandleIdx)))
+  3676→                                const svgX = padL + (snappedIdx + 0.5) * candleSpacing
+  3677→                                const crossPrice = paddedMax - ((svgY - padT) / priceAreaH) * paddedRange
+  3678→                                const hoveredCandle = snappedIdx >= 0 && snappedIdx < visibleCandles.length ? visibleCandles[snappedIdx] : null
+  3679→                                const timeLabel = hoveredCandle ? hoveredCandle.time : ''
+  3680→                                const crosshairColor = isTrDark ? 'rgba(160,175,195,0.6)' : 'rgba(60,60,60,0.5)'
+  3681→                                const crosshairDotColor = isUp ? '#26a69a' : '#ef5350'
+  3682→                                return (
+  3683→                                  <g>
+  3684→                                    {/* Vertical crosshair line — snapped to candle center */}
+  3685→                                    <line x1={svgX} y1={padT} x2={svgX} y2={chartH + volH + timeAxisH}
+  3686→                                      stroke={crosshairColor} strokeWidth="0.5" strokeDasharray="3,2" />
+  3687→                                    {/* Horizontal crosshair line */}
+  3688→                                    <line x1={padL} y1={svgY} x2={padL + chartW} y2={svgY}
+  3689→                                      stroke={crosshairColor} strokeWidth="0.5" strokeDasharray="3,2" />
+  3690→                                    {/* Crosshair center dot */}
+  3691→                                    {svgY > padT && svgY < padT + priceAreaH && svgX > padL && svgX < padL + chartW && (
+  3692→                                      <>
+  3693→                                        <circle cx={svgX} cy={svgY} r="3" fill={crosshairDotColor} opacity="0.15" />
+  3694→                                        <circle cx={svgX} cy={svgY} r="1.8" fill={crosshairDotColor} opacity="0.8" />
+  3695→                                        <circle cx={svgX} cy={svgY} r="0.6" fill="#ffffff" opacity="0.9" />
+  3696→                                      </>
+  3697→                                    )}
+  3698→                                    {/* Price label on right axis */}
+  3699→                                    {svgY > padT && svgY < padT + priceAreaH && (
+  3700→                                      <>
+  3701→                                        <rect x={padL + chartW + 0.5} y={svgY - 6.5} width={padR - 1} height="13" rx="2"
+  3702→                                          fill={crosshairDotColor} stroke="none" />
+  3703→                                        <text x={padL + chartW + padR / 2} y={svgY + 3} fontSize="7" fill="#ffffff" textAnchor="middle" fontFamily="monospace" fontWeight="800">{fmtChartPrice(crossPrice)}</text>
+  3704→                                      </>
+  3705→                                    )}
+  3706→                                    {/* Time label on bottom axis — snapped to candle */}
+  3707→                                    {svgX > padL && svgX < padL + chartW && timeLabel && (
+  3708→                                      <>
+  3709→                                        <rect x={svgX - 16} y={chartH + volH + 0.5} width="32" height="12" rx="2"
+  3710→                                          fill={isTrDark ? 'rgba(20,28,50,0.95)' : 'rgba(240,242,245,0.95)'} stroke={isTrDark ? 'rgba(148,163,184,0.25)' : 'rgba(0,0,0,0.12)'} strokeWidth="0.3" />
+  3711→                                        <text x={svgX} y={chartH + volH + 9} fontSize="6.5" fill={isTrDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)'} textAnchor="middle" fontFamily="monospace" fontWeight="700">{timeLabel}</text>
+  3712→                                      </>
+  3713→                                    )}
+  3714→                                    {/* OHLC data tooltip — top-left corner of chart */}
+  3715→                                    {hoveredCandle && svgX > padL && svgX < padL + chartW && (
+  3716→                                      <g>
+  3717→                                        <rect x={padL + 3} y={padT + 2} width="62" height="32" rx="2"
+  3718→                                          fill={isTrDark ? 'rgba(10,14,23,0.92)' : 'rgba(255,255,255,0.92)'} stroke={isTrDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'} strokeWidth="0.3" />
+  3719→                                        <text x={padL + 6} y={padT + 9} fontSize="5" fill={isTrDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} fontFamily="monospace" fontWeight="600">O <tspan fill={isTrDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)'}>{fmtChartPrice(hoveredCandle.open)}</tspan>  H <tspan fill={hoveredCandle.high >= hoveredCandle.open ? '#26a69a' : '#ef5350'}>{fmtChartPrice(hoveredCandle.high)}</tspan></text>
+  3720→                                        <text x={padL + 6} y={padT + 17} fontSize="5" fill={isTrDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} fontFamily="monospace" fontWeight="600">L <tspan fill={hoveredCandle.low < hoveredCandle.open ? '#ef5350' : '#26a69a'}>{fmtChartPrice(hoveredCandle.low)}</tspan>  C <tspan fill={hoveredCandle.close >= hoveredCandle.open ? '#26a69a' : '#ef5350'}>{fmtChartPrice(hoveredCandle.close)}</tspan></text>
+  3721→                                        <text x={padL + 6} y={padT + 25} fontSize="4.5" fill={isTrDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)'} fontFamily="monospace" fontWeight="600">Vol {formatNumber(hoveredCandle.volume)}</text>
+  3722→                                      </g>
+  3723→                                    )}
+  3724→                                  </g>
+  3725→                                )
+  3726→                              })()}
+  3727→                            </svg>
+  3728→                          )
+  3729→                        })()}
+  3730→                      </div>
+  3731→
+  3732→                      {/* Scroll to latest */}
+  3733→                      {sinyalChartOffset > 0 && (
+  3734→                        <button
+  3735→                          onClick={() => setSinyalChartOffset(0)}
+  3736→                          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 h-7 px-3 rounded-full text-[8px] font-bold flex items-center gap-0.5 hover:bg-[#1d4ed8] transition-colors"
+  3737→                          style={{ background: 'rgba(29,78,216,0.6)', backdropFilter: 'blur(4px)', color: 'white' }}>
+  3738→                          <ChevronRight className="w-2.5 h-2.5 rotate-180" />
+  3739→                          Terbaru
+  3740→                        </button>
+  3741→                      )}
+  3742→
+  3743→                      {/* Result flash */}
+  3744→                      {sinyalResults.length > 0 && (() => {
+  3745→                        const latest = sinyalResults[sinyalResults.length - 1]
+  3746→                        if (!latest || !latest.shownAt || Date.now() - latest.shownAt > 1000) return null
+  3747→                        const won = latest.won
+  3748→                        return (
+  3749→                          <motion.div key={latest.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+  3750→                            className="absolute top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+  3751→                            <div className={'flex items-center gap-1 px-2 py-0.5 rounded-full ' + (won ? 'border border-green-500/20 bg-green-500/10' : 'border border-red-500/20 bg-red-500/10')} style={{ backdropFilter: 'blur(8px)' }}>
+  3752→                              <span className={'text-[8px] font-black ' + (won ? 'text-green-400' : 'text-red-400')}>{won ? 'BENAR' : 'SALAH'}</span>
+  3753→                              <span className={'text-[7px] font-bold ' + (won ? 'text-green-300' : 'text-red-300')}>{won ? '+' : '-'}{formatRupiah(Math.abs(latest.profit))}</span>
+  3754→                            </div>
+  3755→                          </motion.div>
+  3756→                        )
+  3757→                      })()}
+  3758→                    </div>
+  3759→                  )}
+  3760→                  {!selectedSinyalStock && (
+  3761→                    <div className="flex-1 flex items-center justify-center" style={{ background: trTheme.chartBg }}>
+  3762→                      <div className="text-center">
+  3763→                        <BarChart3 className="w-10 h-10 mx-auto mb-2" style={{ color: trTheme.textMuted }} />
+  3764→                        <p className="text-[10px] font-bold" style={{ color: trTheme.textMuted }}>Pilih instrumen untuk mulai trading</p>
+  3765→                      </div>
+  3766→                    </div>
+  3767→                  )}
+  3768→                </div>
+  3769→
+  3770→              {/* ══ 4. BOTTOM TRADE STATUS BAR — Premium Glass Badges ══ */}
+  3771→              {activePos.length > 0 && (
+  3772→                <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 overflow-x-auto" style={{ background: trTheme.bgCard, borderTop: '1px solid ' + trTheme.borderSubtle, scrollbarWidth: 'none' }}>
+  3773→                  {activePos.slice(0, 3).map(pos => {
+  3774→                    const livePL = getPositionLivePL(pos)
+  3775→                    const isUp = pos.direction === 'NAIK'
+  3776→                    return (
+  3777→                      <div key={pos.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg flex-shrink-0" style={{ background: isUp ? 'rgba(34,197,94,0.04)' : 'rgba(239,83,80,0.04)', border: `1px solid ${isUp ? 'rgba(34,197,94,0.10)' : 'rgba(239,83,80,0.10)'}` }}>
+  3778→                        <span className="text-[8px] font-black" style={{ color: trTheme.textSecondary }}>{pos.stockCode}</span>
+  3779→                        <span className={`px-1 py-0.5 rounded text-[7px] font-black text-white ${isUp ? 'bg-green-600/80' : 'bg-red-600/80'}`}>{isUp ? 'BUY' : 'SELL'}</span>
+  3780→                        <span className="text-[7px] font-bold tabular-nums" style={{ color: trTheme.textMuted }}>{(pos.amount / LOT_SIZE).toFixed(2)}</span>
+  3781→                        <span className={`text-[8px] font-black tabular-nums ${livePL >= 0 ? 'text-green-400' : 'text-red-400'}`}>{livePL >= 0 ? '+' : ''}{formatRupiah(livePL)}</span>
+  3782→                        <button onClick={() => closeSinyalPosition(pos.id)} className="w-5 h-5 rounded flex items-center justify-center hover:scale-110 transition-transform" style={{ background: 'rgba(239,83,80,0.35)' }}>
+  3783→                          <X className="w-2 h-2 text-white" />
+  3784→                        </button>
+  3785→                      </div>
+  3786→                    )
+  3787→                  })}
+  3788→                  {activePos.length > 3 && (
+  3789→                    <span className="text-[7px] font-bold flex-shrink-0" style={{ color: trTheme.textMuted }}>+{activePos.length - 3} lagi</span>
+  3790→                  )}
+  3791→                </div>
+  3792→              )}
+  3793→
+  3794→              {/* ══ 5. TERMINAL BAR — Premium MT5 Strip ══ */}
+  3795→              <div className="flex-shrink-0" style={{ background: trTheme.bg, borderTop: '1px solid ' + trTheme.borderSubtle }}>
+  3796→                <div className="flex items-center px-2 py-1.5 gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+  3797→                  {[
+  3798→                    { label: 'Balance', value: formatRupiah(totalBalance), color: trTheme.text },
+  3799→                    { label: 'Equity', value: formatRupiah(equity), color: equity >= totalBalance ? '#4ade80' : '#f87171' },
+  3800→                    { label: 'Margin', value: formatRupiah(usedMargin), color: '#fbbf24' },
+  3801→                    { label: 'Free Mrg', value: formatRupiah(freeMargin), color: freeMargin >= 0 ? '#22d3ee' : '#f87171' },
+  3802→                    { label: 'P&L', value: `${totalLivePL >= 0 ? '+' : ''}${formatRupiah(totalLivePL)}`, color: totalLivePL >= 0 ? '#4ade80' : '#f87171' },
+  3803→                  ].map((item) => (
+  3804→                    <div key={item.label} className="flex flex-col items-center justify-center px-3 py-1 flex-shrink-0 rounded-lg" style={{ background: trTheme.inputBg, border: '1px solid ' + trTheme.borderSubtle, minWidth: '68px' }}>
+  3805→                      <span className="text-[7px] font-bold uppercase tracking-[0.15em]" style={{ color: trTheme.textMuted }}>{item.label}</span>
+  3806→                      <span className="text-[9px] font-black tabular-nums mt-0.5" style={{ color: item.color }}>{item.value}</span>
+  3807→                    </div>
+  3808→                  ))}
+  3809→                </div>
+  3810→              </div>
+  3811→
+  3812→              {/* ══ 6. TERMINAL PANEL — Trade / History Tabs (MT5 Style) ══ */}
+  3813→              <div className="flex-shrink-0" style={{ background: trTheme.bgCard }}>
+  3814→                {/* Terminal Tab Header */}
+  3815→                <div className="flex items-center border-b" style={{ borderColor: trTheme.borderSubtle }}>
+  3816→                  {(['trade', 'history'] as const).map(tab => (
+  3817→                    <button key={tab} onClick={() => setSinyalTerminalTab(tab)}
+  3818→                      className={`px-4 py-1.5 text-[8px] font-black uppercase tracking-[0.15em] transition-all relative ${
+  3819→                        sinyalTerminalTab === tab ? '' : ''
+  3820→                      }`}
+  3821→                      style={{
+  3822→                        color: sinyalTerminalTab === tab ? '#3b82f6' : trTheme.textMuted,
+  3823→                        borderBottom: sinyalTerminalTab === tab ? '2px solid #3b82f6' : '2px solid transparent',
+  3824→                      }}>
+  3825→                      {tab === 'trade' ? `Trade (${activePos.length})` : `History (${sinyalPositions.filter(p => p.status === 'won' || p.status === 'lost').length})`}
+  3826→                    </button>
+  3827→                  ))}
+  3828→                </div>
+  3829→
+  3830→                {/* Trade Tab — Active Positions */}
+  3831→                {sinyalTerminalTab === 'trade' && (
+  3832→                  <>
+  3833→                    {activePos.length > 0 ? (
+  3834→                      <>
+  3835→                        <div className="grid grid-cols-12 gap-0 px-3 py-1 text-[7px] font-black uppercase tracking-[0.15em]" style={{ color: trTheme.textMuted, borderBottom: '1px solid ' + trTheme.borderSubtle }}>
+  3836→                          <div className="col-span-2">Symbol</div>
+
+[showing lines 3337-3836 of 6016; use offset=3837 with limit to continue reading]
