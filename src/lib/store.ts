@@ -29,6 +29,7 @@ interface AuthState {
   logout: () => void
   updateBalance: (balance: number) => void
   updateUser: (data: Partial<User>) => void
+  refreshUser: () => Promise<void>
   setAdminViewingUserMode: (v: boolean) => void
   setPendingLogin: (userId: string, tempToken: string) => void
   clearPendingLogin: () => void
@@ -113,6 +114,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       persistState({ ...state, ...newState } as AuthState)
       return newState
     }),
+  refreshUser: async () => {
+    const user = get().user
+    if (!user) return
+    try {
+      const res = await fetch(`/api/profile?userId=${user.id}`)
+      const data = await res.json()
+      if (data.user) {
+        const newState = { user: { ...user, ...data.user } }
+        set(newState)
+        persistState({ ...get(), ...newState } as AuthState)
+      }
+    } catch {}
+  },
   setAdminViewingUserMode: (v) => set({ adminViewingUserMode: v }),
   setPendingLogin: (userId, tempToken) => set({ pendingUserId: userId, tempToken }),
   clearPendingLogin: () => set({ pendingUserId: null, tempToken: null }),

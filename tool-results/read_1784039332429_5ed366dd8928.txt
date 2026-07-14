@@ -1,0 +1,590 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useRef } from 'react'
+     4→import { useAuthStore } from '@/lib/store'
+     5→import { motion, AnimatePresence } from 'framer-motion'
+     6→import {
+     7→  Wallet, BarChart3, Briefcase, History, LogOut, RefreshCw,
+     8→  X, Bell, Home as HomeIcon, User,
+     9→  Shield, CreditCard, Target, Activity, Menu,
+    10→  Sun, Moon,
+    11→} from 'lucide-react'
+    12→import { toast } from '@/hooks/use-toast'
+    13→import { formatRupiah, formatNumber, formatPercent, formatDateTime, type Stock } from '@/lib/trading-utils'
+    14→import { useDashboardStore, sinyalChartSimRef as sharedChartSimRef, sinyalPositionsRef as sharedPositionsRef, sinyalChartOffsetRef as sharedChartOffsetRef, sinyalChartZoomRef as sharedChartZoomRef, sparklineCache, sparklineSimRef, ihsgChartRef, liveChartRef } from '@/lib/dashboard-store'
+    15→import { ZevorikLogo } from '@/components/ZevorikLogo'
+    16→import { LoginPage } from '@/components/LoginPage'
+    17→import { HomeTab } from '@/components/dashboard/HomeTab'
+    18→import { MarketTab } from '@/components/dashboard/MarketTab'
+    19→import { PortfolioTab } from '@/components/dashboard/PortfolioTab'
+    20→import { HistoryTab } from '@/components/dashboard/HistoryTab'
+    21→import { ProfileTab } from '@/components/dashboard/ProfileTab'
+    22→import { SinyalTab } from '@/components/dashboard/SinyalTab'
+    23→import { FinanceTab } from '@/components/dashboard/FinanceTab'
+    24→import { SaldoTab } from '@/components/dashboard/SaldoTab'
+    25→import { TradeConfirmModal } from '@/components/dashboard/TradeConfirmModal'
+    26→import { StockDetailModal } from '@/components/dashboard/modals/StockDetailModal'
+    27→import { KycModal } from '@/components/dashboard/modals/KycModal'
+    28→import { CsModal } from '@/components/dashboard/modals/CsModal'
+    29→import { AboutModal } from '@/components/dashboard/modals/AboutModal'
+    30→import { HelpModal } from '@/components/dashboard/modals/HelpModal'
+    31→
+    32→
+    33→// ============================================
+    34→// MAIN DASHBOARD
+    35→// ============================================
+    36→function Dashboard() {
+    37→  const { user, logout } = useAuthStore()
+    38→  const store = useDashboardStore()
+    39→  const {
+    40→    stocks, indices, notifications,
+    41→    activeTab, selectedStock, showStockDetail,
+    42→    refreshing, showNotifPanel,
+    43→    contractModal, contractAmount, contractDuration, contractLoading, contractClaimLoadingId,
+    44→    showSideMenu, showBalance, theme,
+    45→    sinyalPositions, selectedSinyalStock,
+    46→    sinyalCandles, sinyalCurrentPrice,
+    47→    ihsgChartData,
+    48→    // Setters
+    49→    setStocks, setActiveTab, setSelectedStock, setShowStockDetail,
+    50→    setRefreshing, setShowNotifPanel,
+    51→    setContractModal, setContractAmount, setContractDuration, setContractLoading,
+    52→    setContractClaimLoadingId,
+    53→    setShowSideMenu,
+    54→    setIhsgChartData,
+    55→    setSinyalCurrentPrice,
+    56→    setLiveBuyChart, setLiveSellChart, setLiveBuyPrice, setLiveSellPrice, setLiveChartActive,
+    57→    setQrisImageUrl,
+    58→    // Actions
+    59→    fetchStocks, fetchPortfolio, fetchTransactions, fetchIndices, fetchNotifications,
+    60→    fetchWatchlist, fetchDeposits, fetchWithdrawals, fetchPriceHistory, fetchKycStatus,
+    61→    refreshAll,
+    62→    handleContract, handleContractClaim,
+    63→    toggleWatchlist, markNotifRead,
+    64→    getPositionLivePL,
+    65→    toggleTheme,
+    66→  } = store
+    67→
+    68→  const initialized = useRef(false)
+    69→  const stocksRef = useRef<Stock[]>([])
+    70→  const MAX_CHART_POINTS = 60
+    71→
+    72→  // Keep refs in sync with store
+    73→  useEffect(() => { stocksRef.current = stocks }, [stocks])
+    74→
+    75→  // Theme
+    76→  useEffect(() => { document.documentElement.className = theme }, [theme])
+    77→
+    78→  // Sync sinyal positions to shared ref
+    79→  useEffect(() => { sharedPositionsRef.current = sinyalPositions }, [sinyalPositions])
+    80→  useEffect(() => { sharedChartOffsetRef.current = store.sinyalChartOffset }, [store.sinyalChartOffset])
+    81→  useEffect(() => { sharedChartZoomRef.current = store.sinyalChartZoom }, [store.sinyalChartZoom])
+    82→
+    83→  // IHSG chart initialization
+    84→  useEffect(() => {
+    85→    const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
+    86→    if (!ihsgIdx || ihsgChartRef.initialized) return
+    87→    ihsgChartRef.initialized = true
+    88→    const baseVal = ihsgIdx.value
+    89→    ihsgChartRef.baseVal = baseVal
+    90→    const isUp = ihsgIdx.changePercent >= 0
+    91→    const pts: {idx: number; value: number}[] = []
+    92→    let val = baseVal * (1 + (isUp ? -0.005 : 0.005))
+    93→    let momentum = 0
+    94→    for (let i = 0; i < 50; i++) {
+    95→      const dir = Math.random() > 0.5 ? 1 : -1
+    96→      const minStep = Math.max(1, baseVal * 0.0005)
+    97→      const stepSize = minStep * (0.8 + Math.random() * 1.2)
+    98→      const bias = (isUp ? 1 : -1) * baseVal * 0.00005
+    99→      momentum = momentum * 0.25 + dir * stepSize + bias
+   100→      val += momentum
+   101→      val += (baseVal - val) * 0.005
+   102→      pts.push({ idx: i, value: Math.round(val) })
+   103→    }
+   104→    pts.push({ idx: 50, value: baseVal })
+   105→    setIhsgChartData(pts)
+   106→    ihsgChartRef.val = baseVal
+   107→  }, [indices, setIhsgChartData])
+   108→
+   109→  // IHSG live update
+   110→  useEffect(() => {
+   111→    let ihsgMomentum = 0
+   112→    const interval = setInterval(() => {
+   113→      const ref = ihsgChartRef
+   114→      if (!ref.initialized) return
+   115→      const dir = Math.random() > 0.5 ? 1 : -1
+   116→      const stepSize = ref.baseVal * (0.0004 + Math.random() * 0.001)
+   117→      ihsgMomentum = ihsgMomentum * 0.25 + dir * stepSize
+   118→      ref.val += ihsgMomentum
+   119→      ref.val += (ref.baseVal - ref.val) * 0.004
+   120→      setIhsgChartData(prev => {
+   121→        if (prev.length === 0) return prev
+   122→        const nextIdx = prev[prev.length - 1].idx + 1
+   123→        const next = [...prev, { idx: nextIdx, value: Math.round(ref.val) }]
+   124→        return next.length > 60 ? next.slice(-60) : next
+   125→      })
+   126→    }, 2500)
+   127→    return () => clearInterval(interval)
+   128→  }, [setIhsgChartData])
+   129→
+   130→  // Live sparkline update
+   131→  useEffect(() => {
+   132→    const interval = setInterval(() => {
+   133→      const currentStocks = stocksRef.current
+   134→      if (currentStocks.length === 0) return
+   135→      currentStocks.forEach(s => {
+   136→        const sim = sparklineSimRef.get(s.id)
+   137→        const cached = sparklineCache.get(s.id)
+   138→        if (!sim || !cached) return
+   139→        const dir = Math.random() > 0.5 ? 1 : -1
+   140→        const minStep = Math.max(1, s.price * 0.001)
+   141→        const stepSize = minStep * (0.5 + Math.random() * 1)
+   142→        sim.momentum = sim.momentum * 0.25 + dir * stepSize
+   143→        sim.val += sim.momentum
+   144→        const reversionStrength = 0.008 + Math.abs(s.price - sim.val) / s.price * 0.08
+   145→        sim.val += (s.price - sim.val) * Math.min(reversionStrength, 0.04)
+   146→        const newPts = cached.slice(1).map((pt, idx) => ({ i: idx, p: pt.p }))
+   147→        newPts.push({ i: cached.length - 1, p: Math.round(sim.val) })
+   148→        sparklineCache.set(s.id, newPts)
+   149→      })
+   150→      setStocks(prev => [...prev])
+   151→    }, 2500)
+   152→    return () => clearInterval(interval)
+   153→  }, [setStocks])
+   154→
+   155→  // Live price simulation for stock detail
+   156→  useEffect(() => {
+   157→    if (!selectedStock || !showStockDetail) {
+   158→      setLiveChartActive(false)
+   159→      return
+   160→    }
+   161→    const basePrice = selectedStock.price
+   162→    const spread = basePrice * 0.002
+   163→    let buyPrice = basePrice - spread / 2
+   164→    let sellPrice = basePrice + spread / 2
+   165→    let momentum = 0
+   166→    let phase = 0
+   167→    const initialBuy: {time: string; price: number}[] = []
+   168→    const initialSell: {time: string; price: number}[] = []
+   169→    let tempBuy = buyPrice
+   170→    let tempSell = sellPrice
+   171→    let histMomentum = 0
+   172→    for (let i = 40; i >= 1; i--) {
+   173→      const dir = Math.random() > 0.5 ? 1 : -1
+   174→      const minStep = Math.max(1, basePrice * 0.001)
+   175→      const stepSize = minStep * (0.8 + Math.random() * 1.2)
+   176→      histMomentum = histMomentum * 0.25 + dir * stepSize
+   177→      const mid = (tempBuy + tempSell) / 2 + histMomentum
+   178→      tempBuy = mid - spread / 2
+   179→      tempSell = mid + spread / 2
+   180→      tempBuy += (basePrice - tempBuy) * 0.005
+   181→      tempSell += (basePrice - tempSell) * 0.005
+   182→      const now = Date.now() - i * 2000
+   183→      const timeStr = new Date(now).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+   184→      initialBuy.push({time: timeStr, price: Math.round(tempBuy)})
+   185→      initialSell.push({time: timeStr, price: Math.round(tempSell)})
+   186→    }
+   187→    buyPrice = tempBuy
+   188→    sellPrice = tempSell
+   189→    setLiveBuyChart(initialBuy)
+   190→    setLiveSellChart(initialSell)
+   191→    setLiveBuyPrice(Math.round(buyPrice))
+   192→    setLiveSellPrice(Math.round(sellPrice))
+   193→    liveChartRef.buyPrice = buyPrice
+   194→    liveChartRef.sellPrice = sellPrice
+   195→    liveChartRef.trend = 0
+   196→    liveChartRef.momentum = 0
+   197→    liveChartRef.phase = phase
+   198→    setLiveChartActive(true)
+   199→    const interval = setInterval(() => {
+   200→      phase++
+   201→      const dir = Math.random() > 0.5 ? 1 : -1
+   202→      const minStep = Math.max(1, basePrice * 0.0008)
+   203→      const stepSize = minStep * (0.5 + Math.random() * 1)
+   204→      momentum = momentum * 0.25 + dir * stepSize
+   205→      const mid = (buyPrice + sellPrice) / 2 + momentum
+   206→      buyPrice = mid - spread / 2
+   207→      sellPrice = mid + spread / 2
+   208→      if (sellPrice <= buyPrice) sellPrice = buyPrice + spread
+   209→      buyPrice += (basePrice - buyPrice) * 0.003
+   210→      sellPrice += (basePrice - sellPrice) * 0.003
+   211→      liveChartRef.buyPrice = buyPrice
+   212→      liveChartRef.sellPrice = sellPrice
+   213→      liveChartRef.momentum = momentum
+   214→      liveChartRef.phase = phase
+   215→      const now = new Date()
+   216→      const timeStr = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+   217→      setLiveBuyChart(prev => { const next = [...prev, {time: timeStr, price: Math.round(buyPrice)}]; return next.length > MAX_CHART_POINTS ? next.slice(-MAX_CHART_POINTS) : next })
+   218→      setLiveSellChart(prev => { const next = [...prev, {time: timeStr, price: Math.round(sellPrice)}]; return next.length > MAX_CHART_POINTS ? next.slice(-MAX_CHART_POINTS) : next })
+   219→      setLiveBuyPrice(Math.round(buyPrice))
+   220→      setLiveSellPrice(Math.round(sellPrice))
+   221→    }, 2000)
+   222→    return () => { clearInterval(interval); setLiveChartActive(false) }
+   223→  }, [selectedStock, showStockDetail, setLiveBuyChart, setLiveSellChart, setLiveBuyPrice, setLiveSellPrice, setLiveChartActive])
+   224→
+   225→  // Background price ticker (when NOT on sinyal tab)
+   226→  useEffect(() => {
+   227→    if (activeTab === 'sinyal' || !selectedSinyalStock) return
+   228→    const activePositions = sharedPositionsRef.current.filter(p => p.status === 'active')
+   229→    if (activePositions.length === 0) return
+   230→    const tickIntervalMs = 1000
+   231→    const interval = setInterval(() => {
+   232→      if (sharedChartSimRef) {
+   233→        const sim = sharedChartSimRef
+   234→        sim.momentum += (Math.random() - 0.5) * sim.vol * 0.002
+   235→        sim.momentum *= 0.95
+   236→        sim.trend = Math.sin(sim.phase / sim.phaseLen * Math.PI * 2) * 0.4
+   237→        sim.phase += 0.02
+   238→        sim.price += sim.momentum + sim.trend * sim.vol * 0.0003 + (Math.random() - 0.5) * sim.vol * 0.0008
+   239→        if (sim.price < sim.basePrice * 0.7) sim.price = sim.basePrice * 0.7 + Math.random() * sim.vol * 0.5
+   240→        if (sim.price > sim.basePrice * 1.5) sim.price = sim.basePrice * 1.5 - Math.random() * sim.vol * 0.5
+   241→        setSinyalCurrentPrice(sim.price)
+   242→      } else if (selectedSinyalStock) {
+   243→        setSinyalCurrentPrice(prev => {
+   244→          const basePrice = selectedSinyalStock.price
+   245→          const currentPrice = prev || basePrice
+   246→          const vol = basePrice * 0.0005
+   247→          const change = (Math.random() - 0.5) * vol * 2
+   248→          return currentPrice + change
+   249→        })
+   250→      }
+   251→    }, tickIntervalMs)
+   252→    return () => clearInterval(interval)
+   253→  }, [activeTab, selectedSinyalStock, sinyalPositions, setSinyalCurrentPrice])
+   254→
+   255→  // Initial data fetch
+   256→  useEffect(() => {
+   257→    if (!user) return
+   258→    if (!initialized.current) { initialized.current = true }
+   259→    fetchStocks(); fetchPortfolio(); fetchTransactions(); fetchIndices()
+   260→    fetchNotifications(); fetchWatchlist(); fetchDeposits()
+   261→    fetchWithdrawals()
+   262→    fetch('/api/qris').then(r => r.json()).then(d => { if (d?.url) setQrisImageUrl(d.url) }).catch(() => {})
+   263→  }, [user, fetchStocks, fetchPortfolio, fetchTransactions, fetchIndices, fetchNotifications, fetchWatchlist, fetchDeposits, fetchWithdrawals, setQrisImageUrl])
+   264→
+   265→  // Periodic refresh
+   266→  useEffect(() => { const iv = setInterval(refreshAll, 30000); return () => clearInterval(iv) }, [refreshAll])
+   267→
+   268→  // Derived values
+   269→  const unreadNotif = notifications.filter(n => !n.isRead).length
+   270→
+   271→  // ============ RENDER ============
+   272→  return (
+   273→    <div className="min-h-screen flex flex-col md:pl-[72px] lg:pl-[80px]" style={{ background: 'var(--zv-bg)' }}>
+   274→      {/* Top Header */}
+   275→      <header className="sticky top-0 z-40 glass-header border-b border-[var(--zv-border)]">
+   276→        <div className="max-w-7xl mx-auto px-3 md:px-6 py-2.5 flex items-center justify-between">
+   277→          <div className="flex items-center gap-2.5">
+   278→            <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
+   279→              <Menu className="w-4 h-4 text-[var(--zv-muted)]" />
+   280→            </button>
+   281→            <ZevorikLogo size={36} className="flex-shrink-0" />
+   282→            <div>
+   283→              <b className="block text-[13px] md:text-base font-black gradient-text leading-tight">ZEVORIK</b>
+   284→              <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-[0.2em]">Investment Platform</span>
+   285→            </div>
+   286→          </div>
+   287→          <div className="flex items-center gap-2">
+   288→            <div className="w-px h-6 bg-[var(--zv-border)] mx-1" />
+   289→            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-hover)] hover:scale-105 transition-all shadow-sm">
+   290→              {theme === 'dark' ? <Sun className="w-4 h-4 text-[var(--zv-gold)]" /> : <Moon className="w-4 h-4 text-[var(--zv-muted)]" />}
+   291→            </button>
+   292→            <button onClick={refreshAll} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
+   293→              <RefreshCw className={`w-4 h-4 text-[var(--zv-muted)] ${refreshing ? 'animate-spin' : ''}`} />
+   294→            </button>
+   295→            <button onClick={() => { setShowNotifPanel(true); markNotifRead() }} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors relative">
+   296→              <Bell className="w-4 h-4 text-[var(--zv-muted)]" />
+   297→              {unreadNotif > 0 && <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-red-500 to-red-600 text-[7px] text-white font-black grid place-items-center shadow-lg shadow-red-500/30">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
+   298→            </button>
+   299→          </div>
+   300→        </div>
+   301→      </header>
+   302→
+   303→      {/* Market Indices Bar */}
+   304→      {indices.length > 0 && (
+   305→        <div className="border-b border-[var(--zv-border)] overflow-x-auto" style={{ background: 'var(--zv-panel)' }}>
+   306→          <div className="max-w-7xl mx-auto flex gap-3 px-3 md:px-6 py-2">
+   307→            {indices.map(idx => (
+   308→              <div key={idx.id} className="flex-shrink-0 flex items-center gap-1.5 bg-[var(--zv-surface)] rounded-lg px-2.5 py-1 border border-[var(--zv-border)]">
+   309→                <span className="text-[8px] md:text-[10px] font-black text-[var(--zv-muted)]">{idx.code}</span>
+   310→                <span className="text-[10px] md:text-[11px] font-black text-[var(--zv-text)] tabular-nums">{formatNumber(idx.value)}</span>
+   311→                <span className={`text-[8px] md:text-[10px] font-black ${idx.changePercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(idx.changePercent)}</span>
+   312→              </div>
+   313→            ))}
+   314→          </div>
+   315→        </div>
+   316→      )}
+   317→
+   318→      {/* Main Content */}
+   319→      <main className="flex-1 max-w-7xl mx-auto w-full px-3 md:px-6 py-4 pb-24 md:pb-6">
+   320→        <AnimatePresence mode="wait">
+   321→          {/* ====== HOME TAB ====== */}
+   322→          {activeTab === 'home' && <HomeTab />}
+   323→
+   324→          {/* ====== MARKET TAB ====== */}
+   325→          {activeTab === 'market' && <MarketTab />}
+   326→
+   327→          {/* ====== PORTFOLIO TAB ====== */}
+   328→          {activeTab === 'portfolio' && <PortfolioTab />}
+   329→
+   330→          {/* ====== TRADING TAB - MT5 EXACT LAYOUT ====== */}
+   331→          {activeTab === 'sinyal' && <SinyalTab />}
+   332→          {/* ====== SALDO LIVE TAB — MT5-Style Premium Dashboard ====== */}
+   333→          {activeTab === 'saldo' && <SaldoTab />}
+   334→          {/* ====== FINANCE TAB ====== */}
+   335→          {activeTab === 'finance' && <FinanceTab />}
+   336→          {/* ====== HISTORY TAB ====== */}
+   337→          {activeTab === 'history' && <HistoryTab />}
+   338→
+   339→          {/* ====== PROFILE TAB ====== */}
+   340→          {activeTab === 'profil' && <ProfileTab />}
+   341→
+   342→        </AnimatePresence>
+   343→      </main>
+   344→
+   345→      {/* Trade Confirmation Modal */}
+   346→      <TradeConfirmModal />
+   347→
+   348→      {/* Contract Modal */}
+   349→      <AnimatePresence>
+   350→        {contractModal && selectedStock && (
+   351→          <>
+   352→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50" onClick={() => setContractModal(false)} />
+   353→            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
+   354→              <div className="p-4">
+   355→                <div className="flex items-center justify-between mb-4">
+   356→                  <h3 className="text-[14px] font-black text-[var(--zv-text)]">Kontrak Saham</h3>
+   357→                  <button onClick={() => setContractModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
+   358→                </div>
+   359→                <div className="mb-3 p-3 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+   360→                  <div className="flex items-center gap-2">
+   361→                    <Shield className="w-5 h-5 text-[#3b82f6]" />
+   362→                    <div>
+   363→                      <span className="block text-[12px] font-black text-[var(--zv-text)]">{selectedStock.code}</span>
+   364→                      <span className="block text-[9px] text-[var(--zv-muted)]">{selectedStock.name}</span>
+   365→                    </div>
+   366→                    <span className="ml-auto text-[14px] font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(selectedStock.price)}</span>
+   367→                  </div>
+   368→                </div>
+   369→                <div className="space-y-3 mb-4">
+   370→                  <div>
+   371→                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Jumlah Investasi (Rp)</label>
+   372→                    <input type="number" value={contractAmount} onChange={e => setContractAmount(e.target.value)} placeholder="Min. Rp 100.000" className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[12px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] transition-colors" />
+   373→                  </div>
+   374→                  <div>
+   375→                    <label className="block text-[9px] font-bold text-[var(--zv-muted)] mb-1">Durasi (hari): {contractDuration}</label>
+   376→                    <input type="range" min={30} max={365} value={contractDuration} onChange={e => setContractDuration(parseInt(e.target.value))} className="w-full accent-[#3b82f6]" />
+   377→                    <div className="flex justify-between text-[7px] text-[var(--zv-muted)] mt-0.5"><span>30 hari</span><span>365 hari</span></div>
+   378→                  </div>
+   379→                </div>
+   380→                <button onClick={() => handleContract()} disabled={contractLoading} className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[12px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
+   381→                  {contractLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+   382→                  {contractLoading ? 'Memproses...' : 'Beli Kontrak'}
+   383→                </button>
+   384→              </div>
+   385→            </motion.div>
+   386→          </>
+   387→        )}
+   388→      </AnimatePresence>
+   389→
+   390→      {/* Stock Detail Modal */}
+   391→      <StockDetailModal />
+   392→
+   393→      {/* KYC Verification Modal */}
+   394→      <KycModal />
+   395→
+   396→      {/* Customer Service Modal */}
+   397→      <CsModal />
+   398→
+   399→      {/* About Company Modal */}
+   400→      <AboutModal />
+   401→
+   402→      {/* Help / FAQ Modal */}
+   403→      <HelpModal />
+   404→
+   405→      {/* Bottom Navigation */}
+   406→      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--zv-border)] md:hidden bottom-nav-safe glass-header">
+   407→        <div className="max-w-7xl mx-auto flex">
+   408→          {[
+   409→            { key: 'home', label: 'Beranda', icon: HomeIcon },
+   410→            { key: 'market', label: 'Quote', icon: BarChart3 },
+   411→            { key: 'sinyal', label: 'Chart', icon: Activity },
+   412→            { key: 'saldo', label: 'Trade', icon: Wallet },
+   413→            { key: 'profil', label: 'Profil', icon: User },
+   414→          ].map(tab => {
+   415→            const isActive = activeTab === tab.key
+   416→            return (
+   417→              <button key={tab.key} onClick={() => {
+   418→                setActiveTab(tab.key)
+   419→              }} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${isActive ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[var(--zv-text)]'}`}>
+   420→                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-b-full" style={{ background: 'linear-gradient(135deg, #3b82f6, #60a5fa)' }} />}
+   421→                <div className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${isActive ? 'bg-[#3b82f6]/10' : ''}`}>
+   422→                  <tab.icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+   423→                  <span className={`text-[9px] font-bold ${isActive ? 'text-[#3b82f6]' : ''}`}>{tab.label}</span>
+   424→                </div>
+   425→              </button>
+   426→            )
+   427→          })}
+   428→        </div>
+   429→      </nav>
+   430→
+   431→      {/* Desktop Sidebar Navigation - hidden on mobile */}
+   432→      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-4 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
+   433→        {/* Logo */}
+   434→        <div className="flex flex-col items-center gap-1 mb-3 pb-3 border-b border-[var(--zv-border)]">
+   435→          <ZevorikLogo size={32} />
+   436→          <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIK</span>
+   437→        </div>
+   438→        {[
+   439→          { key: 'home', label: 'Beranda', icon: HomeIcon },
+   440→          { key: 'market', label: 'Quote', icon: BarChart3 },
+   441→          { key: 'sinyal', label: 'Chart', icon: Activity },
+   442→          { key: 'saldo', label: 'Trade', icon: Wallet },
+   443→          { key: 'profil', label: 'Profil', icon: User },
+   444→          { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
+   445→          { key: 'finance', label: 'Keuangan', icon: CreditCard },
+   446→          { key: 'history', label: 'Riwayat', icon: History },
+   447→        ].map(tab => (
+   448→          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+   449→            className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
+   450→            {activeTab === tab.key && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full" style={{ background: 'linear-gradient(180deg, #3b82f6, #60a5fa)' }} />}
+   451→            <tab.icon className="w-5 h-5" />
+   452→            <span className="text-[7px] lg:text-[8px] font-bold">{tab.label}</span>
+   453→          </button>
+   454→        ))}
+   455→        <div className="mt-auto">
+   456→          <button onClick={() => { logout(); toast({ title: 'Berhasil logout' }) }}
+   457→            className="w-full flex flex-col items-center gap-0.5 py-2.5 text-[#ef5350] hover:text-[#ff6b6b] transition-colors">
+   458→            <LogOut className="w-5 h-5" />
+   459→            <span className="text-[7px] lg:text-[8px] font-bold">Keluar</span>
+   460→          </button>
+   461→        </div>
+   462→      </nav>
+   463→
+   464→      {/* Side Menu */}
+   465→      <AnimatePresence>
+   466→        {showSideMenu && (
+   467→          <>
+   468→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowSideMenu(false)} />
+   469→            <motion.div initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', damping: 25 }} className="fixed left-0 top-0 bottom-0 z-50 w-[280px] md:w-[320px] bg-[var(--zv-panel)] border-r border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+   470→              <div className="p-5" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
+   471→                <div className="flex items-center justify-between mb-4">
+   472→                  <div className="flex items-center gap-3">
+   473→                    <div className="w-12 h-12 rounded-full bg-white/20 border border-white/10 grid place-items-center"><User className="w-6 h-6 text-yellow-300" /></div>
+   474→                    <div className="text-white">
+   475→                      <b className="block text-[13px] font-black">{user?.name}</b>
+   476→                      <span className="block text-[9px] text-blue-200">+62 {user?.phone}</span>
+   477→                    </div>
+   478→                  </div>
+   479→                  <button onClick={() => setShowSideMenu(false)} className="w-8 h-8 rounded-full bg-white/10 border border-white/10 grid place-items-center text-white hover:bg-white/20 transition-colors">
+   480→                    <X className="w-4 h-4" />
+   481→                  </button>
+   482→                </div>
+   483→                <div className="flex items-center gap-2">
+   484→                  <div className="flex-1 rounded-xl p-2 bg-white/10 border border-white/15 text-center">
+   485→                    <Wallet className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+   486→                    <b className="block text-[9px] font-black text-white">{formatRupiah(user?.balance || 0).replace('Rp', '').trim()}</b>
+   487→                    <span className="block text-[7px] text-blue-200">Saldo</span>
+   488→                  </div>
+   489→                  <div className="flex-1 rounded-xl p-2 bg-white/10 border border-white/15 text-center">
+   490→                    <Briefcase className="w-4 h-4 text-blue-300 mx-auto mb-0.5" />
+   491→                    <b className="block text-[9px] font-black text-white">{store.portfolioSummary.totalCurrentValue > 0 ? formatRupiah(store.portfolioSummary.totalCurrentValue).replace('Rp', '').trim() : '0'}</b>
+   492→                    <span className="block text-[7px] text-blue-200">Portofolio</span>
+   493→                  </div>
+   494→                </div>
+   495→              </div>
+   496→              <div className="p-3">
+   497→                {[
+   498→                  { icon: <HomeIcon className="w-4 h-4" />, label: 'Beranda', key: 'home' },
+   499→                  { icon: <BarChart3 className="w-4 h-4" />, label: 'Pasar Global', key: 'market' },
+   500→                  { icon: <Target className="w-4 h-4" />, label: 'Trading', key: 'sinyal' },
+   501→                  { icon: <Wallet className="w-4 h-4" />, label: 'Saldo Live', key: 'saldo' },
+   502→                  { icon: <Briefcase className="w-4 h-4" />, label: 'Portofolio', key: 'portfolio' },
+   503→                  { icon: <CreditCard className="w-4 h-4" />, label: 'Keuangan', key: 'finance' },
+   504→                  { icon: <History className="w-4 h-4" />, label: 'Riwayat', key: 'history' },
+   505→                  { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profil' },
+   506→                ].map(item => (
+   507→                  <button key={item.key} onClick={() => { setActiveTab(item.key); setShowSideMenu(false) }}
+   508→                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold transition-all ${activeTab === item.key ? 'bg-[var(--zv-surface)] text-[#3b82f6] border border-[var(--zv-border)]' : 'text-[var(--zv-text)] hover:bg-[var(--zv-surface)]'}`}>
+   509→                    {item.icon}{item.label}
+   510→                  </button>
+   511→                ))}
+   512→                <div className="mt-3 pt-3 border-t border-[var(--zv-border)]">
+   513→                  <button onClick={() => { logout(); setShowSideMenu(false); toast({ title: 'Berhasil logout' }) }}
+   514→                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-bold text-[#ef5350] hover:bg-[var(--zv-surface)] transition-colors">
+   515→                    <LogOut className="w-4 h-4" />Keluar
+   516→                  </button>
+   517→                </div>
+   518→              </div>
+   519→            </motion.div>
+   520→          </>
+   521→        )}
+   522→      </AnimatePresence>
+   523→
+   524→      {/* Notification Panel */}
+   525→      <AnimatePresence>
+   526→        {showNotifPanel && (
+   527→          <>
+   528→            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowNotifPanel(false)} />
+   529→            <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} transition={{ type: 'spring', damping: 25 }} className="fixed right-0 top-0 bottom-0 z-50 w-[320px] md:w-[400px] bg-[var(--zv-panel)] border-l border-[var(--zv-border)] overflow-y-auto custom-scrollbar">
+   530→              <div className="p-4 border-b border-[var(--zv-border)] flex items-center justify-between" style={{ background: 'linear-gradient(145deg, var(--zv-surface) 0%, var(--zv-panel) 100%)' }}>
+   531→                <div className="flex items-center gap-2">
+   532→                  <Bell className="w-4 h-4 text-[#3b82f6]" />
+   533→                  <h3 className="text-[14px] font-black gradient-text">Notifikasi</h3>
+   534→                </div>
+   535→                <div className="flex items-center gap-2">
+   536→                  <button onClick={() => markNotifRead()} className="text-[9px] font-bold text-[#3b82f6] hover:underline">Tandai dibaca</button>
+   537→                  <button onClick={() => setShowNotifPanel(false)} className="w-8 h-8 rounded-xl grid place-items-center hover:bg-[var(--zv-surface)] bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
+   538→                </div>
+   539→              </div>
+   540→              <div className="p-3">
+   541→                {notifications.map(n => (
+   542→                  <div key={n.id} className={`p-3 rounded-xl mb-2 border transition-colors ${n.isRead ? 'bg-[var(--zv-panel)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>
+   543→                    <div className="flex items-center gap-2 mb-1">
+   544→                      <div className="w-6 h-6 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+   545→                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#3b82f6]" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
+   546→                      </div>
+   547→                      <span className="flex-1 text-[9px] font-bold text-[var(--zv-text)]">{n.title}</span>
+   548→                      {!n.isRead && <span className="w-2 h-2 rounded-full bg-blue-500" />}
+   549→                    </div>
+   550→                    <p className="text-[8px] text-[var(--zv-muted)] leading-relaxed">{n.message}</p>
+   551→                    <span className="block text-[7px] text-[var(--zv-muted)] mt-1">{formatDateTime(n.createdAt)}</span>
+   552→                  </div>
+   553→                ))}
+   554→                {notifications.length === 0 && (
+   555→                  <div className="text-center py-8">
+   556→                    <Bell className="w-8 h-8 text-[var(--zv-muted)] mx-auto mb-2" />
+   557→                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Tidak ada notifikasi</p>
+   558→                  </div>
+   559→                )}
+   560→              </div>
+   561→            </motion.div>
+   562→          </>
+   563→        )}
+   564→      </AnimatePresence>
+   565→
+   566→    </div>
+   567→  )
+   568→}
+   569→
+   570→
+   571→export default function Home() {
+   572→  const { isLoggedIn, _hydrated, hydrate } = useAuthStore()
+   573→  const [mounted, setMounted] = useState(false)
+   574→  useEffect(() => {
+   575→    hydrate()
+   576→    // Use microtask to avoid synchronous setState in effect
+   577→    queueMicrotask(() => setMounted(true))
+   578→  }, [hydrate])
+   579→  if (!mounted || !_hydrated) return (
+   580→    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
+   581→      <div className="flex flex-col items-center gap-3">
+   582→        <ZevorikLogo size={56} />
+   583→        <span className="text-[12px] font-black text-[#1d4ed8] tracking-widest animate-pulse">LOADING...</span>
+   584→      </div>
+   585→    </div>
+   586→  )
+   587→  if (!isLoggedIn) return <LoginPage />
+   588→  return <Dashboard />
+   589→}
+   590→

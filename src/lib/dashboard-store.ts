@@ -208,10 +208,14 @@ interface DashboardState {
   depositAmount: string
   depositMethod: string
   depositLoading: boolean
-  depositStep: 'amount' | 'qris'
+  depositStep: 'amount' | 'qris' | 'crypto'
   financeTab: 'deposit' | 'withdraw'
-  depositCategory: 'qris'
+  depositCategory: 'qris' | 'crypto'
   qrisImageUrl: string | null
+  depositNetwork: 'TRC20' | 'BEP20' | 'ERC20'
+  depositPaymentInfo: { address: string; network: string; coin: string; usdtAmount: number; rate: number; idrAmount: number; minConfirmation: number } | null
+  depositCheckLoading: boolean
+  depositRate: number
 
   // ── Withdraw ──
   withdrawAmount: string
@@ -342,10 +346,14 @@ interface DashboardState {
   setDepositAmount: (v: string) => void
   setDepositMethod: (v: string) => void
   setDepositLoading: (v: boolean) => void
-  setDepositStep: (v: 'amount' | 'qris') => void
+  setDepositStep: (v: 'amount' | 'qris' | 'crypto') => void
   setFinanceTab: (v: 'deposit' | 'withdraw') => void
-  setDepositCategory: (v: 'qris') => void
+  setDepositCategory: (v: 'qris' | 'crypto') => void
   setQrisImageUrl: (v: string | null) => void
+  setDepositNetwork: (v: 'TRC20' | 'BEP20' | 'ERC20') => void
+  setDepositPaymentInfo: (v: { address: string; network: string; coin: string; usdtAmount: number; rate: number; idrAmount: number; minConfirmation: number } | null) => void
+  setDepositCheckLoading: (v: boolean) => void
+  setDepositRate: (v: number) => void
 
   setWithdrawAmount: (v: string) => void
   setWithdrawLoading: (v: boolean) => void
@@ -452,6 +460,9 @@ interface DashboardState {
   refreshAll: () => Promise<void>
 
   handleDeposit: () => Promise<void>
+  handleCryptoDeposit: () => Promise<void>
+  handleCheckDeposit: () => Promise<void>
+  handleFetchDepositRate: () => Promise<void>
   handleSendWithdrawOtp: (withdrawOtpRefs: React.MutableRefObject<(HTMLInputElement | null)[]>) => Promise<void>
   handleVerifyWithdrawOtp: (withdrawOtpRefs: React.MutableRefObject<(HTMLInputElement | null)[]>) => Promise<void>
   handleWithdraw: () => Promise<void>
@@ -559,8 +570,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   depositLoading: false,
   depositStep: 'amount',
   financeTab: 'deposit',
-  depositCategory: 'qris',
+  depositCategory: 'crypto',
   qrisImageUrl: null,
+  depositNetwork: 'TRC20',
+  depositPaymentInfo: null,
+  depositCheckLoading: false,
+  depositRate: 16000,
 
   // ── Withdraw ──
   withdrawAmount: '',
@@ -697,6 +712,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   setFinanceTab: (v) => set({ financeTab: v }),
   setDepositCategory: (v) => set({ depositCategory: v }),
   setQrisImageUrl: (v) => set({ qrisImageUrl: v }),
+  setDepositNetwork: (v) => set({ depositNetwork: v }),
+  setDepositPaymentInfo: (v) => set({ depositPaymentInfo: v }),
+  setDepositCheckLoading: (v) => set({ depositCheckLoading: v }),
+  setDepositRate: (v) => set({ depositRate: v }),
 
   setWithdrawAmount: (v) => set({ withdrawAmount: v }),
   setWithdrawLoading: (v) => set({ withdrawLoading: v }),
@@ -876,10 +895,18 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   handleDeposit: async () => {
     const user = useAuthStore.getState().user
-    const { depositAmount } = get()
+    const { depositAmount, depositCategory } = get()
     if (!user || !depositAmount) return
     const amount = parseFloat(depositAmount)
     if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
+
+    // If crypto deposit, go to crypto step
+    if (depositCategory === 'crypto') {
+      get().handleCryptoDeposit()
+      return
+    }
+
+    // QRIS deposit (legacy, auto-approve)
     set({ depositLoading: true })
     try {
       const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: 'qris', bankName: 'QRIS' }) })
@@ -891,6 +918,82 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       s.fetchPortfolio(); s.fetchDeposits(); s.fetchNotifications()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { set({ depositLoading: false }) }
+  },
+
+  handleCryptoDeposit: async () => {
+    const user = useAuthStore.getState().user
+    const { depositAmount, depositNetwork } = get()
+    if (!user || !depositAmount) return
+    const amount = parseFloat(depositAmount)
+    if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
+
+    // Check KYC first
+    if (user.kycStatus !== 'verified') {
+      toast({ title: 'KYC Diperlukan', description: 'Verifikasi KYC terlebih dahulu untuk deposit', variant: 'destructive' })
+      set({ showKycModal: true })
+      return
+    }
+
+    set({ depositLoading: true })
+    try {
+      const res = await fetch('/api/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, amount, method: 'crypto', network: depositNetwork }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (data.kycRequired) {
+          toast({ title: 'KYC Diperlukan', description: data.error, variant: 'destructive' })
+          set({ showKycModal: true })
+        } else {
+          throw new Error(data.error)
+        }
+        return
+      }
+      set({
+        depositPaymentInfo: data.paymentInfo,
+        depositStep: 'crypto',
+      })
+      toast({ title: 'Alamat Deposit Siap!', description: `Kirim ${data.paymentInfo.usdtAmount} USDT via ${depositNetwork}` })
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' })
+    } finally { set({ depositLoading: false }) }
+  },
+
+  handleCheckDeposit: async () => {
+    const user = useAuthStore.getState().user
+    if (!user) return
+    set({ depositCheckLoading: true })
+    try {
+      const res = await fetch('/api/deposit/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (data.creditedCount > 0) {
+        toast({ title: 'Deposit Dikonfirmasi! ✓', description: `${data.creditedCount} deposit berhasil dikreditkan ke saldo Anda` })
+        set({ depositStep: 'amount', depositAmount: '', depositPaymentInfo: null })
+        const s = get()
+        s.fetchPortfolio(); s.fetchDeposits(); s.fetchNotifications()
+        // Update user balance in auth store
+        useAuthStore.getState().refreshUser()
+      } else {
+        toast({ title: 'Menunggu Konfirmasi', description: data.message || 'Belum ada deposit yang dikonfirmasi. Silakan tunggu.' })
+      }
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Gagal mengecek deposit', variant: 'destructive' })
+    } finally { set({ depositCheckLoading: false }) }
+  },
+
+  handleFetchDepositRate: async () => {
+    try {
+      const res = await fetch('/api/deposit/rate')
+      const data = await res.json()
+      if (data.rate) set({ depositRate: data.rate })
+    } catch {}
   },
 
   handleSendWithdrawOtp: async (withdrawOtpRefs) => {

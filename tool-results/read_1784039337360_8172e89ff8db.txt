@@ -1,0 +1,549 @@
+     1→'use client'
+     2→
+     3→import { useRef } from 'react'
+     4→import { useAuthStore } from '@/lib/store'
+     5→import { motion, AnimatePresence } from 'framer-motion'
+     6→import {
+     7→  Plus, Minus, X, RefreshCw, CheckCircle, ArrowUpRight, ArrowDownRight,
+     8→  Shield, Copy, Check, Wallet, CreditCard, Clock, Info, ChevronRight,
+     9→  Building2, Gem, Download, ArrowRight, AlertCircle, Mail
+    10→} from 'lucide-react'
+    11→import { toast } from '@/hooks/use-toast'
+    12→import { formatRupiah, formatNumber, formatDateTime, type DepositItem, type WithdrawalItem } from '@/lib/trading-utils'
+    13→import { useDashboardStore } from '@/lib/dashboard-store'
+    14→
+    15→export function FinanceTab() {
+    16→  const { user } = useAuthStore()
+    17→  const store = useDashboardStore()
+    18→  const {
+    19→    financeTab, depositAmount, depositLoading, depositStep, depositCategory, qrisImageUrl,
+    20→    withdrawAmount, withdrawLoading, withdrawCategory, withdrawBankMethod, withdrawEwalletMethod,
+    21→    withdrawCryptoMethod, withdrawAccountNumber, withdrawAccountHolder,
+    22→    withdrawOtpSent, withdrawOtpCode, withdrawOtpVerified, withdrawOtpLoading, withdrawOtpTimer,
+    23→    deposits, withdrawals, showBalance,
+    24→    setFinanceTab, setDepositAmount, setDepositLoading, setDepositStep, setDepositCategory,
+    25→    setWithdrawAmount, setWithdrawLoading, setWithdrawCategory, setWithdrawBankMethod,
+    26→    setWithdrawEwalletMethod, setWithdrawCryptoMethod, setWithdrawAccountNumber,
+    27→    setWithdrawAccountHolder, setWithdrawOtpSent, setWithdrawOtpCode, setWithdrawOtpVerified,
+    28→    setWithdrawOtpLoading, setWithdrawOtpTimer,
+    29→    handleDeposit, handleSendWithdrawOtp, handleVerifyWithdrawOtp, handleWithdraw,
+    30→  } = store
+    31→
+    32→  const withdrawOtpRefs = useRef<(HTMLInputElement | null)[]>([])
+    33→
+    34→  const handleOtpChange = (index: number, value: string) => {
+    35→    if (value.length > 1) return
+    36→    const newOtp = [...withdrawOtpCode]
+    37→    newOtp[index] = value
+    38→    setWithdrawOtpCode(newOtp)
+    39→    if (value && index < 5) {
+    40→      withdrawOtpRefs.current[index + 1]?.focus()
+    41→    }
+    42→  }
+    43→
+    44→  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    45→    if (e.key === 'Backspace' && !withdrawOtpCode[index] && index > 0) {
+    46→      withdrawOtpRefs.current[index - 1]?.focus()
+    47→    }
+    48→  }
+    49→
+    50→
+    51→  return (
+    52→    <motion.div key="finance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+    53→    <div className="max-w-lg mx-auto">
+    54→      {/* Finance Tabs */}
+    55→      <div className="flex gap-2 mb-4">
+    56→        <button onClick={() => { setFinanceTab('deposit'); setDepositStep('amount') }} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'deposit' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+    57→          <Plus className="w-3.5 h-3.5 inline mr-1" />Deposit
+    58→        </button>
+    59→        <button onClick={() => setFinanceTab('withdraw')} className={`flex-1 h-10 rounded-2xl text-[11px] md:text-xs font-bold transition-all ${financeTab === 'withdraw' ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+    60→          <Minus className="w-3.5 h-3.5 inline mr-1" />Withdraw
+    61→        </button>
+    62→      </div>
+    63→
+    64→      {/* Deposit Section */}
+    65→      {financeTab === 'deposit' ? (
+    66→        <>
+    67→          {depositStep === 'amount' ? (
+    68→            <motion.div key="deposit-amount" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}>
+    69→              {/* Balance */}
+    70→              <div className="rounded-2xl p-4 bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-panel)] border border-[var(--zv-border)] mb-3">
+    71→                <div className="flex items-center justify-between">
+    72→                  <div>
+    73→                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">Saldo Saat Ini</span>
+    74→                    <b className="block text-xl font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
+    75→                  </div>
+    76→                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--zv-surface)] to-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center">
+    77→                    <Wallet className="w-6 h-6 text-[#3b82f6]" />
+    78→                  </div>
+    79→                </div>
+    80→              </div>
+    81→
+    82→              {/* QRIS Header Badge */}
+    83→              <div className="flex items-center gap-2 mb-3">
+    84→                <div className="h-7 px-2.5 rounded-full flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500">
+    85→                  <CreditCard className="w-3 h-3 text-white" />
+    86→                  <span className="text-[8px] font-black text-white tracking-wide">QRIS PAYMENT</span>
+    87→                </div>
+    88→                <span className="text-[8px] font-bold text-[var(--zv-muted)]">Deposit hanya via QRIS</span>
+    89→              </div>
+    90→
+    91→              {/* Deposit Amount Form Card */}
+    92→              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+    93→
+    94→                {/* Amount Input */}
+    95→                <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Deposit</label>
+    96→                <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Minimal Rp 100.000"
+    97→                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
+    98→                <div className="grid grid-cols-4 gap-1.5 mb-4">
+    99→                  {['100000', '200000', '500000', '1000000', '2000000', '5000000', '10000000'].map(a => (
+   100→                    <button key={a} onClick={() => setDepositAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 hover:text-white hover:border-transparent transition-all">
+   101→                      {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+   102→                    </button>
+   103→                  ))}
+   104→                </div>
+   105→
+   106→                {/* QRIS Method Info */}
+   107→                <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
+   108→                  <div className="flex items-center gap-2">
+   109→                    <CreditCard className="w-4 h-4 text-[#3b82f6]" />
+   110→                    <div>
+   111→                      <span className="block text-[9px] font-bold text-[var(--zv-text)]">QRIS</span>
+   112→                      <span className="block text-[7px] text-[var(--zv-muted)]">Scan QR code untuk pembayaran</span>
+   113→                    </div>
+   114→                  </div>
+   115→                </div>
+   116→
+   117→                {/* Lanjutkan Button */}
+   118→                <button onClick={() => {
+   119→                  if (!depositAmount || parseFloat(depositAmount) < 100000) {
+   120→                    toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' })
+   121→                    return
+   122→                  }
+   123→                  setDepositStep('qris')
+   124→                }}
+   125→                  className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+   126→                  style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+   127→                  <span>Lanjutkan</span>
+   128→                  <ArrowRight className="w-4 h-4" />
+   129→                </button>
+   130→              </div>
+   131→            </motion.div>
+   132→          ) : (
+   133→            <motion.div key="deposit-qris" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
+   134→              {/* QRIS Payment Step */}
+   135→              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+   136→
+   137→                {/* QRIS Code */}
+   138→                <div className="mb-4 flex flex-col items-center py-4">
+   139→                  {qrisImageUrl ? (
+   140→                    <div className="w-48 h-48 rounded-2xl bg-white border-2 border-[var(--zv-border)] p-2 mb-3 shadow-lg">
+   141→                      <img src={qrisImageUrl} alt="QRIS Payment" className="w-full h-full object-contain rounded-lg" />
+   142→                    </div>
+   143→                  ) : (
+   144→                    <div className="w-48 h-48 rounded-2xl bg-[var(--zv-panel)] border-2 border-dashed border-[var(--zv-border)] p-3 mb-3 flex items-center justify-center">
+   145→                      <svg viewBox="0 0 200 200" className="w-full h-full">
+   146→                        <rect width="200" height="200" fill="white" rx="8" />
+   147→                        <rect x="20" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
+   148→                        <rect x="28" y="28" width="34" height="34" fill="white" rx="2" />
+   149→                        <rect x="36" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
+   150→                        <rect x="130" y="20" width="50" height="50" fill="#0c1a2e" rx="4" />
+   151→                        <rect x="138" y="28" width="34" height="34" fill="white" rx="2" />
+   152→                        <rect x="146" y="36" width="18" height="18" fill="#0c1a2e" rx="1" />
+   153→                        <rect x="20" y="130" width="50" height="50" fill="#0c1a2e" rx="4" />
+   154→                        <rect x="28" y="138" width="34" height="34" fill="white" rx="2" />
+   155→                        <rect x="36" y="146" width="18" height="18" fill="#0c1a2e" rx="1" />
+   156→                        <rect x="80" y="20" width="8" height="8" fill="#0c1a2e" />
+   157→                        <rect x="96" y="20" width="8" height="8" fill="#0c1a2e" />
+   158→                        <rect x="112" y="36" width="8" height="8" fill="#0c1a2e" />
+   159→                        <rect x="80" y="60" width="8" height="8" fill="#0c1a2e" />
+   160→                        <rect x="96" y="60" width="8" height="8" fill="#0c1a2e" />
+   161→                        <rect x="112" y="60" width="8" height="8" fill="#0c1a2e" />
+   162→                        <rect x="20" y="80" width="8" height="8" fill="#0c1a2e" />
+   163→                        <rect x="36" y="96" width="8" height="8" fill="#0c1a2e" />
+   164→                        <rect x="52" y="80" width="8" height="8" fill="#0c1a2e" />
+   165→                        <rect x="130" y="80" width="8" height="8" fill="#0c1a2e" />
+   166→                        <rect x="146" y="80" width="8" height="8" fill="#0c1a2e" />
+   167→                        <rect x="80" y="96" width="8" height="8" fill="#0c1a2e" />
+   168→                        <rect x="112" y="96" width="8" height="8" fill="#0c1a2e" />
+   169→                        <rect x="130" y="130" width="8" height="8" fill="#0c1a2e" />
+   170→                        <rect x="162" y="162" width="8" height="8" fill="#0c1a2e" />
+   171→                        <rect x="80" y="162" width="8" height="8" fill="#0c1a2e" />
+   172→                        <rect x="96" y="162" width="8" height="8" fill="#0c1a2e" />
+   173→                        <text x="100" y="195" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0c1a2e">QRIS</text>
+   174→                      </svg>
+   175→                    </div>
+   176→                  )}
+   177→
+   178→                  {/* QRIS Logo */}
+   179→                  <img src="/qris-logo.png" alt="QRIS" className="h-6 object-contain mb-3" />
+   180→
+   181→                  {/* Amount Display */}
+   182→                  <div className="rounded-xl px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 mb-3 shadow-lg shadow-blue-500/20">
+   183→                    <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider block">Total Pembayaran</span>
+   184→                    <span className="text-lg font-black text-white">{formatRupiah(parseFloat(depositAmount) || 0)}</span>
+   185→                  </div>
+   186→
+   187→                  {/* Instructions */}
+   188→                  <div className="flex items-start gap-2 px-4 mb-2">
+   189→                    <AlertCircle className="w-3.5 h-3.5 text-[var(--zv-muted)] flex-shrink-0 mt-0.5" />
+   190→                    <span className="text-[9px] text-[var(--zv-muted)] leading-relaxed">Scan QR code di atas menggunakan aplikasi e-wallet atau mobile banking Anda</span>
+   191→                  </div>
+   192→                </div>
+   193→
+   194→                {/* Action Buttons */}
+   195→                <div className="flex gap-2">
+   196→                  <button onClick={() => setDepositStep('amount')}
+   197→                    className="flex-1 h-12 rounded-2xl text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-text)]">
+   198→                    <span>Kembali</span>
+   199→                  </button>
+   200→                  <button onClick={handleDeposit} disabled={depositLoading}
+   201→                    className="flex-[2] h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+   202→                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
+   203→                    {depositLoading ? (
+   204→                      <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+   205→                    ) : (
+   206→                      <><CheckCircle className="w-4 h-4" />Sudah Bayar</>
+   207→                    )}
+   208→                  </button>
+   209→                </div>
+   210→              </div>
+   211→            </motion.div>
+   212→          )}
+   213→
+   214→          {/* Deposit History */}
+   215→          <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Deposit</h3>
+   216→          <div className="space-y-1.5">
+   217→            {deposits.map(d => (
+   218→              <div key={d.id} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
+   219→                <div className="flex items-center gap-2">
+   220→                  <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Plus className="w-4 h-4 text-[#3b82f6]" /></div>
+   221→                  <div>
+   222→                    <span className="block text-[9px] font-bold text-[var(--zv-text)]">{d.method === 'qris' ? 'QRIS' : d.bankName || 'Transfer'}</span>
+   223→                    <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(d.createdAt)}</span>
+   224→                  </div>
+   225→                </div>
+   226→                <div className="text-right">
+   227→                  <span className="block text-[10px] font-black text-[#3b82f6]">+{formatRupiah(d.amount)}</span>
+   228→                  <span className={`block text-[7px] font-bold ${d.status === 'completed' ? 'text-[#3b82f6]' : d.status === 'pending' ? 'text-[#f59e0b]' : 'text-[#ef5350]'}`}>{d.status}</span>
+   229→                </div>
+   230→              </div>
+   231→            ))}
+   232→          </div>
+   233→        </>
+   234→      ) : (
+   235→        <>
+   236→          {/* Balance - Dompet Utama & Penarikan */}
+   237→          <div className="mb-3">
+   238→            <div className="grid grid-cols-2 gap-2 mb-2">
+   239→              <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+   240→                <span className="text-[7px] font-bold text-[var(--zv-muted)]">Dompet Utama</span>
+   241→                <b className="block text-[13px] font-black text-[#3b82f6]">{formatRupiah(user?.balance || 0)}</b>
+   242→                <span className="block text-[6px] font-semibold text-[var(--zv-muted)] mt-0.5">Saldo deposit hanya untuk investasi</span>
+   243→              </div>
+   244→              <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
+   245→                <span className="text-[7px] font-bold text-[var(--zv-muted)]">Dompet Penarikan</span>
+   246→                <b className="block text-[13px] font-black text-[#f59e0b]">{formatRupiah(0)}</b>
+   247→                <span className="block text-[6px] font-semibold text-[var(--zv-muted)] mt-0.5">Saldo yang dapat ditarik</span>
+   248→              </div>
+   249→            </div>
+   250→            {/* Deposit not withdrawable notice */}
+   251→            <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-2">
+   252→              <div className="flex items-start gap-1.5">
+   253→                <AlertCircle className="w-3 h-3 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+   254→                <span className="text-[6px] font-bold text-[#f59e0b] leading-relaxed">⚠️ Saldo deposit tidak dapat ditarik. Saldo deposit hanya untuk investasi produk.</span>
+   255→              </div>
+   256→            </div>
+   257→            {/* Transfer to withdrawal button */}
+   258→            <button
+   259→              onClick={() => toast({ title: 'Fitur Segera Hadir', description: 'Transfer ke penarikan akan tersedia segera' })}
+   260→              className="w-full h-9 rounded-xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6] text-[9px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#3b82f6]/20 transition-all"
+   261→            >
+   262→              <ArrowRight className="w-3.5 h-3.5" /> Transfer ke Penarikan
+   263→            </button>
+   264→          </div>
+   265→
+   266→          {/* Withdraw Category Tabs */}
+   267→          <div className="flex gap-1.5 mb-3">
+   268→            {[
+   269→              { key: 'bank' as const, label: 'Transfer Bank', icon: <Building2 className="w-3.5 h-3.5" /> },
+   270→              { key: 'ewallet' as const, label: 'E-Wallet', icon: <Wallet className="w-3.5 h-3.5" /> },
+   271→              { key: 'crypto' as const, label: 'Crypto', icon: <Gem className="w-3.5 h-3.5" /> },
+   272→            ].map(cat => (
+   273→              <button key={cat.key} onClick={() => setWithdrawCategory(cat.key)}
+   274→                className={`flex-1 h-9 rounded-xl text-[9px] md:text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${withdrawCategory === cat.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-[#3b82f6]/30 hover:text-[#3b82f6]'}`}>
+   275→                {cat.icon}{cat.label}
+   276→              </button>
+   277→            ))}
+   278→          </div>
+   279→
+   280→          {/* KYC Withdrawal Info */}
+   281→          <div className={`rounded-xl p-2.5 mb-3 border ${user?.kycStatus === 'verified' ? 'bg-green-500/5 border-green-500/10' : 'bg-yellow-500/5 border-yellow-500/10'}`}>
+   282→            <div className="flex items-center gap-2">
+   283→              {user?.kycStatus === 'verified' ? (
+   284→                <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+   285→              ) : (
+   286→                <Shield className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+   287→              )}
+   288→              <div className="flex-1">
+   289→                <p className="text-[9px] font-bold text-[var(--zv-text)]">
+   290→                  {user?.kycStatus === 'verified' ? 'KYC Verified' : 'Belum Verifikasi KYC'}
+   291→                </p>
+   292→                <p className="text-[8px] text-[var(--zv-muted)]">
+   293→                  {user?.kycStatus === 'verified'
+   294→                    ? 'Min. withdraw Rp 50.000 • Biaya admin 10%'
+   295→                    : 'Min. withdraw Rp 250.000 • Biaya admin 10% • Verifikasi KYC untuk min. Rp 50.000'}
+   296→                </p>
+   297→              </div>
+   298→              {user?.kycStatus !== 'verified' && (
+   299→                <button onClick={() => { setShowKycModal(true); fetchKycStatus() }} className="shrink-0 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[8px] font-bold text-blue-500 hover:bg-blue-500/20 transition-colors">
+   300→                  Verifikasi
+   301→                </button>
+   302→              )}
+   303→            </div>
+   304→          </div>
+   305→
+   306→          {/* Withdraw Form Card */}
+   307→          <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
+   308→
+   309→            {/* Bank Method Carousel */}
+   310→            {withdrawCategory === 'bank' && (
+   311→              <div className="mb-3">
+   312→                <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Bank Tujuan</span>
+   313→                <div className="carousel-hide-scrollbar flex gap-2 overflow-x-auto flex-nowrap pb-1">
+   314→                  {[
+   315→                    { code: 'BCA', name: 'BCA', color: '#003399' },
+   316→                    { code: 'BNI', name: 'BNI', color: '#F15A22' },
+   317→                    { code: 'BRI', name: 'BRI', color: '#00529C' },
+   318→                    { code: 'Mandiri', name: 'Mandiri', color: '#003066' },
+   319→                    { code: 'CIMB', name: 'CIMB', color: '#7B0E24' },
+   320→                    { code: 'Permata', name: 'Permata', color: '#005EAB' },
+   321→                    { code: 'BSI', name: 'BSI', color: '#00A650' },
+   322→                    { code: 'Danamon', name: 'Danamon', color: '#FDDA24' },
+   323→                    { code: 'Panin', name: 'Panin', color: '#003764' },
+   324→                    { code: 'Maybank', name: 'Maybank', color: '#002F6C' },
+   325→                    { code: 'OCBC', name: 'OCBC', color: '#E2231A' },
+   326→                    { code: 'BTN', name: 'BTN', color: '#F7941D' },
+   327→                    { code: 'Mega', name: 'Mega', color: '#00468B' },
+   328→                    { code: 'Sinarmas', name: 'Sinarmas', color: '#0061AF' },
+   329→                  ].map(bank => (
+   330→                    <button key={bank.code} onClick={() => setWithdrawBankMethod(bank.code)}
+   331→                      className={`shrink-0 w-[64px] rounded-xl p-1.5 border-2 transition-all flex flex-col items-center justify-center gap-1 ${withdrawBankMethod === bank.code ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-sm shadow-blue-500/10' : 'border-[var(--zv-border)] bg-[var(--zv-surface)] hover:border-[#3b82f6]/30'}`}>
+   332→                      <div className="w-8 h-8 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: bank.color }}>
+   333→                        {bank.name.slice(0, 2)}
+   334→                      </div>
+   335→                      <span className={`text-[6px] font-bold text-center leading-tight ${withdrawBankMethod === bank.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{bank.name}</span>
+   336→                    </button>
+   337→                  ))}
+   338→                </div>
+   339→              </div>
+   340→            )}
+   341→
+   342→            {/* E-Wallet Method Carousel */}
+   343→            {withdrawCategory === 'ewallet' && (
+   344→              <div className="mb-3">
+   345→                <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih E-Wallet</span>
+   346→                <div className="carousel-hide-scrollbar flex gap-2 overflow-x-auto flex-nowrap pb-1">
+   347→                  {[
+   348→                    { code: 'GOPAY', name: 'GoPay', color: '#00AED6' },
+   349→                    { code: 'OVO', name: 'OVO', color: '#4C2A86' },
+   350→                    { code: 'DANA', name: 'DANA', color: '#108EE9' },
+   351→                    { code: 'SHOPEEPAY', name: 'ShopeePay', color: '#EE4D2D' },
+   352→                    { code: 'LINKAJA', name: 'LinkAja', color: '#E82529' },
+   353→                    { code: 'SAKUKU', name: 'Sakuku', color: '#003399' },
+   354→                    { code: 'JENIUS', name: 'Jenius', color: '#00A651' },
+   355→                    { code: 'BLU', name: 'Blu by BCA', color: '#005BAA' },
+   356→                    { code: 'DOKU', name: 'Doku', color: '#E71E26' },
+   357→                    { code: 'ISAKU', name: 'iSaku', color: '#FF6B00' },
+   358→                  ].map(ew => (
+   359→                    <button key={ew.code} onClick={() => setWithdrawEwalletMethod(ew.code)}
+   360→                      className={`shrink-0 w-[64px] rounded-xl p-1.5 border-2 transition-all flex flex-col items-center justify-center gap-1 ${withdrawEwalletMethod === ew.code ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-sm shadow-blue-500/10' : 'border-[var(--zv-border)] bg-[var(--zv-surface)] hover:border-[#3b82f6]/30'}`}>
+   361→                      <div className="w-8 h-8 rounded-lg grid place-items-center text-white text-[8px] font-black" style={{ backgroundColor: ew.color }}>
+   362→                        {ew.name.slice(0, 2)}
+   363→                      </div>
+   364→                      <span className={`text-[6px] font-bold text-center leading-tight ${withdrawEwalletMethod === ew.code ? 'text-[#3b82f6]' : 'text-[var(--zv-muted)]'}`}>{ew.name}</span>
+   365→                    </button>
+   366→                  ))}
+   367→                </div>
+   368→              </div>
+   369→            )}
+   370→
+   371→            {/* Crypto Method Carousel */}
+   372→            {withdrawCategory === 'crypto' && (
+   373→              <div className="mb-3">
+   374→                <span className="block text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest mb-2">Pilih Crypto</span>
+   375→                <div className="carousel-hide-scrollbar flex gap-2 overflow-x-auto flex-nowrap pb-1">
+   376→                  {[
+   377→                    { code: 'USDT_TRC20', name: 'USDT', network: 'TRC20', color: '#26A17B' },
+   378→                    { code: 'USDT_ERC20', name: 'USDT', network: 'ERC20', color: '#627EEA' },
+   379→                    { code: 'BTC', name: 'BTC', network: 'BTC', color: '#F7931A' },
+   380→                    { code: 'ETH', name: 'ETH', network: 'ERC20', color: '#627EEA' },
+   381→                    { code: 'BNB', name: 'BNB', network: 'BEP20', color: '#F3BA2F' },
+   382→                    { code: 'SOL', name: 'SOL', network: 'SOL', color: '#9945FF' },
+   383→                    { code: 'XRP', name: 'XRP', network: 'XRP', color: '#23292F' },
+   384→                    { code: 'DOGE', name: 'DOGE', network: 'DOGE', color: '#C2A633' },
+   385→                  ].map(cr => (
+   386→                    <button key={cr.code} onClick={() => setWithdrawCryptoMethod(cr.code)}
+   387→                      className={`shrink-0 w-[64px] rounded-xl p-1.5 border-2 transition-all flex flex-col items-center justify-center gap-0.5 ${withdrawCryptoMethod === cr.code ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-sm shadow-blue-500/10' : 'border-[var(--zv-border)] bg-[var(--zv-surface)] hover:border-[#3b82f6]/30'}`}>
+   388→                      <div className="w-7 h-7 rounded-full grid place-items-center text-white text-[7px] font-black" style={{ backgroundColor: cr.color }}>
+   389→                        {cr.name.slice(0, 2)}
+   390→                      </div>
+   391→                      <span className={`text-[7px] font-black text-center leading-tight ${withdrawCryptoMethod === cr.code ? 'text-[#3b82f6]' : 'text-[var(--zv-text)]'}`}>{cr.name}</span>
+   392→                      <span className="text-[5px] font-bold text-[var(--zv-muted)]">{cr.network}</span>
+   393→                    </button>
+   394→                  ))}
+   395→                </div>
+   396→              </div>
+   397→            )}
+   398→
+   399→            {/* Amount Input */}
+   400→            <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Jumlah Withdraw</label>
+   401→            <input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder={user?.kycStatus === 'verified' ? 'Minimal Rp 50.000' : 'Minimal Rp 250.000'}
+   402→              className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
+   403→            <div className="grid grid-cols-4 gap-1.5 mb-3">
+   404→              {['50000', '100000', '200000', '500000', '1000000', '2000000', '5000000'].map(a => (
+   405→                <button key={a} onClick={() => setWithdrawAmount(a)} className="h-8 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[8px] md:text-[9px] font-bold text-[#3b82f6] hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 hover:text-white hover:border-transparent transition-all">
+   406→                  {parseFloat(a) >= 1e6 ? `${(parseFloat(a) / 1e6).toFixed(0)}jt` : `${(parseFloat(a) / 1e3).toFixed(0)}rb`}
+   407→                </button>
+   408→              ))}
+   409→            </div>
+   410→
+   411→            {/* Account Detail Form - Dynamic based on category */}
+   412→            {withdrawCategory === 'bank' && (
+   413→              <div className="mb-3">
+   414→                <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nomor Rekening</label>
+   415→                <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor rekening"
+   416→                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all mb-2" />
+   417→                <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nama Pemilik Rekening</label>
+   418→                <input type="text" value={withdrawAccountHolder} onChange={(e) => setWithdrawAccountHolder(e.target.value)} placeholder="Nama sesuai rekening"
+   419→                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+   420→              </div>
+   421→            )}
+   422→
+   423→            {withdrawCategory === 'ewallet' && (
+   424→              <div className="mb-3">
+   425→                <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Nomor HP / Email</label>
+   426→                <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan nomor HP atau email e-wallet"
+   427→                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+   428→              </div>
+   429→            )}
+   430→
+   431→            {withdrawCategory === 'crypto' && (
+   432→              <div className="mb-3">
+   433→                <label className="block mb-1.5 text-[9px] font-black text-[var(--zv-muted)] uppercase tracking-widest">Wallet Address</label>
+   434→                <input type="text" value={withdrawAccountNumber} onChange={(e) => setWithdrawAccountNumber(e.target.value)} placeholder="Masukkan alamat wallet crypto"
+   435→                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 text-[13px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all" />
+   436→              </div>
+   437→            )}
+   438→
+   439→            {/* OTP Verification for Withdrawal */}
+   440→            <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
+   441→              <div className="flex items-center gap-2 mb-2">
+   442→                <Mail className="w-4 h-4 text-[#3b82f6]" />
+   443→                <span className="text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">Verifikasi Email</span>
+   444→                {withdrawOtpVerified && (
+   445→                  <span className="h-4 px-1.5 rounded-full bg-green-500/20 border border-green-400/30 text-[7px] font-black text-green-400 flex items-center gap-0.5">
+   446→                    <CheckCircle className="w-2.5 h-2.5" />Verified
+   447→                  </span>
+   448→                )}
+   449→              </div>
+   450→              {!withdrawOtpSent ? (
+   451→                <button onClick={handleSendWithdrawOtp} disabled={withdrawOtpLoading}
+   452→                  className="w-full h-10 rounded-xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6] text-[10px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#3b82f6]/20 transition-all disabled:opacity-50">
+   453→                  {withdrawOtpLoading ? <div className="w-4 h-4 rounded-full border-2 border-[#3b82f6]/30 border-t-[#3b82f6] animate-spin" /> : <><Mail className="w-3.5 h-3.5" />Kirim OTP ke Email</>}
+   454→                </button>
+   455→              ) : !withdrawOtpVerified ? (
+   456→                <>
+   457→                  <div className="flex items-center justify-center gap-1.5 mb-2">
+   458→                    {withdrawOtpCode.map((digit, i) => (
+   459→                      <input
+   460→                        key={i}
+   461→                        ref={el => { withdrawOtpRefs.current[i] = el }}
+   462→                        type="text"
+   463→                        inputMode="numeric"
+   464→                        maxLength={1}
+   465→                        value={digit}
+   466→                        onChange={(e) => {
+   467→                          if (!/^\d*$/.test(e.target.value)) return
+   468→                          const newOtp = [...withdrawOtpCode]
+   469→                          newOtp[i] = e.target.value.slice(-1)
+   470→                          setWithdrawOtpCode(newOtp)
+   471→                          if (e.target.value && i < 5) withdrawOtpRefs.current[i + 1]?.focus()
+   472→                        }}
+   473→                        onKeyDown={(e) => {
+   474→                          if (e.key === 'Backspace' && !withdrawOtpCode[i] && i > 0) withdrawOtpRefs.current[i - 1]?.focus()
+   475→                        }}
+   476→                        onPaste={(e) => {
+   477→                          e.preventDefault()
+   478→                          const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+   479→                          const newOtp = [...Array(6)].map((_, idx) => pasted[idx] || '')
+   480→                          setWithdrawOtpCode(newOtp)
+   481→                          const nextIdx = Math.min(pasted.length, 5)
+   482→                          withdrawOtpRefs.current[nextIdx]?.focus()
+   483→                        }}
+   484→                        className="w-9 h-10 rounded-lg bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center text-[14px] font-black text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all"
+   485→                      />
+   486→                    ))}
+   487→                  </div>
+   488→                  <div className="flex gap-2">
+   489→                    <button onClick={handleVerifyWithdrawOtp} disabled={withdrawOtpLoading || withdrawOtpCode.join('').length !== 6}
+   490→                      className="flex-1 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[9px] font-bold flex items-center justify-center gap-1 hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-50">
+   491→                      {withdrawOtpLoading ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><CheckCircle className="w-3 h-3" />Verifikasi</>}
+   492→                    </button>
+   493→                    {withdrawOtpTimer > 0 ? (
+   494→                      <span className="h-9 px-3 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[9px] font-bold text-[var(--zv-muted)] flex items-center">({withdrawOtpTimer}s)</span>
+   495→                    ) : (
+   496→                      <button onClick={handleSendWithdrawOtp} disabled={withdrawOtpLoading}
+   497→                        className="h-9 px-3 rounded-xl bg-[var(--zv-panel)] border border-[var(--zv-border)] text-[9px] font-bold text-[#3b82f6] hover:bg-[#3b82f6]/10 transition-all disabled:opacity-50">
+   498→                        Kirim Ulang
+   499→                      </button>
+   500→                    )}
+   501→                  </div>
+   502→                </>
+   503→              ) : (
+   504→                <div className="flex items-center gap-1.5 text-[9px] text-green-400 font-bold">
+   505→                  <CheckCircle className="w-3.5 h-3.5" />Email berhasil diverifikasi
+   506→                </div>
+   507→              )}
+   508→            </div>
+   509→
+   510→            {/* Withdraw Button */}
+   511→            <button onClick={handleWithdraw} disabled={withdrawLoading || !withdrawOtpVerified}
+   512→              className="w-full h-12 rounded-2xl text-white text-[11px] font-black tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+   513→              style={{ background: 'linear-gradient(135deg, #6b2100 0%, #b45309 50%, #f59e0b 100%)' }}>
+   514→              {withdrawLoading ? (
+   515→                <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
+   516→              ) : (
+   517→                <><Minus className="w-4 h-4" />Withdraw Sekarang</>
+   518→              )}
+   519→            </button>
+   520→          </div>
+   521→
+   522→          {/* Withdraw History */}
+   523→          <h3 className="text-[11px] font-black text-[#3b82f6] mb-2">Riwayat Withdraw</h3>
+   524→          <div className="space-y-1.5">
+   525→            {withdrawals.map(w => (
+   526→              <div key={w.id} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
+   527→                <div className="flex items-center gap-2">
+   528→                  <div className="w-8 h-8 rounded-lg bg-[var(--zv-surface)] grid place-items-center"><Minus className="w-4 h-4 text-[#ef5350]" /></div>
+   529→                  <div>
+   530→                    <span className="block text-[9px] font-bold text-[var(--zv-text)]">{w.bankName || 'Transfer Bank'}</span>
+   531→                    <span className="block text-[7px] text-[var(--zv-muted)]">{formatDateTime(w.createdAt)}</span>
+   532→                  </div>
+   533→                </div>
+   534→                <div className="text-right">
+   535→                  <span className="block text-[10px] font-black text-[#ef5350]">-{formatRupiah(w.amount)}</span>
+   536→                  <span className={`block text-[7px] font-bold ${w.status === 'completed' ? 'text-[#3b82f6]' : w.status === 'processing' ? 'text-[#f59e0b]' : 'text-[#ef5350]'}`}>{w.status}</span>
+   537→                </div>
+   538→              </div>
+   539→            ))}
+   540→          </div>
+   541→        </>
+   542→      )}
+   543→    </div>
+   544→    </motion.div>
+   545→
+   546→  )
+   547→
+   548→}
+   549→
