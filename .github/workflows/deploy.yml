@@ -44,11 +44,10 @@ jobs:
             bun install
 
             echo ">>> Updating database (force reset)..."
-            bun run db:push -- --force-reset 2>/dev/null || bunx prisma db push --force-reset
+            npx prisma db push --force-reset
 
-            # Write the .env file (ensure SMTP is configured on VPS)
-            if ! grep -q "smtp.hostinger.com" .env 2>/dev/null; then
-              cat > .env << 'ENVEOF'
+            # Write the .env file with SMTP config
+            cat > .env << 'ENVEOF'
 DATABASE_URL=file:/home/z/my-project/db/custom.db
 
 # SMTP Email Configuration (Hostinger)
@@ -58,8 +57,7 @@ SMTP_USER=zevorik@zevorik.com
 SMTP_PASS=v=Z@/B:6q
 EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
 ENVEOF
-              echo ">>> .env configured with SMTP"
-            fi
+            echo ">>> .env configured"
 
             echo ">>> Restarting app..."
             pkill -f "next dev" 2>/dev/null || true
