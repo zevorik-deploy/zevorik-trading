@@ -269,7 +269,6 @@ async function seedStocks() {
     { code: 'AXP', name: 'American Express Co.', price: 275000, change: 3800, changePercent: 1.40, open: 271200, high: 277000, low: 270000, volume: 3345600, marketCap: 198000000000000, category: 'bluechip', sector: 'Finance', logo: '/stocks/AXP.png', description: 'Global payments and travel services company.', peRatio: 18.5, pbv: 6.2, dividendYield: 1.2, lotSize: 1 },
     { code: 'FOX', name: 'Fox Corporation', price: 65000, change: -850, changePercent: -1.29, open: 65850, high: 66500, low: 64500, volume: 2345600, marketCap: 18500000000000, category: 'media', sector: 'Entertainment', logo: '/stocks/FOX.png', description: 'Media company operating Fox News and Fox Broadcasting.', peRatio: 15.2, pbv: 2.8, dividendYield: 1.5, lotSize: 1 },
     { code: 'PSA', name: 'Public Storage', price: 355000, change: 5200, changePercent: 1.49, open: 349800, high: 358000, low: 348000, volume: 1345600, marketCap: 62000000000000, category: 'consumer', sector: 'REIT', logo: '/stocks/PSA.png', description: 'Self-storage REIT with 2,500+ facilities.', peRatio: 32.5, pbv: 8.5, dividendYield: 3.8, lotSize: 1 },
-    { code: 'TMO', name: 'Thermo Fisher Scientific', price: 855000, change: 15200, changePercent: 1.81, open: 839800, high: 860000, low: 835000, volume: 1345600, marketCap: 325000000000000, category: 'healthcare', sector: 'Healthcare', logo: '/stocks/TMO.png', description: 'Life sciences and diagnostics company.', peRatio: 35.2, pbv: 5.8, dividendYield: 0.3, lotSize: 1 },
     { code: 'WFC', name: 'Wells Fargo & Co.', price: 82000, change: 1800, changePercent: 2.24, open: 80200, high: 83000, low: 79800, volume: 14345600, marketCap: 288000000000000, category: 'banking', sector: 'Finance', logo: '/stocks/WFC.png', description: 'One of the largest banks in the US.', peRatio: 11.8, pbv: 1.2, dividendYield: 2.8, lotSize: 1 },
     { code: 'MS', name: 'Morgan Stanley', price: 125000, change: 2100, changePercent: 1.71, open: 122900, high: 126000, low: 122000, volume: 7345600, marketCap: 200000000000000, category: 'banking', sector: 'Finance', logo: '/stocks/MS.png', description: 'Global investment bank and wealth manager.', peRatio: 15.2, pbv: 1.8, dividendYield: 3.2, lotSize: 1 },
     { code: 'SCHW', name: 'Charles Schwab Corp.', price: 95000, change: -1500, changePercent: -1.55, open: 96500, high: 97000, low: 94000, volume: 9345600, marketCap: 170000000000000, category: 'banking', sector: 'Finance', logo: '/stocks/SCHW.png', description: 'Largest retail brokerage firm in the US.', peRatio: 18.5, pbv: 2.5, dividendYield: 1.5, lotSize: 1 },
@@ -409,7 +408,11 @@ async function seedStocks() {
 
   for (const stock of stockData) {
     try {
-      await db.stock.create({ data: stock })
+      await db.stock.upsert({
+        where: { code: stock.code },
+        update: stock,
+        create: stock,
+      })
 
       // Create initial price history
       const historyEntries = []
