@@ -28,9 +28,6 @@ jobs:
             $BUN_INSTALL/bin/bun install
             printf '%s\n' 'DATABASE_URL=file:./db/custom.db' 'SMTP_HOST=smtp.hostinger.com' 'SMTP_PORT=465' 'SMTP_USER=zevorik@zevorik.com' 'SMTP_PASS=v=Z@/B:6q' 'EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>' 'JWT_SECRET=zevorik-jwt-secret-key-2024-secure' > .env
             $BUN_INSTALL/bin/bunx prisma db push --accept-data-loss
-            pkill -f "next" 2>/dev/null || true
-            sleep 2
-            cd /root/zevorik-trading
-            setsid $BUN_INSTALL/bin/bun run dev > /tmp/zevorik.log 2>&1 &
-            sleep 10
+            nohup $BUN_INSTALL/bin/bun run dev > /tmp/zevorik.log 2>&1 &
+            sleep 12
             curl -s http://localhost:3000/api/stocks > /dev/null && echo "APP OK" || echo "APP STARTING"
