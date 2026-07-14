@@ -16,25 +16,25 @@ export async function POST() {
     }
 
     const hashedPassword = await hashPassword('admin123')
-    const referralCode = 'ADMIN-' + Date.now()
+    const hashedPin = await hashPassword('000000')
 
     const admin = await db.user.create({
       data: {
         phone: '080000000000',
-        name: 'Admin ZEVORIX',
+        email: 'admin@zevorik.com',
+        name: 'Admin ZEVORIK',
         password: hashedPassword,
+        pin: hashedPin,
         role: 'admin',
-        referralCode,
         kycStatus: 'verified',
-        vipLevel: 'Diamond',
       },
       select: {
         id: true,
         name: true,
         phone: true,
+        email: true,
         role: true,
         kycStatus: true,
-        vipLevel: true,
         createdAt: true,
       },
     })

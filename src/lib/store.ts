@@ -4,18 +4,16 @@ interface User {
   id: string
   name: string
   phone: string
-  email?: string
+  email: string
   balance: number
-  withdrawalBalance: number
   role: string
   avatar: string | null
-  referralCode?: string
   kycStatus?: string
   bankName?: string
   bankAccount?: string
   bankHolder?: string
-  accountType?: string  // 'demo' or 'real'
   totalDeposit?: number
+  totalTrading?: number
 }
 
 interface AuthState {
@@ -23,11 +21,15 @@ interface AuthState {
   token: string | null
   isLoggedIn: boolean
   adminViewingUserMode: boolean
+  pendingUserId: string | null
+  tempToken: string | null
   login: (user: User, token: string) => void
   logout: () => void
   updateBalance: (balance: number) => void
   updateUser: (data: Partial<User>) => void
   setAdminViewingUserMode: (v: boolean) => void
+  setPendingLogin: (userId: string, tempToken: string) => void
+  clearPendingLogin: () => void
 }
 
 const PERSIST_KEY = 'zv-auth-storage'
@@ -47,7 +49,13 @@ const loadPersistedState = () => {
 const persistState = (state: AuthState) => {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { user: state.user, token: state.token, isLoggedIn: state.isLoggedIn } }))
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({
+      state: {
+        user: state.user,
+        token: state.token,
+        isLoggedIn: state.isLoggedIn,
+      },
+    }))
   } catch {}
 }
 
@@ -58,13 +66,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: persisted?.token ?? null,
   isLoggedIn: persisted?.isLoggedIn ?? false,
   adminViewingUserMode: false,
+  pendingUserId: null,
+  tempToken: null,
   login: (user, token) => {
-    const newState = { user, token, isLoggedIn: true }
+    const newState = { user, token, isLoggedIn: true, pendingUserId: null, tempToken: null }
     set(newState)
     persistState(newState as AuthState)
   },
   logout: () => {
-    const newState = { user: null, token: null, isLoggedIn: false, adminViewingUserMode: false }
+    const newState = { user: null, token: null, isLoggedIn: false, adminViewingUserMode: false, pendingUserId: null, tempToken: null }
     set(newState)
     if (typeof window !== 'undefined') localStorage.removeItem(PERSIST_KEY)
   },
@@ -81,4 +91,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       return newState
     }),
   setAdminViewingUserMode: (v) => set({ adminViewingUserMode: v }),
+  setPendingLogin: (userId, tempToken) => set({ pendingUserId: userId, tempToken }),
+  clearPendingLogin: () => set({ pendingUserId: null, tempToken: null }),
 }))

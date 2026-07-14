@@ -169,9 +169,9 @@ export default function AdminDashboard() {
               {/* Logo + Text */}
               <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-4">
                 <div className="mb-2"><ZevorixLogo size={56} /></div>
-                <h1 className="text-[18px] font-black text-center leading-tight">Masuk Admin<br />ZEVORIX</h1>
+                <h1 className="text-[18px] font-black text-center leading-tight">Masuk Admin<br />ZEVORIK</h1>
                 <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
-                  Akses panel admin ZEVORIX untuk mengelola pengguna, deposit, withdrawal, dan seluruh platform.
+                  Akses panel admin ZEVORIK untuk mengelola pengguna, deposit, withdrawal, dan seluruh platform.
                 </p>
               </div>
               {/* Chart Line */}
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
           {sidebarOpen && (
             <div className="flex items-center gap-2">
               <ZevorixLogo size={28} />
-              <span className="text-sm font-black text-[#3b82f6]">ZEVORIX</span>
+              <span className="text-sm font-black text-[#3b82f6]">ZEVORIK</span>
             </div>
           )}
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -1654,7 +1654,7 @@ function SettingsSection({ adminId, api, showToast, uploadFile }: { adminId: str
   const [qrisPreview, setQrisPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [appInput, setAppInput] = useState('ZEVORIX')
+  const [appInput, setAppInput] = useState('ZEVORIK')
   const [minDepInput, setMinDepInput] = useState('50000')
   const [minWithInput, setMinWithInput] = useState('100000')
   const [waInput, setWaInput] = useState('')
@@ -1675,7 +1675,7 @@ function SettingsSection({ adminId, api, showToast, uploadFile }: { adminId: str
         if (map.qris_image) setQrisPreview(map.qris_image)
         if (map.app_logo) setLogoPreview(map.app_logo)
         if (!inputsInitialized) {
-          setAppInput(map.app_name || 'ZEVORIX')
+          setAppInput(map.app_name || 'ZEVORIK')
           setMinDepInput(map.min_deposit || '50000')
           setMinWithInput(map.min_withdraw || '100000')
           setWaInput(map.wa_number || '')
@@ -1703,7 +1703,7 @@ function SettingsSection({ adminId, api, showToast, uploadFile }: { adminId: str
         setSettings(map)
         if (map.qris_image) setQrisPreview(map.qris_image)
         if (map.app_logo) setLogoPreview(map.app_logo)
-        setAppInput(map.app_name || 'ZEVORIX')
+        setAppInput(map.app_name || 'ZEVORIK')
         setMinDepInput(map.min_deposit || '50000')
         setMinWithInput(map.min_withdraw || '100000')
         setWaInput(map.wa_number || '')

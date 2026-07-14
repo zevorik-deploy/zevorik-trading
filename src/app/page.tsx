@@ -168,9 +168,9 @@ const REFERENCE_TICKERS = [
 const PIE_COLORS = ['#2563eb', '#f59e0b', '#60a5fa', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
 // ============================================
-// ZEVORIX LOGO COMPONENT
+// ZEVORIK LOGO COMPONENT
 // ============================================
-function ZevorixLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
+function ZevorikLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
   return (
     <div
       className={`flex items-center justify-center ${className}`}
@@ -178,7 +178,7 @@ function ZevorixLogo({ size = 40, className = '' }: { size?: number; className?:
     >
       <img
         src="/zevorix-logo.png"
-        alt="ZEVORIX"
+        alt="ZEVORIK"
         className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(59,130,246,0.35)]"
       />
     </div>
@@ -211,65 +211,113 @@ function LogoWithFallback({ src, alt, size, code, className = '' }: { src: strin
 }
 
 // ============================================
-// LOGIN / REGISTER PAGE
+// LOGIN / REGISTER PAGE (2-Step with PIN)
 // ============================================
 function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true)
-  const [phone, setPhone] = useState('')
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'pin'>('login')
+  const [identifier, setIdentifier] = useState('') // email or phone
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [refCode, setRefCode] = useState('')
+  const [pin, setPin] = useState(['', '', '', '', '', ''])
+  const [registerPin, setRegisterPin] = useState(['', '', '', '', '', ''])
+  const [confirmPin, setConfirmPin] = useState(['', '', '', '', '', ''])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [mathA, setMathA] = useState(Math.floor(Math.random() * 15) + 1)
-  const [mathB, setMathB] = useState(Math.floor(Math.random() * 15) + 1)
-  const [mathAnswer, setMathAnswer] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
-  const [accountType, setAccountType] = useState<'demo' | 'real'>('real')
+  const [tempToken, setTempToken] = useState<string | null>(null)
   const login = useAuthStore((s) => s.login)
 
-  const refreshMath = () => {
-    setMathA(Math.floor(Math.random() * 15) + 1)
-    setMathB(Math.floor(Math.random() * 15) + 1)
-    setMathAnswer('')
+  const pinRefs = useRef<(HTMLInputElement | null)[]>([])
+  const registerPinRefs = useRef<(HTMLInputElement | null)[]>([])
+  const confirmPinRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  const handlePinChange = (index: number, value: string, pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
+    if (!/^\d*$/.test(value)) return
+    const newPin = [...pinArr]
+    newPin[index] = value.slice(-1)
+    setPinArr(newPin)
+    if (value && index < 5) {
+      refs.current[index + 1]?.focus()
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent, pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
+    if (e.key === 'Backspace' && !pinArr[index] && index > 0) {
+      refs.current[index - 1]?.focus()
+    }
+  }
+
+  const handlePinPaste = (e: React.ClipboardEvent, setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => {
     e.preventDefault()
-    if (isLogin) {
-      if (!phone || !password) {
-        toast({ title: 'Error', description: 'Mohon isi nomor WhatsApp dan kata sandi', variant: 'destructive' })
-        return
-      }
-    } else {
-      if (!name || !phone || !password || !confirmPassword) {
-        toast({ title: 'Error', description: 'Mohon isi semua field', variant: 'destructive' })
-        return
-      }
-      if (password !== confirmPassword) {
-        toast({ title: 'Error', description: 'Kata sandi tidak cocok', variant: 'destructive' })
-        return
-      }
-      if (parseInt(mathAnswer) !== mathA + mathB) {
-        toast({ title: 'Error', description: 'Jawaban verifikasi keamanan salah', variant: 'destructive' })
-        return
-      }
-      if (!agreeTerms) {
-        toast({ title: 'Error', description: 'Anda harus menyetujui proses pendaftaran', variant: 'destructive' })
-        return
-      }
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const newPin = [...Array(6)].map((_, i) => pasted[i] || '')
+    setPinArr(newPin)
+    const nextIndex = Math.min(pasted.length, 5)
+    refs.current[nextIndex]?.focus()
+  }
+
+  // Step 1: Login with identifier + password
+  const handleLoginStep1 = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!identifier || !password) {
+      toast({ title: 'Error', description: 'Mohon isi email/nomor HP dan kata sandi', variant: 'destructive' })
+      return
     }
     setLoading(true)
     try {
-      const url = isLogin ? '/api/auth/login' : '/api/auth/register'
-      const body = isLogin ? { phone, password } : { name, phone, password, referralCode: refCode || undefined, accountType }
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      // If admin logs in on user page, store admin session and redirect to admin dashboard
+      if (data.step === 'pin_required') {
+        setTempToken(data.tempToken)
+        setAuthMode('pin')
+        setTimeout(() => pinRefs.current[0]?.focus(), 100)
+      } else {
+        // Admin direct login (no PIN required for admin)
+        if (data.user?.role === 'admin') {
+          localStorage.setItem('adminId', data.user.id)
+          localStorage.setItem('adminToken', data.token)
+          window.location.href = '/admin'
+          return
+        }
+        login(data.user, data.token)
+        toast({ title: 'Selamat Datang!', description: `Halo, ${data.user.name}` })
+      }
+    } catch (err: unknown) {
+      toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Terjadi kesalahan', variant: 'destructive' })
+    } finally { setLoading(false) }
+  }
+
+  // Step 2: Verify PIN
+  const handlePinVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const pinStr = pin.join('')
+    if (pinStr.length !== 6) {
+      toast({ title: 'Error', description: 'Masukkan 6 digit PIN', variant: 'destructive' })
+      return
+    }
+    if (!tempToken) {
+      toast({ title: 'Error', description: 'Sesi kadaluarsa, silakan login ulang', variant: 'destructive' })
+      setAuthMode('login')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken, pin: pinStr })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
       if (data.user?.role === 'admin') {
         localStorage.setItem('adminId', data.user.id)
         localStorage.setItem('adminToken', data.token)
@@ -277,22 +325,101 @@ function LoginPage() {
         return
       }
       login(data.user, data.token)
-      toast({ title: isLogin ? 'Selamat Datang!' : 'Registrasi Berhasil!', description: `Halo, ${data.user.name}` })
+      toast({ title: 'Selamat Datang!', description: `Halo, ${data.user.name}` })
+    } catch (err: unknown) {
+      toast({ title: 'PIN Salah', description: err instanceof Error ? err.message : 'Verifikasi PIN gagal', variant: 'destructive' })
+      setPin(['', '', '', '', '', ''])
+      setTimeout(() => pinRefs.current[0]?.focus(), 100)
+    } finally { setLoading(false) }
+  }
+
+  // Register
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !email || !phone || !password || !confirmPassword) {
+      toast({ title: 'Error', description: 'Mohon isi semua field', variant: 'destructive' })
+      return
+    }
+    if (password !== confirmPassword) {
+      toast({ title: 'Error', description: 'Kata sandi tidak cocok', variant: 'destructive' })
+      return
+    }
+    if (password.length < 6) {
+      toast({ title: 'Error', description: 'Kata sandi minimal 6 karakter', variant: 'destructive' })
+      return
+    }
+    const pinStr = registerPin.join('')
+    const confirmPinStr = confirmPin.join('')
+    if (pinStr.length !== 6) {
+      toast({ title: 'Error', description: 'Masukkan 6 digit PIN', variant: 'destructive' })
+      return
+    }
+    if (pinStr !== confirmPinStr) {
+      toast({ title: 'Error', description: 'Konfirmasi PIN tidak cocok', variant: 'destructive' })
+      return
+    }
+    if (!agreeTerms) {
+      toast({ title: 'Error', description: 'Anda harus menyetujui proses pendaftaran', variant: 'destructive' })
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, password, pin: pinStr })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (data.user?.role === 'admin') {
+        localStorage.setItem('adminId', data.user.id)
+        localStorage.setItem('adminToken', data.token)
+        window.location.href = '/admin'
+        return
+      }
+      login(data.user, data.token)
+      toast({ title: 'Registrasi Berhasil!', description: `Selamat datang, ${data.user.name}!` })
     } catch (err: unknown) {
       toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Terjadi kesalahan', variant: 'destructive' })
     } finally { setLoading(false) }
   }
 
+  const getHeaderText = () => {
+    if (authMode === 'pin') return { title: 'Verifikasi PIN', subtitle: 'Masukkan 6 digit PIN keamanan Anda untuk melanjutkan login.' }
+    if (authMode === 'register') return { title: 'Daftar ZEVORIK', subtitle: 'Buat akun investor untuk akses portofolio, trading, dan layanan investor ZEVORIK.' }
+    return { title: 'Masuk Investor ZEVORIK', subtitle: 'Akses akun ZEVORIK untuk memantau portofolio, pergerakan saham, dan aktivitas profit.' }
+  }
+  const headerText = getHeaderText()
+
+  const renderPinInputs = (pinArr: string[], setPinArr: (v: string[]) => void, refs: React.MutableRefObject<(HTMLInputElement | null)[]>) => (
+    <div className="flex items-center justify-center gap-2">
+      {pinArr.map((digit, i) => (
+        <input
+          key={i}
+          ref={el => { refs.current[i] = el }}
+          type="password"
+          inputMode="numeric"
+          maxLength={1}
+          value={digit}
+          onChange={(e) => handlePinChange(i, e.target.value, pinArr, setPinArr, refs)}
+          onKeyDown={(e) => handlePinKeyDown(i, e, pinArr, setPinArr, refs)}
+          onPaste={(e) => handlePinPaste(e, setPinArr, refs)}
+          className="w-11 h-13 rounded-xl bg-slate-50 border-2 border-slate-200 text-center text-[18px] font-black text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all"
+        />
+      ))}
+    </div>
+  )
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
-      {/* Desktop Left Branding Panel - hidden on mobile */}
+      {/* Desktop Left Branding Panel */}
       <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 text-center text-white max-w-lg">
           <div className="mx-auto mb-6">
-            <ZevorixLogo size={80} />
+            <ZevorikLogo size={80} />
           </div>
-          <h1 className="text-3xl lg:text-4xl font-black mb-2 tracking-[0.15em]" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', textShadow: '0 0 30px rgba(59,130,246,0.5)' }}>ZEVORIX</h1>
+          <h1 className="text-3xl lg:text-4xl font-black mb-2 tracking-[0.15em]" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', textShadow: '0 0 30px rgba(59,130,246,0.5)' }}>ZEVORIK</h1>
           <p className="text-blue-200/80 text-xs lg:text-sm mb-8 leading-relaxed tracking-widest uppercase font-medium">Future of Investing</p>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-2xl p-4 bg-white/10 border border-white/15 text-center">
@@ -311,7 +438,6 @@ function LoginPage() {
               <span className="block text-xs text-blue-200 font-bold">Terjamin</span>
             </div>
           </div>
-          {/* Decorative chart line */}
           <div className="mt-8 mx-auto h-12 w-full max-w-sm rounded-xl overflow-hidden bg-white/8 border border-white/12">
             <svg className="w-full h-full" viewBox="0 0 400 50" preserveAspectRatio="none">
               <defs>
@@ -333,40 +459,44 @@ function LoginPage() {
           {/* Top Navigation - mobile only */}
           <header className="flex items-center justify-between mb-3 md:hidden">
             <div className="flex items-center gap-2.5">
-              <ZevorixLogo size={36} />
+              <ZevorikLogo size={36} />
               <div>
-                <b className="block text-[11px] leading-tight font-black gradient-text tracking-wide">ZEVORIX</b>
+                <b className="block text-[11px] leading-tight font-black gradient-text tracking-wide">ZEVORIK</b>
                 <span className="block text-[7px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
               </div>
             </div>
-            <button
-              onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
-              className="h-8 px-4 rounded-xl bg-[#1d4ed8] text-white text-[10px] font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1"
-            >
-              {isLogin ? <><UserPlus className="w-3 h-3" />Daftar</> : <><LogIn className="w-3 h-3" />Masuk</>}
-            </button>
+            {authMode !== 'pin' && (
+              <button
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                className="h-8 px-4 rounded-xl bg-[#1d4ed8] text-white text-[10px] font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1"
+              >
+                {authMode === 'login' ? <><UserPlus className="w-3 h-3" />Daftar</> : <><LogIn className="w-3 h-3" />Masuk</>}
+              </button>
+            )}
           </header>
 
           {/* Desktop switch button */}
           <div className="hidden md:flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <ZevorixLogo size={36} />
+              <ZevorikLogo size={36} />
               <div>
-                <b className="block text-xs leading-tight font-black gradient-text tracking-wide">ZEVORIX</b>
+                <b className="block text-xs leading-tight font-black gradient-text tracking-wide">ZEVORIK</b>
                 <span className="block text-[9px] font-bold text-[#3b82f6] uppercase tracking-[0.15em]">Pro Platform</span>
               </div>
             </div>
-            <button
-              onClick={() => { setIsLogin(!isLogin); refreshMath(); }}
-              className="h-9 px-5 rounded-xl bg-[#1d4ed8] text-white text-xs font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1.5"
-            >
-              {isLogin ? <><UserPlus className="w-3.5 h-3.5" />Daftar</> : <><LogIn className="w-3.5 h-3.5" />Masuk</>}
-            </button>
+            {authMode !== 'pin' && (
+              <button
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                className="h-9 px-5 rounded-xl bg-[#1d4ed8] text-white text-xs font-bold hover:bg-[#3b82f6] transition-colors flex items-center gap-1.5"
+              >
+                {authMode === 'login' ? <><UserPlus className="w-3.5 h-3.5" />Daftar</> : <><LogIn className="w-3.5 h-3.5" />Masuk</>}
+              </button>
+            )}
           </div>
 
         {/* Main Card */}
         <div className="rounded-3xl bg-white shadow-xl overflow-hidden flex-1 md:flex-none flex flex-col">
-          {/* Green Header Section */}
+          {/* Header Section */}
           <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(145deg, #172554 0%, #1d4ed8 54%, #3b82f6 100%)' }}>
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
@@ -391,68 +521,51 @@ function LoginPage() {
             {/* Center Logo + Text */}
             <div className="relative z-10 flex flex-col items-center px-4 pt-2 pb-3">
               <div className="mb-2 mx-auto">
-                <ZevorixLogo size={56} />
+                <ZevorikLogo size={56} />
               </div>
 
-              {isLogin ? (
+              {authMode === 'pin' ? (
                 <>
-                  <h1 className="text-[18px] font-black text-center leading-tight">Masuk Investor<br />ZEVORIX</h1>
-                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
-                    Akses akun ZEVORIX untuk memantau portofolio, pergerakan saham, aktivitas profit, dan layanan Investor.
-                  </p>
+                  <div className="h-6 px-3 rounded-full bg-green-500/20 border border-green-400/30 flex items-center gap-1.5 mb-2">
+                    <Lock className="w-3 h-3 text-green-300" />
+                    <span className="text-[8px] font-black text-green-300 tracking-wide">VERIFIKASI PIN</span>
+                  </div>
+                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
                 </>
-              ) : (
+              ) : authMode === 'register' ? (
                 <>
                   <div className="h-6 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center gap-1.5 mb-2">
                     <Shield className="w-3 h-3 text-yellow-300" />
                     <span className="text-[8px] font-black text-yellow-300 tracking-wide">REGISTRASI INVESTOR</span>
                   </div>
-                  <h1 className="text-[18px] font-black text-center leading-tight">Daftar ZEVORIX</h1>
-                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">
-                    Buat akun investor untuk akses portofolio, produk aktif, dan program reward ZEVORIX.
-                  </p>
+                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-[18px] font-black text-center leading-tight">{headerText.title}</h1>
+                  <p className="max-w-[280px] mt-1.5 text-[9px] text-center font-medium text-blue-200 leading-relaxed">{headerText.subtitle}</p>
                 </>
               )}
 
               {/* Stat Boxes */}
               <div className="mt-3 grid grid-cols-3 gap-2 w-full">
-                {isLogin ? (
-                  <>
-                    <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
-                      <BarChart3 className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">Market</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Live</span>
-                    </div>
-                    <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
-                      <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">125K++</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Pengguna</span>
-                    </div>
-                    <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
-                      <Briefcase className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">Portofolio</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">Akses</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
-                      <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">PENDUDUKA</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">125K++</span>
-                    </div>
-                    <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
-                      <TrendingUp className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">MARKET</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">+4.18%</span>
-                    </div>
-                    <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
-                      <CheckCircle className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
-                      <b className="block text-[8px] font-black">STATUS</b>
-                      <span className="block text-[7px] text-blue-200 font-bold">OPEN</span>
-                    </div>
-                  </>
-                )}
+                <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
+                  <BarChart3 className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+                  <b className="block text-[8px] font-black">Market</b>
+                  <span className="block text-[7px] text-blue-200 font-bold">Live</span>
+                </div>
+                <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
+                  <Users className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+                  <b className="block text-[8px] font-black">125K++</b>
+                  <span className="block text-[7px] text-blue-200 font-bold">Pengguna</span>
+                </div>
+                <div className="rounded-2xl p-2 bg-white/10 border border-white/15 text-center">
+                  <Shield className="w-4 h-4 text-yellow-300 mx-auto mb-0.5" />
+                  <b className="block text-[8px] font-black">Aman</b>
+                  <span className="block text-[7px] text-blue-200 font-bold">Terjamin</span>
+                </div>
               </div>
             </div>
 
@@ -474,94 +587,130 @@ function LoginPage() {
 
           {/* Form Section */}
           <div className="p-4 flex-1 flex flex-col overflow-y-auto custom-scrollbar">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
-              {/* Register: Account Type Selector */}
-              {!isLogin && (
-                <div>
-                  <label className="flex items-center gap-1.5 mb-2 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
-                    <Shield className="w-3 h-3 text-[#3b82f6]" /> Tipe Akun
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setAccountType('real')}
-                      className={`relative h-[68px] rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${accountType === 'real' ? 'border-[#3b82f6] bg-[#3b82f6]/10 shadow-md shadow-blue-500/10' : 'border-slate-200 bg-slate-50 hover:border-[#3b82f6]/30'}`}>
-                      {accountType === 'real' && <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#3b82f6] grid place-items-center"><CheckCircle className="w-3 h-3 text-white" /></div>}
-                      <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] grid place-items-center">
-                        <DollarSign className="w-4 h-4 text-white" />
-                      </div>
-                      <span className={`text-[9px] font-black ${accountType === 'real' ? 'text-[#3b82f6]' : 'text-slate-600'}`}>AKUN REAL</span>
-                      <span className="text-[7px] font-bold text-slate-400">Deposit & Withdraw</span>
-                    </button>
-                    <button type="button" onClick={() => setAccountType('demo')}
-                      className={`relative h-[68px] rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${accountType === 'demo' ? 'border-amber-500 bg-amber-500/10 shadow-md shadow-amber-500/10' : 'border-slate-200 bg-slate-50 hover:border-amber-500/30'}`}>
-                      {accountType === 'demo' && <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 grid place-items-center"><CheckCircle className="w-3 h-3 text-white" /></div>}
-                      <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 grid place-items-center">
-                        <Sparkles className="w-4 h-4 text-white" />
-                      </div>
-                      <span className={`text-[9px] font-black ${accountType === 'demo' ? 'text-amber-600' : 'text-slate-600'}`}>AKUN DEMO</span>
-                      <span className="text-[7px] font-bold text-slate-400">Saldo Virtual</span>
-                    </button>
-                  </div>
-                  {accountType === 'demo' && (
-                    <div className="mt-2 rounded-xl p-2.5 bg-amber-50 border border-amber-200">
-                      <div className="flex items-start gap-1.5">
-                        <Info className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-[8px] font-bold text-amber-700 leading-relaxed">Akun demo mendapat saldo virtual Rp 100.000.000. Bisa request tambah saldo, namun <b>TIDAK BISA WITHDRAW</b>.</span>
-                      </div>
-                    </div>
-                  )}
-                  {accountType === 'real' && (
-                    <div className="mt-2 rounded-xl p-2.5 bg-blue-50 border border-blue-200">
-                      <div className="flex items-start gap-1.5">
-                        <Shield className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-[8px] font-bold text-blue-700 leading-relaxed">Akun real menggunakan uang asli. Saldo awal Rp 0. Deposit minimal Rp 100.000 via QRIS. Bisa withdraw kapan saja.</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {/* Register: Username */}
-              {!isLogin && (
+            {/* ===== PIN VERIFICATION MODE ===== */}
+            {authMode === 'pin' && (
+              <form onSubmit={handlePinVerify} className="flex flex-col gap-4 flex-1">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Lock className="w-5 h-5 text-[#3b82f6]" />
+                  <span className="text-[11px] font-black text-[#3b82f6] uppercase tracking-widest">Masukkan PIN Keamanan</span>
+                </div>
+                {renderPinInputs(pin, setPin, pinRefs)}
+                <p className="text-center text-[9px] font-semibold text-slate-400">Masukkan 6 digit PIN yang Anda buat saat registrasi</p>
+                <button type="submit" disabled={loading}
+                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                  style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    {loading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <><Shield className="w-4 h-4" />VERIFIKASI PIN</>}
+                  </span>
+                </button>
+                <button type="button" onClick={() => { setAuthMode('login'); setPin(['', '', '', '', '', '']); setTempToken(null); }}
+                  className="text-center text-[10px] font-bold text-slate-500 hover:text-[#3b82f6] transition-colors">
+                  ← Kembali ke Login
+                </button>
+              </form>
+            )}
+
+            {/* ===== LOGIN MODE ===== */}
+            {authMode === 'login' && (
+              <form onSubmit={handleLoginStep1} className="flex flex-col gap-3 flex-1">
+                {/* Email/Phone */}
                 <div>
                   <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
-                    <User className="w-3 h-3 text-[#3b82f6]" /> Username
+                    <Mail className="w-3 h-3 text-[#3b82f6]" /> EMAIL / NOMOR WHATSAPP
                   </label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan username"
+                  <div className="flex items-center h-11 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
+                    <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-slate-200">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="email@contoh.com atau 81234567890"
+                      className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-slate-900 outline-none placeholder:text-gray-400" />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
+                  </label>
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi"
+                      className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button type="submit" disabled={loading}
+                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                  style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    {loading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <>MASUK SEKARANG <ArrowRight className="w-4 h-4" /></>}
+                  </span>
+                </button>
+
+                <p className="text-center text-[10px] font-semibold text-slate-500">
+                  Belum punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => setAuthMode('register')}>Daftar ZEVORIK</span>
+                </p>
+              </form>
+            )}
+
+            {/* ===== REGISTER MODE ===== */}
+            {authMode === 'register' && (
+              <form onSubmit={handleRegister} className="flex flex-col gap-3 flex-1">
+                {/* Nama Lengkap */}
+                <div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <User className="w-3 h-3 text-[#3b82f6]" /> NAMA LENGKAP
+                  </label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama lengkap"
                     className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
                 </div>
-              )}
 
-              {/* NOMOR WHATSAPP */}
-              <div>
-                <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
-                  <Phone className="w-3 h-3 text-[#3b82f6]" /> NOMOR WHATSAPP
-                </label>
-                <div className="flex items-center h-11 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
-                  <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-slate-200">
-                    <span className="text-[11px] font-bold">+62</span>
+                {/* Email */}
+                <div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Mail className="w-3 h-3 text-[#3b82f6]" /> EMAIL
+                  </label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@contoh.com"
+                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Phone className="w-3 h-3 text-[#3b82f6]" /> NOMOR WHATSAPP
+                  </label>
+                  <div className="flex items-center h-11 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden focus-within:border-[#3b82f6] focus-within:ring-1 focus-within:ring-[#3b82f6]/30 transition-all">
+                    <div className="h-full px-3 flex items-center bg-[#1d4ed8] text-white border-r border-slate-200">
+                      <span className="text-[11px] font-bold">+62</span>
+                    </div>
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="81234567890"
+                      className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-slate-900 outline-none placeholder:text-gray-400" />
                   </div>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="81234567890"
-                    className="flex-1 h-full bg-transparent px-3 text-[13px] font-semibold text-slate-900 outline-none placeholder:text-gray-400" />
                 </div>
-              </div>
 
-              {/* KATA SANDI */}
-              <div>
-                <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
-                  <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
-                </label>
-                <div className="relative">
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Masukkan kata sandi"
-                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                {/* Password */}
+                <div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Lock className="w-3 h-3 text-[#3b82f6]" /> KATA SANDI
+                  </label>
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimal 6 karakter"
+                      className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 pr-16 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Register: Konfirmasi Sandi */}
-              {!isLogin && (
+                {/* Confirm Password */}
                 <div>
                   <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
                     <Lock className="w-3 h-3 text-[#3b82f6]" /> KONFIRMASI SANDI
@@ -575,105 +724,47 @@ function LoginPage() {
                     </button>
                   </div>
                 </div>
-              )}
 
-              {/* Register: Kode Referral */}
-              {!isLogin && (
+                {/* PIN */}
                 <div>
-                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
-                    <Gift className="w-3 h-3 text-[#3b82f6]" /> KODE REFERRAL OPSIONAL
+                  <label className="flex items-center gap-1.5 mb-2 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Shield className="w-3 h-3 text-[#3b82f6]" /> PIN KEAMANAN (6 DIGIT)
                   </label>
-                  <input type="text" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="Masukkan kode referral"
-                    className="w-full h-11 rounded-2xl bg-slate-50 border border-slate-200 px-4 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-gray-400 uppercase" />
+                  {renderPinInputs(registerPin, setRegisterPin, registerPinRefs)}
                 </div>
-              )}
 
-              {/* Register: Math Verification */}
-              {!isLogin && (
+                {/* Confirm PIN */}
                 <div>
-                  <label className="flex items-center gap-1.5 mb-1.5 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
-                    <Shield className="w-3 h-3 text-[#3b82f6]" /> Verifikasi Keamanan
+                  <label className="flex items-center gap-1.5 mb-2 text-[9px] font-black text-[#3b82f6] uppercase tracking-widest">
+                    <Shield className="w-3 h-3 text-[#3b82f6]" /> KONFIRMASI PIN
                   </label>
-                  <div className="flex items-center gap-2">
-                    <div className="h-11 px-4 rounded-2xl bg-[#1d4ed8] text-white flex items-center gap-2">
-                      <span className="text-[14px] font-black">{mathA} + {mathB}</span>
-                    </div>
-                    <input type="number" value={mathAnswer} onChange={(e) => setMathAnswer(e.target.value)} placeholder="Jawab"
-                      className="w-20 h-11 rounded-2xl bg-slate-50 border border-slate-200 px-3 text-[13px] font-semibold text-slate-900 outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all text-center placeholder:text-gray-400" />
-                    <button type="button" onClick={refreshMath}
-                      className="h-11 w-11 rounded-2xl bg-slate-50 border border-slate-200 grid place-items-center hover:bg-[#3b82f6] hover:text-white text-[#3b82f6] transition-colors">
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {renderPinInputs(confirmPin, setConfirmPin, confirmPinRefs)}
                 </div>
-              )}
 
-              {/* Login: Remember + Forgot */}
-              {isLogin && (
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded accent-[#3b82f6]" />
-                    <span className="text-[10px] font-semibold text-slate-500">Ingat akun</span>
-                  </label>
-                  <button type="button" className="text-[10px] font-bold text-orange-500 hover:underline">Lupa sandi?</button>
-                </div>
-              )}
-
-              {/* Register: Terms */}
-              {!isLogin && (
+                {/* Terms */}
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)}
                     className="w-4 h-4 rounded accent-[#3b82f6] mt-0.5" />
                   <span className="text-[9px] font-semibold text-slate-500 leading-relaxed">
-                    Saya menyetujui proses pendaftaran dan memahami keamanan akun ZEVORIX.
+                    Saya menyetujui proses pendaftaran dan memahami keamanan akun ZEVORIK.
                   </span>
                 </label>
-              )}
 
-              {/* Submit Button */}
-              <button type="submit" disabled={loading}
-                className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
-                style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
-                <span className="relative z-10 flex items-center gap-2">
-                  {loading ? (
-                    <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
-                  ) : (
-                    <>
-                      {isLogin ? 'MASUK SEKARANG' : 'DAFTAR SEKARANG'}
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </span>
-              </button>
-
-              {/* Switch Login/Register */}
-              <p className="text-center text-[10px] font-semibold text-slate-500">
-                {isLogin ? (
-                  <>Belum punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => { setIsLogin(false); refreshMath(); }}>Daftar ZEVORIX</span></>
-                ) : (
-                  <>Sudah punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => setIsLogin(true)}>Masuk ZEVORIX</span></>
-                )}
-              </p>
-
-              {/* Demo Account Quick Login */}
-              {isLogin && (
-              <div className="rounded-2xl p-3 bg-amber-50 border border-amber-200 flex items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <b className="block text-[10px] font-black text-amber-600">Coba Akun Demo</b>
-                  </div>
-                  <span className="block mt-0.5 text-[8px] font-bold text-amber-400">+62 81234567890 / demo123</span>
-                </div>
-                <button type="button" onClick={() => { setPhone('081234567890'); setPassword('demo123'); setIsLogin(true); }}
-                  className="text-[8px] font-black text-white bg-amber-500 px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors">
-                  Gunakan
+                {/* Submit */}
+                <button type="submit" disabled={loading}
+                  className="w-full h-12 rounded-2xl overflow-hidden relative text-white text-[12px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-70"
+                  style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    {loading ? <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" /> : <>DAFTAR SEKARANG <ArrowRight className="w-4 h-4" /></>}
+                  </span>
                 </button>
-              </div>
-              )}
-            </form>
+
+                <p className="text-center text-[10px] font-semibold text-slate-500">
+                  Sudah punya akun? <span className="text-[#3b82f6] font-black cursor-pointer hover:underline" onClick={() => setAuthMode('login')}>Masuk ZEVORIK</span>
+                </p>
+              </form>
+            )}
           </div>
         </div>
 
@@ -681,7 +772,7 @@ function LoginPage() {
         <div className="mt-3 pb-2">
           <div className="text-center mb-2">
             <b className="block text-[9px] md:text-[10px] font-black text-[#1d4ed8]">Legalitas Perusahaan</b>
-            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-slate-500">Halaman resmi ZEVORIX</span>
+            <span className="block mt-0.5 text-[8px] md:text-[9px] font-semibold text-slate-500">Halaman resmi ZEVORIK</span>
           </div>
           <div className="flex items-center justify-center gap-3 mb-2">
             <Shield className="w-4 h-4 text-[#3b82f6]" />
@@ -756,23 +847,16 @@ function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [indices, setIndices] = useState<MarketIndex[]>([])
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [news, setNews] = useState<NewsItem[]>([])
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
   const [deposits, setDeposits] = useState<DepositItem[]>([])
   const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([])
   const [priceHistory, setPriceHistory] = useState<PriceHistory[]>([])
-  const [bonuses, setBonuses] = useState<BonusItem[]>([])
-  const [promos, setPromos] = useState<PromoItem[]>([])
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+
 
   const [activeTab, setActiveTab] = useState<string>('home')
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [showStockDetail, setShowStockDetail] = useState(false)
-  const [contractModal, setContractModal] = useState(false)
-  const [contractAmount, setContractAmount] = useState('')
-  const [contractDuration, setContractDuration] = useState(30)
-  const [contractLoading, setContractLoading] = useState(false)
-  const [userContracts, setUserContracts] = useState<StockContract[]>([])
+
   const [searchQuery, setSearchQuery] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
@@ -797,36 +881,15 @@ function Dashboard() {
   const [withdrawAccountNumber, setWithdrawAccountNumber] = useState('')
   const [withdrawAccountHolder, setWithdrawAccountHolder] = useState('')
 
-  // ============ DEMO BALANCE REQUEST STATE ============
-  const [demoRequestAmount, setDemoRequestAmount] = useState('')
-  const [demoRequestLoading, setDemoRequestLoading] = useState(false)
-  const isDemo = user?.accountType === 'demo'
 
-  const [promoClaimLoadingId, setPromoClaimLoadingId] = useState<string | null>(null)
-
-  // ============ PROMOSI & BONUS DASHBOARD STATE ============
-  const [promoSubTab, setPromoSubTab] = useState<'daily' | 'promo' | 'video' | 'history'>('daily')
-  const [promoPlatform, setPromoPlatform] = useState<'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'twitter'>('tiktok')
-  const [promoVideoLink, setPromoVideoLink] = useState('')
-  const [promoVideos, setPromoVideos] = useState<{ id: string; platform: string; link: string; views: number; likes: number; bonus: number; status: 'pending' | 'verified' | 'rejected'; submittedAt: string }[]>([])
-  const [promoSubmitLoading, setPromoSubmitLoading] = useState(false)
   const [profileEdit, setProfileEdit] = useState(false)
   const [profileForm, setProfileForm] = useState({ name: '', email: '', bankName: '', bankAccount: '', bankHolder: '' })
-  const [referralInfo, setReferralInfo] = useState({ code: '', totalReferred: 0, totalBonus: 0, referredUsers: [] as { name: string; date: string; bonus: number }[], totalMembers: 0, totalDeposit: 0, totalCommission: 0, pendingCommission: 0, claimedCommission: 0, tiers: [{ level: 1, commissionPercent: 10, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 1, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }], history: [] as { id: string; name: string; date: string; level: number; deposit: number; commission: number; status: string }[] })
-  const [claimLoading, setClaimLoading] = useState(false)
+
   const [copied, setCopied] = useState(false)
   const [txFilter, setTxFilter] = useState('all')
   const [showSideMenu, setShowSideMenu] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
-  const [investProducts, setInvestProducts] = useState<InvestProduct[]>([])
-  const [userInvestments, setUserInvestments] = useState<UserInvestment[]>([])
-  const [investCategory, setInvestCategory] = useState<'starter' | 'growth' | 'premium'>('starter')
-  const [showInvestModal, setShowInvestModal] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<InvestProduct | null>(null)
-  const [investLoading, setInvestLoading] = useState(false)
-  const [claimLoadingId, setClaimLoadingId] = useState<string | null>(null)
-  const [investMovement, setInvestMovement] = useState<Map<string, {change: number; changePercent: number}>>(new Map())
-  const [contractClaimLoadingId, setContractClaimLoadingId] = useState<string | null>(null)
+
   const initialized = useRef(false)
 
   // ============ BANNER CAROUSEL STATE ============
@@ -2162,7 +2225,7 @@ function Dashboard() {
 
   // Live price simulation — REALISTIC stock movement with natural up/down zigzag
   useEffect(() => {
-    if (!selectedStock || (!showStockDetail && !contractModal)) {
+    if (!selectedStock || !showStockDetail) {
       setLiveChartActive(false)
       return
     }
@@ -2246,7 +2309,7 @@ function Dashboard() {
       clearInterval(interval)
       setLiveChartActive(false)
     }
-  }, [selectedStock, showStockDetail, contractModal])
+  }, [selectedStock, showStockDetail])
 
   // ============ SINYAL PRO HELPERS & TIMER ============
   // Stockity-style payout: NAIK profit bigger, TURUN profit smaller
@@ -2731,9 +2794,7 @@ function Dashboard() {
     if (!user) return
     try { const r = await fetch(`/api/notifications?userId=${user.id}`); const d = await r.json(); if (d.notifications) setNotifications(d.notifications) } catch {}
   }, [user])
-  const fetchNews = useCallback(async () => {
-    try { const r = await fetch('/api/news'); const d = await r.json(); if (d.news) setNews(d.news) } catch {}
-  }, [])
+
   const fetchWatchlist = useCallback(async () => {
     if (!user) return
     try { const r = await fetch(`/api/watchlist?userId=${user.id}`); const d = await r.json(); if (d.watchlist) setWatchlist(d.watchlist) } catch {}
@@ -2746,61 +2807,11 @@ function Dashboard() {
     if (!user) return
     try { const r = await fetch(`/api/withdrawal?userId=${user.id}`); const d = await r.json(); if (d.withdrawals) setWithdrawals(d.withdrawals) } catch {}
   }, [user])
-  const fetchReferral = useCallback(async () => {
-    if (!user) return
-    try {
-      const r = await fetch(`/api/referral?userId=${user.id}`)
-      const d = await r.json()
-      setReferralInfo({
-        code: d.referralCode || '',
-        totalReferred: d.totalReferred || 0,
-        totalBonus: d.totalBonus || 0,
-        referredUsers: d.referredUsers || [],
-        totalMembers: d.totalMembers || 0,
-        totalDeposit: d.totalDeposit || 0,
-        totalCommission: d.totalCommission || 0,
-        pendingCommission: d.pendingCommission || 0,
-        claimedCommission: d.claimedCommission || 0,
-        tiers: d.tiers || [{ level: 1, commissionPercent: 10, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 2, commissionPercent: 3, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }, { level: 3, commissionPercent: 1, members: 0, activeMembers: 0, inactiveMembers: 0, deposit: 0, commission: 0 }],
-        history: d.history || [],
-      })
-    } catch {}
-  }, [user])
+
   const fetchPriceHistory = useCallback(async (stockId: string) => {
     try { const r = await fetch(`/api/stocks/${stockId}`); const d = await r.json(); if (d.priceHistory) setPriceHistory(d.priceHistory) } catch {}
   }, [])
-  const fetchBonuses = useCallback(async () => {
-    if (!user) return
-    try { const r = await fetch(`/api/bonus?userId=${user.id}`); const d = await r.json(); if (d.bonuses) setBonuses(d.bonuses) } catch {}
-  }, [user])
-  const fetchPromos = useCallback(async () => {
-    try { const r = await fetch('/api/promo'); const d = await r.json(); if (d.promos) setPromos(d.promos) } catch {}
-  }, [])
-  const fetchLeaderboard = useCallback(async () => {
-    try { const r = await fetch('/api/leaderboard'); const d = await r.json(); if (d.leaderboard) setLeaderboard(d.leaderboard) } catch {}
-  }, [])
-  const fetchInvestProducts = useCallback(async () => {
-    try { const r = await fetch('/api/invest'); const d = await r.json(); if (d.products) setInvestProducts(d.products) } catch {}
-  }, [])
-  const fetchUserInvestments = useCallback(async () => {
-    if (!user) return
-    try { const r = await fetch(`/api/investments?userId=${user.id}`); const d = await r.json(); if (d.investments) setUserInvestments(d.investments) } catch {}
-  }, [user])
 
-  const fetchDailyCheck = useCallback(async () => {
-    if (!user) return
-    try { const r = await fetch(`/api/daily-check?userId=${user.id}`); const d = await r.json(); setDailyCheckStatus({ streak: d.streak, lastCheckDate: d.lastCheckDate, canCheckToday: d.canCheckToday, todayReward: d.todayReward }) } catch {}
-  }, [user])
-
-  const fetchTasks = useCallback(async () => {
-    if (!user) return
-    try { const r = await fetch(`/api/tasks?userId=${user.id}`); const d = await r.json(); if (d.tasks) setTasks(d.tasks) } catch {}
-  }, [user])
-
-  const fetchContracts = useCallback(async () => {
-    if (!user) return
-    try { const r = await fetch(`/api/contracts?userId=${user.id}`); const d = await r.json(); if (d.contracts) setUserContracts(d.contracts) } catch {}
-  }, [user])
 
   const refreshAll = useCallback(async () => {
     setRefreshing(true)
@@ -2813,10 +2824,8 @@ function Dashboard() {
     if (!user) return
     if (!initialized.current) { initialized.current = true }
     fetchStocks(); fetchPortfolio(); fetchTransactions(); fetchIndices()
-    fetchNotifications(); fetchNews(); fetchWatchlist(); fetchDeposits()
-    fetchWithdrawals(); fetchReferral(); fetchBonuses(); fetchPromos(); fetchLeaderboard()
-    fetchInvestProducts(); fetchUserInvestments()
-    fetchDailyCheck(); fetchTasks(); fetchContracts()
+    fetchNotifications(); fetchWatchlist(); fetchDeposits()
+    fetchWithdrawals()
     // Fetch QRIS image from admin settings
     fetch('/api/qris').then(r => r.json()).then(d => { if (d?.url) setQrisImageUrl(d.url) }).catch(() => {})
   }, [user])
@@ -3284,9 +3293,9 @@ function Dashboard() {
             <button onClick={() => setShowSideMenu(true)} className="w-9 h-9 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors">
               <Menu className="w-4 h-4 text-[var(--zv-muted)]" />
             </button>
-            <ZevorixLogo size={36} className="flex-shrink-0" />
+            <ZevorikLogo size={36} className="flex-shrink-0" />
             <div>
-              <b className="block text-[13px] md:text-base font-black gradient-text leading-tight">ZEVORIX</b>
+              <b className="block text-[13px] md:text-base font-black gradient-text leading-tight">ZEVORIK</b>
               <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-[0.2em]">Investment Platform</span>
             </div>
           </div>
@@ -3380,19 +3389,7 @@ function Dashboard() {
                       titleAccent: 'Hingga 7%',
                       desc: 'Kontrak saham premium dengan profit otomatis setiap 00:00 WIB.',
                       btns: [
-                        { label: 'Mulai Investasi', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('investasi'), style: 'primary' as const },
-                      ],
-                      live: false,
-                    },
-                    {
-                      img: '/banner-undang-bonus.png',
-                      overlay: 'linear-gradient(135deg, rgba(12,26,46,0.92) 0%, rgba(124,58,237,0.5) 100%)',
-                      badge: { icon: <UserPlus className="w-4 h-4 text-violet-300" />, text: 'UNDANG TEMAN' },
-                      title: 'Bonus Referral',
-                      titleAccent: 'Tanpa Batas',
-                      desc: 'Undang teman dan dapatkan bonus untuk setiap pendaftaran baru.',
-                      btns: [
-                        { label: 'Undang Sekarang', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('undang'), style: 'primary' as const },
+                        { label: 'Mulai Investasi', icon: <ArrowRight className="w-3 h-3" />, action: () => setActiveTab('market'), style: 'primary' as const },
                       ],
                       live: false,
                     },
@@ -3435,8 +3432,8 @@ function Dashboard() {
                         {/* Zevorix brand on first slide */}
                         {i === 0 && (
                           <div className="flex items-center gap-2 mb-2">
-                            <ZevorixLogo size={28} />
-                            <span className="text-[8px] font-black tracking-[0.2em] uppercase text-blue-300/80">ZEVORIX</span>
+                            <ZevorikLogo size={28} />
+                            <span className="text-[8px] font-black tracking-[0.2em] uppercase text-blue-300/80">ZEVORIK</span>
                           </div>
                         )}
                         <h2 className="text-[17px] md:text-[22px] font-black text-white leading-tight mb-1 drop-shadow-lg">{slide.title}<br /><span className="gradient-text">{slide.titleAccent}</span></h2>
@@ -3626,8 +3623,8 @@ function Dashboard() {
                         <button disabled className="h-10 rounded-xl bg-white/5 border border-white/10 text-white/30 text-[9px] font-bold flex items-center justify-center gap-1 cursor-not-allowed">
                           <Minus className="w-3.5 h-3.5" />Tarik
                         </button>
-                        <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                          <Briefcase className="w-3.5 h-3.5" />Investasi
+                        <button onClick={() => setActiveTab('market')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                          <BarChart3 className="w-3.5 h-3.5" />Pasar
                         </button>
                       </>
                     ) : (
@@ -3638,8 +3635,8 @@ function Dashboard() {
                         <button onClick={() => setActiveTab('finance')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
                           <Minus className="w-3.5 h-3.5" />Tarik
                         </button>
-                        <button onClick={() => setActiveTab('investasi')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
-                          <Briefcase className="w-3.5 h-3.5" />Investasi
+                        <button onClick={() => setActiveTab('market')} className="h-10 rounded-xl bg-white/12 border border-white/20 text-white text-[9px] font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1 backdrop-blur-sm active:scale-[0.97]">
+                          <BarChart3 className="w-3.5 h-3.5" />Pasar
                         </button>
                       </>
                     )}
@@ -3657,8 +3654,8 @@ function Dashboard() {
                   {[
                     { icon: <Target className="w-5 h-5" />, label: 'Trading', desc: 'Real MT5', action: () => setActiveTab('sinyal'), iconBg: 'bg-blue-500/15', iconColor: 'text-blue-400', glow: 'rgba(59,130,246,0.08)' },
                     { icon: <BarChart3 className="w-5 h-5" />, label: 'Pasar', desc: 'Global', action: () => setActiveTab('market'), iconBg: 'bg-cyan-500/15', iconColor: 'text-cyan-400', glow: 'rgba(6,182,212,0.08)' },
-                    { icon: <DollarSign className="w-5 h-5" />, label: 'Investasi', desc: 'Profit 7%', action: () => setActiveTab('investasi'), iconBg: 'bg-amber-500/15', iconColor: 'text-amber-400', glow: 'rgba(245,158,11,0.08)' },
-                    { icon: <UserPlus className="w-5 h-5" />, label: 'Undang', desc: 'Bonus', action: () => setActiveTab('undang'), iconBg: 'bg-violet-500/15', iconColor: 'text-violet-400', glow: 'rgba(139,92,246,0.08)' },
+                    { icon: <Briefcase className="w-5 h-5" />, label: 'Portofolio', desc: 'Saham', action: () => setActiveTab('portfolio'), iconBg: 'bg-amber-500/15', iconColor: 'text-amber-400', glow: 'rgba(245,158,11,0.08)' },
+                    { icon: <CreditCard className="w-5 h-5" />, label: 'Keuangan', desc: 'Deposit', action: () => setActiveTab('finance'), iconBg: 'bg-violet-500/15', iconColor: 'text-violet-400', glow: 'rgba(139,92,246,0.08)' },
                   ].map((a, i) => (
                     <button key={i} onClick={a.action} className="stock-card flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/30 hover:shadow-lg transition-all active:scale-[0.96]" style={{ boxShadow: `0 4px 20px ${a.glow}` }}>
                       <div className={`w-11 h-11 rounded-xl ${a.iconBg} grid place-items-center ${a.iconColor}`}>{a.icon}</div>
@@ -3940,33 +3937,6 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* ══════════ NEWS ══════════ */}
-              {news.length > 0 && (
-                <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-5 relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
-                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #06b6d4, transparent)' }} />
-                  <div className="flex items-center justify-between mb-3.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-5 rounded-full bg-[#06b6d4]" />
-                      <h3 className="text-[12px] font-black gradient-text">Berita Terkini</h3>
-                    </div>
-                    <button onClick={() => setActiveTab('news')} className="text-[8px] font-bold text-[#3b82f6] hover:underline flex items-center gap-0.5">Semua <ChevronRight className="w-3 h-3" /></button>
-                  </div>
-                  <div className="space-y-2.5">
-                    {news.slice(0, 3).map(n => (
-                      <div key={n.id} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] hover:border-[#3b82f6]/20 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/15 grid place-items-center flex-shrink-0 mt-0.5">
-                          <Newspaper className="w-4 h-4 text-cyan-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="block text-[9px] font-bold text-[var(--zv-text)] leading-snug line-clamp-2">{n.title}</span>
-                          <span className="block text-[7px] text-[var(--zv-muted)] mt-1">{formatDate(n.createdAt)} • <span className="text-cyan-500">{n.category}</span></span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* ══════════ TRUST BADGES ══════════ */}
               <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] relative" style={{ boxShadow: '0 4px 20px rgba(37,99,235,0.1)' }}>
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4, #22c55e, #f59e0b)' }} />
@@ -3985,7 +3955,7 @@ function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <p className="text-center text-[7px] font-black text-[var(--zv-muted)] tracking-wider uppercase">ZEVORIX • Aset Saham Terdaftar & Diawasi • V2.0</p>
+                <p className="text-center text-[7px] font-black text-[var(--zv-muted)] tracking-wider uppercase">ZEVORIK • Aset Saham Terdaftar & Diawasi • V2.0</p>
               </div>
 
             </motion.div>
@@ -4389,332 +4359,7 @@ function Dashboard() {
                 )}
               </div>
 
-              {/* Active Stock Contracts */}
-              {userContracts.filter(c => c.status === 'active').length > 0 && (
-                <>
-                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Kontrak Saham Aktif</h3>
-                  <div className="space-y-2">
-                    {userContracts.filter(c => c.status === 'active').map(c => {
-                      const progress = Math.round((c.daysElapsed / c.duration) * 100)
-                      const canClaim = (() => {
-                        if (!c.lastClaimAt) return true
-                        const now = new Date()
-                        const jakartaOffset = 7 * 60 * 60 * 1000
-                        const jakartaNow = new Date(now.getTime() + jakartaOffset)
-                        const todayStr = `${jakartaNow.getFullYear()}-${jakartaNow.getMonth()}-${jakartaNow.getDate()}`
-                        const lastClaimJakarta = new Date(new Date(c.lastClaimAt).getTime() + jakartaOffset)
-                        const lastClaimStr = `${lastClaimJakarta.getFullYear()}-${lastClaimJakarta.getMonth()}-${lastClaimJakarta.getDate()}`
-                        return todayStr !== lastClaimStr
-                      })()
-                      return (
-                        <div key={c.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
-                                <Package className="w-4 h-4 text-[#3b82f6]" />
-                              </div>
-                              <div>
-                                <span className="block text-[10px] md:text-xs font-black text-[var(--zv-text)]">{c.stockCode}</span>
-                                <span className="block text-[7px] text-[var(--zv-muted)]">{c.duration} hari • {c.dailyProfitRate}%/hari</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{formatRupiah(c.amount)}</span>
-                              <span className="block text-[8px] font-bold text-[#22c55e]">+{formatRupiah(c.dailyProfitAmount)}/hari</span>
-                            </div>
-                          </div>
-                          {/* Progress */}
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Hari {c.daysElapsed}/{c.duration}</span>
-                              <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                              <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[7px] text-[var(--zv-muted)]">Diklaim: {formatRupiah(c.totalClaimed)} / {formatRupiah(c.totalProfit)}</span>
-                            <button onClick={() => handleContractClaim(c.id)} disabled={!canClaim || contractClaimLoadingId === c.id}
-                              className={`h-7 px-3 rounded-lg text-[8px] font-bold transition-all ${canClaim ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-sm shadow-blue-500/20' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)] cursor-not-allowed'}`}>
-                              {contractClaimLoadingId === c.id ? '...' : canClaim ? 'Klaim Profit' : '00:00 WIB'}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1 mt-1.5">
-                            <Clock className="w-2.5 h-2.5 text-[#3b82f6]" />
-                            <span className="text-[7px] text-[#3b82f6]">Profit masuk 00:00 WIB</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
 
-              {/* Active Investments in Portfolio */}
-              {userInvestments.filter(i => i.status === 'active').length > 0 && (
-                <>
-                  <h3 className="text-[11px] md:text-sm font-black text-[#3b82f6] mt-4 mb-2">Investasi Aktif</h3>
-                  <div className="space-y-2">
-                    {userInvestments.filter(i => i.status === 'active').map(inv => {
-                      const progress = Math.round((inv.daysElapsed / inv.duration) * 100)
-                      return (
-                        <div key={inv.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
-                                <DollarSign className="w-4 h-4 text-[#3b82f6]" />
-                              </div>
-                              <div>
-                                <span className="block text-[10px] font-black text-[var(--zv-text)]">{inv.product.name}</span>
-                                <span className="block text-[7px] text-[var(--zv-muted)]">{formatRupiah(inv.amount)} • {inv.product.category === 'starter' ? 'Starter' : inv.product.category === 'growth' ? 'Growth' : 'Premium'}</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="block text-[9px] font-black text-[#3b82f6]">+{formatRupiah(inv.dailyProfit)}/hari</span>
-                              <span className="block text-[7px] text-[var(--zv-muted)]">{inv.daysElapsed}/{inv.duration} hari</span>
-                            </div>
-                          </div>
-                          <div className="w-full h-1.5 rounded-full bg-[var(--zv-surface)] overflow-hidden mb-1">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }} />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[7px] font-bold text-[var(--zv-muted)]">{formatRupiah(inv.totalClaimed)} diklaim</span>
-                            <span className="text-[7px] font-bold text-[#3b82f6]">{progress}%</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {activeTab === 'investasi' && (
-            <motion.div key="investasi" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Investasi & Saham Section */}
-              {indices.length > 0 && (
-                <div className="rounded-2xl overflow-hidden mb-4 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                  <div className="p-3 md:p-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-yellow-300" />
-                        <span className="text-[11px] md:text-sm font-black text-white">Investasi & Saham</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-red-500/25 border border-red-400/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                        <span className="text-[8px] font-black text-red-300">LIVE</span>
-                      </div>
-                    </div>
-                    {(() => {
-                      const ihsgIdx = indices.find(idx => idx.code === 'IHSG') || indices[0]
-                      if (!ihsgIdx || ihsgChartData.length < 2) return null
-                      const isIhsgUp = ihsgIdx.changePercent >= 0
-                      const ihsgPrices = ihsgChartData.map(p => p.value)
-                      const ihsgMin = Math.min(...ihsgPrices)
-                      const ihsgMax = Math.max(...ihsgPrices)
-                      const ihsgRange = ihsgMax - ihsgMin || 1
-                      const ihsgDomain: [number, number] = [Math.floor(ihsgMin - ihsgRange * 0.1), Math.ceil(ihsgMax + ihsgRange * 0.1)]
-                      const lastIhsgVal = ihsgChartData[ihsgChartData.length - 1].value
-                      const ihsgStroke = isIhsgUp ? '#4ade80' : '#f87171'
-                      return (
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg md:text-xl font-black text-white tabular-nums">{formatNumber(lastIhsgVal)}</span>
-                            <span className={`text-[10px] md:text-xs font-bold ${isIhsgUp ? 'text-blue-300' : 'text-red-300'}`}>
-                              {isIhsgUp ? <TrendingUp className="w-3 h-3 inline" /> : <TrendingDown className="w-3 h-3 inline" />}
-                              {' '}{formatPercent(ihsgIdx.changePercent)}
-                            </span>
-                          </div>
-                          <div className="h-20 md:h-24">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={ihsgChartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                                <defs>
-                                  <linearGradient id="ihsgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={ihsgStroke} stopOpacity="0.45" />
-                                    <stop offset="50%" stopColor={ihsgStroke} stopOpacity="0.1" />
-                                    <stop offset="100%" stopColor={ihsgStroke} stopOpacity="0" />
-                                  </linearGradient>
-                                </defs>
-                                <XAxis dataKey="idx" hide />
-                                <YAxis hide domain={ihsgDomain} />
-                                <ReferenceLine y={lastIhsgVal} stroke={ihsgStroke} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                <Tooltip formatter={(value: number) => [formatNumber(value), 'IHSG']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #bbf7d0', background: '#f0fdf4' }} />
-                                <Area type="monotone" dataKey="value" stroke={ihsgStroke} fill="url(#ihsgGrad)" strokeWidth={2}
-                                  dot={(props: Record<string, unknown>) => {
-                                    const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                    if (index !== ihsgChartData.length - 1) return <g key={String(index)} />
-                                    return (
-                                      <g key="live-dot-ihsg">
-                                        <circle cx={cx} cy={cy} r={8} fill={ihsgStroke} opacity={0.2}>
-                                          <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
-                                        </circle>
-                                        <circle cx={cx} cy={cy} r={4} fill={ihsgStroke} stroke="#fff" strokeWidth={1.5} />
-                                      </g>
-                                    )
-                                  }}
-                                  activeDot={false}
-                                  isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                  {/* Quick Stats */}
-                  <div className="grid grid-cols-3 gap-2 p-3">
-                    {(() => {
-                      const gainer = topGainers[0]
-                      const loser = topLosers[0]
-                      const mostActive = stocks.length > 0 ? [...stocks].sort((a, b) => b.volume - a.volume)[0] : null
-                      return (
-                        <>
-                          <div className="p-2.5 text-center rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                            <span className="block text-[8px] md:text-[9px] font-bold text-[#3b82f6] mb-0.5">🔺 Top Gainer</span>
-                            <span className="block text-[11px] md:text-sm font-black text-[var(--zv-text)]">{gainer?.code || '-'}</span>
-                            <span className="block text-[9px] md:text-[10px] font-bold text-[#22c55e]">{gainer ? `+${gainer.changePercent.toFixed(2)}%` : '-'}</span>
-                          </div>
-                          <div className="p-2.5 text-center rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                            <span className="block text-[8px] md:text-[9px] font-bold text-[#ef5350] mb-0.5">🔻 Top Loser</span>
-                            <span className="block text-[11px] md:text-sm font-black text-[var(--zv-text)]">{loser?.code || '-'}</span>
-                            <span className="block text-[9px] md:text-[10px] font-bold text-[#ef5350]">{loser ? `${loser.changePercent.toFixed(2)}%` : '-'}</span>
-                          </div>
-                          <div className="p-2.5 text-center rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)]">
-                            <span className="block text-[8px] md:text-[9px] font-bold text-[#f59e0b] mb-0.5">⚡ Most Active</span>
-                            <span className="block text-[11px] md:text-sm font-black text-[var(--zv-text)]">{mostActive?.code || '-'}</span>
-                            <span className="block text-[9px] md:text-[10px] font-bold text-[var(--zv-muted)]">{mostActive ? formatNumber(mostActive.volume) : '-'}</span>
-                          </div>
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Search */}
-              <div className="relative mb-3">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--zv-muted)]" />
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari saham..."
-                  className="w-full h-11 rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-10 pr-4 text-[12px] md:text-sm font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 transition-all placeholder:text-[var(--zv-muted)]" />
-              </div>
-
-              {/* Category Filter */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-3 custom-scrollbar">
-                {categories.map(c => (
-                  <button key={c.key} onClick={() => setStockFilter(c.key)}
-                    className={`flex-shrink-0 h-8 md:h-9 px-4 md:px-5 rounded-xl text-[10px] md:text-[11px] font-bold transition-all ${stockFilter === c.key ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:bg-[var(--zv-border)] hover:border-[var(--zv-border)] hover:text-[#3b82f6]'}`}>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Stock List - Multi Column Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                {filteredStocks.map(s => {
-                  // Use memoized sparkline data to prevent jitter on re-renders
-                  const sparkData = getSparklineData(s)
-                  const isUp = s.changePercent >= 0
-                  const sparkColor = isUp ? '#2563eb' : '#ef4444'
-                  const maxVol = Math.max(...stocks.map(st => st.volume), 1)
-                  const volPercent = Math.round((s.volume / maxVol) * 100)
-
-                  return (
-                    <div key={s.id} className={`stock-card rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden hover:border-[#3b82f6]/30 hover:shadow-lg hover:shadow-blue-500/5 transition-all`}>
-                      <div className="p-3 md:p-4">
-                        <div className="flex items-center justify-between mb-2.5">
-                          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => openStockDetail(s)}>
-                            <div className="flex-shrink-0">{getRealLogo(s.code, 40)}</div>
-                            <div>
-                              <span className="block text-[11px] md:text-xs font-black text-[var(--zv-text)]">{s.code}</span>
-                              <span className="block text-[8px] md:text-[9px] text-[var(--zv-muted)] max-w-[100px] md:max-w-[140px] truncate">{s.name}</span>
-                            </div>
-                          </div>
-                          <button onClick={() => toggleWatchlist(s.id)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] transition-colors">
-                            <Star className={`w-4 h-4 ${isWatched(s.id) ? 'text-[#f59e0b] fill-[#f59e0b]' : 'text-[var(--zv-border)]'}`} />
-                          </button>
-                        </div>
-
-                        {/* Recharts Mini AreaChart */}
-                        <div className="h-[50px] md:h-[60px] -mx-1 mb-2.5">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={sparkData} margin={{ top: 2, right: 8, bottom: 2, left: 2 }}>
-                              <defs>
-                                <linearGradient id={`sparkGrad-${s.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                  <stop offset="0%" stopColor={sparkColor} stopOpacity="0.3" />
-                                  <stop offset="70%" stopColor={sparkColor} stopOpacity="0.05" />
-                                  <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
-                                </linearGradient>
-                              </defs>
-                              <XAxis dataKey="i" hide />
-                              <YAxis hide domain={computeYDomain(sparkData.map(d => ({price: d.p})), 0.1)} />
-                              <Area type="monotone" dataKey="p" stroke={sparkColor} fill={`url(#sparkGrad-${s.id})`} strokeWidth={1.5}
-                                dot={(props: Record<string, unknown>) => {
-                                  const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                  if (index !== sparkData.length - 1) return <g key={String(index)} />
-                                  return (
-                                    <g key={`dot-${s.id}`}>
-                                      <circle cx={cx} cy={cy} r={5} fill={sparkColor} opacity={0.2}>
-                                        <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-                                        <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
-                                      </circle>
-                                      <circle cx={cx} cy={cy} r={3} fill={sparkColor} stroke="#fff" strokeWidth={1} />
-                                    </g>
-                                  )
-                                }}
-                                activeDot={false} />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-
-                        <div className="flex items-end justify-between">
-                          <div>
-                            <span className="block text-[14px] md:text-base font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(s.price)}</span>
-                            <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-lg ${isUp ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
-                              {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
-                              <span className={`text-[10px] md:text-[11px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(s.changePercent)}</span>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <button onClick={() => openContract(s)} className="h-10 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-white text-[11px] md:text-[12px] font-black hover:from-amber-400 hover:to-amber-300 transition-all flex items-center gap-2 shadow-md shadow-amber-500/20">
-                              <Package className="w-4 h-4" />Kontrak
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Contract Info - Footer */}
-                      <div className="px-3 md:px-4 py-2.5 bg-[var(--zv-surface)] border-t border-[var(--zv-border)] grid grid-cols-3 gap-2">
-                        <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">High</span>
-                          <span className="block text-[9px] md:text-[10px] font-black text-[#22c55e]">{formatNumber(s.high)}</span>
-                        </div>
-                        <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Low</span>
-                          <span className="block text-[9px] md:text-[10px] font-black text-[#ef5350]">{formatNumber(s.low)}</span>
-                        </div>
-                        <div>
-                          <span className="block text-[7px] md:text-[8px] font-bold text-[var(--zv-muted)]">Vol</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[8px] md:text-[9px] font-bold text-[var(--zv-text)]">{formatNumber(s.volume)}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-[var(--zv-border)] overflow-hidden">
-                              <div className={`h-full rounded-full ${isUp ? 'bg-[#22c55e]' : 'bg-[#ef5350]'}`} style={{ width: `${volPercent}%` }} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-                {filteredStocks.length === 0 && (
-                  <div className="col-span-full text-center py-8">
-                    <BarChart3 className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                    <p className="text-[11px] md:text-sm font-bold text-[var(--zv-muted)]">Tidak ada saham ditemukan</p>
-                  </div>
-                )}
-              </div>
             </motion.div>
           )}
 
@@ -6415,7 +6060,7 @@ function Dashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Wallet className="w-4 h-4 text-blue-400" />
-                      <span className="text-[10px] font-black text-blue-300/80 uppercase tracking-widest">ZEVORIX Terminal</span>
+                      <span className="text-[10px] font-black text-blue-300/80 uppercase tracking-widest">ZEVORIK Terminal</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {activePos.length > 0 && (
@@ -7643,1016 +7288,6 @@ function Dashboard() {
             </motion.div>
           )}
 
-          {/* ====== UNDANG (REFERRAL) TAB ====== */}
-          {activeTab === 'undang' && (
-            <motion.div key="undang" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-[16px] md:text-xl font-black text-[#3b82f6]">Program Referral</h2>
-                  </div>
-                  <span className="text-[9px] font-black text-[#f59e0b] tracking-widest uppercase">Komisi Hingga 14%</span>
-                  <p className="text-[8px] font-semibold text-[var(--zv-muted)] mt-0.5">Ajak Teman, Tumbuh Bersama</p>
-                </div>
-                <div className="w-10 h-10 rounded-2xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 grid place-items-center">
-                  <UserPlus className="w-5 h-5 text-[#3b82f6]" />
-                </div>
-              </div>
-
-              {/* ====== JARINGAN REFERRAL (TREE/SUN VISUAL) ====== */}
-              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4 overflow-hidden">
-                <div className="p-3 md:p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 grid place-items-center">
-                      <Zap className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-[12px] md:text-[14px] font-black text-[#3b82f6]">Jaringan Referral</h3>
-                      <span className="text-[7px] font-bold text-[#f59e0b] tracking-widest uppercase">Makin Banyak, Makin Luas!</span>
-                    </div>
-                  </div>
-
-                  {/* Sun/Tree Network SVG Visualization */}
-                  <div className="rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] p-3 mb-3 overflow-x-auto">
-                    <svg viewBox="0 0 340 220" className="w-full min-w-[300px]" style={{ maxHeight: 220 }}>
-                      <defs>
-                        <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#2563eb" />
-                          <stop offset="100%" stopColor="#1e3a5f" />
-                        </radialGradient>
-                        <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-                        </radialGradient>
-                        <filter id="glow">
-                          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                          <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                      </defs>
-
-                      {/* Sun glow background */}
-                      <circle cx="170" cy="110" r="100" fill="url(#sunGlow)" />
-
-                      {/* Level 3 lines (outermost, faintest) */}
-                      {(() => {
-                        const l2Positions = [
-                          { x: 56, y: 55 }, { x: 284, y: 55 }, { x: 56, y: 165 }, { x: 284, y: 165 },
-                          { x: 40, y: 110 }, { x: 300, y: 110 },
-                        ]
-                        const lines: React.ReactNode[] = []
-                        l2Positions.forEach((p, pi) => {
-                          const angle1 = Math.PI * 0.3 + (pi * 0.2)
-                          const angle2 = Math.PI * 0.3 + ((pi + 1) * 0.2)
-                          lines.push(
-                            <line key={`l3-${pi}-a`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle1) * 28} y2={p.y + Math.sin(angle1) * 28} stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.25" />,
-                            <circle key={`l3-${pi}-a-c`} cx={p.x + Math.cos(angle1) * 28} cy={p.y + Math.sin(angle1) * 28} r="4" fill="#f59e0b" fillOpacity="0.3" />,
-                          )
-                          if (pi % 2 === 0) {
-                            lines.push(
-                              <line key={`l3-${pi}-b`} x1={p.x} y1={p.y} x2={p.x + Math.cos(angle2) * 25} y2={p.y + Math.sin(angle2) * 25} stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.2" />,
-                              <circle key={`l3-${pi}-b-c`} cx={p.x + Math.cos(angle2) * 25} cy={p.y + Math.sin(angle2) * 25} r="3" fill="#f59e0b" fillOpacity="0.2" />,
-                            )
-                          }
-                        })
-                        return lines
-                      })()}
-
-                      {/* Level 2 lines (middle layer) */}
-                      {[
-                        { fx: 170, fy: 110, tx: 56, ty: 55, color: '#f97316' },
-                        { fx: 170, fy: 110, tx: 284, ty: 55, color: '#f97316' },
-                        { fx: 170, fy: 110, tx: 40, ty: 110, color: '#f97316' },
-                        { fx: 170, fy: 110, tx: 300, ty: 110, color: '#f97316' },
-                        { fx: 170, fy: 110, tx: 56, ty: 165, color: '#f97316' },
-                        { fx: 170, fy: 110, tx: 284, ty: 165, color: '#f97316' },
-                      ].map((l, i) => (
-                        <line key={`l2-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke={l.color} strokeWidth="1.5" strokeOpacity="0.35" strokeDasharray="4 3" />
-                      ))}
-
-                      {/* Level 1 lines (direct referrals, brightest) */}
-                      {[
-                        { fx: 170, fy: 110, tx: 90, ty: 40 },
-                        { fx: 170, fy: 110, tx: 170, ty: 25 },
-                        { fx: 170, fy: 110, tx: 250, ty: 40 },
-                        { fx: 170, fy: 110, tx: 75, ty: 110 },
-                        { fx: 170, fy: 110, tx: 265, ty: 110 },
-                        { fx: 170, fy: 110, tx: 90, ty: 180 },
-                        { fx: 170, fy: 110, tx: 170, ty: 195 },
-                        { fx: 170, fy: 110, tx: 250, ty: 180 },
-                      ].map((l, i) => (
-                        <line key={`l1-${i}`} x1={l.fx} y1={l.fy} x2={l.tx} y2={l.ty} stroke="#2563eb" strokeWidth="2" strokeOpacity="0.6" />
-                      ))}
-
-                      {/* Level 2 nodes (orange) */}
-                      {[
-                        { x: 56, y: 55, label: 'L2' }, { x: 284, y: 55, label: 'L2' },
-                        { x: 40, y: 110, label: 'L2' }, { x: 300, y: 110, label: 'L2' },
-                        { x: 56, y: 165, label: 'L2' }, { x: 284, y: 165, label: 'L2' },
-                      ].map((n, i) => (
-                        <g key={`n2-${i}`}>
-                          <circle cx={n.x} cy={n.y} r="10" fill="#f97316" fillOpacity="0.7" filter="url(#glow)" />
-                          <text x={n.x} y={n.y + 3} textAnchor="middle" fontSize="6" fontWeight="bold" fill="white">{n.label}</text>
-                        </g>
-                      ))}
-
-                      {/* Level 1 nodes (green, direct referrals) */}
-                      {[
-                        { x: 90, y: 40, label: '1' }, { x: 170, y: 25, label: '2' }, { x: 250, y: 40, label: '3' },
-                        { x: 75, y: 110, label: '4' }, { x: 265, y: 110, label: '5' },
-                        { x: 90, y: 180, label: '6' }, { x: 170, y: 195, label: '7' }, { x: 250, y: 180, label: '8' },
-                      ].map((n, i) => (
-                        <g key={`n1-${i}`}>
-                          <circle cx={n.x} cy={n.y} r="13" fill="#2563eb" fillOpacity="0.85" filter="url(#glow)" />
-                          <text x={n.x} y={n.y + 3.5} textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">{n.label}</text>
-                        </g>
-                      ))}
-
-                      {/* Center node (YOU) */}
-                      <circle cx="170" cy="110" r="28" fill="url(#centerGrad)" filter="url(#glow)" />
-                      <circle cx="170" cy="110" r="28" fill="none" stroke="#f59e0b" strokeWidth="2" strokeOpacity="0.6" />
-                      <text x="170" y="107" textAnchor="middle" fontSize="8" fontWeight="bold" fill="white">ANDA</text>
-                      <text x="170" y="117" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#f59e0b">CENTER</text>
-
-                      {/* Animated pulse on center */}
-                      <circle cx="170" cy="110" r="28" fill="none" stroke="#2563eb" strokeWidth="2">
-                        <animate attributeName="r" from="28" to="42" dur="2s" repeatCount="indefinite" />
-                        <animate attributeName="stroke-opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
-                      </circle>
-                    </svg>
-                  </div>
-
-                  {/* Network Stats */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
-                      <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                        <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 1</span>
-                      </div>
-                      <b className="block text-[14px] font-black text-[#3b82f6]">{referralInfo.tiers[0]?.activeMembers + referralInfo.tiers[0]?.inactiveMembers || 0}</b>
-                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Langsung</span>
-                    </div>
-                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
-                      <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                        <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 2</span>
-                      </div>
-                      <b className="block text-[14px] font-black text-[#ff9800]">{referralInfo.tiers[1]?.activeMembers + referralInfo.tiers[1]?.inactiveMembers || 0}</b>
-                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Cabang</span>
-                    </div>
-                    <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] text-center">
-                      <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                        <span className="text-[7px] font-black text-[var(--zv-muted)]">LEVEL 3</span>
-                      </div>
-                      <b className="block text-[14px] font-black text-[#f59e0b]">{referralInfo.tiers[2]?.activeMembers + referralInfo.tiers[2]?.inactiveMembers || 0}</b>
-                      <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Akar</span>
-                    </div>
-                  </div>
-
-                  {/* Expand hint */}
-                  <div className="mt-2 text-center">
-                    <span className="text-[7px] font-bold text-[var(--zv-muted)]">💡 Semakin banyak yang Anda undang, jaringan makin luas seperti akar pohon!</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Hero Card */}
-              <div className="rounded-3xl overflow-hidden mb-4 relative" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                <div className="relative p-4 md:p-6 text-white text-center">
-                  {/* Badge */}
-                  <div className="inline-flex items-center gap-1.5 h-6 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 mb-3">
-                    <Zap className="w-3 h-3 text-yellow-300" />
-                    <span className="text-[8px] font-black text-yellow-300 tracking-wide">PROGRAM REFERRAL</span>
-                  </div>
-
-                  {/* Commission highlight */}
-                  <div className="mb-2">
-                    <span className="text-[28px] md:text-[36px] font-black text-yellow-300 drop-shadow-lg">14%</span>
-                    <span className="block text-[9px] font-bold text-blue-200 mt-0.5">Komisi Hingga</span>
-                  </div>
-
-                  <h3 className="text-[14px] md:text-[16px] font-black mb-1">Ajak Teman, Tumbuh Bersama</h3>
-                  <p className="text-[9px] md:text-[10px] text-blue-200 leading-relaxed max-w-[300px] mx-auto mb-4">
-                    Dapatkan komisi dari setiap teman yang berinvestasi melalui tautan referral Anda.
-                  </p>
-
-                  {/* Total Commission */}
-                  <div className="rounded-2xl p-3 bg-white/10 border border-white/15">
-                    <span className="block text-[8px] font-bold text-blue-200 mb-1">TOTAL KOMISI DIPEROLEH</span>
-                    <b className="text-[20px] md:text-[24px] font-black text-yellow-300">{formatRupiah(referralInfo.totalCommission)}</b>
-                    {referralInfo.pendingCommission > 0 && (
-                      <div className="mt-1 flex items-center justify-center gap-2">
-                        <span className="text-[8px] text-blue-200">Pending: {formatRupiah(referralInfo.pendingCommission)}</span>
-                        <button
-                          onClick={async () => {
-                            if (claimLoading) return
-                            setClaimLoading(true)
-                            try {
-                              const res = await fetch('/api/referral/claim', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ userId: user?.id }),
-                              })
-                              const data = await res.json()
-                              if (!res.ok) throw new Error(data.error)
-                              toast({ title: 'Komisi Diklaim!', description: `${formatRupiah(data.claimedAmount)} telah ditambahkan ke saldo Anda` })
-                              fetchReferral()
-                              if (updateBalance) updateBalance(data.newBalance)
-                            } catch (err: unknown) {
-                              toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Gagal mengklaim komisi', variant: 'destructive' })
-                            } finally {
-                              setClaimLoading(false)
-                            }
-                          }}
-                          disabled={claimLoading}
-                          className="h-6 px-3 rounded-lg bg-yellow-500 text-[var(--zv-text)] text-[8px] font-black inline-flex items-center gap-1 hover:bg-yellow-400 transition-colors disabled:opacity-50"
-                        >
-                          {claimLoading ? <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <><DollarSign className="w-3 h-3" />Klaim</>}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Referral Code & Link */}
-              <div className="rounded-2xl p-4 bg-[var(--zv-panel)] border border-[var(--zv-border)] mb-4">
-                <span className="block text-[9px] font-black text-[#3b82f6] mb-2">Kode Referral Anda</span>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-4 flex items-center">
-                    <b className="text-[18px] font-black tracking-[0.2em] text-[#3b82f6]">{referralInfo.code || user?.referralCode || 'GSXXXX'}</b>
-                  </div>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: 'Kode disalin!' }) }}
-                    className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-white grid place-items-center hover:from-blue-500 hover:to-blue-400 transition-all shadow-md shadow-blue-500/20"
-                  >
-                    {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
-
-                <div className="flex gap-2 mb-3">
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(referralInfo.code || user?.referralCode || ''); toast({ title: 'Kode disalin!' }) }}
-                    className="flex-1 h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[#3b82f6] text-[10px] font-bold hover:bg-[var(--zv-surface)] transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Copy className="w-3.5 h-3.5" />Salin
-                  </button>
-                  <button
-                    onClick={() => {
-                      const shareText = `Gabung ZEVORIX dan mulai investasi! Daftar melalui tautan saya: https://globalsaham.com/register/${referralInfo.code || user?.referralCode || ''}`
-                      if (navigator.share) {
-                        navigator.share({ title: 'ZEVORIX - Undang Teman', text: shareText }).catch(() => {})
-                      } else {
-                        navigator.clipboard.writeText(shareText)
-                        toast({ title: 'Link disalin!' })
-                      }
-                    }}
-                    className="flex-1 h-10 rounded-xl bg-yellow-500 text-[var(--zv-text)] text-[10px] font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />Bagikan
-                  </button>
-                </div>
-
-                <span className="block text-[9px] font-black text-[var(--zv-muted)] mb-1">Tautan Referral</span>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-9 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 flex items-center overflow-hidden">
-                    <span className="text-[9px] font-semibold text-[var(--zv-text)] truncate">https://globalsaham.com/register/{referralInfo.code || user?.referralCode || 'GSXXXX'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Cards */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
-                  <Users className="w-5 h-5 text-[#3b82f6] mx-auto mb-1" />
-                  <b className="block text-[14px] font-black text-[#3b82f6]">{referralInfo.totalMembers}</b>
-                  <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Anggota</span>
-                </div>
-                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
-                  <Wallet className="w-5 h-5 text-[#f59e0b] mx-auto mb-1" />
-                  <b className="block text-[12px] font-black text-[#f59e0b]">{formatRupiah(referralInfo.totalDeposit)}</b>
-                  <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Deposit</span>
-                </div>
-                <div className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] text-center">
-                  <DollarSign className="w-5 h-5 text-[#3b82f6] mx-auto mb-1" />
-                  <b className="block text-[12px] font-black text-[#3b82f6]">{formatRupiah(referralInfo.totalCommission)}</b>
-                  <span className="block text-[8px] font-bold text-[var(--zv-muted)]">Komisi</span>
-                </div>
-              </div>
-
-              {/* Tier Commission System with Gem Badges */}
-              <h3 className="text-[12px] font-black text-[#3b82f6] mb-3">Sistem Komisi Tier</h3>
-              <div className="space-y-2 mb-4">
-                {referralInfo.tiers.map((tier) => {
-                  const tierColors = [
-                    { bg: 'bg-blue-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💎', border: 'border-[var(--zv-border)]' },
-                    { bg: 'bg-orange-500', text: 'text-[#ff9800]', light: 'bg-[var(--zv-surface)]', gem: '🔥', border: 'border-[var(--zv-border)]' },
-                    { bg: 'bg-blue-500', text: 'text-[#3b82f6]', light: 'bg-[var(--zv-surface)]', gem: '💚', border: 'border-[var(--zv-border)]' },
-                  ]
-                  const tc = tierColors[tier.level - 1] || tierColors[0]
-                  return (
-                    <div key={tier.level} className={`rounded-2xl p-3 bg-[var(--zv-panel)] border ${tc.border} shadow-sm`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-9 h-9 rounded-lg ${tc.bg} grid place-items-center text-white shadow-sm`}>
-                            <Gem className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <span className="block text-[10px] font-black text-[var(--zv-text)]">Level {tier.level}</span>
-                            <span className="block text-[7px] text-[var(--zv-muted)]">
-                              {tier.level === 1 ? 'Referral langsung' : tier.level === 2 ? 'Referral dari referral Anda' : 'Referral level ketiga'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className={`text-[18px] font-black ${tc.text}`}>
-                            {tier.commissionPercent}%
-                          </span>
-                          <span className="block text-[7px] font-bold text-[var(--zv-muted)]">Komisi</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
-                          <b className="block text-[11px] font-black text-[var(--zv-text)]">{tier.activeMembers + tier.inactiveMembers}</b>
-                          <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Anggota</span>
-                        </div>
-                        <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
-                          <b className="block text-[9px] font-black text-[var(--zv-text)]">{tier.activeMembers}/{tier.inactiveMembers}</b>
-                          <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Aktif/Nonaktif</span>
-                        </div>
-                        <div className={`rounded-lg p-1.5 ${tc.light} text-center`}>
-                          <b className="block text-[9px] font-black text-[#f59e0b]">{formatRupiah(tier.deposit)}</b>
-                          <span className="block text-[6px] font-bold text-[var(--zv-muted)]">Deposit</span>
-                        </div>
-                      </div>
-                      {tier.commission > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[var(--zv-border)] flex items-center justify-between">
-                          <span className="text-[8px] font-bold text-[var(--zv-muted)]">Komisi Level {tier.level}</span>
-                          <span className="text-[10px] font-black text-[#3b82f6]">+{formatRupiah(tier.commission)}</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Referral History */}
-              <h3 className="text-[12px] font-black text-[#3b82f6] mb-3">Riwayat Komisi</h3>
-              <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] overflow-hidden">
-                {referralInfo.history.length > 0 ? (
-                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
-                    {referralInfo.history.map((h) => (
-                      <div key={h.id} className="p-3 border-b border-[var(--zv-border)] last:border-0 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full grid place-items-center ${
-                            h.level === 1 ? 'bg-[var(--zv-surface)]' : h.level === 2 ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'
-                          }`}>
-                            <Gem className={`w-3.5 h-3.5 ${
-                              h.level === 1 ? 'text-[#3b82f6]' : h.level === 2 ? 'text-orange-500' : 'text-[#3b82f6]'
-                            }`} />
-                          </div>
-                          <div>
-                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{h.name}</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[7px] text-[var(--zv-muted)]">{formatDate(h.date)}</span>
-                              {h.status === 'claimed' && (
-                                <span className="text-[6px] font-bold text-[#3b82f6] bg-[var(--zv-surface)] px-1 rounded">Diklaim</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="block text-[9px] font-black text-[#3b82f6]">+{formatRupiah(h.commission)}</span>
-                          <span className="block text-[7px] text-[var(--zv-muted)]">Deposit: {formatRupiah(h.deposit)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center">
-                    <UserPlus className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-[var(--zv-muted)]">Belum ada komisi referral</p>
-                    <p className="text-[8px] text-[var(--zv-muted)] mt-1">Ajak teman untuk mulai mendapatkan komisi</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Backwards compat: referred users list */}
-              {referralInfo.referredUsers.length > 0 && (
-                <>
-                  <h3 className="text-[12px] font-black text-[#3b82f6] mb-3 mt-4">Daftar Referral Langsung</h3>
-                  <div className="space-y-1.5">
-                    {referralInfo.referredUsers.map((u, i) => (
-                      <div key={i} className="rounded-2xl p-2.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[var(--zv-surface)] grid place-items-center"><User className="w-4 h-4 text-[#3b82f6]" /></div>
-                          <div>
-                            <span className="block text-[9px] font-bold text-[var(--zv-text)]">{u.name}</span>
-                            <span className="block text-[7px] text-[var(--zv-muted)]">{formatDate(u.date)}</span>
-                          </div>
-                        </div>
-                        <span className="text-[9px] font-black text-[#3b82f6]">+{formatRupiah(u.bonus)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* ====== NEWS TAB ====== */}
-          {activeTab === 'news' && (
-            <motion.div key="news" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-[14px] md:text-lg font-black text-[#3b82f6] mb-3">Berita & Edukasi</h2>
-              <div className="space-y-2">
-                {news.map(n => (
-                  <div key={n.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="h-5 px-2 rounded-full bg-[var(--zv-surface)] text-[7px] font-bold text-[#3b82f6] flex items-center">{n.category}</span>
-                      <span className="text-[7px] text-[var(--zv-muted)]">{formatDate(n.createdAt)}</span>
-                    </div>
-                    <h4 className="text-[11px] font-bold text-[var(--zv-text)] leading-snug mb-1">{n.title}</h4>
-                    <p className="text-[8px] text-[var(--zv-muted)] leading-relaxed line-clamp-2">{n.content}</p>
-                  </div>
-                ))}
-                {news.length === 0 && (
-                  <div className="text-center py-8">
-                    <Newspaper className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum ada berita</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ====== PROMOSI & BONUS DASHBOARD ====== */}
-          {activeTab === 'bonus' && (
-            <motion.div key="bonus" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-
-              {/* ── HERO HEADER ── */}
-              <div className="relative rounded-3xl overflow-hidden mb-5" style={{ background: 'linear-gradient(145deg, #0c0a1a 0%, #1a0a2e 30%, #3b1a6e 60%, #6d28d9 100%)' }}>
-                <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(168,85,247,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59,130,246,0.3) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(245,158,11,0.15) 0%, transparent 60%)' }} />
-                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                {/* Animated floating orbs */}
-                <div className="absolute top-6 left-8 w-16 h-16 rounded-full bg-purple-500/20 blur-xl animate-pulse pointer-events-none" />
-                <div className="absolute bottom-4 right-10 w-20 h-20 rounded-full bg-yellow-400/15 blur-2xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
-                <div className="absolute top-10 right-20 w-12 h-12 rounded-full bg-blue-400/20 blur-lg animate-pulse pointer-events-none" style={{ animationDelay: '0.5s' }} />
-
-                <div className="relative p-5 md:p-7 text-white">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-14 h-14 rounded-2xl grid place-items-center" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', boxShadow: '0 4px 20px rgba(245,158,11,0.4)' }}>
-                      <Gift className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-[18px] md:text-[22px] font-black tracking-tight">Promosi & Bonus</h2>
-                      <span className="text-[9px] font-bold text-yellow-300 tracking-widest uppercase">Pusat Hadiah & Keuntungan</span>
-                    </div>
-                  </div>
-
-                  {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-2.5">
-                    <div className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                      <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-                      <b className="block text-[14px] font-black">{dailyCheckStatus.streak}</b>
-                      <span className="block text-[7px] font-bold text-purple-200/80">Hari Streak</span>
-                    </div>
-                    <div className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                      <Gift className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-                      <b className="block text-[14px] font-black">{bonuses.length}</b>
-                      <span className="block text-[7px] font-bold text-purple-200/80">Total Bonus</span>
-                    </div>
-                    <div className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                      <DollarSign className="w-5 h-5 text-green-400 mx-auto mb-1" />
-                      <b className="block text-[14px] font-black">{formatRupiah(bonuses.reduce((s, b) => s + b.amount, 0)).replace('Rp', '').trim()}</b>
-                      <span className="block text-[7px] font-bold text-purple-200/80">Total Diperoleh</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ── SUB TABS ── */}
-              <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 custom-scrollbar">
-                {[
-                  { key: 'daily' as const, label: 'Cek Harian', icon: <Flame className="w-3.5 h-3.5" /> },
-                  { key: 'promo' as const, label: 'Promo', icon: <Zap className="w-3.5 h-3.5" /> },
-                  { key: 'video' as const, label: 'Promosi Video', icon: <Video className="w-3.5 h-3.5" /> },
-                  { key: 'history' as const, label: 'Riwayat', icon: <History className="w-3.5 h-3.5" /> },
-                ].map(t => (
-                  <button key={t.key} onClick={() => setPromoSubTab(t.key)}
-                    className={`flex-shrink-0 h-9 px-4 rounded-xl flex items-center gap-1.5 text-[10px] font-bold transition-all ${promoSubTab === t.key ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-lg shadow-purple-500/20 scale-[1.02]' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-purple-500/30 hover:text-[var(--zv-text)]'}`}>
-                    {t.icon}{t.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* ── DAILY CHECK-IN ── */}
-              {promoSubTab === 'daily' && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
-                  {/* Streak Progress Card */}
-                  <div className="relative rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 100%)' }}>
-                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                    <div className="relative p-5 text-white text-center">
-                      <div className="w-16 h-16 rounded-full mx-auto mb-3 grid place-items-center" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 0 30px rgba(245,158,11,0.4)' }}>
-                        <Flame className="w-8 h-8 text-white" />
-                      </div>
-                      <h3 className="text-[16px] font-black mb-1">Cek Harian</h3>
-                      <p className="text-[9px] text-orange-200 font-semibold mb-3">Klaim bonus setiap hari dan bangun streak Anda!</p>
-
-                      {/* Streak Visualization */}
-                      <div className="flex items-center justify-center gap-1 mb-4">
-                        {Array.from({ length: 7 }).map((_, i) => {
-                          const dayNum = i + 1
-                          const isCompleted = dailyCheckStatus.streak >= dayNum
-                          const isToday = dailyCheckStatus.streak === dayNum - 1 && dailyCheckStatus.canCheckToday
-                          return (
-                            <div key={i} className="flex flex-col items-center gap-0.5">
-                              <div className={`w-9 h-9 rounded-xl grid place-items-center text-[10px] font-black transition-all ${isCompleted ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-md shadow-orange-500/30 scale-110' : isToday ? 'bg-white/20 border-2 border-dashed border-yellow-400/60 text-yellow-300 animate-pulse' : 'bg-white/10 text-white/30'}`}>
-                                {isCompleted ? '✓' : dayNum}
-                              </div>
-                              <span className="text-[6px] font-bold text-white/50">Hari {dayNum}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Reward Preview */}
-                      <div className="rounded-xl p-2.5 bg-white/10 border border-white/15 mb-3 inline-block">
-                        <span className="text-[8px] font-bold text-yellow-200">Bonus Hari Ini: </span>
-                        <span className="text-[12px] font-black text-yellow-300">{formatRupiah(dailyCheckStatus.todayReward || 1000)}</span>
-                      </div>
-
-                      <div>
-                        {dailyCheckStatus.canCheckToday ? (
-                          <button onClick={handleDailyCheck} disabled={dailyCheckLoading}
-                            className="h-11 px-10 rounded-2xl text-[12px] font-bold transition-all disabled:opacity-60 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02]"
-                            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                            {dailyCheckLoading ? (
-                              <span className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Memproses...</span>
-                            ) : '🔥 Klaim Sekarang'}
-                          </button>
-                        ) : (
-                          <div className="h-11 px-10 rounded-2xl bg-white/15 inline-flex items-center gap-1.5 text-[12px] font-bold">
-                            <CheckCircle className="w-5 h-5 text-green-400" /> Sudah Diklaim Hari Ini ✓
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Tasks */}
-                  {tasks.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="text-[12px] font-black text-[var(--zv-text)] mb-3 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 grid place-items-center"><ListChecks className="w-3.5 h-3.5 text-purple-400" /></div>
-                        Tugas Bonus
-                      </h3>
-                      <div className="space-y-2">
-                        {tasks.map(task => (
-                          <div key={task.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-8 h-8 rounded-xl grid place-items-center ${task.completed ? 'bg-green-500/10' : 'bg-purple-500/10'}`}>
-                                  {task.completed ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Target className="w-4 h-4 text-purple-400" />}
-                                </div>
-                                <div>
-                                  <span className="block text-[10px] font-bold text-[var(--zv-text)]">{task.title}</span>
-                                  <span className="block text-[7px] text-[var(--zv-muted)]">{task.description}</span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="block text-[11px] font-black text-[#f59e0b]">+{formatRupiah(task.reward)}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full bg-[var(--zv-surface)] overflow-hidden">
-                                <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500" style={{ width: `${Math.min(100, (task.progress / task.target) * 100)}%` }} />
-                              </div>
-                              <span className="text-[8px] font-bold text-[var(--zv-muted)]">{task.progress}/{task.target}</span>
-                              {task.completed && !task.claimed && (
-                                <button onClick={() => handleClaimTask(task.id)} disabled={taskClaimingId === task.id}
-                                  className="h-6 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 text-white text-[8px] font-bold flex items-center gap-1 hover:from-purple-500 hover:to-blue-400 transition-all disabled:opacity-60">
-                                  {taskClaimingId === task.id ? <div className="w-3 h-3 rounded-full border border-white/30 border-t-white animate-spin" /> : <><DollarSign className="w-3 h-3" />Klaim</>}
-                                </button>
-                              )}
-                              {task.claimed && (
-                                <span className="h-6 px-2 rounded-lg bg-green-500/10 text-green-500 text-[8px] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" />Selesai</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* ── PROMO ── */}
-              {promoSubTab === 'promo' && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
-                  {/* Active Promos */}
-                  {promos.length > 0 ? (
-                    <div className="space-y-3">
-                      {promos.map(p => (
-                        <button key={p.id} onClick={() => { setSelectedPromo(p); setShowPromoDetailModal(true) }}
-                          className="w-full text-left rounded-2xl overflow-hidden group hover:scale-[1.01] transition-all" style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #1e3a5f 50%, #2563eb 100%)' }}>
-                          <div className="relative p-4 text-white">
-                            <div className="flex items-center gap-2.5 mb-2">
-                              <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-400/30 grid place-items-center">
-                                <Zap className="w-5 h-5 text-yellow-300" />
-                              </div>
-                              <div className="flex-1">
-                                <span className="block text-[12px] font-black">{p.title}</span>
-                                <span className="block text-[8px] text-blue-200 mt-0.5">{p.type === 'deposit_bonus' ? 'Deposit Bonus' : p.type === 'trading_bonus' ? 'Trading Bonus' : p.type === 'welcome_bonus' ? 'Welcome Bonus' : p.type === 'referral_program' ? 'Referral Program' : p.type === 'trading_competition' ? 'Kompetisi Trading' : p.type === 'daily_checkin' ? 'Daily Check-in' : 'Special Promo'}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="h-7 px-3 rounded-full bg-yellow-500/20 border border-yellow-400/30 flex items-center gap-1">
-                                  <span className="text-[8px] font-black text-yellow-300">AKTIF</span>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
-                              </div>
-                            </div>
-                            <p className="text-[9px] text-blue-100/80 leading-relaxed line-clamp-2">{p.description}</p>
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex items-center gap-1 text-[8px] text-blue-200">
-                                <CalendarDays className="w-3 h-3" />
-                                <span>{p.startDate ? formatDate(p.startDate) : 'Sekarang'} — {p.endDate ? formatDate(p.endDate) : 'Berlangsung'}</span>
-                              </div>
-                              <span className="text-[8px] font-bold text-yellow-300 group-hover:underline">Lihat Detail →</span>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center mx-auto mb-4">
-                        <Zap className="w-8 h-8 text-[var(--zv-muted)]" />
-                      </div>
-                      <p className="text-[12px] font-bold text-[var(--zv-muted)]">Belum Ada Promo Aktif</p>
-                      <p className="text-[9px] text-[var(--zv-muted)] mt-1">Cek kembali nanti untuk promo menarik!</p>
-                    </div>
-                  )}
-
-                  {/* Upcoming Promo Teasers */}
-                  <div className="mt-5">
-                    <h3 className="text-[11px] font-black text-[var(--zv-text)] mb-3 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><Sparkles className="w-3.5 h-3.5 text-yellow-400" /></div>
-                      Segera Hadir
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {[
-                        { id: 'upcoming-deposit150', title: 'Bonus Deposit 150%', desc: 'Deposit minimal Rp 500.000 dan dapatkan bonus 150%', color: 'from-purple-600 to-blue-500', icon: <CreditCard className="w-4 h-4" /> },
-                        { id: 'upcoming-marathon', title: 'Trading Marathon', desc: 'Trade 50x dan dapatkan bonus hingga Rp 500.000', color: 'from-orange-500 to-red-500', icon: <BarChart3 className="w-4 h-4" /> },
-                        { id: 'upcoming-referral', title: 'Referral Super', desc: 'Ajak 10 teman dan dapatkan bonus Rp 100.000', color: 'from-green-500 to-emerald-500', icon: <UserPlus className="w-4 h-4" /> },
-                        { id: 'upcoming-cashback', title: 'VIP Cashback', desc: 'Cashback 5% untuk semua transaksi VIP', color: 'from-yellow-500 to-amber-500', icon: <DollarSign className="w-4 h-4" /> },
-                      ].map((promo) => (
-                        <div key={promo.id} className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all group">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${promo.color} grid place-items-center text-white shadow-md group-hover:scale-110 transition-transform`}>
-                              {promo.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="block text-[10px] font-black text-[var(--zv-text)]">{promo.title}</span>
-                              <span className="block text-[7px] text-[var(--zv-muted)] mt-0.5 leading-relaxed">{promo.desc}</span>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3 h-3 text-[var(--zv-muted)]" />
-                              <span className="text-[7px] font-bold text-[var(--zv-muted)]">Segera Hadir</span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setPromoNotified(prev => {
-                                  const newNotified = new Set(prev)
-                                  if (newNotified.has(promo.id)) {
-                                    newNotified.delete(promo.id)
-                                    toast({ title: 'Notifikasi Dibatalkan', description: `Anda tidak akan diberitahu untuk ${promo.title}` })
-                                  } else {
-                                    newNotified.add(promo.id)
-                                    toast({ title: 'Akan Diberitahu! 🔔', description: `Anda akan diberitahu saat ${promo.title} dimulai` })
-                                  }
-                                  return newNotified
-                                })
-                              }}
-                              className={`h-6 px-2.5 rounded-lg text-[7px] font-bold flex items-center gap-1 transition-all ${promoNotified.has(promo.id) ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-purple-500/30 hover:text-purple-500'}`}
-                            >
-                              {promoNotified.has(promo.id) ? <><Bell className="w-2.5 h-2.5" />Berlangganan</> : <><BellRing className="w-2.5 h-2.5" />Beri Tahu</>}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── PROMOSI VIDEO ── */}
-              {promoSubTab === 'video' && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
-                  {/* Video Promo Hero */}
-                  <div className="relative rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #1a0020 0%, #4a044e 40%, #c026d3 100%)' }}>
-                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(236,72,153,0.5) 0%, transparent 50%)' }} />
-                    <div className="relative p-4 text-white">
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e)', boxShadow: '0 4px 15px rgba(236,72,153,0.4)' }}>
-                          <Video className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-[14px] font-black">Promosi Video</h3>
-                          <span className="text-[8px] font-bold text-pink-200 tracking-widest uppercase">Review & Dapatkan Bonus!</span>
-                        </div>
-                      </div>
-
-                      {/* How it works - Step cards */}
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        {[
-                          { step: '1', label: 'Upload Video', desc: 'Review ZEVORIX di sosial media', icon: '📹' },
-                          { step: '2', label: 'Kirim Link', desc: 'Submit link video Anda', icon: '🔗' },
-                          { step: '3', label: 'Dapat Views', desc: 'Video Anda ditonton', icon: '👀' },
-                          { step: '4', label: 'Terima Bonus', desc: 'Dibayar per 1.000 views', icon: '💰' },
-                        ].map((s, i) => (
-                          <div key={i} className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <span className="text-[16px] block mb-0.5">{s.icon}</span>
-                            <span className="block text-[9px] font-black text-white">{s.label}</span>
-                            <span className="block text-[7px] text-pink-200/70">{s.desc}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Reward tiers */}
-                      <div className="space-y-1.5 mb-3">
-                        {[
-                          { views: '1.000', bonus: 'Rp 5.000', icon: '🥉', color: 'from-amber-700 to-amber-500' },
-                          { views: '10.000', bonus: 'Rp 50.000', icon: '🥈', color: 'from-gray-400 to-gray-300' },
-                          { views: '100.000', bonus: 'Rp 500.000', icon: '🥇', color: 'from-yellow-500 to-yellow-300' },
-                          { views: '1.000.000', bonus: 'Rp 5.000.000', icon: '💎', color: 'from-cyan-500 to-blue-400' },
-                        ].map((t, i) => (
-                          <div key={i} className="rounded-xl p-2 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[14px]">{t.icon}</span>
-                              <span className="text-[9px] font-black text-white">{t.views} Views</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className={`h-1.5 w-8 rounded-full bg-gradient-to-r ${t.color}`} />
-                              <span className="text-[10px] font-black text-yellow-300">{t.bonus}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Warning */}
-                      <div className="rounded-xl p-2.5 flex items-start gap-1.5" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                        <AlertCircle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-[7px] font-bold text-yellow-200/80 leading-relaxed">Views & Likes harus REAL/ORGANIK. Dilarang suntikan views/bot. Jika terdeteksi, bonus dibatalkan.</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Platform Selector + Submit Form */}
-                  <div className="rounded-2xl bg-[var(--zv-panel)] border border-[var(--zv-border)] p-3.5 mb-4">
-                    <span className="block text-[9px] font-black text-[var(--zv-text)] uppercase tracking-widest mb-2">Pilih Platform</span>
-                    <div className="flex gap-2 overflow-x-auto pb-1 mb-3 custom-scrollbar">
-                      {[
-                        { key: 'tiktok' as const, label: 'TikTok', icon: '🎵', gradient: 'from-black to-gray-800' },
-                        { key: 'instagram' as const, label: 'Instagram', icon: '📸', gradient: 'from-purple-500 to-pink-500' },
-                        { key: 'youtube' as const, label: 'YouTube', icon: '▶️', gradient: 'from-red-600 to-red-700' },
-                        { key: 'facebook' as const, label: 'Facebook', icon: '📘', gradient: 'from-blue-600 to-blue-700' },
-                        { key: 'twitter' as const, label: 'X/Twitter', icon: '🐦', gradient: 'from-gray-700 to-gray-900' },
-                      ].map(p => (
-                        <button key={p.key} onClick={() => setPromoPlatform(p.key)}
-                          className={`flex-shrink-0 h-10 px-4 rounded-xl flex items-center gap-1.5 text-[10px] font-bold transition-all ${promoPlatform === p.key ? `bg-gradient-to-r ${p.gradient} text-white shadow-lg scale-105` : 'bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] hover:border-pink-500/30'}`}>
-                          <span className="text-[14px]">{p.icon}</span>
-                          <span>{p.label}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <span className="block text-[9px] font-black text-[var(--zv-text)] uppercase tracking-widest mb-2">Link Video</span>
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--zv-muted)]" />
-                        <input
-                          type="url"
-                          value={promoVideoLink}
-                          onChange={(e) => setPromoVideoLink(e.target.value)}
-                          placeholder={`Masukkan link ${promoPlatform === 'tiktok' ? 'TikTok' : promoPlatform === 'instagram' ? 'Instagram' : promoPlatform === 'youtube' ? 'YouTube' : promoPlatform === 'facebook' ? 'Facebook' : 'X/Twitter'}`}
-                          className="w-full h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] pl-10 pr-3 text-[11px] font-semibold text-[var(--zv-text)] outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition-all placeholder:text-[var(--zv-muted)]"
-                        />
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (!promoVideoLink.trim()) {
-                            toast({ title: 'Error', description: 'Masukkan link video terlebih dahulu', variant: 'destructive' })
-                            return
-                          }
-                          if (!promoVideoLink.startsWith('http')) {
-                            toast({ title: 'Error', description: 'Link video tidak valid, harus dimulai dengan http', variant: 'destructive' })
-                            return
-                          }
-                          setPromoSubmitLoading(true)
-                          setTimeout(() => {
-                            const simulatedViews = Math.floor(Math.random() * 5000) + 50
-                            const simulatedLikes = Math.floor(simulatedViews * (Math.random() * 0.15 + 0.02))
-                            const bonus = Math.floor(simulatedViews / 1000) * 5000
-                            const newVideo = {
-                              id: `promo-${Date.now()}`,
-                              platform: promoPlatform,
-                              link: promoVideoLink,
-                              views: simulatedViews,
-                              likes: simulatedLikes,
-                              bonus,
-                              status: 'verified' as const,
-                              submittedAt: new Date().toISOString(),
-                            }
-                            setPromoVideos(prev => [newVideo, ...prev])
-                            setPromoVideoLink('')
-                            toast({ title: 'Video Terkirim! 🎬', description: `Bonus ${formatRupiah(bonus)} dari ${simulatedViews.toLocaleString()} views` })
-                            setPromoSubmitLoading(false)
-                          }, 1500)
-                        }}
-                        disabled={promoSubmitLoading}
-                        className="h-11 px-5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-bold flex items-center gap-1.5 hover:from-pink-400 hover:to-purple-500 transition-all disabled:opacity-60 flex-shrink-0 shadow-lg shadow-pink-500/20"
-                      >
-                        {promoSubmitLoading ? (
-                          <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        ) : (
-                          <><Send className="w-4 h-4" />Kirim</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Submitted Videos */}
-                  {promoVideos.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black text-[var(--zv-text)]">Video Anda ({promoVideos.length})</span>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-3.5 h-3.5 text-[#f59e0b]" />
-                          <span className="text-[12px] font-black text-[#f59e0b]">{formatRupiah(promoVideos.reduce((s, v) => s + v.bonus, 0))}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
-                        {promoVideos.map((v) => {
-                          const platformInfo: Record<string, { label: string; icon: string; color: string }> = {
-                            tiktok: { label: 'TikTok', icon: '🎵', color: 'bg-black' },
-                            instagram: { label: 'Instagram', icon: '📸', color: 'bg-gradient-to-br from-purple-500 to-pink-500' },
-                            youtube: { label: 'YouTube', icon: '▶️', color: 'bg-red-600' },
-                            facebook: { label: 'Facebook', icon: '📘', color: 'bg-blue-600' },
-                            twitter: { label: 'X/Twitter', icon: '🐦', color: 'bg-gray-800' },
-                          }
-                          const pi = platformInfo[v.platform] || platformInfo.tiktok
-                          return (
-                            <div key={v.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-8 h-8 rounded-lg ${pi.color} grid place-items-center text-[14px]`}>
-                                    {pi.icon}
-                                  </div>
-                                  <div>
-                                    <span className="block text-[10px] font-bold text-[var(--zv-text)]">{pi.label}</span>
-                                    <span className="block text-[7px] text-[var(--zv-muted)] truncate max-w-[160px]">{v.link}</span>
-                                  </div>
-                                </div>
-                                <span className={`h-5 px-2 rounded-full text-[7px] font-black flex items-center gap-1 ${v.status === 'verified' ? 'bg-green-500/10 text-green-500' : v.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'}`}>
-                                  {v.status === 'verified' ? <><CheckCircle className="w-2.5 h-2.5" />Verifikasi</> : v.status === 'pending' ? <><Clock className="w-2.5 h-2.5" />Diperiksa</> : <><AlertCircle className="w-2.5 h-2.5" />Ditolak</>}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-1">
-                                  <EyeIcon className="w-3.5 h-3.5 text-[#3b82f6]" />
-                                  <span className="text-[9px] font-black text-[var(--zv-text)]">{v.views.toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <ThumbsUp className="w-3.5 h-3.5 text-pink-500" />
-                                  <span className="text-[9px] font-black text-[var(--zv-text)]">{v.likes.toLocaleString()}</span>
-                                </div>
-                                <div className="ml-auto flex items-center gap-1">
-                                  <DollarSign className="w-3.5 h-3.5 text-[#f59e0b]" />
-                                  <span className="text-[10px] font-black text-[#f59e0b]">{formatRupiah(v.bonus)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* ── BONUS HISTORY ── */}
-              {promoSubTab === 'history' && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
-                  {/* Total Stats */}
-                  <div className="grid grid-cols-2 gap-2.5 mb-4">
-                    <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 grid place-items-center"><Gift className="w-4 h-4 text-purple-400" /></div>
-                        <span className="text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-wider">Total Bonus</span>
-                      </div>
-                      <b className="block text-[16px] font-black text-[var(--zv-text)]">{formatRupiah(bonuses.reduce((s, b) => s + b.amount, 0))}</b>
-                    </div>
-                    <div className="rounded-2xl p-3.5 bg-[var(--zv-panel)] border border-[var(--zv-border)]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 grid place-items-center"><Flame className="w-4 h-4 text-yellow-400" /></div>
-                        <span className="text-[8px] font-black text-[var(--zv-muted)] uppercase tracking-wider">Streak</span>
-                      </div>
-                      <b className="block text-[16px] font-black text-[var(--zv-text)]">{dailyCheckStatus.streak} Hari</b>
-                    </div>
-                  </div>
-
-                  {/* Bonus List */}
-                  <h3 className="text-[11px] font-black text-[var(--zv-text)] mb-3 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 grid place-items-center"><History className="w-3.5 h-3.5 text-blue-400" /></div>
-                    Riwayat Bonus
-                  </h3>
-                  <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-                    {bonuses.map(b => {
-                      const iconMap: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
-                        daily_checkin: { icon: <Flame className="w-4 h-4" />, color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/20' },
-                        trading_bonus: { icon: <BarChart3 className="w-4 h-4" />, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' },
-                        deposit_bonus: { icon: <Wallet className="w-4 h-4" />, color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' },
-                        referral_bonus: { icon: <UserPlus className="w-4 h-4" />, color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/20' },
-                        welcome_bonus: { icon: <Sparkles className="w-4 h-4" />, color: 'text-yellow-500', bg: 'bg-yellow-500/10 border-yellow-500/20' },
-                      }
-                      const info = iconMap[b.type] || iconMap.welcome_bonus
-                      return (
-                        <div key={b.id} className="rounded-2xl p-3 bg-[var(--zv-panel)] border border-[var(--zv-border)] hover:border-purple-500/20 transition-all">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <div className={`w-10 h-10 rounded-xl border grid place-items-center ${info.bg} ${info.color}`}>
-                                {info.icon}
-                              </div>
-                              <div>
-                                <span className="block text-[10px] font-bold text-[var(--zv-text)]">
-                                  {b.type === 'daily_checkin' ? 'Daily Check-in' : b.type === 'trading_bonus' ? 'Trading Bonus' : b.type === 'deposit_bonus' ? 'Deposit Bonus' : b.type === 'referral_bonus' ? 'Referral Bonus' : 'Welcome Bonus'}
-                                </span>
-                                <span className="block text-[8px] text-[var(--zv-muted)]">{formatDateTime(b.createdAt)}</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="block text-[12px] font-black text-green-500">+{formatRupiah(b.amount)}</span>
-                              <span className="block text-[7px] font-bold text-green-500/60">{b.status === 'credited' ? 'Dikreditkan' : 'Pending'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                    {bonuses.length === 0 && (
-                      <div className="text-center py-10">
-                        <div className="w-16 h-16 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center mx-auto mb-3">
-                          <Gift className="w-7 h-7 text-[var(--zv-muted)]" />
-                        </div>
-                        <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum Ada Bonus</p>
-                        <p className="text-[8px] text-[var(--zv-muted)] mt-1">Mulai check-in harian untuk mendapat bonus pertama!</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-            </motion.div>
-          )}
-
-          {/* ====== LEADERBOARD TAB ====== */}
-          {activeTab === 'leaderboard' && (
-            <motion.div key="leaderboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <div className="rounded-3xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                <div className="p-4 text-white text-center">
-                  <Trophy className="w-10 h-10 text-yellow-300 mx-auto mb-2" />
-                  <h2 className="text-[16px] md:text-xl font-black">Leaderboard</h2>
-                  <p className="text-[9px] md:text-[10px] text-blue-200 mt-1">Top investor dengan profit tertinggi</p>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                {leaderboard.map((entry, i) => (
-                  <div key={i} className={`rounded-2xl p-3 border shadow-sm flex items-center gap-3 ${i === 0 ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : i === 1 ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : i === 2 ? 'bg-[var(--zv-surface)] border-[var(--zv-border)]' : 'bg-[var(--zv-panel)] border-[var(--zv-border)]'}`}>
-                    <div className={`w-8 h-8 rounded-full grid place-items-center text-[11px] font-black ${i === 0 ? 'bg-yellow-500 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-[var(--zv-surface)] text-[var(--zv-muted)]'}`}>
-                      {entry.rank || i + 1}
-                    </div>
-                    <div className="flex-1">
-                      <span className="block text-[10px] font-bold text-[var(--zv-text)]">{entry.name}</span>
-                      <span className="block text-[8px] text-[var(--zv-muted)]">Profit: {formatRupiah(entry.profit)}</span>
-                    </div>
-                    <span className={`text-[11px] font-black ${entry.profitPercent >= 0 ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>{formatPercent(entry.profitPercent)}</span>
-                  </div>
-                ))}
-                {leaderboard.length === 0 && (
-                  <div className="text-center py-8">
-                    <Trophy className="w-10 h-10 text-[var(--zv-muted)] mx-auto mb-2" />
-                    <p className="text-[11px] font-bold text-[var(--zv-muted)]">Belum ada data leaderboard</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
           {/* ====== PROFILE TAB ====== */}
           {activeTab === 'profil' && (
             <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
@@ -8751,8 +7386,6 @@ function Dashboard() {
                   { icon: <Briefcase className="w-4 h-4 text-[#3b82f6]" />, label: 'Portofolio', desc: 'Lihat portofolio investasi', action: () => setActiveTab('portfolio') },
                   { icon: <Wallet className="w-4 h-4 text-[#22c55e]" />, label: 'Keuangan', desc: 'Deposit & penarikan', action: () => setActiveTab('finance') },
                   { icon: <History className="w-4 h-4 text-[#f59e0b]" />, label: 'Riwayat', desc: 'Riwayat transaksi', action: () => setActiveTab('history') },
-                  { icon: <Gift className="w-4 h-4 text-[#9c27b0]" />, label: 'Promosi', desc: 'Klaim bonus & promo', action: () => setActiveTab('bonus') },
-                  { icon: <UserPlus className="w-4 h-4 text-[#3b82f6]" />, label: 'Undang Teman', desc: 'Ajak teman, dapat komisi', action: () => setActiveTab('undang') },
                   { icon: <Settings className="w-4 h-4 text-[var(--zv-muted)]" />, label: 'Pengaturan', desc: 'Edit profil & keamanan', action: () => { setProfileForm({ name: user?.name || '', email: user?.email || '', bankName: user?.bankName || '', bankAccount: user?.bankAccount || '', bankHolder: user?.bankHolder || '' }); setProfileEdit(true) } },
                   { icon: <Shield className="w-4 h-4 text-[#3b82f6]" />, label: 'Verifikasi KYC', desc: user?.kycStatus === 'verified' ? 'Terverifikasi' : user?.kycStatus === 'pending' ? 'Menunggu verifikasi' : 'Belum verifikasi', action: () => { setShowKycModal(true); fetchKycStatus() } },
                   { icon: <HelpCircle className="w-4 h-4 text-[#f59e0b]" />, label: 'Bantuan', desc: 'FAQ & Support', action: () => setShowHelpModal(true) },
@@ -8911,21 +7544,18 @@ function Dashboard() {
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 z-30 w-[72px] lg:w-[80px] border-r border-[var(--zv-border)] flex-col items-center pt-4 pb-4 gap-0.5" style={{ background: 'var(--zv-panel)' }}>
         {/* Logo */}
         <div className="flex flex-col items-center gap-1 mb-3 pb-3 border-b border-[var(--zv-border)]">
-          <ZevorixLogo size={32} />
-          <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIX</span>
+          <ZevorikLogo size={32} />
+          <span className="text-[7px] font-black gradient-text tracking-wider">ZEVORIK</span>
         </div>
         {[
           { key: 'home', label: 'Beranda', icon: HomeIcon },
           { key: 'market', label: 'Quote', icon: BarChart3 },
           { key: 'sinyal', label: 'Chart', icon: Activity },
           { key: 'saldo', label: 'Trade', icon: Wallet },
-          { key: 'investasi', label: 'Investasi', icon: DollarSign },
           { key: 'profil', label: 'Profil', icon: User },
           { key: 'portfolio', label: 'Portofolio', icon: Briefcase },
           { key: 'finance', label: 'Keuangan', icon: CreditCard },
           { key: 'history', label: 'Riwayat', icon: History },
-          { key: 'undang', label: 'Undang', icon: UserPlus },
-          { key: 'bonus', label: 'Promosi', icon: Gift },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`w-full flex flex-col items-center gap-0.5 py-2.5 transition-all relative ${activeTab === tab.key ? 'text-[#3b82f6] bg-[var(--zv-surface)]' : 'text-[var(--zv-muted)] opacity-70 hover:opacity-100 hover:text-[#3b82f6] hover:bg-[var(--zv-surface)]'}`}>
@@ -8981,14 +7611,9 @@ function Dashboard() {
                   { icon: <BarChart3 className="w-4 h-4" />, label: 'Pasar Global', key: 'market' },
                   { icon: <Target className="w-4 h-4" />, label: 'Trading', key: 'sinyal' },
                   { icon: <Wallet className="w-4 h-4" />, label: 'Saldo Live', key: 'saldo' },
-                  { icon: <DollarSign className="w-4 h-4" />, label: 'Investasi', key: 'investasi' },
                   { icon: <Briefcase className="w-4 h-4" />, label: 'Portofolio', key: 'portfolio' },
                   { icon: <CreditCard className="w-4 h-4" />, label: 'Keuangan', key: 'finance' },
                   { icon: <History className="w-4 h-4" />, label: 'Riwayat', key: 'history' },
-                  { icon: <UserPlus className="w-4 h-4" />, label: 'Undang', key: 'undang' },
-                  { icon: <Newspaper className="w-4 h-4" />, label: 'Berita', key: 'news' },
-                  { icon: <Gift className="w-4 h-4" />, label: 'Promosi & Bonus', key: 'bonus' },
-                  { icon: <Trophy className="w-4 h-4" />, label: 'Leaderboard', key: 'leaderboard' },
                   { icon: <User className="w-4 h-4" />, label: 'Profil', key: 'profil' },
                 ].map(item => (
                   <button key={item.key} onClick={() => { setActiveTab(item.key); setShowSideMenu(false) }}
@@ -9050,87 +7675,6 @@ function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Investment Confirmation Modal */}
-      <AnimatePresence>
-        {showInvestModal && selectedProduct && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowInvestModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[85vh] md:max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-md md:mx-auto md:my-auto">
-              <div className="p-4 md:p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[14px] md:text-lg font-black text-[#3b82f6]">RINGKASAN INVESTASI</h3>
-                  <button onClick={() => setShowInvestModal(false)} className="w-8 h-8 rounded-full grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
-                </div>
-
-                {/* Product Info */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                  <div className="text-white">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="w-5 h-5 text-yellow-300" />
-                      <span className="text-[13px] font-black">{selectedProduct.name}</span>
-                    </div>
-                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedProduct.category === 'starter' ? 'Paket Starter' : selectedProduct.category === 'growth' ? 'Paket Growth' : 'Paket Premium'}</span>
-                  </div>
-                </div>
-
-                {/* Summary Details */}
-                <div className="space-y-2.5 mb-4">
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">JUMLAH INVESTASI</span>
-                    <span className="text-[12px] font-black text-[var(--zv-text)]">{formatRupiah(selectedProduct.modal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">SALDO TERSEDIA</span>
-                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedProduct.modal ? 'text-[#3b82f6]' : 'text-[#ef5350]'}`}>{formatRupiah(user?.balance || 0)}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PENDAPATAN HARIAN</span>
-                    <span className="text-[12px] font-black text-[#22c55e]">+{formatRupiah(selectedProduct.dailyProfit)}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">DURASI</span>
-                    <span className="text-[12px] font-black text-[var(--zv-text)]">{selectedProduct.duration} Hari</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
-                    <div className="text-right">
-                      <span className="text-[12px] font-black text-[#22c55e]">{formatRupiah(selectedProduct.totalReturn)}</span>
-                      <span className="ml-1 text-[8px] font-bold text-[#f59e0b] bg-[var(--zv-surface)] px-1 rounded">ROI {selectedProduct.roi}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Balance Warning */}
-                {(user?.balance || 0) < selectedProduct.modal && (
-                  <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-[#ef5350] flex-shrink-0" />
-                    <span className="text-[9px] font-bold text-[#ef5350]">Saldo tidak mencukupi. Silakan deposit terlebih dahulu.</span>
-                  </div>
-                )}
-
-                {/* Note */}
-                <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4 flex items-start gap-2">
-                  <Info className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
-                  <span className="text-[8px] text-[#3b82f6] leading-relaxed">Pembelian akan diproses langsung dari saldo Anda setelah konfirmasi.</span>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button onClick={() => setShowInvestModal(false)} className="flex-1 h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] text-[11px] font-bold hover:bg-[var(--zv-border)] transition-colors">
-                    Nanti
-                  </button>
-                  <button onClick={handlePurchaseInvestment} disabled={investLoading || (user?.balance || 0) < selectedProduct.modal}
-                    className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}>
-                    {investLoading ? 'Memproses...' : 'Konfirmasi Pembelian'}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Stock Detail Modal */}
       <AnimatePresence>
@@ -9243,156 +7787,6 @@ function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Contract Modal */}
-      <AnimatePresence>
-        {contractModal && selectedStock && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setContractModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:top-auto md:flex md:items-center md:justify-center bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
-              <div className="p-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl overflow-hidden bg-[var(--zv-surface)] flex items-center justify-center">
-                      {getRealLogo(selectedStock.code, 36)}
-                    </div>
-                    <div>
-                      <h3 className="text-[14px] font-black text-[#3b82f6]">Buy Contract {selectedStock.code}</h3>
-                      <span className="text-[8px] text-[var(--zv-muted)]">{selectedStock.name} • {formatRupiah(selectedStock.price)}</span>
-                    </div>
-                  </div>
-                  <button onClick={() => setContractModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
-                </div>
-
-                {/* Stock Info */}
-                <div className="rounded-xl p-3 bg-[var(--zv-surface)] mb-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-bold text-[var(--zv-muted)]">Harga Saham</span>
-                    <span className="text-[14px] font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(selectedStock.price)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-[8px] text-[var(--zv-muted)]">Rate Dasar</span>
-                    <span className="text-[11px] font-black text-[#22c55e]">{getStockBaseRate(selectedStock.code)}% / hari</span>
-                  </div>
-                </div>
-
-                {/* Duration Selection */}
-                <div className="mb-3">
-                  <label className="block text-[9px] font-black text-[#3b82f6] mb-1.5">Durasi Kontrak</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[30, 60, 90, 120, 180, 365].map(d => {
-                      const effectiveRate = Math.min(getStockBaseRate(selectedStock.code), 7.0)
-                      return (
-                        <button key={d} onClick={() => setContractDuration(d)}
-                          className={`rounded-xl p-2 text-center border-2 transition-all ${contractDuration === d ? 'border-[#3b82f6] bg-[var(--zv-surface)]' : 'border-[var(--zv-border)] bg-[var(--zv-panel)] hover:border-[#3b82f6]'}`}>
-                          <span className="block text-[11px] font-black text-[var(--zv-text)]">{d}</span>
-                          <span className="block text-[7px] font-bold text-[var(--zv-muted)]">hari</span>
-                          <span className="block text-[8px] font-black text-[#22c55e] mt-0.5">{effectiveRate.toFixed(1)}%/hari</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Amount Input */}
-                <div className="mb-3">
-                  <label className="block text-[9px] font-black text-[#3b82f6] mb-1.5">Jumlah Investasi (Rp)</label>
-                  <input type="number" value={contractAmount} onChange={(e) => setContractAmount(e.target.value)} placeholder="Min. 100.000"
-                    className="w-full h-10 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] px-3 text-[12px] font-semibold text-[var(--zv-text)] outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30 placeholder:text-[var(--zv-muted)]" />
-                </div>
-
-                {/* Quick Amount Buttons */}
-                <div className="flex gap-1.5 mb-3">
-                  {['100000', '200000', '500000', '1000000', '5000000'].map(amt => (
-                    <button key={amt} onClick={() => setContractAmount(amt)} className="flex-1 h-7 rounded-lg bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[7px] font-bold text-[#3b82f6] hover:bg-[#3b82f6] hover:text-white transition-colors">
-                      {parseInt(amt) >= 1000000 ? `${parseInt(amt)/1000000}M` : `${parseInt(amt)/1000}K`}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Profit Summary */}
-                {contractAmount && parseInt(contractAmount) > 0 && (() => {
-                  const amount = parseInt(contractAmount)
-                  const profit = calcContractProfit(selectedStock, contractDuration, amount)
-                  return (
-                    <div className="rounded-xl p-3 border border-[var(--zv-border)] bg-[var(--zv-surface)] mb-3">
-                      <h4 className="text-[9px] font-black text-[#3b82f6] mb-1.5">Ringkasan Kontrak</h4>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[var(--zv-muted)]">Jumlah Investasi</span>
-                          <span className="text-[8px] font-bold text-[var(--zv-text)]">{formatRupiah(amount)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[var(--zv-muted)]">Durasi</span>
-                          <span className="text-[8px] font-bold text-[var(--zv-text)]">{contractDuration} hari</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[var(--zv-muted)]">Rate Harian</span>
-                          <span className="text-[8px] font-black text-[#22c55e]">{profit.dailyRate}%/hari</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[var(--zv-muted)]">Profit Harian</span>
-                          <span className="text-[8px] font-black text-[#22c55e]">{formatRupiah(profit.dailyProfitAmount)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-[var(--zv-muted)]">Total Profit ({contractDuration} hari)</span>
-                          <span className="text-[9px] font-black text-[#22c55e]">{formatRupiah(profit.totalProfit)}</span>
-                        </div>
-                        <div className="flex items-center justify-between pt-1 mt-1 border-t border-[var(--zv-border)]">
-                          <span className="text-[9px] font-black text-[#22c55e]">Total Kembali</span>
-                          <span className="text-[11px] font-black text-[#22c55e]">{formatRupiah(profit.totalReturn)}</span>
-                        </div>
-                      </div>
-                      <div className="mt-2 rounded-lg p-1.5 bg-[#f59e0b]/10 border border-[#f59e0b]/20">
-                        <span className="text-[7px] text-[#f59e0b] font-bold">💡 Lebih lama kontrak & lebih besar modal = profit lebih tinggi!</span>
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Balance Check */}
-                {contractAmount && parseInt(contractAmount) > (user?.balance || 0) && (
-                  <div className="rounded-xl p-2 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3">
-                    <span className="text-[8px] font-bold text-[#ef5350]">Saldo tidak cukup! Saldo: {formatRupiah(user?.balance || 0)}</span>
-                  </div>
-                )}
-
-                <div className="rounded-xl p-2.5 bg-[#3b82f6]/5 border border-[#3b82f6]/20 mb-3">
-    <div className="flex items-center gap-1.5 mb-1">
-      <Clock className="w-3 h-3 text-[#3b82f6]" />
-      <span className="text-[9px] font-black text-[#3b82f6]">Profit Masuk 00:00 WIB</span>
-    </div>
-    <div className="flex items-center gap-1.5">
-      <span className="text-[8px] text-[var(--zv-muted)]">Klaim berikutnya dalam:</span>
-      <span className="text-[10px] font-black text-[#3b82f6] tabular-nums">{(() => {
-        const now = new Date()
-        const utc = now.getTime() + now.getTimezoneOffset() * 60000
-        const jakarta = new Date(utc + 7 * 3600000)
-        const nextMidnight = new Date(jakarta)
-        nextMidnight.setHours(24, 0, 0, 0)
-        const diff = nextMidnight.getTime() - jakarta.getTime()
-        const h = Math.floor(diff / 3600000)
-        const m = Math.floor((diff % 3600000) / 60000)
-        const s = Math.floor((diff % 60000) / 1000)
-        return `${h}j ${m}m ${s}d`
-      })()}</span>
-    </div>
-    <span className="block text-[7px] text-[var(--zv-muted)] mt-1">Kontrak berakhir setelah {contractDuration} hari</span>
-  </div>
-
-                {/* Submit */}
-                <button onClick={handleContract} disabled={contractLoading || !contractAmount || parseInt(contractAmount) < 100000}
-                  className="w-full h-12 rounded-xl bg-[#3b82f6] hover:bg-[#2e9e93] text-white text-[12px] font-bold disabled:opacity-70 transition-colors flex items-center justify-center gap-2">
-                  {contractLoading ? (
-                    <div className="w-5 h-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
-                  ) : (
-                    <><Package className="w-4 h-4" />Buy Contract {selectedStock.code}</>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Daily Check-in Modal */}
       <AnimatePresence>
@@ -9594,9 +7988,9 @@ function Dashboard() {
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                   <div className="relative z-10">
                     <div className="mx-auto mb-3">
-                      <ZevorixLogo size={60} />
+                      <ZevorikLogo size={60} />
                     </div>
-                    <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIX</h2>
+                    <h2 className="text-lg font-black mb-1">Selamat Datang di ZEVORIK</h2>
                     <p className="text-[9px] text-blue-200 leading-relaxed max-w-[280px] mx-auto">
                       Platform investasi terpercaya dengan profit harian, portofolio cerdas, dan reward eksklusif untuk investor Indonesia.
                     </p>
@@ -9629,7 +8023,7 @@ function Dashboard() {
 
                   {/* Action Buttons */}
                   <button
-                    onClick={() => { handleWelcomeClose(); setActiveTab('investasi') }}
+                    onClick={() => { handleWelcomeClose(); setActiveTab('market') }}
                     className="w-full h-11 rounded-xl text-white text-[11px] font-black tracking-wide hover:scale-[1.02] transition-transform mb-2"
                     style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
                   >
@@ -9663,421 +8057,6 @@ function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Investment Product Detail Modal */}
-      <AnimatePresence>
-        {showInvestDetailModal && selectedDetailProduct && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowInvestDetailModal(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25 }} className="fixed z-50 bottom-0 left-0 right-0 md:inset-0 md:bottom-auto md:left-auto md:right-auto md:flex md:items-center md:justify-center max-h-[90vh] bg-[var(--zv-panel)] rounded-t-3xl md:rounded-3xl border border-[var(--zv-border)] overflow-y-auto custom-scrollbar md:w-[90vw] md:max-w-lg md:mx-auto md:my-auto">
-              <div className="sticky top-0 bg-[var(--zv-panel)] p-4 border-b border-[var(--zv-border)] flex items-center justify-between rounded-t-3xl z-10">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-[#3b82f6]" />
-                  <span className="text-[12px] font-black text-[var(--zv-text)]">Detail Investasi</span>
-                </div>
-                <button onClick={() => setShowInvestDetailModal(false)} className="w-8 h-8 rounded-lg grid place-items-center hover:bg-[var(--zv-surface)] text-[var(--zv-muted)] hover:text-[var(--zv-text)]"><X className="w-4 h-4" /></button>
-              </div>
-
-              <div className="p-4">
-                {/* Product Header */}
-                <div className="rounded-2xl p-3 mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
-                  <div className="text-white">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="w-5 h-5 text-yellow-300" />
-                      <span className="text-[14px] font-black">{selectedDetailProduct.name}</span>
-                    </div>
-                    <span className="text-[8px] font-bold text-blue-200">Aset Saham • {selectedDetailProduct.category === 'starter' ? 'Paket Starter' : selectedDetailProduct.category === 'growth' ? 'Paket Growth' : 'Paket Premium'}</span>
-                  </div>
-                </div>
-
-                {/* Live Chart with Type & Timeframe Selectors */}
-                {(() => {
-                  const rawData = getInvestChartData(selectedDetailProduct)
-                  const chartData = getDataForTimeframe(rawData, investTimeframe)
-                  const movement = investMovement.get(selectedDetailProduct.id)
-                  const isUp = movement ? movement.changePercent >= 0 : true
-                  const chartColor = isUp ? '#2563eb' : '#ef4444'
-                  const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].close : selectedDetailProduct.modal
-                  return (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1">
-                          <BarChart3 className="w-3 h-3 text-[var(--zv-muted)]" />
-                          <span className="text-[8px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PERGERAKAN MARKET</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                          <span className="text-[7px] font-black text-[#3b82f6]">LIVE</span>
-                        </div>
-                      </div>
-                      {/* Current Price Display */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xl font-black text-[var(--zv-text)] tabular-nums">{formatRupiah(lastValue)}</span>
-                        <span className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-[var(--zv-surface)] text-[#22c55e]' : 'bg-[var(--zv-surface)] text-[#ef5350]'}`}>
-                          {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                          {movement ? (isUp ? '+' : '') + movement.changePercent.toFixed(2) + '%' : '+0.00%'}
-                        </span>
-                      </div>
-                      {/* Chart Type & Timeframe Selectors */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1 bg-[var(--zv-surface)] rounded-xl p-1">
-                          {([
-                            { type: 'area' as const, label: '📈 Area' },
-                            { type: 'line' as const, label: '📉 Line' },
-                            { type: 'candle' as const, label: '🕯️ Candle' },
-                            { type: 'bar' as const, label: '📊 Bar' },
-                          ]).map(ct => (
-                            <button key={ct.type} onClick={() => setInvestChartType(ct.type)}
-                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investChartType === ct.type ? 'bg-[var(--zv-panel)] shadow-sm text-[#3b82f6]' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
-                              {ct.label}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-0.5 bg-[var(--zv-surface)] rounded-xl p-1">
-                          {(['1H', '1D', '1W', '1M', 'ALL'] as const).map(tf => (
-                            <button key={tf} onClick={() => setInvestTimeframe(tf)}
-                              className={`h-7 px-2.5 rounded-lg text-[8px] font-black transition-all ${investTimeframe === tf ? 'bg-[#3b82f6] text-white' : 'text-[var(--zv-muted)] hover:text-[var(--zv-text)]'}`}>
-                              {tf}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Chart Area */}
-                      <div className="h-56 w-full rounded-2xl border border-[var(--zv-border)] p-0 overflow-hidden" style={{ background: 'var(--zv-panel)' }}>
-                        {chartData.length > 2 ? (() => {
-                          const candles = chartData
-                          const allPrices = candles.flatMap(c => [c.high, c.low])
-                          const minP = Math.min(...allPrices)
-                          const maxP = Math.max(...allPrices)
-                          const rangeP = maxP - minP || 1
-                          const totalCandles = candles.length
-                          const maxVol = Math.max(...candles.map(c => c.volume), 1)
-                          const padTop = 12
-                          const padBot = 18
-                          const priceH = 138 // price chart area height (70%)
-                          const volH = 56 // volume area height (30%)
-                          const totalH = priceH + volH
-                          const svgH = padTop + totalH + padBot
-                          const priceScaleW = 64
-                          const timeScaleH = padBot
-                          const leftPad = 8
-                          const candleW = Math.max(6, Math.floor(240 / totalCandles))
-                          const gapW = Math.max(3, Math.floor(50 / totalCandles))
-                          const chartW = totalCandles * (candleW + gapW) + gapW * 2
-                          const svgW = chartW + priceScaleW
-
-                          // Compute MA lines
-                          const ma7 = computeMA(candles, 7)
-                          const ma25 = computeMA(candles, 25)
-                          const ma99 = computeMA(candles, 99)
-
-                          // Compact price formatter for grid labels
-                          const compactPrice = (p: number) => {
-                            if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M`
-                            if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K`
-                            return p.toFixed(0)
-                          }
-
-                          // Candlestick (large, full featured)
-                          if (investChartType === 'candle') {
-                            if (candles.length < 2) return <div className="flex items-center justify-center h-full text-[10px] text-gray-500">Data kurang...</div>
-                            return (
-                              <svg className="w-full h-full" viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" style={{ fontFamily: 'monospace' }} shapeRendering="crispEdges">
-                                {/* Grid lines - horizontal with 8 lines, dotted style */}
-                                {[0, 1, 2, 3, 4, 5, 6, 7].map(gi => {
-                                  const gy = padTop + (gi / 7) * priceH
-                                  const priceLabel = Math.round(maxP - (rangeP / 7) * gi)
-                                  return (
-                                    <g key={`hgrid-${gi}`}>
-                                      <line x1={leftPad} y1={gy} x2={chartW} y2={gy} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                      <text x={chartW + 6} y={gy + 3} fontSize="7" fill="var(--zv-muted)">{compactPrice(priceLabel)}</text>
-                                    </g>
-                                  )
-                                })}
-                                {/* Grid lines - vertical, dotted */}
-                                {candles.filter((_, i) => i % Math.max(1, Math.floor(totalCandles / 6)) === 0).map((c, _idx, arr) => {
-                                  const i = _idx === 0 ? 0 : Math.floor(totalCandles / 6) * _idx
-                                  const gx = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                                  return (
-                                    <g key={`vgrid-${i}`}>
-                                      <line x1={gx} y1={padTop} x2={gx} y2={padTop + totalH} stroke="var(--zv-border)" strokeWidth="0.5" strokeDasharray="3,3" />
-                                      <text x={gx} y={svgH - 4} fontSize="6" fill="var(--zv-muted)" textAnchor="middle">{c.time}</text>
-                                    </g>
-                                  )
-                                })}
-                                {/* Volume bars with opacity variation & rounded top */}
-                                {candles.map((c, i) => {
-                                  const x = leftPad + gapW + i * (candleW + gapW)
-                                  const isGreen = c.close >= c.open
-                                  const volBarH = (c.volume / maxVol) * volH
-                                  const volY = padTop + priceH + volH - volBarH
-                                  const volOpacity = 0.2 + (i / totalCandles) * 0.25
-                                  return <rect key={`vol-${i}`} x={x} y={volY} width={candleW} height={volBarH} fill={isGreen ? '#22c55e' : '#ef5350'} opacity={volOpacity} rx="1" />
-                                })}
-                                {/* MA7 line (yellow) - smoothed */}
-                                <polyline
-                                  fill="none"
-                                  stroke="#f5c542"
-                                  strokeWidth="1"
-                                  opacity="0.8"
-                                  strokeLinejoin="round"
-                                  strokeLinecap="round"
-                                  points={ma7.map((v, i) => {
-                                    if (v === null) return ''
-                                    const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                                    const y = padTop + ((maxP - v) / rangeP) * priceH
-                                    return `${x},${y}`
-                                  }).filter(Boolean).join(' ')}
-                                />
-                                {/* MA25 line (blue) - smoothed */}
-                                <polyline
-                                  fill="none"
-                                  stroke="#2196f3"
-                                  strokeWidth="1"
-                                  opacity="0.8"
-                                  strokeLinejoin="round"
-                                  strokeLinecap="round"
-                                  points={ma25.map((v, i) => {
-                                    if (v === null) return ''
-                                    const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                                    const y = padTop + ((maxP - v) / rangeP) * priceH
-                                    return `${x},${y}`
-                                  }).filter(Boolean).join(' ')}
-                                />
-                                {/* MA99 line (purple) - smoothed */}
-                                <polyline
-                                  fill="none"
-                                  stroke="#9c27b0"
-                                  strokeWidth="1"
-                                  opacity="0.8"
-                                  strokeLinejoin="round"
-                                  strokeLinecap="round"
-                                  points={ma99.map((v, i) => {
-                                    if (v === null) return ''
-                                    const x = leftPad + gapW + i * (candleW + gapW) + candleW / 2
-                                    const y = padTop + ((maxP - v) / rangeP) * priceH
-                                    return `${x},${y}`
-                                  }).filter(Boolean).join(' ')}
-                                />
-                                {/* Candlesticks - TradingView style with hollow bearish */}
-                                {candles.map((c, i) => {
-                                  const x = leftPad + gapW + i * (candleW + gapW)
-                                  const yH = padTop + ((maxP - c.high) / rangeP) * priceH
-                                  const yL = padTop + ((maxP - c.low) / rangeP) * priceH
-                                  const yO = padTop + ((maxP - c.open) / rangeP) * priceH
-                                  const yC = padTop + ((maxP - c.close) / rangeP) * priceH
-                                  const isGreen = c.close >= c.open
-                                  const bodyTop = Math.min(yO, yC)
-                                  const bodyH = Math.max(Math.abs(yO - yC), 2)
-                                  const isLast = i === totalCandles - 1
-                                  return (
-                                    <g key={i} opacity={isLast ? 1 : 0.9}>
-                                      <line x1={x + candleW / 2} y1={yH} x2={x + candleW / 2} y2={yL} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth={isLast ? "1" : "0.7"} />
-                                      <rect x={x} y={bodyTop} width={candleW} height={bodyH} fill={isGreen ? '#22c55e' : '#ef5350'} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" rx="0.8" />
-                                    </g>
-                                  )
-                                })}
-                                {/* Current price line with tag */}
-                                {candles.length > 0 && (() => {
-                                  const lastC = candles[candles.length - 1]
-                                  const isGreen = lastC.close >= lastC.open
-                                  const yLast = padTop + ((maxP - lastC.close) / rangeP) * priceH
-                                  return (
-                                    <>
-                                      <line x1={leftPad} y1={yLast} x2={chartW} y2={yLast} stroke={isGreen ? '#22c55e' : '#ef5350'} strokeWidth="0.7" strokeDasharray="4,3" opacity="0.8" />
-                                      <rect x={chartW + 2} y={yLast - 8} width={priceScaleW - 4} height="16" rx="3" fill={isGreen ? '#22c55e' : '#ef5350'} />
-                                      <text x={chartW + priceScaleW / 2} y={yLast + 3.5} fontSize="7" fill="white" textAnchor="middle" fontWeight="bold">{compactPrice(lastC.close)}</text>
-                                    </>
-                                  )
-                                })()}
-                                {/* MA Legend */}
-                                <text x={leftPad + 4} y={padTop - 2} fontSize="7" fill="#f5c542" fontWeight="bold">MA7</text>
-                                <text x={leftPad + 34} y={padTop - 2} fontSize="7" fill="#2196f3" fontWeight="bold">MA25</text>
-                                <text x={leftPad + 70} y={padTop - 2} fontSize="7" fill="#9c27b0" fontWeight="bold">MA99</text>
-                              </svg>
-                            )
-                          }
-
-                          const values = chartData.map(d => d.close)
-                          const minV = Math.min(...values)
-                          const maxV = Math.max(...values)
-                          const rangeV = maxV - minV || 1
-                          const domain: [number, number] = [Math.floor(minV - rangeV * 0.12), Math.ceil(maxV + rangeV * 0.12)]
-
-                          // Bar chart
-                          if (investChartType === 'bar') {
-                            const barData = chartData.map((d, i) => ({
-                              idx: d.idx,
-                              close: d.close,
-                              fill: i > 0 && d.close >= chartData[i - 1].close ? '#2563eb' : '#ef4444'
-                            }))
-                            return (
-                              <ResponsiveContainer width="100%" height="100%">
-                                <ReBarChart data={barData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                                  <XAxis dataKey="idx" hide />
-                                  <YAxis hide domain={domain} />
-                                  <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: '1px solid #e5e7eb' }} />
-                                  <Bar dataKey="close" radius={[3, 3, 0, 0]} isAnimationActive={true} animationDuration={400}>
-                                    {barData.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                  </Bar>
-                                </ReBarChart>
-                              </ResponsiveContainer>
-                            )
-                          }
-
-                          // Line chart
-                          if (investChartType === 'line') {
-                            return (
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                                  <XAxis dataKey="idx" hide />
-                                  <YAxis hide domain={domain} />
-                                  <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                  <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: `1px solid ${isUp ? '#bbf7d0' : '#fecaca'}`, background: isUp ? '#f0fdf4' : '#fef2f2' }} />
-                                  <Line type="monotone" dataKey="close" stroke={chartColor} strokeWidth={2.5} dot={false}
-                                    activeDot={{ r: 5, fill: chartColor, stroke: '#fff', strokeWidth: 2 }}
-                                    isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                                </LineChart>
-                              </ResponsiveContainer>
-                            )
-                          }
-
-                          // Area chart (default)
-                          return (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={chartData} margin={{ top: 5, right: 12, bottom: 0, left: 5 }}>
-                                <defs>
-                                  <linearGradient id={`investDetailGrad-${selectedDetailProduct.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={chartColor} stopOpacity="0.4" />
-                                    <stop offset="50%" stopColor={chartColor} stopOpacity="0.1" />
-                                    <stop offset="100%" stopColor={chartColor} stopOpacity="0" />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                                <XAxis dataKey="idx" hide />
-                                <YAxis hide domain={domain} />
-                                <ReferenceLine y={lastValue} stroke={chartColor} strokeDasharray="3 3" strokeOpacity={0.3} />
-                                <Tooltip formatter={(value: number) => [formatRupiah(value), 'Harga']} contentStyle={{ fontSize: '10px', borderRadius: '10px', border: `1px solid ${isUp ? '#bbf7d0' : '#fecaca'}`, background: isUp ? '#f0fdf4' : '#fef2f2' }} />
-                                <Area type="monotone" dataKey="close" stroke={chartColor} fill={`url(#investDetailGrad-${selectedDetailProduct.id})`} strokeWidth={2.5}
-                                  dot={(props: Record<string, unknown>) => {
-                                    const { cx, cy, index } = props as { cx: number; cy: number; index: number }
-                                    if (index !== chartData.length - 1) return <g key={String(index)} />
-                                    return (
-                                      <g key={`invest-detail-dot-${selectedDetailProduct.id}`}>
-                                        <circle cx={cx} cy={cy} r={8} fill={chartColor} opacity={0.2}>
-                                          <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" />
-                                          <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
-                                        </circle>
-                                        <circle cx={cx} cy={cy} r={4} fill={chartColor} stroke="#fff" strokeWidth={1.5} />
-                                      </g>
-                                    )
-                                  }}
-                                  activeDot={false}
-                                  isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          )
-                        })() : (
-                          <div className="flex items-center justify-center h-full text-[10px] text-gray-500">Memuat data market...</div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-1">
-                          {isUp ? <TrendingUp className="w-3.5 h-3.5 text-[#22c55e]" /> : <TrendingDown className="w-3.5 h-3.5 text-[#ef5350]" />}
-                          <span className={`text-[10px] font-bold ${isUp ? 'text-[#22c55e]' : 'text-[#ef5350]'}`}>
-                            Modal: {formatRupiah(selectedDetailProduct.modal)}
-                          </span>
-                        </div>
-                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isUp ? 'bg-[var(--zv-surface)] text-[#22c55e]' : 'bg-[var(--zv-surface)] text-[#ef5350]'}`}>
-                          {formatRupiah(lastValue)}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Full Financial Details */}
-                <div className="space-y-2.5 mb-4">
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">JUMLAH MODAL</span>
-                    <span className="text-[12px] font-black text-[var(--zv-text)]">{formatRupiah(selectedDetailProduct.modal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">PROFIT HARIAN</span>
-                    <span className="text-[12px] font-black text-[#22c55e]">+{formatRupiah(selectedDetailProduct.dailyProfit)}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">DURASI</span>
-                    <span className="text-[12px] font-black text-[var(--zv-text)]">{selectedDetailProduct.duration} Hari</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5 border-b border-[var(--zv-border)]">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">TOTAL KEUNTUNGAN</span>
-                    <div className="text-right">
-                      <span className="text-[12px] font-black text-[#22c55e]">{formatRupiah(selectedDetailProduct.totalReturn)}</span>
-                      <span className="ml-1 text-[8px] font-bold text-[#f59e0b] bg-[var(--zv-surface)] px-1 rounded">ROI {selectedDetailProduct.roi}%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between py-1.5">
-                    <span className="text-[9px] font-bold text-[var(--zv-muted)] uppercase tracking-wider">SALDO TERSEDIA</span>
-                    <span className={`text-[12px] font-black ${(user?.balance || 0) >= selectedDetailProduct.modal ? 'text-[#3b82f6]' : 'text-[#ef5350]'}`}>{formatRupiah(user?.balance || 0)}</span>
-                  </div>
-                </div>
-
-                {/* Profit Distribution with AUTO toggle */}
-                <div className="rounded-xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#3b82f6]" />
-                      <span className="text-[9px] font-bold text-[#3b82f6]">Pembagian Profit Setiap 24 jam</span>
-                    </div>
-                    <button
-                      onClick={() => setInvestDetailAutoProfit(!investDetailAutoProfit)}
-                      className={`h-6 px-3 rounded-full text-[7px] font-black transition-colors ${investDetailAutoProfit ? 'bg-[#3b82f6] text-white' : 'bg-[var(--zv-border)] text-[var(--zv-muted)]'}`}
-                    >
-                      {investDetailAutoProfit ? 'AUTO' : 'MANUAL'}
-                    </button>
-                  </div>
-                  <p className="text-[7px] text-[var(--zv-muted)] mt-1">
-                    {investDetailAutoProfit
-                      ? 'Profit akan otomatis dikreditkan ke saldo Anda setiap 24 jam.'
-                      : 'Anda perlu mengklaim profit secara manual setiap hari.'}
-                  </p>
-                </div>
-
-                {/* Balance Warning */}
-                {(user?.balance || 0) < selectedDetailProduct.modal && (
-                  <div className="rounded-xl p-2.5 bg-[var(--zv-surface)] border border-[var(--zv-border)] mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-[#ef5350] flex-shrink-0" />
-                    <span className="text-[9px] font-bold text-[#ef5350]">Saldo tidak mencukupi. Silakan deposit terlebih dahulu.</span>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button onClick={() => setShowInvestDetailModal(false)} className="flex-1 h-11 rounded-xl bg-[var(--zv-surface)] border border-[var(--zv-border)] text-[var(--zv-muted)] text-[11px] font-bold hover:bg-[var(--zv-border)] transition-colors">
-                    Kembali
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowInvestDetailModal(false)
-                      setSelectedProduct(selectedDetailProduct)
-                      setShowInvestModal(true)
-                    }}
-                    disabled={(user?.balance || 0) < selectedDetailProduct.modal}
-                    className="flex-1 h-11 rounded-xl text-white text-[11px] font-black disabled:opacity-70 hover:scale-[1.02] transition-transform"
-                    style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 50%, #2563eb 100%)' }}
-                  >
-                    Investasi Sekarang
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Promo Detail Modal */}
       <AnimatePresence>
@@ -10123,8 +8102,8 @@ function Dashboard() {
                       <Flame className="w-4 h-4" />Klaim Cek Harian
                     </button>
                   ) : selectedPromo.type === 'referral_program' ? (
-                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('undang') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
-                      <UserPlus className="w-4 h-4" />Ajak Teman Sekarang
+                    <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('market') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-bold hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+                      <BarChart3 className="w-4 h-4" />Lihat Pasar
                     </button>
                   ) : selectedPromo.type === 'deposit_bonus' ? (
                     <button onClick={() => { setShowPromoDetailModal(false); setActiveTab('finance') }} className="w-full h-11 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[11px] font-bold hover:from-green-400 hover:to-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
@@ -10354,21 +8333,21 @@ function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 grid place-items-center"><Building2 className="w-5 h-5 text-[#3b82f6]" /></div>
-                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Tentang ZEVORIX</h2>
+                    <h2 className="text-[16px] font-black text-[var(--zv-text)]">Tentang ZEVORIK</h2>
                   </div>
                   <button onClick={() => setShowAboutModal(false)} className="w-8 h-8 rounded-full bg-[var(--zv-surface)] border border-[var(--zv-border)] grid place-items-center hover:bg-[var(--zv-border)] transition-colors"><X className="w-4 h-4 text-[var(--zv-muted)]" /></button>
                 </div>
                 <div className="rounded-2xl overflow-hidden mb-4" style={{ background: 'linear-gradient(145deg, #0c1a2e 0%, #1e3a5f 54%, #2563eb 100%)' }}>
                   <div className="p-5 text-white text-center">
                     <div className="mx-auto mb-3 w-fit">
-                      <ZevorixLogo size={50} />
+                      <ZevorikLogo size={50} />
                     </div>
-                    <h3 className="text-[18px] font-black gradient-text tracking-[0.15em]">ZEVORIX</h3>
+                    <h3 className="text-[18px] font-black gradient-text tracking-[0.15em]">ZEVORIK</h3>
                     <p className="text-[9px] text-blue-200 tracking-[0.2em] uppercase font-medium">Platform Investasi Saham Digital</p>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-[10px] text-[var(--zv-text)] leading-relaxed">ZEVORIX adalah platform investasi saham digital terpercaya yang menyediakan akses ke pasar saham global dengan teknologi terdepan. Didirikan dengan visi demokratisasi investasi untuk semua orang Indonesia.</p>
+                  <p className="text-[10px] text-[var(--zv-text)] leading-relaxed">ZEVORIK adalah platform investasi saham digital terpercaya yang menyediakan akses ke pasar saham global dengan teknologi terdepan. Didirikan dengan visi demokratisasi investasi untuk semua orang Indonesia.</p>
                   <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)] space-y-2">
                     {[
                       { label: 'Didirikan', value: '2024' },
@@ -10411,7 +8390,7 @@ function Dashboard() {
                     { q: 'Bagaimana cara menarik dana?', a: 'Klik menu Dompet → Tarik Saldo → Masukkan jumlah dan rekening tujuan → Konfirmasi penarikan. Proses 1-3 hari kerja.' },
                     { q: 'Apa itu Trading?', a: 'Trading adalah fitur dimana Anda membuka posisi Buy/Sell dengan Lot & Leverage. Posisi terbuka sampai Anda tutup manual, saldo ikut pergerakan grafik real-time seperti MT5.' },
                     { q: 'Bagaimana sistem komisi referral?', a: 'Anda mendapat komisi 10% dari Level 1, 3% dari Level 2, dan 1% dari Level 3. Komisi bisa diklaim kapan saja.' },
-                    { q: 'Apakah ZEVORIX aman?', a: 'ZEVORIX terdaftar dan diawasi oleh OJK. Semua dana nasabah dijamin oleh LPS. Kami menggunakan enkripsi SSL 256-bit.' },
+                    { q: 'Apakah ZEVORIK aman?', a: 'ZEVORIK terdaftar dan diawasi oleh OJK. Semua dana nasabah dijamin oleh LPS. Kami menggunakan enkripsi SSL 256-bit.' },
                   ].map((faq, i) => (
                     <details key={i} className="rounded-2xl bg-[var(--zv-surface)] border border-[var(--zv-border)] overflow-hidden group">
                       <summary className="p-3 flex items-center justify-between cursor-pointer hover:bg-[var(--zv-panel)] transition-colors">
@@ -10449,7 +8428,7 @@ export default function Home() {
   if (!mounted) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
       <div className="flex flex-col items-center gap-3">
-        <ZevorixLogo size={56} />
+        <ZevorikLogo size={56} />
         <span className="text-[12px] font-black text-[#1d4ed8] tracking-widest animate-pulse">LOADING...</span>
       </div>
     </div>

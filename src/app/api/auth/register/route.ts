@@ -2,179 +2,90 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword, generateToken } from '@/lib/auth'
 
-function generateReferralCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let code = 'GS'
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return code
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, phone, password, referralCode: inputReferralCode, accountType } = body
+    const { name, email, phone, password, pin } = body
 
-    if (!name || !phone || !password) {
+    // Validate all required fields
+    if (!name || !email || !phone || !password || !pin) {
       return NextResponse.json(
-        { error: 'Name, phone, and password are required' },
+        { error: 'Name, email, phone, password, and PIN are required' },
         { status: 400 }
       )
     }
 
-    const isDemo = accountType === 'demo'
-    const effectiveAccountType = isDemo ? 'demo' : 'real'
+    // Validate PIN is 6 digits
+    if (!/^\d{6}$/.test(pin)) {
+      return NextResponse.json(
+        { error: 'PIN must be exactly 6 digits' },
+        { status: 400 }
+      )
+    }
 
-    const existingUser = await db.user.findUnique({ where: { phone } })
-    if (existingUser) {
+    // Check email uniqueness
+    const existingEmail = await db.user.findUnique({ where: { email } })
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: 'Email already registered' },
+        { status: 409 }
+      )
+    }
+
+    // Check phone uniqueness
+    const existingPhone = await db.user.findUnique({ where: { phone } })
+    if (existingPhone) {
       return NextResponse.json(
         { error: 'Phone number already registered' },
         { status: 409 }
       )
     }
 
+    // Hash password and pin
     const hashedPassword = await hashPassword(password)
+    const hashedPin = await hashPassword(pin)
 
-    let referralCode = generateReferralCode()
-    let codeExists = await db.user.findUnique({ where: { referralCode } })
-    while (codeExists) {
-      referralCode = generateReferralCode()
-      codeExists = await db.user.findUnique({ where: { referralCode } })
-    }
-
-    let referrerId: string | null = null
-    if (inputReferralCode && !isDemo) {
-      const referrer = await db.user.findUnique({
-        where: { referralCode: inputReferralCode },
-      })
-      if (referrer) {
-        referrerId = referrer.id
-      }
-    }
-
-    // Demo: 100M balance, no welcome bonus
-    // Real: 0 balance (user must deposit/topup)
-    const welcomeBonus = 0
-    const initialBalance = isDemo ? 100000000 : 0
-
+    // Create user
     const user = await db.user.create({
       data: {
         name,
-        username: name.toLowerCase().replace(/\s+/g, '_'),
         phone,
+        email,
         password: hashedPassword,
-        balance: initialBalance,
-        role: isDemo ? 'investor' : 'investor',
-        accountType: effectiveAccountType,
-        referralCode,
-        referredBy: referrerId,
-        vipLevel: 'Bronze',
-        totalDeposit: 0,
-        totalTrading: 0,
-        dailyCheckIn: 0,
+        pin: hashedPin,
+        balance: 0,
+        role: 'investor',
+        kycStatus: 'pending',
       },
     })
 
-    // No welcome bonus - balance starts at 0 for real accounts
-
-    // Handle referral - only for real accounts (demo money isn't real)
-    if (referrerId && !isDemo) {
-      const bonusAmount = 50000
-      await db.referral.create({
-        data: {
-          referrerId,
-          referredId: user.id,
-          bonusAmount,
-          status: 'completed',
-        },
-      })
-      await db.user.update({
-        where: { id: referrerId },
-        data: { balance: { increment: bonusAmount } },
-      })
-      await db.user.update({
-        where: { id: user.id },
-        data: { balance: { increment: bonusAmount } },
-      })
-      await db.bonus.create({
-        data: {
-          userId: referrerId,
-          type: 'referral_bonus',
-          amount: bonusAmount,
-          description: `Bonus referral karena mengajak ${name} bergabung`,
-          status: 'completed',
-        },
-      })
-      await db.bonus.create({
-        data: {
-          userId: user.id,
-          type: 'referral_bonus',
-          amount: bonusAmount,
-          description: 'Bonus referral dari kode referral',
-          status: 'completed',
-        },
-      })
-      await db.notification.create({
-        data: {
-          userId: referrerId,
-          title: 'Bonus Referral!',
-          message: `Anda mendapat bonus referral Rp ${bonusAmount.toLocaleString('id-ID')} karena mengajak teman bergabung.`,
-          type: 'alert',
-        },
-      })
-      await db.notification.create({
-        data: {
-          userId: user.id,
-          title: 'Bonus Referral!',
-          message: `Anda mendapat bonus referral Rp ${bonusAmount.toLocaleString('id-ID')} dari kode referral.`,
-          type: 'alert',
-        },
-      })
-    }
-
-    // Welcome notification
-    if (isDemo) {
-      await db.notification.create({
-        data: {
-          userId: user.id,
-          title: 'Selamat Datang! 🎉',
-          message: `Selamat datang di ZEVORIX! Ini adalah akun demo dengan saldo Rp 100.000.000. Coba fitur trading tanpa risiko!`,
-          type: 'system',
-        },
-      })
-    } else {
-      await db.notification.create({
-        data: {
-          userId: user.id,
-          title: 'Selamat Datang! 🎉',
-          message: `Selamat datang di ZEVORIX! Mulai investasi Anda dengan deposit via QRIS. Lengkapi tugas harian untuk mendapat bonus!`,
-          type: 'system',
-        },
-      })
-    }
+    // Welcome notification - use ZEVORIK (not ZEVORIK)
+    await db.notification.create({
+      data: {
+        userId: user.id,
+        title: 'Selamat Datang! 🎉',
+        message: `Selamat datang di ZEVORIK! Mulai investasi Anda dengan deposit. Lengkapi KYC untuk akses penuh!`,
+        type: 'system',
+      },
+    })
 
     const token = await generateToken({ userId: user.id, phone: user.phone })
 
     return NextResponse.json({
       user: {
         id: user.id,
-        username: user.username,
         name: user.name,
         phone: user.phone,
         email: user.email,
         balance: user.balance,
         role: user.role,
-        accountType: user.accountType,
-        avatar: user.avatar,
-        referralCode: user.referralCode,
         kycStatus: user.kycStatus,
-        vipLevel: user.vipLevel,
         totalDeposit: user.totalDeposit,
         totalTrading: user.totalTrading,
         bankName: user.bankName,
         bankAccount: user.bankAccount,
         bankHolder: user.bankHolder,
+        avatar: user.avatar,
         createdAt: user.createdAt,
       },
       token,

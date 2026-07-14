@@ -9,45 +9,31 @@ datasource db {
 
 model User {
   id              String   @id @default(cuid())
-  username        String?
   name            String
   phone           String   @unique
-  email           String?
+  email           String   @unique
   password        String
+  pin             String
   balance         Float    @default(0)
   avatar          String?
   role            String   @default("investor")
-  referralCode    String   @unique
-  referredBy      String?
   kycStatus       String   @default("pending") // pending, verified, rejected
-  accountType     String   @default("real") // "demo" or "real"
-  vipLevel        String   @default("Bronze") // Bronze, Silver, Gold, Platinum, Diamond
   totalDeposit    Float    @default(0)
   totalTrading    Float    @default(0)
-  dailyCheckIn    Int      @default(0)
-  lastCheckIn     DateTime?
   bankName        String?
   bankAccount     String?
   bankHolder      String?
-  pin             String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  portfolios       Portfolio[]
-  transactions     Transaction[]
   deposits         Deposit[]
   withdrawals      Withdrawal[]
   watchlist        Watchlist[]
   notifications    Notification[]
-  bonuses          Bonus[]
   kycRecords       KYC[]
-  sentReferrals    Referral[]  @relation("Referrer")
-  receivedReferrals Referral[] @relation("Referred")
-  commissionEarned ReferralCommission[] @relation("CommissionReferrer")
-  commissionGenerated ReferralCommission[] @relation("CommissionReferred")
-  investments      Investment[]
   predictionTrades PredictionTrade[]
-  stockContracts   StockContract[]
+  portfolios       Portfolio[]
+  transactions     Transaction[]
 }
 
 model Stock {
@@ -73,42 +59,9 @@ model Stock {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  watchlist      Watchlist[]
   portfolios     Portfolio[]
   transactions   Transaction[]
-  watchlist      Watchlist[]
-  stockContracts StockContract[]
-}
-
-model Portfolio {
-  id        String   @id @default(cuid())
-  userId    String
-  stockId   String
-  shares    Int      @default(0)
-  avgPrice  Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id])
-  stock Stock @relation(fields: [stockId], references: [id])
-
-  @@unique([userId, stockId])
-}
-
-model Transaction {
-  id        String   @id @default(cuid())
-  userId    String
-  stockId   String
-  type      String   // BUY or SELL
-  orderType String   @default("market") // market, limit
-  shares    Int
-  price     Float
-  total     Float
-  fee       Float    @default(0)
-  status    String   @default("completed") // completed, pending, cancelled
-  createdAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id])
-  stock Stock @relation(fields: [stockId], references: [id])
 }
 
 model StockPriceHistory {
@@ -175,28 +128,6 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 }
 
-model Referral {
-  id          String   @id @default(cuid())
-  referrerId  String
-  referredId  String
-  bonusAmount Float    @default(0)
-  status      String   @default("pending") // pending, completed
-  createdAt   DateTime @default(now())
-
-  referrer User @relation("Referrer", fields: [referrerId], references: [id])
-  referred User @relation("Referred", fields: [referredId], references: [id])
-}
-
-model News {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  category    String   @default("market") // market, company, system, education
-  imageUrl    String?
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-}
-
 model MarketIndex {
   id            String   @id @default(cuid())
   code          String   @unique
@@ -207,18 +138,6 @@ model MarketIndex {
   updatedAt     DateTime @updatedAt
 }
 
-model Bonus {
-  id          String   @id @default(cuid())
-  userId      String
-  type        String   // daily_checkin, trading_bonus, deposit_bonus, referral_bonus, welcome_bonus
-  amount      Float
-  description String?
-  status      String   @default("completed") // pending, completed, cancelled
-  createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-}
-
 model KYC {
   id              String   @id @default(cuid())
   userId          String
@@ -227,134 +146,16 @@ model KYC {
   address         String
   occupation      String
   incomeRange     String
-  ktpImage        String?   // URL gambar KTP
-  selfieImage     String?   // URL gambar selfie dengan KTP
-  bankStatement   String?   // URL buku rekening / statement bank
-  additionalDoc   String?   // URL dokumen tambahan
+  ktpImage        String?
+  selfieImage     String?
+  bankStatement   String?
+  additionalDoc   String?
   status          String   @default("pending") // pending, verified, rejected
-  rejectReason    String?   // Alasan penolakan jika rejected
-  reviewedAt      DateTime? // Kapan di-review oleh admin
+  rejectReason    String?
+  reviewedAt      DateTime?
   createdAt       DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
-}
-
-model Promo {
-  id        String   @id @default(cuid())
-  title     String
-  description String
-  type      String   // welcome_bonus, deposit_bonus, referral_program, trading_competition
-  value     Float    @default(0)
-  startDate DateTime @default(now())
-  endDate   DateTime?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-}
-
-model Leaderboard {
-  id           String   @id @default(cuid())
-  userId       String
-  rank         Int
-  totalProfit  Float    @default(0)
-  profitPercent Float   @default(0)
-  period       String   @default("all") // daily, weekly, monthly, all
-  createdAt    DateTime @default(now())
-}
-
-model InvestmentProduct {
-  id          String   @id @default(cuid())
-  name        String
-  category    String   // "potential" or "dividen"
-  modal       Int      // Investment amount in IDR
-  dailyProfit Int      // Daily profit in IDR
-  totalReturn Int      // Total return in IDR
-  duration    Int      // Duration in days
-  roi         Float    // ROI percentage
-  order       Int      // Display order
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-
-  investments Investment[]
-}
-
-model Investment {
-  id           String    @id @default(cuid())
-  userId       String
-  productId    String
-  amount       Int       // Investment amount
-  dailyProfit  Int       // Daily profit amount
-  totalReturn  Int       // Total expected return
-  duration     Int       // Duration in days
-  daysElapsed  Int       @default(0)
-  totalClaimed Int       @default(0) // Total profit claimed so far
-  status       String    @default("active") // active, completed, cancelled
-  lastClaimAt  DateTime?
-  createdAt    DateTime  @default(now())
-
-  user    User              @relation(fields: [userId], references: [id])
-  product InvestmentProduct @relation(fields: [productId], references: [id])
-}
-
-model DailyCheck {
-  id          String   @id @default(cuid())
-  userId      String
-  checkDate   DateTime // The date of check-in
-  reward      Int      // Reward amount in IDR
-  streak      Int      // Current streak count
-  createdAt   DateTime @default(now())
-
-  @@unique([userId, checkDate]) // One check per day per user
-}
-
-model Task {
-  id          String   @id @default(cuid())
-  userId      String
-  taskType    String   // "first_invest", "top_up", "invite_3", "verify", "invest_3", "check_7"
-  title       String
-  description String?
-  reward      Int      // Reward amount
-  progress    Int      @default(0)
-  target      Int      @default(1)
-  completed   Boolean  @default(false)
-  claimed     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model ReferralCommission {
-  id          String   @id @default(cuid())
-  referrerId  String   // Who earned the commission
-  referredId  String   // Who was referred
-  level       Int      // 1, 2, or 3
-  amount      Int      // Commission amount
-  sourceAmount Int     // The deposit/investment amount that generated this commission
-  status      String   @default("pending") // pending, claimed
-  createdAt   DateTime @default(now())
-
-  referrer User @relation("CommissionReferrer", fields: [referrerId], references: [id])
-  referred User @relation("CommissionReferred", fields: [referredId], references: [id])
-}
-
-model StockContract {
-  id               String    @id @default(cuid())
-  userId           String
-  stockId          String
-  stockCode        String
-  stockName        String
-  amount           Int       // Investment amount in IDR
-  dailyProfitRate  Float     // Daily profit rate (%)
-  dailyProfitAmount Int     // Daily profit in IDR
-  totalProfit      Int       // Total expected profit over duration
-  totalReturn      Int       // Total return (amount + totalProfit)
-  duration         Int       // Duration in days (min 30)
-  daysElapsed      Int       @default(0)
-  totalClaimed     Int       @default(0)
-  status           String    @default("active") // active, completed, cancelled
-  lastClaimAt      DateTime?
-  createdAt        DateTime  @default(now())
-
-  user  User  @relation(fields: [userId], references: [id])
-  stock Stock @relation(fields: [stockId], references: [id])
 }
 
 model PredictionTrade {
@@ -363,14 +164,14 @@ model PredictionTrade {
   stockCode     String
   stockName     String
   direction     String   // UP or DOWN
-  amount        Float    // Investment amount in IDR
-  duration      Int      // Duration in seconds
-  profitPercent Float    // Profit percentage based on duration
-  startPrice    Float    // Stock price at trade start
-  endPrice      Float    @default(0) // Stock price at trade end
+  amount        Float
+  duration      Int
+  profitPercent Float
+  startPrice    Float
+  endPrice      Float    @default(0)
   status        String   @default("active") // active, won, lost
-  isAuto        Boolean  @default(false) // Auto-detect direction
-  profit        Float    @default(0) // Profit amount (0 if lost)
+  isAuto        Boolean  @default(false)
+  profit        Float    @default(0)
   startedAt     DateTime @default(now())
   completedAt   DateTime?
   createdAt     DateTime @default(now())
@@ -392,4 +193,36 @@ model AdminSetting {
   id    String @id @default(cuid())
   key   String @unique
   value String
+}
+
+model Portfolio {
+  id        String   @id @default(cuid())
+  userId    String
+  stockId   String
+  shares    Int      @default(0)
+  avgPrice  Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  stock Stock @relation(fields: [stockId], references: [id])
+
+  @@unique([userId, stockId])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  stockId   String
+  type      String   // BUY or SELL
+  orderType String   @default("market") // market, limit
+  shares    Int
+  price     Float
+  total     Float
+  fee       Float    @default(0)
+  status    String   @default("completed") // completed, pending, cancelled
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  stock Stock @relation(fields: [stockId], references: [id])
 }

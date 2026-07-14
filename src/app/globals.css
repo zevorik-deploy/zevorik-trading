@@ -41,7 +41,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  /* ZEVORIX Brand Colors */
+  /* ZEVORIK Brand Colors */
   --color-zv-blue: #3b82f6;
   --color-zv-blue2: #60a5fa;
   --color-zv-blue3: #1d4ed8;
