@@ -1,0 +1,22 @@
+name: VPS Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASS }}
+          port: 22
+          timeout: 120s
+          command_timeout: 15m
+          script: whoami && echo "Connected to VPS!" && cd /root/zevorik-trading && git fetch --all && git reset --hard origin/main && bun install && echo "JWT_SECRET=zevorik-jwt-secret-key-2024-secure" >> .env && npx prisma db push --accept-data-loss && pkill -f next 2>/dev/null; sleep 2; setsid bun run dev > /tmp/zevorik.log 2>&1 & sleep 10; curl -s http://localhost:3000/api/stocks > /dev/null && echo "APP OK" || echo "APP STARTING"
