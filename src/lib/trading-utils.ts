@@ -1,11 +1,14 @@
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
-export const formatRupiah = (num: number): string =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num)
+export const formatUSD = (num: number): string =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num)
+
+// Keep formatRupiah as alias for backward compatibility (now shows USD)
+export const formatRupiah = formatUSD
 
 export const formatNumber = (num: number): string =>
-  new Intl.NumberFormat('id-ID').format(num)
+  new Intl.NumberFormat('en-US').format(num)
 
 export const formatPercent = (num: number): string =>
   `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`

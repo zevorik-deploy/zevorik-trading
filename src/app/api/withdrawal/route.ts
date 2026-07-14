@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId || !amount || !bankName || !bankAccount || !bankHolder) {
       return NextResponse.json(
-        { error: 'userId, amount, bankName, bankAccount, and bankHolder are required' },
+        { error: 'userId, amount, bankName, bankAccount, dan bankHolder are required' },
         { status: 400 }
       )
     }
@@ -21,9 +21,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (amount <= 0) {
+    const withdrawAmount = parseFloat(amount)
+    if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
       return NextResponse.json(
         { error: 'Jumlah penarikan harus lebih dari 0' },
+        { status: 400 }
+      )
+    }
+
+    // Minimum withdrawal 10 USDT
+    if (withdrawAmount < 10) {
+      return NextResponse.json(
+        { error: 'Minimum penarikan 10 USDT' },
         { status: 400 }
       )
     }
@@ -54,68 +63,88 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // KYC-based minimum withdrawal
-    const isKycVerified = user.kycStatus === 'verified'
-    const minWithdraw = isKycVerified ? 50000 : 250000
-
-    if (amount < minWithdraw) {
+    // KYC required for withdrawal
+    if (user.kycStatus !== 'verified') {
       return NextResponse.json(
-        { error: `Minimum penarikan ${isKycVerified ? 'dengan KYC terverifikasi' : 'tanpa verifikasi KYC'} adalah Rp ${minWithdraw.toLocaleString('id-ID')}. Verifikasi KYC untuk minimum Rp 50.000!` },
-        { status: 400 }
+        { error: 'Verifikasi KYC diperlukan untuk melakukan penarikan' },
+        { status: 403 }
       )
     }
 
-    if (user.balance < amount) {
+    if (user.balance < withdrawAmount) {
       return NextResponse.json(
         { error: 'Saldo tidak cukup' },
         { status: 400 }
       )
     }
 
-    // Maximum withdrawal per transaction
-    const maxWithdraw = 500000000 // 500 million
-    if (amount > maxWithdraw) {
-      return NextResponse.json(
-        { error: `Maximum penarikan per transaksi adalah Rp ${maxWithdraw.toLocaleString('id-ID')}` },
-        { status: 400 }
-      )
+    // =============================================
+    // PROFIT-BASED WITHDRAWAL PENALTY SYSTEM
+    // =============================================
+    const totalDeposit = user.totalDeposit || 0
+    const profit = user.balance - totalDeposit
+    const profitPercent = totalDeposit > 0 ? (profit / totalDeposit) * 100 : 0
+    const isProfit100Percent = profitPercent >= 100
+
+    let penalty = 0
+    let adminFee = 0
+    let netAmount = 0
+    let feeDescription = ''
+
+    if (isProfit100Percent) {
+      // Profit >= 100% of modal: only 5% admin fee
+      adminFee = Math.round(withdrawAmount * 0.05 * 100) / 100
+      penalty = 0
+      netAmount = withdrawAmount - adminFee
+      feeDescription = `Profit ≥ 100% dari modal. Biaya admin 5%: ${adminFee} USDT. Diterima: ${netAmount} USDT`
+    } else {
+      // Profit < 100% of modal: 50% penalty + 5% admin fee = 55% total deduction
+      penalty = Math.round(withdrawAmount * 0.50 * 100) / 100
+      const remainingAfterPenalty = withdrawAmount - penalty
+      adminFee = Math.round(remainingAfterPenalty * 0.05 * 100) / 100
+      netAmount = remainingAfterPenalty - adminFee
+      feeDescription = `Profit < 100% dari modal (${profitPercent.toFixed(1)}%). Penalty 50%: ${penalty} USDT. Biaya admin 5%: ${adminFee} USDT. Total potongan: ${penalty + adminFee} USDT. Diterima: ${netAmount} USDT`
     }
 
-    // Calculate 10% admin fee
-    const adminFee = Math.round(amount * 0.10)
-    const netAmount = amount - adminFee
-
-    // Create withdrawal and deduct balance
+    // Create withdrawal
     const withdrawal = await db.withdrawal.create({
       data: {
         userId,
-        amount,
+        amount: withdrawAmount,
         bankName,
         bankAccount,
         bankHolder,
         status: 'processing',
-        note: `Biaya admin 10%: Rp ${adminFee.toLocaleString('id-ID')} | Diterima: Rp ${netAmount.toLocaleString('id-ID')}`,
+        note: feeDescription,
       },
     })
 
+    // Deduct balance
     await db.user.update({
       where: { id: userId },
-      data: { balance: user.balance - amount },
+      data: { balance: user.balance - withdrawAmount },
     })
 
     await db.notification.create({
       data: {
         userId,
         title: 'Permintaan Penarikan',
-        message: `Penarikan sebesar Rp ${amount.toLocaleString('id-ID')} sedang diproses. Biaya admin 10%: Rp ${adminFee.toLocaleString('id-ID')}. Dana diterima: Rp ${netAmount.toLocaleString('id-ID')}. Transfer dalam 1x24 jam.`,
+        message: isProfit100Percent
+          ? `Penarikan ${withdrawAmount} USDT sedang diproses. Biaya admin 5%: ${adminFee} USDT. Dana diterima: ${netAmount} USDT. Transfer dalam 1x24 jam.`
+          : `Penarikan ${withdrawAmount} USDT sedang diproses. Profit Anda ${profitPercent.toFixed(1)}% dari modal (< 100%). Penalty 50%: ${penalty} USDT + Admin 5%: ${adminFee} USDT. Dana diterima: ${netAmount} USDT. Transfer dalam 1x24 jam.`,
         type: 'info',
       },
     })
 
     return NextResponse.json({
       withdrawal,
+      penalty,
       adminFee,
       netAmount,
+      isProfit100Percent,
+      profitPercent: Math.round(profitPercent * 100) / 100,
+      totalDeduction: penalty + adminFee,
+      deductionPercent: isProfit100Percent ? 5 : 55,
     }, { status: 201 })
   } catch (error) {
     console.error('Withdrawal error:', error)
@@ -140,10 +169,14 @@ export async function GET(request: NextRequest) {
 
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { kycStatus: true },
+      select: { kycStatus: true, balance: true, totalDeposit: true, email: true },
     })
 
     const isKycVerified = user?.kycStatus === 'verified'
+    const totalDeposit = user?.totalDeposit || 0
+    const balance = user?.balance || 0
+    const profit = balance - totalDeposit
+    const profitPercent = totalDeposit > 0 ? (profit / totalDeposit) * 100 : 0
 
     const withdrawals = await db.withdrawal.findMany({
       where: { userId },
@@ -153,9 +186,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       withdrawals,
       withdrawalInfo: {
-        minWithdraw: isKycVerified ? 50000 : 250000,
-        adminFeePercent: 10,
+        minWithdraw: 10,
         isKycVerified,
+        balance,
+        totalDeposit,
+        profit,
+        profitPercent: Math.round(profitPercent * 100) / 100,
+        isProfit100Percent: profitPercent >= 100,
+        feeIfProfit100: 5,       // 5% admin only
+        feeIfProfitLess100: 55,  // 50% penalty + 5% admin
       },
     })
   } catch (error) {

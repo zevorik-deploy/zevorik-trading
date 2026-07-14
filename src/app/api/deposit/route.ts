@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getDepositAddress, convertIdrToUsdt, getIdrToUsdtRate } from '@/lib/binance'
+import { getDepositAddress } from '@/lib/binance'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, amount, method, network } = body
+    const { userId, amount, network } = body
 
     if (!userId || !amount) {
       return NextResponse.json(
@@ -14,17 +14,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (amount <= 0) {
+    const usdtAmount = parseFloat(amount)
+    if (isNaN(usdtAmount) || usdtAmount <= 0) {
       return NextResponse.json(
-        { error: 'Jumlah harus lebih dari 0' },
+        { error: 'Jumlah USDT tidak valid' },
         { status: 400 }
       )
     }
 
-    // Minimum deposit Rp 100.000
-    if (amount < 100000) {
+    // Minimum deposit 100 USDT
+    if (usdtAmount < 100) {
       return NextResponse.json(
-        { error: 'Minimum deposit Rp 100.000' },
+        { error: 'Minimum deposit 100 USDT' },
         { status: 400 }
       )
     }
@@ -45,112 +46,68 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // === CRYPTO DEPOSIT (Binance) ===
-    if (method === 'crypto') {
-      const selectedNetwork = network || 'TRC20'
-      const validNetworks = ['TRC20', 'BEP20', 'ERC20']
-      if (!validNetworks.includes(selectedNetwork)) {
-        return NextResponse.json(
-          { error: 'Network tidak valid. Pilih TRC20, BEP20, atau ERC20' },
-          { status: 400 }
-        )
-      }
-
-      // Convert IDR to USDT
-      const { usdtAmount, rate } = await convertIdrToUsdt(amount)
-
-      // Get Binance deposit address
-      let depositAddress: string
-      try {
-        const addressInfo = await getDepositAddress('USDT', selectedNetwork)
-        depositAddress = addressInfo.address
-      } catch (err) {
-        console.error('Failed to get Binance deposit address:', err)
-        return NextResponse.json(
-          { error: 'Gagal mendapatkan alamat deposit. Silakan coba lagi nanti.' },
-          { status: 500 }
-        )
-      }
-
-      // Create pending deposit record
-      const deposit = await db.deposit.create({
-        data: {
-          userId,
-          amount,
-          method: 'crypto',
-          bankName: `USDT ${selectedNetwork}`,
-          status: 'pending',
-          cryptoAmount: usdtAmount,
-          cryptoCoin: 'USDT',
-          cryptoNetwork: selectedNetwork,
-          cryptoAddress: depositAddress,
-          cryptoRate: rate,
-          note: `Deposit USDT ${usdtAmount} via ${selectedNetwork} | Rate: Rp ${rate.toLocaleString('id-ID')}/USDT | Alamat: ${depositAddress}`,
-        },
-      })
-
-      // Create notification
-      await db.notification.create({
-        data: {
-          userId,
-          title: 'Deposit Dibuat',
-          message: `Deposit sebesar Rp ${amount.toLocaleString('id-ID')} (${usdtAmount} USDT) telah dibuat. Silakan kirim USDT ke alamat yang diberikan.`,
-          type: 'deposit',
-        },
-      })
-
-      return NextResponse.json({
-        deposit,
-        paymentInfo: {
-          address: depositAddress,
-          network: selectedNetwork,
-          coin: 'USDT',
-          usdtAmount,
-          rate,
-          idrAmount: amount,
-          minConfirmation: selectedNetwork === 'TRC20' ? 20 : selectedNetwork === 'BEP20' ? 15 : 12,
-        },
-      }, { status: 201 })
-    }
-
-    // === QRIS DEPOSIT (legacy, auto-approve) ===
-    const validMethods = ['bank_transfer', 'e_wallet', 'qris']
-    if (method && !validMethods.includes(method)) {
+    // === CRYPTO DEPOSIT (USDT only) ===
+    const selectedNetwork = network || 'TRC20'
+    const validNetworks = ['TRC20', 'BEP20', 'ERC20']
+    if (!validNetworks.includes(selectedNetwork)) {
       return NextResponse.json(
-        { error: 'Metode tidak valid' },
+        { error: 'Network tidak valid. Pilih TRC20, BEP20, atau ERC20' },
         { status: 400 }
       )
     }
 
+    // Get Binance deposit address
+    let depositAddress: string
+    try {
+      const addressInfo = await getDepositAddress('USDT', selectedNetwork)
+      depositAddress = addressInfo.address
+    } catch (err) {
+      console.error('Failed to get Binance deposit address:', err)
+      return NextResponse.json(
+        { error: 'Gagal mendapatkan alamat deposit. Silakan coba lagi nanti.' },
+        { status: 500 }
+      )
+    }
+
+    // Create pending deposit record
     const deposit = await db.deposit.create({
       data: {
         userId,
-        amount,
-        method: method || 'qris',
-        bankName: 'QRIS',
-        status: 'completed',
+        amount: usdtAmount,
+        method: 'crypto',
+        bankName: `USDT ${selectedNetwork}`,
+        status: 'pending',
+        cryptoAmount: usdtAmount,
+        cryptoCoin: 'USDT',
+        cryptoNetwork: selectedNetwork,
+        cryptoAddress: depositAddress,
+        cryptoRate: 1, // 1:1 since we're now in USDT
+        note: `Deposit USDT ${usdtAmount} via ${selectedNetwork} | Alamat: ${depositAddress}`,
       },
     })
 
-    const newTotalDeposit = user.totalDeposit + amount
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        balance: { increment: amount },
-        totalDeposit: newTotalDeposit,
-      },
-    })
-
+    // Create notification
     await db.notification.create({
       data: {
         userId,
-        title: 'Deposit Berhasil',
-        message: `Deposit sebesar Rp ${amount.toLocaleString('id-ID')} telah berhasil dikreditkan ke akun Anda.`,
+        title: 'Deposit Dibuat',
+        message: `Deposit sebesar ${usdtAmount} USDT telah dibuat. Silakan kirim USDT ke alamat yang diberikan.`,
         type: 'deposit',
       },
     })
 
-    return NextResponse.json({ deposit }, { status: 201 })
+    return NextResponse.json({
+      deposit,
+      paymentInfo: {
+        address: depositAddress,
+        network: selectedNetwork,
+        coin: 'USDT',
+        usdtAmount,
+        idrAmount: usdtAmount, // Same since we use USDT now
+        rate: 1,
+        minConfirmation: selectedNetwork === 'TRC20' ? 20 : selectedNetwork === 'BEP20' ? 15 : 12,
+      },
+    }, { status: 201 })
   } catch (error) {
     console.error('Deposit error:', error)
     return NextResponse.json(

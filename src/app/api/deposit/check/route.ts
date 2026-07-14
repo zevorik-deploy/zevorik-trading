@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getDepositHistory, convertUsdtToIdr } from '@/lib/binance'
+import { getDepositHistory } from '@/lib/binance'
 
 /**
  * Check pending crypto deposits and auto-credit confirmed ones.
- * This endpoint should be called periodically (polling) to detect
- * Binance deposits and credit user balances automatically.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -45,8 +43,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Check Binance deposit history for recent deposits
-    // Look back 24 hours from now
+    // Check Binance deposit history
     const startTime = Date.now() - 24 * 60 * 60 * 1000
     let binanceDeposits: any[] = []
 
@@ -66,8 +63,6 @@ export async function POST(request: NextRequest) {
     const results: any[] = []
 
     for (const deposit of pendingDeposits) {
-      // Find matching Binance deposit
-      // Match by: network, amount (within tolerance), and recent time
       const matchingBinanceDeposit = binanceDeposits.find((bd: any) => {
         const bdAmount = parseFloat(bd.amount)
         const depositAmount = deposit.cryptoAmount
@@ -76,7 +71,7 @@ export async function POST(request: NextRequest) {
         const networkMatch = !bd.network ||
           bd.network.toUpperCase() === (deposit.cryptoNetwork || '').toUpperCase()
 
-        // Match amount with 2% tolerance (for crypto fluctuations)
+        // Match amount with 2% tolerance
         const amountMatch = Math.abs(bdAmount - depositAmount) / depositAmount < 0.02
 
         // Binance status: 1 = success/confirmed
@@ -86,12 +81,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (matchingBinanceDeposit) {
-        // Credit the user's balance
-        const { idrAmount } = await convertUsdtToIdr(parseFloat(matchingBinanceDeposit.amount))
-
-        // Use the original IDR amount from the deposit request (not the converted amount)
-        // to avoid discrepancies due to rate changes
-        const creditAmount = deposit.amount
+        const creditAmount = deposit.amount // The original USDT amount
 
         await db.deposit.update({
           where: { id: deposit.id },
@@ -114,8 +104,8 @@ export async function POST(request: NextRequest) {
         await db.notification.create({
           data: {
             userId,
-            title: ' Deposit Berhasil! ✓',
-            message: `Deposit Anda sebesar Rp ${creditAmount.toLocaleString('id-ID')} (${matchingBinanceDeposit.amount} USDT) telah dikonfirmasi dan dikreditkan ke saldo Anda.`,
+            title: 'Deposit Berhasil! ✓',
+            message: `Deposit Anda sebesar ${creditAmount} USDT telah dikonfirmasi dan dikreditkan ke saldo Anda.`,
             type: 'deposit',
           },
         })
@@ -149,7 +139,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET: Check if user has KYC verified (for deposit eligibility)
+ * GET: Check deposit eligibility and get withdrawal info
  */
 export async function GET(request: NextRequest) {
   try {
@@ -165,7 +155,7 @@ export async function GET(request: NextRequest) {
 
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { kycStatus: true, email: true, name: true },
+      select: { kycStatus: true, balance: true, totalDeposit: true },
     })
 
     if (!user) {
@@ -175,14 +165,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Also get the current USDT/IDR rate
-    const { getIdrToUsdtRate } = await import('@/lib/binance')
-    const rate = await getIdrToUsdtRate()
+    const profit = user.balance - user.totalDeposit
+    const profitPercent = user.totalDeposit > 0 ? (profit / user.totalDeposit) * 100 : 0
 
     return NextResponse.json({
       kycStatus: user.kycStatus,
       canDeposit: user.kycStatus === 'verified',
-      rate,
+      balance: user.balance,
+      totalDeposit: user.totalDeposit,
+      profit,
+      profitPercent: Math.round(profitPercent * 100) / 100,
+      canWithdrawFreely: profitPercent >= 100,
     })
   } catch (error) {
     console.error('Deposit eligibility check error:', error)

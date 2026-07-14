@@ -894,30 +894,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   handleDeposit: async () => {
-    const user = useAuthStore.getState().user
-    const { depositAmount, depositCategory } = get()
-    if (!user || !depositAmount) return
-    const amount = parseFloat(depositAmount)
-    if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
-
-    // If crypto deposit, go to crypto step
-    if (depositCategory === 'crypto') {
-      get().handleCryptoDeposit()
-      return
-    }
-
-    // QRIS deposit (legacy, auto-approve)
-    set({ depositLoading: true })
-    try {
-      const res = await fetch('/api/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, method: 'qris', bankName: 'QRIS' }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      toast({ title: 'Deposit Berhasil!', description: `+${formatRupiah(amount)} via QRIS telah ditambahkan` })
-      set({ depositAmount: '', depositStep: 'amount' })
-      const s = get()
-      s.fetchPortfolio(); s.fetchDeposits(); s.fetchNotifications()
-    } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
-    finally { set({ depositLoading: false }) }
+    // All deposits are now crypto (USDT)
+    get().handleCryptoDeposit()
   },
 
   handleCryptoDeposit: async () => {
@@ -925,7 +903,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     const { depositAmount, depositNetwork } = get()
     if (!user || !depositAmount) return
     const amount = parseFloat(depositAmount)
-    if (amount < 100000) { toast({ title: 'Minimum deposit Rp 100.000', variant: 'destructive' }); return }
+    if (amount < 100) { toast({ title: 'Minimum deposit 100 USDT', variant: 'destructive' }); return }
 
     // Check KYC first
     if (user.kycStatus !== 'verified') {
@@ -1038,12 +1016,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     if (!user || !withdrawAmount) return
     if (!withdrawOtpVerified) { toast({ title: 'Verifikasi OTP Terlebih Dahulu', description: 'Kirim dan verifikasi OTP sebelum withdrawal', variant: 'destructive' }); return }
     const amount = parseFloat(withdrawAmount)
-    const isKycVerified = user?.kycStatus === 'verified'
-    const minWithdraw = isKycVerified ? 50000 : 250000
-    if (amount < minWithdraw) {
-      toast({ title: `Minimum Withdraw Rp ${minWithdraw.toLocaleString('id-ID')}`, description: isKycVerified ? '' : 'Verifikasi KYC untuk minimum Rp 50.000!', variant: 'destructive' })
-      return
-    }
+    if (amount < 10) { toast({ title: 'Minimum Withdraw 10 USDT', variant: 'destructive' }); return }
     if (amount > (user?.balance || 0)) { toast({ title: 'Saldo tidak cukup', variant: 'destructive' }); return }
     if (withdrawCategory !== 'crypto' && !withdrawAccountNumber) { toast({ title: 'Isi nomor rekening / HP terlebih dahulu', variant: 'destructive' }); return }
     if (withdrawCategory === 'bank' && !withdrawAccountHolder) { toast({ title: 'Isi nama pemilik rekening', variant: 'destructive' }); return }
@@ -1053,12 +1026,19 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const res = await fetch('/api/withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, amount, bankName: methodName, bankAccount: withdrawAccountNumber || user.bankAccount || '0000000', bankHolder: withdrawAccountHolder || user.name, otpVerified: true }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      const adminFee = data.adminFee || Math.round(amount * 0.10)
-      const netAmount = data.netAmount || (amount - adminFee)
-      toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} via ${methodName}. Biaya admin 10%: ${formatRupiah(adminFee)}. Diterima: ${formatRupiah(netAmount)}` })
+      const isProfit100 = data.isProfit100Percent
+      const penalty = data.penalty || 0
+      const adminFee = data.adminFee || 0
+      const netAmount = data.netAmount || 0
+      if (isProfit100) {
+        toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} USDT — Admin 5%: ${formatRupiah(adminFee)} — Diterima: ${formatRupiah(netAmount)} USDT` })
+      } else {
+        toast({ title: 'Withdraw Diproses!', description: `${formatRupiah(amount)} USDT — Penalty 50%: ${formatRupiah(penalty)} — Admin 5%: ${formatRupiah(adminFee)} — Diterima: ${formatRupiah(netAmount)} USDT` })
+      }
       set({ withdrawAmount: '', withdrawAccountNumber: '', withdrawAccountHolder: '', withdrawOtpVerified: false, withdrawOtpSent: false, withdrawOtpCode: ['', '', '', '', '', ''] })
       const s = get()
       s.fetchPortfolio(); s.fetchWithdrawals()
+      useAuthStore.getState().refreshUser()
     } catch (err: unknown) { toast({ title: 'Gagal', description: err instanceof Error ? err.message : 'Error', variant: 'destructive' }) }
     finally { set({ withdrawLoading: false }) }
   },

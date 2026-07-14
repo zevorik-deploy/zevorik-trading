@@ -1,23 +1,21 @@
 import { NextResponse } from 'next/server'
-import { getIdrToUsdtRate } from '@/lib/binance'
 
 /**
- * Get current USDT/IDR exchange rate for deposit conversion
+ * Get current deposit info (USDT based)
  */
 export async function GET() {
   try {
-    const rate = await getIdrToUsdtRate()
     return NextResponse.json({
-      rate,
       coin: 'USDT',
-      pair: 'USDT/IDR',
-      updatedAt: new Date().toISOString(),
+      minDeposit: 100,
+      networks: [
+        { key: 'TRC20', name: 'TRC20', fee: '~1 USDT', speed: '~3 min', recommended: true },
+        { key: 'BEP20', name: 'BEP20', fee: '~0.5 USDT', speed: '~5 min', recommended: false },
+        { key: 'ERC20', name: 'ERC20', fee: '~5 USDT', speed: '~15 min', recommended: false },
+      ],
     })
   } catch (error) {
     console.error('Rate fetch error:', error)
-    return NextResponse.json(
-      { error: 'Gagal mengambil rate', rate: 16000 },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Gagal mengambil info deposit' }, { status: 500 })
   }
 }

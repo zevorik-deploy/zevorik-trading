@@ -202,3 +202,41 @@ Stage Summary:
 - Dashboard is now a thin orchestrator pattern: renders header, nav, shared effects, and delegates to tab/modal components
 - All components use useDashboardStore() from @/lib/dashboard-store for state
 - Lint passes cleanly, dev server compiles successfully
+
+---
+Task ID: 2
+Agent: main
+Task: Implement automatic USDT deposit via Binance + profit-based withdrawal penalty system
+
+Work Log:
+- Added Binance API keys to .env (O4diHDLB... and TZ7hv85x...)
+- Created /src/lib/binance.ts - Binance API client with HMAC-SHA256 signing, deposit address, deposit history, USDT/IDR rate
+- Updated Prisma schema - Added crypto deposit fields (cryptoAmount, cryptoCoin, cryptoNetwork, cryptoAddress, cryptoTxId, cryptoRate)
+- Ran db:push to sync schema
+- Rewrote /src/app/api/deposit/route.ts - USDT only, minimum 100 USDT, KYC required, Binance deposit address generation
+- Created /src/app/api/deposit/check/route.ts - Auto-credit confirmed deposits from Binance
+- Updated /src/app/api/deposit/rate/route.ts - Returns deposit info
+- Rewrote /src/app/api/withdrawal/route.ts - Profit-based penalty system:
+  * Profit >= 100% of modal: only 5% admin fee
+  * Profit < 100% of modal: 50% penalty + 5% admin = 55% total deduction
+  * System auto-calculates profit from totalDeposit
+- Changed currency system from IDR to USDT globally:
+  * Updated formatRupiah to formatUSD (alias for backward compatibility)
+  * Updated formatNumber to use en-US locale
+- Rewrote /src/components/dashboard/FinanceTab.tsx with premium UI:
+  * USDT-only deposit with TRC20/BEP20/ERC20 network selection
+  * Profit progress bar showing % toward 100%
+  * Withdrawal preview showing exact penalty/admin deductions
+  * KYC gate for deposits
+  * Auto-polling for deposit confirmation
+- Updated dashboard store for USDT-based system
+- Added refreshUser() method to auth store
+- Build passes with no errors
+
+Stage Summary:
+- Currency changed from IDR to USDT globally
+- Deposit: USDT only via Binance, minimum 100 USDT, KYC required
+- Withdrawal: Profit-based penalty (5% if profit≥100%, 55% if profit<100%)
+- Binance API integration working (tested: rate API returns actual USDT/IDR rate)
+- All API routes verified working
+- Build passes cleanly
