@@ -38,8 +38,18 @@ jobs:
             # Install dependencies
             $BUN_INSTALL/bin/bun install
             
-            # Write .env file
-            printf '%s\n' 'DATABASE_URL=file:./db/custom.db' 'SMTP_HOST=smtp.hostinger.com' 'SMTP_PORT=465' 'SMTP_USER=zevorik@zevorik.com' 'SMTP_PASS=v=Z@/B:6q' 'EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>' 'JWT_SECRET=zevorik-jwt-secret-key-2024-secure' > .env
+            # Write .env file with Binance API keys
+            printf '%s\n' \
+              'DATABASE_URL=file:./db/custom.db' \
+              'SMTP_HOST=smtp.hostinger.com' \
+              'SMTP_PORT=465' \
+              'SMTP_USER=zevorik@zevorik.com' \
+              'SMTP_PASS=v=Z@/B:6q' \
+              'EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>' \
+              'JWT_SECRET=zevorik-jwt-secret-key-2024-secure' \
+              'BINANCE_API_KEY=O4diHDLBU5i4wXYjJ8M8Y9MF2HM0I5IcotLW3xwbQiGVX88YKVs3uRMTnyzwkspM' \
+              'BINANCE_SECRET_KEY=TZ7hv85x79ibvwRXEuFxwcuxNql2YZ73hfObDpUvhfadOx9bKsOuniZSXpp0NjFx' \
+              > .env
             
             # Push database schema
             $BUN_INSTALL/bin/bunx prisma db push --accept-data-loss
