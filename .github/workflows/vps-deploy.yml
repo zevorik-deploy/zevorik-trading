@@ -19,4 +19,36 @@ jobs:
           port: 22
           timeout: 120s
           command_timeout: 15m
-          script: whoami && echo "Connected to VPS!" && cd /root/zevorik-trading && git fetch --all && git reset --hard origin/main && bun install && echo "JWT_SECRET=zevorik-jwt-secret-key-2024-secure" >> .env && npx prisma db push --accept-data-loss && pkill -f next 2>/dev/null; sleep 2; setsid bun run dev > /tmp/zevorik.log 2>&1 & sleep 10; curl -s http://localhost:3000/api/stocks > /dev/null && echo "APP OK" || echo "APP STARTING"
+          script: |
+            export PATH="/root/.bun/bin:/root/.nvm/versions/node/*/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+            export BUN_INSTALL="/root/.bun"
+            whoami
+            echo "Connected to VPS!"
+            which bun || (echo "Installing bun..." && curl -fsSL https://bun.sh/install | bash && export PATH="/root/.bun/bin:$PATH")
+            cd /root/zevorik-trading
+            echo ">>> Pulling latest code..."
+            git fetch --all
+            git reset --hard origin/main
+            echo ">>> Installing deps..."
+            /root/.bun/bin/bun install
+            echo ">>> Writing .env..."
+            cat > .env << 'ENVEOF'
+DATABASE_URL=file:./db/custom.db
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=zevorik@zevorik.com
+SMTP_PASS=v=Z@/B:6q
+EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
+JWT_SECRET=zevorik-jwt-secret-key-2024-secure
+ENVEOF
+            echo ">>> DB push..."
+            /root/.bun/bin/bunx prisma db push --accept-data-loss
+            echo ">>> Restarting app..."
+            pkill -f "next-server" 2>/dev/null || true
+            pkill -f "next start" 2>/dev/null || true
+            pkill -f "next dev" 2>/dev/null || true
+            sleep 2
+            cd /root/zevorik-trading
+            setsid /root/.bun/bin/bun run dev > /tmp/zevorik.log 2>&1 &
+            sleep 10
+            curl -s http://localhost:3000/api/stocks > /dev/null && echo "APP OK" || echo "APP STARTING"
