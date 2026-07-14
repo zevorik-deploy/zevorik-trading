@@ -10,10 +10,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    const lots = await db.tradeLot.findMany({
-      where: { userId, status: 'active' },
+    // Use Portfolio model instead of non-existent TradeLot
+    const portfolios = await db.portfolio.findMany({
+      where: { userId },
+      include: { stock: true },
       orderBy: { createdAt: 'desc' },
     })
+
+    const lots = portfolios.map(p => ({
+      id: p.id,
+      userId: p.userId,
+      stockCode: p.stock.code,
+      stockName: p.stock.name,
+      lots: p.shares,
+      buyPrice: p.avgPrice,
+      currentPrice: p.stock.price,
+      totalInvested: p.shares * p.avgPrice,
+      currentValue: p.shares * p.stock.price,
+      status: 'active' as const,
+      createdAt: p.createdAt,
+    }))
 
     const totalInvested = lots.reduce((sum, l) => sum + l.totalInvested, 0)
     const currentValue = lots.reduce((sum, l) => sum + l.currentValue, 0)
@@ -42,7 +58,6 @@ export async function POST(request: NextRequest) {
     let totalCost: number
     let effectiveLots: number
     if (amount && amount >= 100000) {
-      // Amount-based: totalCost = amount, lots = amount / price
       totalCost = amount
       effectiveLots = Math.max(1, Math.round(amount / price))
     } else if (lots && lots > 0) {
@@ -61,6 +76,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Saldo tidak mencukupi' }, { status: 400 })
     }
 
+    // Find the stock by code
+    const stock = await db.stock.findUnique({ where: { code: stockCode } })
+    if (!stock) {
+      return NextResponse.json({ error: 'Stock not found' }, { status: 404 })
+    }
+
     // Deduct balance
     await db.user.update({
       where: { id: userId },
@@ -70,44 +91,50 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Check if user already has active lots for this stock
-    const existingLot = await db.tradeLot.findFirst({
-      where: { userId, stockCode, status: 'active' },
+    // Check if user already has a portfolio entry for this stock
+    const existingPortfolio = await db.portfolio.findUnique({
+      where: { userId_stockId: { userId, stockId: stock.id } },
     })
 
     let lot
-    if (existingLot) {
+    if (existingPortfolio) {
       // Merge: average buy price
-      const newTotalLots = existingLot.lots + effectiveLots
-      const newTotalInvested = existingLot.totalInvested + totalCost
+      const newTotalLots = existingPortfolio.shares + effectiveLots
+      const newTotalInvested = existingPortfolio.shares * existingPortfolio.avgPrice + totalCost
       const newAvgPrice = newTotalInvested / newTotalLots
-      const newCurrentValue = newTotalLots * price
 
-      lot = await db.tradeLot.update({
-        where: { id: existingLot.id },
+      lot = await db.portfolio.update({
+        where: { id: existingPortfolio.id },
         data: {
-          lots: newTotalLots,
-          buyPrice: Math.round(newAvgPrice),
-          totalInvested: newTotalInvested,
-          currentValue: newCurrentValue,
-          currentPrice: price,
+          shares: newTotalLots,
+          avgPrice: Math.round(newAvgPrice * 100) / 100,
         },
       })
     } else {
-      lot = await db.tradeLot.create({
+      lot = await db.portfolio.create({
         data: {
           userId,
-          stockCode,
-          stockName,
-          lots: effectiveLots,
-          buyPrice: price,
-          currentPrice: price,
-          totalInvested: totalCost,
-          currentValue: totalCost,
-          status: 'active',
+          stockId: stock.id,
+          shares: effectiveLots,
+          avgPrice: price,
         },
       })
     }
+
+    // Create transaction record
+    await db.transaction.create({
+      data: {
+        userId,
+        stockId: stock.id,
+        type: 'BUY',
+        orderType: 'market',
+        shares: effectiveLots,
+        price,
+        total: totalCost,
+        fee: totalCost * 0.0015,
+        status: 'completed',
+      },
+    })
 
     // Create notification
     await db.notification.create({
@@ -145,13 +172,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Lots to sell must be greater than 0' }, { status: 400 })
     }
 
-    const lot = await db.tradeLot.findUnique({ where: { id: lotId } })
-    if (!lot || lot.userId !== userId || lot.status !== 'active') {
-      return NextResponse.json({ error: 'Trade lot not found' }, { status: 404 })
+    // Use Portfolio model instead of TradeLot
+    const portfolioItem = await db.portfolio.findUnique({ where: { id: lotId } })
+    if (!portfolioItem || portfolioItem.userId !== userId) {
+      return NextResponse.json({ error: 'Portfolio item not found' }, { status: 404 })
     }
 
-    if (lotsToSell > lot.lots) {
-      return NextResponse.json({ error: 'Insufficient lots to sell' }, { status: 400 })
+    if (lotsToSell > portfolioItem.shares) {
+      return NextResponse.json({ error: 'Insufficient shares to sell' }, { status: 400 })
     }
 
     const receivedAmount = lotsToSell * currentPrice
@@ -168,40 +196,43 @@ export async function PUT(request: NextRequest) {
     })
 
     let updatedLot
-    const remainingLots = lot.lots - lotsToSell
+    const remainingShares = portfolioItem.shares - lotsToSell
 
-    if (remainingLots === 0) {
-      // Mark as sold
-      updatedLot = await db.tradeLot.update({
-        where: { id: lotId },
-        data: {
-          status: 'sold',
-          soldAt: new Date(),
-          currentPrice,
-          currentValue: 0,
-        },
-      })
+    if (remainingShares === 0) {
+      // Delete the portfolio entry
+      await db.portfolio.delete({ where: { id: lotId } })
+      updatedLot = { id: lotId, status: 'sold', currentValue: 0 }
     } else {
-      // Reduce lots
-      const newInvested = Math.round(lot.totalInvested * (remainingLots / lot.lots))
-      const newValue = remainingLots * currentPrice
-      updatedLot = await db.tradeLot.update({
+      // Reduce shares
+      updatedLot = await db.portfolio.update({
         where: { id: lotId },
         data: {
-          lots: remainingLots,
-          totalInvested: newInvested,
-          currentValue: newValue,
-          currentPrice,
+          shares: remainingShares,
         },
       })
     }
+
+    // Create transaction record
+    await db.transaction.create({
+      data: {
+        userId,
+        stockId: portfolioItem.stockId,
+        type: 'SELL',
+        orderType: 'market',
+        shares: lotsToSell,
+        price: currentPrice,
+        total: receivedAmount,
+        fee: receivedAmount * 0.0015,
+        status: 'completed',
+      },
+    })
 
     // Create notification
     await db.notification.create({
       data: {
         userId,
         title: 'Penjualan Saham Berhasil',
-        message: `Jual ${lotsToSell} lot ${lot.stockCode} @ ${currentPrice.toLocaleString('id-ID')} IDR. Diterima: ${receivedAmount.toLocaleString('id-ID')} IDR`,
+        message: `Jual ${lotsToSell} lot @ ${currentPrice.toLocaleString('id-ID')} IDR. Diterima: ${receivedAmount.toLocaleString('id-ID')} IDR`,
         type: 'trade',
       },
     })

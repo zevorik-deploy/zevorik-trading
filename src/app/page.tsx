@@ -8,7 +8,7 @@ import {
   Wallet, BarChart3, Briefcase, History, LogOut, RefreshCw,
   ChevronUp, ChevronDown, X, Search, Bell, Star,
   ArrowUpRight, ArrowDownRight, Home as HomeIcon, User, Copy, Check,
-  Plus, Minus, Gift, Shield, CreditCard, Settings,
+  Plus, Minus, Shield, CreditCard, Settings,
   Clock, AlertCircle, CheckCircle, XCircle, Info, ExternalLink, Share2,
   BookOpen, Target, PieChart, Zap, Users, Menu,
   Phone, Lock, ChevronRight,
@@ -81,10 +81,6 @@ interface NotificationItem {
   id: string; userId: string; title: string; message: string; type: string; isRead: boolean; createdAt: string;
 }
 
-interface NewsItem {
-  id: string; title: string; content: string; category: string; imageUrl?: string; createdAt: string;
-}
-
 interface DepositItem {
   id: string; userId: string; amount: number; method: string; bankName?: string; status: string; createdAt: string;
 }
@@ -95,15 +91,6 @@ interface WithdrawalItem {
 
 interface WatchlistItem {
   id: string; userId: string; stockId: string; stock: Stock; createdAt: string;
-}
-
-interface StockContract {
-  id: string; userId: string; stockId: string; stockCode: string; stockName: string;
-  amount: number; dailyProfitRate: number; dailyProfitAmount: number;
-  totalProfit: number; totalReturn: number; duration: number;
-  daysElapsed: number; totalClaimed: number; status: string;
-  lastClaimAt: string | null; createdAt: string;
-  stock: Stock;
 }
 
 interface CandleData {
@@ -1011,6 +998,13 @@ function Dashboard() {
   const [withdrawOtpTimer, setWithdrawOtpTimer] = useState(0)
   const withdrawOtpRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  // ============ CONTRACT STATE ============
+  const [contractModal, setContractModal] = useState(false)
+  const [contractAmount, setContractAmount] = useState('')
+  const [contractDuration, setContractDuration] = useState(30)
+  const [contractLoading, setContractLoading] = useState(false)
+  const [contractClaimLoadingId, setContractClaimLoadingId] = useState<string | null>(null)
+
   // Withdraw OTP timer
   useEffect(() => {
     if (withdrawOtpTimer <= 0) return
@@ -1059,7 +1053,7 @@ function Dashboard() {
     const startTimer = () => {
       if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
       bannerTimerRef.current = setInterval(() => {
-        setBannerIndex(prev => (prev + 1) % 4)
+        setBannerIndex(prev => (prev + 1) % 3)
       }, 4000)
     }
     startTimer()
@@ -2483,7 +2477,7 @@ function Dashboard() {
     if (amount < 1000) { toast({ title: 'Minimum 0.01 Lot (Rp 1.000)', variant: 'destructive' }); return }
     // MT5-style: Check if amount exceeds available balance (simplified margin check)
     // In MT5, Free Margin = Equity - Used Margin. We check against total balance for simplicity.
-    const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
+    const totalBalance = (user?.balance || 0)
     if (amount > totalBalance) { toast({ title: 'Saldo tidak cukup', description: `Saldo: ${formatRupiah(totalBalance)}`, variant: 'destructive' }); return }
     const dir = overrideDirection || sinyalDirection
     // MT5-style: No fee deducted on open. Balance stays the same.
@@ -2583,7 +2577,7 @@ function Dashboard() {
   // When no positions: Equity = Balance (static, shows initial deposit)
   // When positions open: Equity moves with the market price — exactly like MT5 Terminal
   const liveEquity = (() => {
-    const baseBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
+    const baseBalance = (user?.balance || 0)
     const activePos = sinyalPositions.filter(p => p.status === 'active')
     if (activePos.length === 0) return baseBalance
     const totalFloatingPL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
@@ -2838,6 +2832,9 @@ function Dashboard() {
     if (!user) return
     try { const r = await fetch(`/api/withdrawal?userId=${user.id}`); const d = await r.json(); if (d.withdrawals) setWithdrawals(d.withdrawals) } catch {}
   }, [user])
+  const fetchContracts = useCallback(async () => {
+    // Contracts feature not available
+  }, [])
 
   const fetchPriceHistory = useCallback(async (stockId: string) => {
     try { const r = await fetch(`/api/stocks/${stockId}`); const d = await r.json(); if (d.priceHistory) setPriceHistory(d.priceHistory) } catch {}
@@ -3303,10 +3300,10 @@ function Dashboard() {
                   bannerTouchEndX.current = e.changedTouches[0].clientX
                   const diff = bannerTouchStartX.current - bannerTouchEndX.current
                   if (Math.abs(diff) > 50) {
-                    if (diff > 0) setBannerIndex(prev => (prev + 1) % 4)
-                    else setBannerIndex(prev => (prev - 1 + 4) % 4)
+                    if (diff > 0) setBannerIndex(prev => (prev + 1) % 3)
+                    else setBannerIndex(prev => (prev - 1 + 3) % 3)
                     if (bannerTimerRef.current) clearInterval(bannerTimerRef.current)
-                    bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 4), 4000)
+                    bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 3), 4000)
                   }
                 }}
               >
@@ -3405,10 +3402,10 @@ function Dashboard() {
                 </div>
                 {/* Dot Indicators */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                  {[0,1,2,3].map(i => (
+                  {[0,1,2].map(i => (
                     <button
                       key={i}
-                      onClick={() => { setBannerIndex(i); if (bannerTimerRef.current) clearInterval(bannerTimerRef.current); bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 4), 4000) }}
+                      onClick={() => { setBannerIndex(i); if (bannerTimerRef.current) clearInterval(bannerTimerRef.current); bannerTimerRef.current = setInterval(() => setBannerIndex(prev => (prev + 1) % 3), 4000) }}
                       className="transition-all duration-300 rounded-full"
                       style={{
                         width: bannerIndex === i ? 24 : 8,
@@ -3498,7 +3495,7 @@ function Dashboard() {
                         <div className="w-5 h-5 rounded-lg bg-blue-400/20 grid place-items-center"><CreditCard className="w-3 h-3 text-blue-300" /></div>
                         <span className="text-[7px] font-black text-blue-200/80 uppercase tracking-wider">Penarikan</span>
                       </div>
-                      <b className="block text-[14px] font-black">{showBalance ? formatRupiah(user?.withdrawalBalance || 0) : '••••••'}</b>
+                      <b className="block text-[14px] font-black">{showBalance ? formatRupiah(0) : '••••••'}</b>
                       <span className="block text-[6px] font-semibold text-blue-200/40 mt-0.5">Dapat ditarik</span>
                     </div>
                   </div>
@@ -4148,7 +4145,7 @@ function Dashboard() {
           {activeTab === 'sinyal' && (() => {
             // ── Computed values for MT5 terminal ──
             const activePos = sinyalPositions.filter(p => p.status === 'active')
-            const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
+            const totalBalance = (user?.balance || 0)
             const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
             // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
             const equity = totalBalance + totalLivePL
@@ -5808,7 +5805,7 @@ function Dashboard() {
                 const activePos = sinyalPositions.filter(p => p.status === 'active')
                 const closedPos = sinyalPositions.filter(p => p.status === 'won' || p.status === 'lost')
                 const totalLivePL = activePos.reduce((s, p) => s + getPositionLivePL(p), 0)
-                const totalBalance = (user?.balance || 0) + (user?.withdrawalBalance || 0)
+                const totalBalance = (user?.balance || 0)
                 // MT5-style: Equity = Balance + Floating P/L (follows chart in real-time)
                 const equity = totalBalance + totalLivePL
                 const usedMargin = activePos.reduce((s, p) => s + p.amount, 0)
@@ -6664,7 +6661,7 @@ function Dashboard() {
                       </div>
                       <div className="rounded-2xl p-3 bg-[var(--zv-surface)] border border-[var(--zv-border)]">
                         <span className="text-[7px] font-bold text-[var(--zv-muted)]">Dompet Penarikan</span>
-                        <b className="block text-[13px] font-black text-[#f59e0b]">{formatRupiah(user?.withdrawalBalance || 0)}</b>
+                        <b className="block text-[13px] font-black text-[#f59e0b]">{formatRupiah(0)}</b>
                         <span className="block text-[6px] font-semibold text-[var(--zv-muted)] mt-0.5">Saldo yang dapat ditarik</span>
                       </div>
                     </div>
@@ -7438,8 +7435,8 @@ function Dashboard() {
                 {notifications.map(n => (
                   <div key={n.id} className={`p-3 rounded-xl mb-2 border transition-colors ${n.isRead ? 'bg-[var(--zv-panel)] border-[var(--zv-border)]' : 'bg-[var(--zv-surface)] border-[var(--zv-border)]'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-6 h-6 rounded-lg grid place-items-center ${n.type === 'trade' ? 'bg-[var(--zv-surface)]' : n.type === 'deposit' ? 'bg-[var(--zv-surface)]' : n.type === 'bonus' ? 'bg-[var(--zv-surface)]' : 'bg-[var(--zv-surface)]'}`}>
-                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'bonus' ? <Gift className="w-3 h-3 text-purple-400" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
+                      <div className="w-6 h-6 rounded-lg grid place-items-center bg-[var(--zv-surface)]">
+                        {n.type === 'trade' ? <BarChart3 className="w-3 h-3 text-[#3b82f6]" /> : n.type === 'deposit' ? <Wallet className="w-3 h-3 text-[#3b82f6]" /> : <Bell className="w-3 h-3 text-[#f59e0b]" />}
                       </div>
                       <span className="flex-1 text-[9px] font-bold text-[var(--zv-text)]">{n.title}</span>
                       {!n.isRead && <span className="w-2 h-2 rounded-full bg-blue-500" />}
