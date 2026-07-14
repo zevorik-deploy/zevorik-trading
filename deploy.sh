@@ -17,19 +17,18 @@ fi
 cd $PROJECT_DIR
 
 echo "📥 Pulling latest code..."
-git pull origin main
+git fetch --all
+git reset --hard origin/main
 
 echo "📦 Installing dependencies..."
 bun install
 
-echo "🗄️ Resetting database..."
-npx prisma db push --force-reset
+echo "🗄️ Pushing database schema..."
+npx prisma db push --accept-data-loss
 
 echo "⚙️ Configuring environment..."
 cat > .env << 'EOF'
-DATABASE_URL=file:/home/z/my-project/db/custom.db
-
-# SMTP Email Configuration (Hostinger)
+DATABASE_URL=file:./db/custom.db
 SMTP_HOST=smtp.hostinger.com
 SMTP_PORT=465
 SMTP_USER=zevorik@zevorik.com
@@ -38,12 +37,14 @@ EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
 EOF
 
 echo "🔄 Restarting application..."
+pkill -f "next-server" 2>/dev/null || true
 pkill -f "next dev" 2>/dev/null || true
+pkill -f "bun.*dev" 2>/dev/null || true
 sleep 2
 nohup bun run dev > /tmp/zevorik.log 2>&1 &
 echo "App started with PID: $!"
 
-sleep 3
+sleep 5
 echo ""
 echo "✅ Deployment complete!"
 echo "   Website: https://zevorik.com"

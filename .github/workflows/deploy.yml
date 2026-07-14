@@ -14,7 +14,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_PASS }}
           port: 22
           timeout: 60s
           command_timeout: 10m
@@ -33,29 +33,28 @@ jobs:
             echo ">>> Installing dependencies..."
             bun install
 
-            echo ">>> Force reset database..."
-            npx prisma db push --force-reset --accept-data-loss
+            echo ">>> Pushing database schema..."
+            npx prisma db push --accept-data-loss
 
             echo ">>> Writing .env..."
-            printf 'DATABASE_URL=file:/home/z/my-project/db/custom.db\nSMTP_HOST=smtp.hostinger.com\nSMTP_PORT=465\nSMTP_USER=zevorik@zevorik.com\nSMTP_PASS=v=Z@/B:6q\nEMAIL_FROM=ZEVORIK <zevorik@zevorik.com>\n' > .env
+            cat > .env << 'ENVEOF'
+            DATABASE_URL=file:./db/custom.db
+            SMTP_HOST=smtp.hostinger.com
+            SMTP_PORT=465
+            SMTP_USER=zevorik@zevorik.com
+            SMTP_PASS=v=Z@/B:6q
+            EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
+            ENVEOF
 
-            echo ">>> Creating restart script..."
-            cat > /tmp/restart_zevorik.sh << 'RESTART'
-            #!/bin/bash
-            export PATH="/root/.bun/bin:$HOME/.bun/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            echo ">>> Restarting application..."
             pkill -f "next-server" 2>/dev/null || true
+            pkill -f "next dev" 2>/dev/null || true
             pkill -f "bun.*dev" 2>/dev/null || true
             sleep 2
             cd /root/zevorik-trading
             nohup bun run dev > /tmp/zevorik.log 2>&1 &
-            echo "ZEVORIK restarted with PID $!" >> /tmp/zevorik_restart.log
-            RESTART
-            chmod +x /tmp/restart_zevorik.sh
+            echo "ZEVORIK restarted with PID $!"
 
-            echo ">>> Scheduling restart..."
-            nohup /tmp/restart_zevorik.sh > /dev/null 2>&1 &
-            disown
-
-            echo "=== Code deployed. App restarting in background... ==="
+            sleep 5
+            echo "=== Deployment complete! ==="
+            echo "Website: https://zevorik.com"
