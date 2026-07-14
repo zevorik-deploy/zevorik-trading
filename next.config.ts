@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  allowedDevOrigins: ['21.0.9.177'],
+  allowedDevOrigins: ['21.0.9.177', '.space-z.ai'],
 };
 
 export default nextConfig;
