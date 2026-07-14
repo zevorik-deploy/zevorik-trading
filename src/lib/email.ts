@@ -7,16 +7,21 @@ const SMTP_USER = process.env.SMTP_USER || ''
 const SMTP_PASS = process.env.SMTP_PASS || ''
 const EMAIL_FROM = process.env.EMAIL_FROM || 'ZEVORIK <noreply@zevorik.com>'
 
-// Create reusable transporter
-const transporter = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: SMTP_PORT,
-  secure: SMTP_PORT === 465,
-  auth: {
-    user: SMTP_USER,
-    pass: SMTP_PASS,
-  },
-})
+// Create transporter on demand for resilience
+function createTransporter() {
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+    connectionTimeout: 15000, // 15 seconds
+    greetingTimeout: 10000,  // 10 seconds
+    socketTimeout: 15000,    // 15 seconds
+  })
+}
 
 export interface SendEmailOptions {
   to: string
@@ -32,6 +37,16 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
       return false
     }
 
+    const transporter = createTransporter()
+
+    // Verify connection before sending
+    try {
+      await transporter.verify()
+    } catch (verifyError) {
+      console.error('SMTP connection verification failed:', verifyError)
+      return false
+    }
+
     const info = await transporter.sendMail({
       from: EMAIL_FROM,
       to,
@@ -39,7 +54,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
       html,
     })
 
-    console.log('Email sent:', info.messageId)
+    console.log('Email sent successfully:', info.messageId, 'to:', to)
     return true
   } catch (error) {
     console.error('Email send error:', error)

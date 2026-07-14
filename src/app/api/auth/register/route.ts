@@ -10,12 +10,64 @@ export async function POST(request: NextRequest) {
     // Validate all required fields
     if (!name || !email || !phone || !password || !pin) {
       return NextResponse.json(
-        { error: 'Name, email, phone, password, and PIN are required' },
+        { error: 'Nama, email, nomor HP, kata sandi, dan PIN wajib diisi' },
         { status: 400 }
       )
     }
 
-    // Validate OTP was verified
+    // Validate name length
+    if (name.trim().length < 2) {
+      return NextResponse.json(
+        { error: 'Nama minimal 2 karakter' },
+        { status: 400 }
+      )
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Format email tidak valid' },
+        { status: 400 }
+      )
+    }
+
+    // Validate phone format (Indonesian phone numbers)
+    const cleanPhone = phone.replace(/[\s\-\+\(\)]/g, '')
+    if (!/^(\+?62|0)?8\d{8,12}$/.test(cleanPhone)) {
+      return NextResponse.json(
+        { error: 'Nomor WhatsApp tidak valid. Gunakan format: 81234567890' },
+        { status: 400 }
+      )
+    }
+
+    // Normalize phone number (remove leading 0 or +62, add 0 prefix)
+    let normalizedPhone = cleanPhone
+    if (normalizedPhone.startsWith('+62')) {
+      normalizedPhone = '0' + normalizedPhone.slice(3)
+    } else if (normalizedPhone.startsWith('62')) {
+      normalizedPhone = '0' + normalizedPhone.slice(2)
+    } else if (!normalizedPhone.startsWith('0')) {
+      normalizedPhone = '0' + normalizedPhone
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Kata sandi minimal 6 karakter' },
+        { status: 400 }
+      )
+    }
+
+    // Validate PIN is 6 digits
+    if (!/^\d{6}$/.test(pin)) {
+      return NextResponse.json(
+        { error: 'PIN harus tepat 6 digit angka' },
+        { status: 400 }
+      )
+    }
+
+    // Validate OTP was verified on frontend
     if (!otpVerified) {
       return NextResponse.json(
         { error: 'Email belum diverifikasi. Silakan verifikasi OTP terlebih dahulu.' },
@@ -29,22 +81,14 @@ export async function POST(request: NextRequest) {
         email,
         type: 'register',
         verified: true,
-        expiresAt: { gt: new Date(Date.now() - 10 * 60 * 1000) }, // within 10 minutes
+        expiresAt: { gt: new Date(Date.now() - 15 * 60 * 1000) }, // within 15 minutes
       },
       orderBy: { createdAt: 'desc' },
     })
 
     if (!verifiedOTP) {
       return NextResponse.json(
-        { error: 'Verifikasi OTP tidak valid atau sudah kadaluarsa. Silakan coba lagi.' },
-        { status: 400 }
-      )
-    }
-
-    // Validate PIN is 6 digits
-    if (!/^\d{6}$/.test(pin)) {
-      return NextResponse.json(
-        { error: 'PIN must be exactly 6 digits' },
+        { error: 'Verifikasi OTP tidak valid atau sudah kadaluarsa. Silakan mulai dari awal.' },
         { status: 400 }
       )
     }
@@ -53,16 +97,16 @@ export async function POST(request: NextRequest) {
     const existingEmail = await db.user.findUnique({ where: { email } })
     if (existingEmail) {
       return NextResponse.json(
-        { error: 'Email sudah terdaftar' },
+        { error: 'Email sudah terdaftar. Silakan login.' },
         { status: 409 }
       )
     }
 
-    // Check phone uniqueness
-    const existingPhone = await db.user.findUnique({ where: { phone } })
+    // Check phone uniqueness (with normalized phone)
+    const existingPhone = await db.user.findUnique({ where: { phone: normalizedPhone } })
     if (existingPhone) {
       return NextResponse.json(
-        { error: 'Nomor telepon sudah terdaftar' },
+        { error: 'Nomor WhatsApp sudah terdaftar. Silakan gunakan nomor lain.' },
         { status: 409 }
       )
     }
@@ -74,9 +118,9 @@ export async function POST(request: NextRequest) {
     // Create user with emailVerified = true since OTP was verified
     const user = await db.user.create({
       data: {
-        name,
-        phone,
-        email,
+        name: name.trim(),
+        phone: normalizedPhone,
+        email: email.trim().toLowerCase(),
         password: hashedPassword,
         pin: hashedPin,
         balance: 0,
@@ -91,9 +135,14 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         title: 'Selamat Datang! 🎉',
-        message: `Selamat datang di ZEVORIK! Mulai investasi Anda dengan deposit. Lengkapi KYC untuk akses penuh!`,
+        message: `Selamat datang di ZEVORIK, ${user.name}! Mulai investasi Anda dengan deposit. Lengkapi KYC untuk akses penuh!`,
         type: 'system',
       },
+    })
+
+    // Delete used OTP records
+    await db.oTP.deleteMany({
+      where: { email, type: 'register' },
     })
 
     const token = await generateToken({ userId: user.id, phone: user.phone })
@@ -120,8 +169,17 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Registration error:', error)
+    // Provide more specific error for known issues
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint')) {
+        return NextResponse.json(
+          { error: 'Email atau nomor WhatsApp sudah terdaftar.' },
+          { status: 409 }
+        )
+      }
+    }
     return NextResponse.json(
-      { error: 'Failed to register user' },
+      { error: 'Gagal mendaftar. Silakan coba lagi.' },
       { status: 500 }
     )
   }

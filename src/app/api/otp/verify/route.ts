@@ -8,7 +8,15 @@ export async function POST(request: NextRequest) {
 
     if (!email || !code || !type) {
       return NextResponse.json(
-        { error: 'Email, code, and type are required' },
+        { error: 'Email, kode OTP, dan tipe wajib diisi' },
+        { status: 400 }
+      )
+    }
+
+    // Validate OTP code format (6 digits)
+    if (!/^\d{6}$/.test(code)) {
+      return NextResponse.json(
+        { error: 'Kode OTP harus 6 digit angka' },
         { status: 400 }
       )
     }
@@ -26,8 +34,29 @@ export async function POST(request: NextRequest) {
     })
 
     if (!otpRecord) {
+      // Check if OTP exists but already verified or expired
+      const anyOTP = await db.oTP.findFirst({
+        where: { email, type, code },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      if (anyOTP) {
+        if (anyOTP.verified) {
+          return NextResponse.json(
+            { error: 'Kode OTP sudah digunakan. Silakan minta kode baru.' },
+            { status: 400 }
+          )
+        }
+        if (anyOTP.expiresAt <= new Date()) {
+          return NextResponse.json(
+            { error: 'Kode OTP sudah kadaluarsa. Silakan minta kode baru.' },
+            { status: 400 }
+          )
+        }
+      }
+
       return NextResponse.json(
-        { error: 'Kode OTP tidak valid atau sudah kadaluarsa' },
+        { error: 'Kode OTP tidak valid. Silakan periksa dan coba lagi.' },
         { status: 400 }
       )
     }
@@ -38,7 +67,7 @@ export async function POST(request: NextRequest) {
       data: { verified: true },
     })
 
-    // For registration, also mark email as verified on the user
+    // For registration, also mark email as verified on the user (if user already exists somehow)
     if (type === 'register') {
       const user = await db.user.findUnique({ where: { email } })
       if (user) {
@@ -56,7 +85,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Verify OTP error:', error)
     return NextResponse.json(
-      { error: 'Gagal memverifikasi OTP' },
+      { error: 'Gagal memverifikasi OTP. Silakan coba lagi.' },
       { status: 500 }
     )
   }

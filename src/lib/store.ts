@@ -24,6 +24,7 @@ interface AuthState {
   adminViewingUserMode: boolean
   pendingUserId: string | null
   tempToken: string | null
+  _hydrated: boolean
   login: (user: User, token: string) => void
   logout: () => void
   updateBalance: (balance: number) => void
@@ -31,6 +32,7 @@ interface AuthState {
   setAdminViewingUserMode: (v: boolean) => void
   setPendingLogin: (userId: string, tempToken: string) => void
   clearPendingLogin: () => void
+  hydrate: () => void
 }
 
 const PERSIST_KEY = 'zv-auth-storage'
@@ -41,9 +43,14 @@ const loadPersistedState = () => {
     const saved = localStorage.getItem(PERSIST_KEY)
     if (saved) {
       const parsed = JSON.parse(saved)
-      if (parsed.state?.isLoggedIn) return parsed.state
+      if (parsed.state?.isLoggedIn && parsed.state?.user && parsed.state?.token) {
+        return parsed.state
+      }
     }
-  } catch {}
+  } catch {
+    // Clear corrupt data
+    try { localStorage.removeItem(PERSIST_KEY) } catch {}
+  }
   return null
 }
 
@@ -60,22 +67,37 @@ const persistState = (state: AuthState) => {
   } catch {}
 }
 
-const persisted = loadPersistedState()
-
-export const useAuthStore = create<AuthState>((set) => ({
-  user: persisted?.user ?? null,
-  token: persisted?.token ?? null,
-  isLoggedIn: persisted?.isLoggedIn ?? false,
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  token: null,
+  isLoggedIn: false,
   adminViewingUserMode: false,
   pendingUserId: null,
   tempToken: null,
+  _hydrated: false,
+
+  // Hydrate from localStorage after mount (prevents SSR mismatch)
+  hydrate: () => {
+    const persisted = loadPersistedState()
+    if (persisted) {
+      set({
+        user: persisted.user,
+        token: persisted.token,
+        isLoggedIn: persisted.isLoggedIn,
+        _hydrated: true,
+      })
+    } else {
+      set({ _hydrated: true })
+    }
+  },
+
   login: (user, token) => {
-    const newState = { user, token, isLoggedIn: true, pendingUserId: null, tempToken: null }
+    const newState = { user, token, isLoggedIn: true, pendingUserId: null, tempToken: null, _hydrated: true }
     set(newState)
     persistState(newState as AuthState)
   },
   logout: () => {
-    const newState = { user: null, token: null, isLoggedIn: false, adminViewingUserMode: false, pendingUserId: null, tempToken: null }
+    const newState = { user: null, token: null, isLoggedIn: false, adminViewingUserMode: false, pendingUserId: null, tempToken: null, _hydrated: true }
     set(newState)
     if (typeof window !== 'undefined') localStorage.removeItem(PERSIST_KEY)
   },

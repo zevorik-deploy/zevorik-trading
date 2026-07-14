@@ -7803,11 +7803,14 @@ function Dashboard() {
 
 
 export default function Home() {
-  const { isLoggedIn } = useAuthStore()
+  const { isLoggedIn, _hydrated, hydrate } = useAuthStore()
   const [mounted, setMounted] = useState(false)
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMounted(true) }, [])
-  if (!mounted) return (
+  useEffect(() => {
+    hydrate()
+    // Use microtask to avoid synchronous setState in effect
+    queueMicrotask(() => setMounted(true))
+  }, [hydrate])
+  if (!mounted || !_hydrated) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)' }}>
       <div className="flex flex-col items-center gap-3">
         <ZevorikLogo size={56} />

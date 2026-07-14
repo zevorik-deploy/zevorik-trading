@@ -12,7 +12,20 @@ export async function GET(request: NextRequest) {
 
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      // Return empty portfolio for non-existent user instead of 404
+      // This prevents frontend errors for stale sessions
+      return NextResponse.json({
+        portfolio: [],
+        summary: {
+          totalInvested: 0,
+          totalCurrentValue: 0,
+          totalProfitLoss: 0,
+          totalProfitLossPercent: 0,
+          cashBalance: 0,
+          totalAssets: 0,
+          holdingsCount: 0,
+        }
+      })
     }
 
     // Get portfolio items with stock data
@@ -60,6 +73,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ portfolio, summary })
   } catch (error) {
     console.error('Get portfolio error:', error)
-    return NextResponse.json({ error: 'Failed to fetch portfolio' }, { status: 500 })
+    // Return empty data on error instead of 500
+    return NextResponse.json({
+      portfolio: [],
+      summary: {
+        totalInvested: 0,
+        totalCurrentValue: 0,
+        totalProfitLoss: 0,
+        totalProfitLossPercent: 0,
+        cashBalance: 0,
+        totalAssets: 0,
+        holdingsCount: 0,
+      }
+    })
   }
 }
