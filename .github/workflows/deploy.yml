@@ -39,13 +39,23 @@ jobs:
             echo ">>> Writing .env..."
             printf 'DATABASE_URL=file:/home/z/my-project/db/custom.db\nSMTP_HOST=smtp.hostinger.com\nSMTP_PORT=465\nSMTP_USER=zevorik@zevorik.com\nSMTP_PASS=v=Z@/B:6q\nEMAIL_FROM=ZEVORIK <zevorik@zevorik.com>\n' > .env
 
-            echo ">>> Restarting app..."
-            pkill -f "next dev" 2>/dev/null || true
+            echo ">>> Creating restart script..."
+            cat > /tmp/restart_zevorik.sh << 'RESTART'
+            #!/bin/bash
+            export PATH="/root/.bun/bin:$HOME/.bun/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            pkill -f "next-server" 2>/dev/null || true
+            pkill -f "bun.*dev" 2>/dev/null || true
             sleep 2
+            cd /root/zevorik-trading
             nohup bun run dev > /tmp/zevorik.log 2>&1 &
-            echo "Started PID: $!"
-            sleep 5
-            echo ">>> Checking status..."
-            curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:3000/ || echo "Still starting..."
-            echo ""
-            echo "=== DEPLOYMENT COMPLETE ==="
+            echo "ZEVORIK restarted with PID $!" >> /tmp/zevorik_restart.log
+            RESTART
+            chmod +x /tmp/restart_zevorik.sh
+
+            echo ">>> Scheduling restart..."
+            nohup /tmp/restart_zevorik.sh > /dev/null 2>&1 &
+            disown
+
+            echo "=== Code deployed. App restarting in background... ==="
