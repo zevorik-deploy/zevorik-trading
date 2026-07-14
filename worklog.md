@@ -72,3 +72,33 @@ Stage Summary:
 - All critical features preserved: Market/Quote, Trading/Sinyal, Portfolio, Finance (deposit/withdrawal with OTP), History, Profile, Saldo
 - No new TypeScript errors introduced (pre-existing errors in other files remain)
 - Lint passes, dev server runs successfully
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Configure SMTP, fix API routes, push to GitHub, deploy
+
+Work Log:
+- Updated .env with Hostinger SMTP settings (smtp.hostinger.com, port 465, zevorik@zevorik.com)
+- Cleaned up /src/app/api/route.ts - removed bonus/referral/vip/news/promo endpoint references, renamed to ZEVORIK API
+- Rewrote /src/app/api/help/route.ts - removed bonus/referral/VIP FAQ entries, added OTP FAQ, updated brand to ZEVORIK
+- Removed news seeding code from /src/app/api/stocks/route.ts (referenced non-existent db.news model)
+- Fixed /src/app/api/admin/dashboard/route.ts - removed references to non-existent models (news, promo, investment, stockContract)
+- Created GitHub Actions workflow (.github/workflows/deploy.yml) for auto-deployment on push to main
+- Set GitHub secrets: VPS_HOST=31.97.67.131, VPS_USER=root (VPS_SSH_KEY still needs to be added)
+- Created deploy.sh script for manual VPS deployment
+- Pushed all changes to GitHub (4 commits total)
+- Verified OTP send/verify API works correctly (tested full flow)
+- Verified login page renders correctly with ZEVORIK branding
+- Verified register page shows all required fields (name, email, phone, password, PIN)
+- No old feature references remain in source code (verified with grep)
+- VPS SSH not accessible from sandbox (connection timeout)
+
+Stage Summary:
+- All code changes complete and pushed to GitHub
+- SMTP configured with Hostinger (smtp.hostinger.com:465, zevorik@zevorik.com) - SMTP_PASS needs to be set on VPS
+- GitHub Actions deployment workflow created (needs VPS_SSH_KEY secret)
+- Deploy script (deploy.sh) available for manual deployment
+- OTP flow tested and working (send + verify)
+- All old features completely removed from source
+- VPS deployment requires manual action: SSH into VPS and run deploy.sh
