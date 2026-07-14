@@ -24,9 +24,8 @@ jobs:
             export PATH="$BUN_INSTALL/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             cd /root/zevorik-trading
             
-            # Kill any existing Next.js processes
-            pkill -f "next dev" || true
-            pkill -f "next-server" || true
+            # Kill any existing Next.js server on port 3000
+            fuser -k 3000/tcp 2>/dev/null || true
             sleep 2
             
             # Pull latest code
