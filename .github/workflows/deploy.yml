@@ -20,7 +20,7 @@ jobs:
           script: |
             export PATH="$HOME/.bun/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-            # Load bun if installed
+            # Load bun
             if [ -f "$HOME/.bun/bin/bun" ]; then
               export BUN_INSTALL="$HOME/.bun"
               export PATH="$BUN_INSTALL/bin:$PATH"
@@ -29,15 +29,11 @@ jobs:
               export PATH="$BUN_INSTALL/bin:$PATH"
             fi
 
-            # Load nvm for pm2
+            # Load nvm
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
             echo "=== Deploying ZEVORIK ==="
-            echo "Node: $(node -v 2>/dev/null || echo 'not found')"
-            echo "Bun: $(bun -v 2>/dev/null || echo 'not found')"
-            echo "PM2: $(pm2 -v 2>/dev/null || echo 'not found')"
 
             cd /root/zevorik-trading
 
@@ -45,32 +41,30 @@ jobs:
             git pull origin main
 
             echo ">>> Installing dependencies..."
-            if command -v bun &> /dev/null; then
-              bun install
-            else
-              npm install
-            fi
+            bun install
 
-            echo ">>> Updating database..."
-            if command -v bun &> /dev/null; then
-              bun run db:push
-            else
-              npx prisma db push
+            echo ">>> Updating database (force reset)..."
+            bun run db:push -- --force-reset 2>/dev/null || bunx prisma db push --force-reset
+
+            # Write the .env file (ensure SMTP is configured on VPS)
+            if ! grep -q "smtp.hostinger.com" .env 2>/dev/null; then
+              cat > .env << 'ENVEOF'
+DATABASE_URL=file:/home/z/my-project/db/custom.db
+
+# SMTP Email Configuration (Hostinger)
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=zevorik@zevorik.com
+SMTP_PASS=v=Z@/B:6q
+EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
+ENVEOF
+              echo ">>> .env configured with SMTP"
             fi
 
             echo ">>> Restarting app..."
-            if command -v pm2 &> /dev/null; then
-              pm2 restart zevorik 2>/dev/null || pm2 start "bun run dev -- -p 3000" --name zevorik
-              pm2 save
-            elif command -v bun &> /dev/null; then
-              # Kill existing process
-              pkill -f "next dev" 2>/dev/null || true
-              nohup bun run dev -- -p 3000 > /tmp/zevorik.log 2>&1 &
-              echo "Started with PID: $!"
-            else
-              pkill -f "next dev" 2>/dev/null || true
-              nohup npx next dev -p 3000 > /tmp/zevorik.log 2>&1 &
-              echo "Started with PID: $!"
-            fi
-
+            pkill -f "next dev" 2>/dev/null || true
+            sleep 2
+            nohup bun run dev > /tmp/zevorik.log 2>&1 &
+            echo "Started with PID: $!"
+            sleep 3
             echo "=== Deployment complete at $(date) ==="
