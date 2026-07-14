@@ -23,11 +23,35 @@ jobs:
             export BUN_INSTALL="/root/.bun"
             export PATH="$BUN_INSTALL/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             cd /root/zevorik-trading
+            
+            # Kill any existing Next.js processes
+            pkill -f "next dev" || true
+            pkill -f "next-server" || true
+            sleep 2
+            
+            # Pull latest code
             git fetch --all
             git reset --hard origin/main
+            
+            # Clean build cache
+            rm -rf .next
+            
+            # Install dependencies
             $BUN_INSTALL/bin/bun install
+            
+            # Write .env file
             printf '%s\n' 'DATABASE_URL=file:./db/custom.db' 'SMTP_HOST=smtp.hostinger.com' 'SMTP_PORT=465' 'SMTP_USER=zevorik@zevorik.com' 'SMTP_PASS=v=Z@/B:6q' 'EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>' 'JWT_SECRET=zevorik-jwt-secret-key-2024-secure' > .env
+            
+            # Push database schema
             $BUN_INSTALL/bin/bunx prisma db push --accept-data-loss
-            nohup $BUN_INSTALL/bin/bun run dev > /tmp/zevorik.log 2>&1 &
-            sleep 12
+            $BUN_INSTALL/bin/bunx prisma generate
+            
+            # Build for production
+            $BUN_INSTALL/bin/bun run build
+            
+            # Start production server
+            nohup $BUN_INSTALL/bin/bun .next/standalone/server.js > /tmp/zevorik.log 2>&1 &
+            sleep 5
+            
+            # Verify app is running
             curl -s http://localhost:3000/api/stocks > /dev/null && echo "APP OK" || echo "APP STARTING"

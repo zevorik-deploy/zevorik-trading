@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   keywords: ["saham", "investasi", "portofolio", "IHSG", "ZEVORIK", "trading", "stock"],
   authors: [{ name: "ZEVORIK" }],
   icons: {
-    icon: "/zevorix-logo.png",
-    apple: "/zevorix-logo.png",
+    icon: "/favicon.ico",
+    apple: "/zevorik-logo.png",
   },
   openGraph: {
     title: "ZEVORIK - Future of Investing",
