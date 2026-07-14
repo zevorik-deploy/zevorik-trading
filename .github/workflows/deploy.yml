@@ -2,7 +2,8 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -23,12 +24,9 @@ jobs:
 
             echo "=== Deploying ZEVORIK ==="
 
-            # Find the project directory
             PROJECT_DIR=""
             if [ -d "/root/zevorik-trading" ]; then
               PROJECT_DIR="/root/zevorik-trading"
-            elif [ -d "/home/z/my-project" ]; then
-              PROJECT_DIR="/home/z/my-project"
             else
               echo "ERROR: Project directory not found!"
               exit 1
