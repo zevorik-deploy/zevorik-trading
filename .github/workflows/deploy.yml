@@ -10,53 +10,5 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASS }}
-          port: 22
-          timeout: 120s
-          command_timeout: 15m
-          script_stop: false
-          script: |
-            export PATH="/root/.bun/bin:$HOME/.bun/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
-            echo "=== Deploying ZEVORIK ==="
-            cd /root/zevorik-trading
-            echo ">>> Git pull..."
-            git fetch --all
-            git reset --hard origin/main
-            echo ">>> Installing dependencies..."
-            bun install
-            echo ">>> Writing .env..."
-            cat > .env << 'ENVEOF'
-DATABASE_URL=file:./db/custom.db
-SMTP_HOST=smtp.hostinger.com
-SMTP_PORT=465
-SMTP_USER=zevorik@zevorik.com
-SMTP_PASS=v=Z@/B:6q
-EMAIL_FROM=ZEVORIK <zevorik@zevorik.com>
-JWT_SECRET=zevorik-jwt-secret-key-2024-secure
-ENVEOF
-            echo ">>> Pushing database schema..."
-            npx prisma db push --accept-data-loss
-            echo ">>> Stopping old process..."
-            pkill -f "next-server" 2>/dev/null || true
-            pkill -f "next start" 2>/dev/null || true
-            pkill -f "next dev" 2>/dev/null || true
-            sleep 2
-            echo ">>> Starting application with setsid..."
-            cd /root/zevorik-trading
-            setsid bun run dev > /tmp/zevorik.log 2>&1 &
-            disown
-            echo "ZEVORIK started"
-            sleep 10
-            echo ">>> Checking status..."
-            if curl -s http://localhost:3000/api/stocks > /dev/null 2>&1; then
-              echo "✅ Application is running!"
-            else
-              echo "⚠️ Checking logs..."
-              tail -20 /tmp/zevorik.log 2>/dev/null || echo "No logs yet"
-            fi
-            echo "=== Deployment complete! ==="
+      - name: Test
+        run: echo Hello World
